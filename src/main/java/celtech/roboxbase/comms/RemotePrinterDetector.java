@@ -125,7 +125,7 @@ public class RemotePrinterDetector extends DeviceDetector
 
                 for (DetectedDevice printerToDisconnect : printersToDisconnect)
                 {
-                    steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
+                    steno.info("Disconnecting from remote printer " + printerToDisconnect + " as it doesn't seem to be present anymore");
                     deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
                     currentPrinters.remove(printerToDisconnect);
                 }
@@ -175,11 +175,13 @@ public class RemotePrinterDetector extends DeviceDetector
 
                 if (responseCode == 200)
                 {
+                    steno.info("Asking " + address.getHostAddress() + " for printers");
                     DiscoveryResponse discoveryResponse = mapper.readValue(con.getInputStream(), DiscoveryResponse.class);
                     discoveryResponse.getPrinterIDs().forEach(printerID ->
                     {
                         RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);
                         foundPrinters.add(remotePrinter);
+                        steno.info("Got " + remotePrinter.getConnectionHandle());
                     });
 
 //                    steno.info("Got response from @ " + address.getHostAddress() + " : " + discoveryResponse.toString());

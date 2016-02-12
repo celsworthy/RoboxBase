@@ -1,12 +1,10 @@
 package celtech.roboxbase.comms.tx;
 
-import celtech.roboxbase.utils.ColourStringConverter;
 import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.comms.remote.EnumStringConverter;
 import celtech.roboxbase.comms.remote.FixedDecimalFloatFormat;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import java.io.UnsupportedEncodingException;
-import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -17,7 +15,7 @@ import libertysystems.stenographer.StenographerFactory;
 public class WriteReel1EEPROM extends RoboxTxPacket
 {
 
-    private Stenographer steno = StenographerFactory.getStenographer(WriteReel1EEPROM.class.getName());
+    private final Stenographer steno = StenographerFactory.getStenographer(WriteReel1EEPROM.class.getName());
 
     public static final int FRIENDLY_NAME_LENGTH = 40;
     public static final int MATERIAL_TYPE_LENGTH = 1;
@@ -41,14 +39,14 @@ public class WriteReel1EEPROM extends RoboxTxPacket
             float reelFirstLayerBedTemperature, float reelBedTemperature, float reelAmbientTemperature,
             float reelFilamentDiameter,
             float reelFilamentMultiplier, float reelFeedRateMultiplier, float reelRemainingFilament,
-            String friendlyName, MaterialType materialType, Color displayColour)
+            String friendlyName, MaterialType materialType, String displayColourString)
     {
         StringBuilder payload = new StringBuilder();
 
         FixedDecimalFloatFormat decimalFloatFormatter = new FixedDecimalFloatFormat();
 
         payload.append(formatString(filamentID, 16));
-        payload.append(formatString(ColourStringConverter.colourToString(displayColour), DISPLAY_COLOUR_LENGTH));
+        payload.append(formatString(displayColourString, DISPLAY_COLOUR_LENGTH));
         payload.append(formatString(" ", 24 - DISPLAY_COLOUR_LENGTH));
         payload.append(decimalFloatFormatter.format(reelFirstLayerNozzleTemperature));
         payload.append(decimalFloatFormatter.format(reelNozzleTemperature));

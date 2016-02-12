@@ -3,8 +3,6 @@ package celtech.roboxbase.comms.tx;
 import celtech.roboxbase.comms.remote.PrinterIDDataStructure;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import java.io.UnsupportedEncodingException;
-import javafx.scene.paint.Color;
-import static celtech.roboxbase.utils.ColourStringConverter.colourToString;
 
 /**
  *
@@ -48,7 +46,7 @@ public class WritePrinterID extends RoboxTxPacket
     private String serialNumber;
     private String checkByte;
     private String printerFriendlyName;
-    private Color colour;
+    private String colourWebString = "";
 
     /**
      *
@@ -60,12 +58,12 @@ public class WritePrinterID extends RoboxTxPacket
      * @param serialNumber
      * @param checkByte
      * @param printerFriendlyName
-     * @param colour
+     * @param printerColourWebString
      */
     public void setIDAndColour(String model, String edition,
             String weekOfManufacture, String yearOfManufacture, String poNumber,
             String serialNumber, String checkByte, String printerFriendlyName,
-            Color colour)
+            String printerColourWebString)
     {
         this.model = model;
         this.edition = edition;
@@ -75,7 +73,7 @@ public class WritePrinterID extends RoboxTxPacket
         this.serialNumber = serialNumber;
         this.checkByte = checkByte;
         this.printerFriendlyName = printerFriendlyName;
-        this.colour = colour;
+        this.colourWebString = printerColourWebString;
 
         try
         {
@@ -103,7 +101,7 @@ public class WritePrinterID extends RoboxTxPacket
                 printerFriendlyName));
         payload.append(secondPad);
 
-        payload.append(colourToString(colour));
+        payload.append(printerColourWebString);
 
         steno.debug("Outputting string of length " + payload.length());
         this.setMessagePayload(payload.toString());
@@ -111,16 +109,16 @@ public class WritePrinterID extends RoboxTxPacket
 
     public void populatePacket(
             String printerUniqueIDIn,
-    String printermodelIn,
-    String printereditionIn,
-    String printerweekOfManufactureIn,
-    String printeryearOfManufactureIn,
-    String printerpoNumberIn,
-    String printerserialNumberIn,
-    String printercheckByteIn,
-    String printerFriendlyNameIn,
-    Color printerColourIn,
-    String firmwareVersionIn)
+            String printermodelIn,
+            String printereditionIn,
+            String printerweekOfManufactureIn,
+            String printeryearOfManufactureIn,
+            String printerpoNumberIn,
+            String printerserialNumberIn,
+            String printercheckByteIn,
+            String printerFriendlyNameIn,
+            String printerColourWebString,
+            String firmwareVersionIn)
     {
         setIDAndColour(printermodelIn,
                 printereditionIn,
@@ -130,7 +128,7 @@ public class WritePrinterID extends RoboxTxPacket
                 printerserialNumberIn,
                 printercheckByteIn,
                 printerFriendlyNameIn,
-                printerColourIn);
+                printerColourWebString);
     }
 
     public String getModel()
@@ -173,9 +171,53 @@ public class WritePrinterID extends RoboxTxPacket
         return printerFriendlyName;
     }
 
-    public Color getColour()
+    public String getColourWebString()
     {
-        return colour;
+        return colourWebString;
     }
 
+    public void setCheckByte(String checkByte)
+    {
+        this.checkByte = checkByte;
+    }
+
+    public void setEdition(String edition)
+    {
+        this.edition = edition;
+    }
+
+    public void setModel(String model)
+    {
+        this.model = model;
+    }
+
+    public void setPoNumber(String poNumber)
+    {
+        this.poNumber = poNumber;
+    }
+
+    public void setPrinterColourWebString(String printerColourWebString)
+    {
+        this.colourWebString = printerColourWebString;
+    }
+
+    public void setPrinterFriendlyName(String printerFriendlyName)
+    {
+        this.printerFriendlyName = printerFriendlyName;
+    }
+
+    public void setSerialNumber(String serialNumber)
+    {
+        this.serialNumber = serialNumber;
+    }
+
+    public void setWeekOfManufacture(String weekOfManufacture)
+    {
+        this.weekOfManufacture = weekOfManufacture;
+    }
+
+    public void setYearOfManufacture(String yearOfManufacture)
+    {
+        this.yearOfManufacture = yearOfManufacture;
+    }
 }

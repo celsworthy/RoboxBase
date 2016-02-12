@@ -207,7 +207,7 @@ public class TestCommandInterface extends CommandInterface
             printerID.setEdition(writeID.getEdition());
             printerID.setModel(writeID.getModel());
             printerID.setPoNumber(writeID.getPoNumber());
-            printerID.setPrinterColour(writeID.getColour().toString());
+            printerID.setPrinterColour(writeID.getColourWebString());
             printerID.setPrinterFriendlyName(writeID.getPrinterFriendlyName());
             printerID.setSerialNumber(writeID.getSerialNumber());
             printerID.setWeekOfManufacture(writeID.getWeekOfManufacture());

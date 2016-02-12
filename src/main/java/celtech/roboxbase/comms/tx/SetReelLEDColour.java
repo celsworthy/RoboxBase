@@ -1,12 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package celtech.roboxbase.comms.tx;
-
-import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
-import celtech.roboxbase.comms.tx.RoboxTxPacket;
-import javafx.scene.paint.Color;
 
 /**
  *
@@ -37,22 +29,13 @@ public class SetReelLEDColour extends RoboxTxPacket
 
     /**
      *
-     * @param colour
+     * @param colourString
      */
-    public void setLEDColour(Color colour)
+    public void setLEDColour(String colourString)
     {
         StringBuffer payload = new StringBuffer();
 
-        int redValue = (int) (255 * colour.getRed());
-        String redString = String.format("%02X", redValue);
-        int greenValue = (int) (255 * colour.getGreen());
-        String greenString = String.format("%02X", greenValue);
-        int blueValue = (int) (255 * colour.getBlue());
-        String blueString = String.format("%02X", blueValue);
-
-        payload.append(redString);
-        payload.append(greenString);
-        payload.append(blueString);
+        payload.append(colourString);
 
         this.setMessagePayload(payload.toString());
     }

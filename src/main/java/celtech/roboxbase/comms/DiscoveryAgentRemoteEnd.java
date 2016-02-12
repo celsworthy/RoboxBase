@@ -34,7 +34,6 @@ public class DiscoveryAgentRemoteEnd implements Runnable
                 {
                     byte[] responseBuf = RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII");
                     DatagramPacket response = new DatagramPacket(responseBuf, responseBuf.length, recv.getAddress(), recv.getPort());
-                    System.out.println("Got multicast from " + recv.getAddress() + ":" + recv.getPort() + " content was " + recv.getLength() + " bytes");
                     s.send(response);
                 }
 

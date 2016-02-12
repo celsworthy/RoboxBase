@@ -5,6 +5,7 @@ package celtech.roboxbase.comms.remote.tx;
 
 import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.MaterialType;
+import celtech.roboxbase.utils.ColourStringConverter;
 import javafx.scene.paint.Color;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -37,7 +38,7 @@ public class WriteReelEEPROMTest
                 reelFirstLayerBedTemperature, reelBedTemperature,
                 reelAmbientTemperature, reelFilamentDiameter, reelFilamentMultiplier,
                 reelFeedRateMultiplier, reelRemainingFilament, friendlyName,
-                materialType, displayColour);
+                materialType, ColourStringConverter.colourToString(displayColour));
         String bufferString = instance.getMessagePayload();
         assertEquals(192, bufferString.length());
         System.out.println(bufferString);
@@ -65,7 +66,7 @@ public class WriteReelEEPROMTest
                 reelFirstLayerBedTemperature, reelBedTemperature,
                 reelAmbientTemperature, reelFilamentDiameter, reelFilamentMultiplier,
                 reelFeedRateMultiplier, reelRemainingFilament, friendlyName,
-                materialType, displayColour);
+                materialType, ColourStringConverter.colourToString(displayColour));
         String bufferString = instance.getMessagePayload();
         assertEquals(192, bufferString.length());
         System.out.println(bufferString);

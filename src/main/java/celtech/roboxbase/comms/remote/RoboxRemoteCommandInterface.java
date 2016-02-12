@@ -48,7 +48,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     {
         RoboxRxPacket rxPacket = remoteClient.writeToPrinter(printerHandle.getConnectionHandle(), messageToWrite);
 
-        if (!dontPublishResult)
+        if (rxPacket!= null && !dontPublishResult)
         {
             printerToUse.processRoboxResponse(rxPacket);
         }

@@ -83,6 +83,7 @@ import celtech.roboxbase.printerControl.model.statetransitions.calibration.Calib
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
+import celtech.roboxbase.utils.ColourStringConverter;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.tasks.Cancellable;
@@ -1431,7 +1432,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         reelToWrite.remainingFilament.get(),
                         reelToWrite.friendlyFilamentName.get(),
                         reelToWrite.material.get(),
-                        reelToWrite.displayColour.get());
+                        ColourStringConverter.colourToString(reelToWrite.displayColour.get()));
                 break;
             case 1:
                 readPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_REEL_1_EEPROM);
@@ -1449,7 +1450,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         reelToWrite.remainingFilament.get(),
                         reelToWrite.friendlyFilamentName.get(),
                         reelToWrite.material.get(),
-                        reelToWrite.displayColour.get());
+                        ColourStringConverter.colourToString(reelToWrite.displayColour.get()));
                 break;
         }
 
@@ -1495,7 +1496,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         filament.getRemainingFilament(),
                         filament.getFriendlyFilamentName(),
                         filament.getMaterial(),
-                        filament.getDisplayColour());
+                        ColourStringConverter.colourToString(filament.getDisplayColour()));
                 break;
             case 1:
                 readPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_REEL_1_EEPROM);
@@ -1515,7 +1516,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         filament.getRemainingFilament(),
                         filament.getFriendlyFilamentName(),
                         filament.getMaterial(),
-                        filament.getDisplayColour());
+                        ColourStringConverter.colourToString(filament.getDisplayColour()));
                 break;
             default:
                 steno.warning("Using default reel - was asked to read reel number " + reelNumber);
@@ -1565,7 +1566,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         reelRemainingFilament,
                         friendlyName,
                         materialType,
-                        displayColour);
+                        ColourStringConverter.colourToString(displayColour));
                 break;
             case 1:
                 readPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_REEL_1_EEPROM);
@@ -1583,7 +1584,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         reelRemainingFilament,
                         friendlyName,
                         materialType,
-                        displayColour);
+                        ColourStringConverter.colourToString(displayColour));
                 break;
             default:
                 steno.warning("Using default reel - was asked to read reel number " + reelNumber);
@@ -2062,7 +2063,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
         try
         {
@@ -2094,7 +2095,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2128,7 +2129,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2162,7 +2163,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2196,7 +2197,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2230,7 +2231,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2264,7 +2265,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2298,7 +2299,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
                 newIdentity.printerFriendlyName.get(),
-                newIdentity.printerColour.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
 
         try
@@ -2971,7 +2972,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         SetAmbientLEDColour ledColour = (SetAmbientLEDColour) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.SET_AMBIENT_LED_COLOUR);
 
-        ledColour.setLEDColour(colour);
+        ledColour.setLEDColour(ColourStringConverter.colourToString(colour));
 
         try
         {
@@ -2987,7 +2988,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         SetReelLEDColour ledColour = (SetReelLEDColour) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.SET_REEL_LED_COLOUR);
-        ledColour.setLEDColour(colour);
+        ledColour.setLEDColour(ColourStringConverter.colourToString(colour));
         try
         {
             commandInterface.writeToPrinter(ledColour);
