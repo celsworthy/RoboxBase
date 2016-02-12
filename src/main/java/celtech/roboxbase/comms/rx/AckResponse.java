@@ -109,7 +109,7 @@ public class AckResponse extends RoboxRxPacket
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(13, 33).
                 append(firmwareErrors).
                 toHashCode();
     }

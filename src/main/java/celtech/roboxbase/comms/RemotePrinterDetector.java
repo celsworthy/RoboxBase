@@ -30,7 +30,6 @@ public class RemotePrinterDetector extends DeviceDetector
     private boolean initialised = false;
     private InetAddress group = null;
     private DatagramSocket s = null;
-    private boolean keepRunning = true;
     private List<DetectedDevice> currentPrinters = new ArrayList<>();
     private static final ObjectMapper mapper = new ObjectMapper();
 

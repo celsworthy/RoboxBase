@@ -1,4 +1,4 @@
-package celtech.roboxbase.interappcomms;
+package celtech.roboxbase.comms.interapp;
 
 /**
  *

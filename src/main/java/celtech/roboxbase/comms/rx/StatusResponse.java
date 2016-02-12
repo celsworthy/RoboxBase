@@ -1511,7 +1511,7 @@ public class StatusResponse extends RoboxRxPacket
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(13, 33).
                 append(runningPrintJobID).
                 append(printJobLineNumberString).
                 append(printJobLineNumber).

@@ -28,7 +28,7 @@ public class SerializableColour
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(23, 31).
                 append(webColour)
                 .toHashCode();
     }

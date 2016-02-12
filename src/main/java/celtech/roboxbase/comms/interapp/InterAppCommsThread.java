@@ -1,17 +1,13 @@
-package celtech.roboxbase.interappcomms;
+package celtech.roboxbase.comms.interapp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 import javafx.application.Platform;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -20,14 +16,15 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author ianhudson
  */
-public class InterAppCommsListener extends Thread
+public class InterAppCommsThread extends Thread
 {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(InterAppCommsListener.class.getName());
+    private final Stenographer steno = StenographerFactory.getStenographer(InterAppCommsThread.class.getName());
     private boolean keepRunning = true;
-    private final int PORT = 32145;
     private ServerSocket initialServerSocket;
-    private Socket serverSocket;
+    private Socket serverSocket = null;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private InterAppCommsConsumer commsConsumer = null;
 
     @Override
     public void run()
@@ -36,39 +33,44 @@ public class InterAppCommsListener extends Thread
         {
             try
             {
-                byte[] buffer = new byte[4096];
-                int bufferOffset = 0;
                 serverSocket = initialServerSocket.accept();
-                DataInputStream is = new DataInputStream(serverSocket.getInputStream());
 
-                while (is.available() > 0)
+                InterAppRequest interAppRequest = mapper.readValue(serverSocket.getInputStream(), InterAppRequest.class);
+                if (interAppRequest != null)
                 {
-                    int bytesRead = is.read(buffer, bufferOffset, buffer.length - bufferOffset);
-                    bufferOffset += bytesRead;
-                }
-                
-                String input = Arrays.toString(buffer);
-                
-                steno.info("Was passed data by a sibling:" + input);
+                    steno.info("Was InterApp data:" + interAppRequest.toString());
 
-                is.close();
-                serverSocket.close();
+                    if (commsConsumer != null)
+                    {
+                        commsConsumer.incomingComms(interAppRequest);
+                    }
+                }
+
             } catch (IOException ex)
             {
+                steno.error("Error trying to listen for InterApp comms");
             }
+        }
 
-            steno.info("Got a connection from a sibling trying to start up! : ");
+        try
+        {
+            serverSocket.close();
+        } catch (IOException ex)
+        {
+            steno.error("Error attempting to shutdown InterApp comms");
         }
     }
 
-    public InterAppStartupStatus letUsBegin(List<String> parameters)
+    public InterAppStartupStatus letUsBegin(InterAppRequest interAppCommsRequest, InterAppCommsConsumer commsConsumer)
     {
+        this.commsConsumer = commsConsumer;
+
         InterAppStartupStatus status = InterAppStartupStatus.OTHER_ERROR;
 
         try
         {
             //Bind to localhost adapter with a zero connection queue 
-            initialServerSocket = new ServerSocket(PORT, 0, InetAddress.getLocalHost());
+            initialServerSocket = new ServerSocket(InterAppConfiguration.PORT, 0, InetAddress.getLocalHost());
 
             status = InterAppStartupStatus.STARTED_OK;
             this.start();
@@ -81,22 +83,16 @@ public class InterAppCommsListener extends Thread
 
             try
             {
-                Socket clientSocket = new Socket(InetAddress.getLocalHost(), PORT);
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                Socket clientSocket = new Socket(InetAddress.getLocalHost(), InterAppConfiguration.PORT);
+                OutputStreamWriter out = new OutputStreamWriter(clientSocket.getOutputStream(), InterAppConfiguration.charSetToUse);
 
-                StringBuilder paramString = new StringBuilder();
-                parameters.forEach(parameter ->
-                {
-                    paramString.append(parameter);
-                });
+                String dataToOutput = mapper.writeValueAsString(interAppCommsRequest);
 
-                String dataToSend = paramString.toString();
-                out.printf("%d", dataToSend.length());
-                out.printf("%s", dataToSend);
+                out.write(dataToOutput);
                 out.flush();
 
                 clientSocket.close();
-                steno.info("Told my sibling about the params I was passed");
+                steno.debug("Told my sibling about the params I was passed");
                 status = InterAppStartupStatus.ALREADY_RUNNING_CONTACT_MADE;
             } catch (IOException ex)
             {

@@ -499,7 +499,7 @@ public abstract class ReelEEPROMDataResponse extends RoboxRxPacket
     
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(19, 31).
                 append(filamentID).
                 append(firstLayerNozzleTemperature).
                 append(nozzleTemperature).

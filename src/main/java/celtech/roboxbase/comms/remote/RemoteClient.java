@@ -1,6 +1,5 @@
 package celtech.roboxbase.comms.remote;
 
-import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;

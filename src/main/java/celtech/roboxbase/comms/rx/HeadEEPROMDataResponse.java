@@ -660,7 +660,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(15, 39).
                 append(headEEPROMData).
                 toHashCode();
     }

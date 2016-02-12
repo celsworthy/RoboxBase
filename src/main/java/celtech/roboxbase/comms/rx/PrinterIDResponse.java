@@ -273,7 +273,7 @@ public class PrinterIDResponse extends RoboxRxPacket
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(15, 37).
                 append(model).
                 append(edition).
                 append(weekOfManufacture).

@@ -124,7 +124,7 @@ public class Filament implements Serializable, Cloneable
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(17, 31).
+        return new HashCodeBuilder(11, 31).
                 append(filamentID.get()).
                 append(friendlyFilamentName.get()).
                 append(material.get()).
