@@ -132,16 +132,12 @@ public class RemotePrinterDetector extends DeviceDetector
 
             if (responseCode == 200)
             {
-                steno.info("Asking " + address.getHostAddress() + " for printers");
                 DiscoveryResponse discoveryResponse = mapper.readValue(con.getInputStream(), DiscoveryResponse.class);
                 discoveryResponse.getPrinterIDs().forEach(printerID ->
                 {
                     RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);
                     foundPrinters.add(remotePrinter);
-                    steno.info("Got " + remotePrinter.getConnectionHandle());
                 });
-
-//                    steno.info("Got response from @ " + address.getHostAddress() + " : " + discoveryResponse.toString());
             } else
             {
                 steno.warning("No response from @ " + address.getHostAddress());
