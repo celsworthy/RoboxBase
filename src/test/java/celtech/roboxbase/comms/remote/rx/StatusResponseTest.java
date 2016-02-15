@@ -3,6 +3,7 @@ package celtech.roboxbase.comms.remote.rx;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.comms.remote.EEPROMState;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -19,7 +20,7 @@ public class StatusResponseTest
 {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.StatusResponse\",\"packetType\":\"STATUS_RESPONSE\",\"messagePayload\":null,\"sequenceNumber\":44,\"includeSequenceNumber\":false,\"includeCharsOfDataInOutput\":false,\"runningPrintJobID\":null,\"printJobLineNumber\":0,\"xSwitchStatus\":false,\"ySwitchStatus\":false,\"zSwitchStatus\":false,\"pauseStatus\":\"NOT_PAUSED\",\"busyStatus\":\"NOT_BUSY\",\"filament1SwitchStatus\":true,\"filament2SwitchStatus\":false,\"nozzleSwitchStatus\":false,\"doorOpen\":false,\"reelButtonPressed\":false,\"topZSwitchStatus\":false,\"extruderEPresent\":false,\"extruderDPresent\":false,\"nozzle0HeaterMode\":\"OFF\",\"nozzle0Temperature\":0,\"nozzle0TargetTemperature\":0,\"nozzle0FirstLayerTargetTemperature\":0,\"nozzle1HeaterMode\":\"OFF\",\"nozzle1Temperature\":0,\"nozzle1TargetTemperature\":144,\"nozzle1FirstLayerTargetTemperature\":0,\"bedHeaterMode\":\"OFF\",\"bedTemperature\":0,\"bedTargetTemperature\":0,\"bedFirstLayerTargetTemperature\":0,\"ambientFanOn\":false,\"ambientTemperature\":0,\"ambientTargetTemperature\":65,\"headFanOn\":false,\"headEEPROMState\":\"NOT_PRESENT\",\"reel0EEPROMState\":\"PROGRAMMED\",\"reel1EEPROMState\":\"NOT_PRESENT\",\"dualReelAdaptorPresent\":false,\"sdCardPresent\":false,\"headXPosition\":0.0,\"headYPosition\":0.0,\"headZPosition\":0.0,\"nozzleInUse\":0,\"feedRateEMultiplier\":0.0,\"feedRateDMultiplier\":0.0,\"whyAreWeWaitingState\":\"NOT_WAITING\",\"headPowerOn\":false,\"eindexStatus\":false,\"dindexStatus\":false,\"bposition\":0.0,\"efilamentDiameter\":0.0,\"efilamentMultiplier\":0.0,\"dfilamentDiameter\":0.0,\"dfilamentMultiplier\":0.0}";
+    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.StatusResponse\",\"ambientFanOn\":false,\"ambientTargetTemperature\":65,\"ambientTemperature\":0,\"bedFirstLayerTargetTemperature\":0,\"bedHeaterMode\":\"OFF\",\"bedTargetTemperature\":0,\"bedTemperature\":0,\"bposition\":0.0,\"busyStatus\":\"NOT_BUSY\",\"dfilamentDiameter\":0.0,\"dfilamentMultiplier\":0.0,\"dindexStatus\":false,\"doorOpen\":false,\"dualReelAdaptorPresent\":false,\"efilamentDiameter\":0.0,\"efilamentMultiplier\":0.0,\"eindexStatus\":false,\"extruderDPresent\":false,\"extruderEPresent\":false,\"feedRateDMultiplier\":0.0,\"feedRateEMultiplier\":0.0,\"filament1SwitchStatus\":true,\"filament2SwitchStatus\":false,\"headEEPROMState\":\"NOT_PRESENT\",\"headFanOn\":false,\"headPowerOn\":false,\"headXPosition\":0.0,\"headYPosition\":0.0,\"headZPosition\":0.0,\"includeCharsOfDataInOutput\":false,\"includeSequenceNumber\":false,\"messagePayload\":null,\"nozzle0FirstLayerTargetTemperature\":0,\"nozzle0HeaterMode\":\"OFF\",\"nozzle0TargetTemperature\":0,\"nozzle0Temperature\":0,\"nozzle1FirstLayerTargetTemperature\":0,\"nozzle1HeaterMode\":\"OFF\",\"nozzle1TargetTemperature\":144,\"nozzle1Temperature\":0,\"nozzleInUse\":0,\"nozzleSwitchStatus\":false,\"packetType\":\"STATUS_RESPONSE\",\"pauseStatus\":\"NOT_PAUSED\",\"printJobLineNumber\":0,\"reel0EEPROMState\":\"PROGRAMMED\",\"reel1EEPROMState\":\"NOT_PRESENT\",\"reelButtonPressed\":false,\"runningPrintJobID\":null,\"sdCardPresent\":false,\"sequenceNumber\":44,\"topZSwitchStatus\":false,\"whyAreWeWaitingState\":\"NOT_WAITING\",\"xSwitchStatus\":false,\"ySwitchStatus\":false,\"zSwitchStatus\":false}";
 
     public StatusResponseTest()
     {
@@ -28,6 +29,7 @@ public class StatusResponseTest
     @BeforeClass
     public static void setUpClass()
     {
+        mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
     }
 
     @AfterClass
