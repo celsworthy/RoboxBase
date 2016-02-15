@@ -58,8 +58,6 @@ public class RemotePrinterDetector extends DeviceDetector
 
         while (keepRunning && initialised)
         {
-            Set<InetAddress> serverAddresses = new HashSet<>();
-
             try
             {
                 DatagramPacket hi = new DatagramPacket(RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII"),
@@ -68,72 +66,34 @@ public class RemotePrinterDetector extends DeviceDetector
 
                 s.send(hi);
 
-                int remainingWaitTime_ms = 1000;
+                boolean keepSearching = true;
 
-                while (remainingWaitTime_ms > 0)
+                while (keepSearching)
                 {
                     try
                     {
-                        s.setSoTimeout(remainingWaitTime_ms);
+                        s.setSoTimeout(2000);
 
                         byte[] buf = new byte[100];
                         DatagramPacket recv = new DatagramPacket(buf, buf.length);
 
-                        long startTime = System.currentTimeMillis();
-
                         s.receive(recv);
-
-                        long endTime = System.currentTimeMillis();
-
-                        remainingWaitTime_ms = remainingWaitTime_ms - (int) (endTime - startTime);
 
                         if (Arrays.equals(Arrays.copyOf(buf, RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII").length),
                                 RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII")))
                         {
-                            serverAddresses.add(recv.getAddress());
+                            List<DetectedDevice> newlyDetectedPrinters = searchForDevices(recv.getAddress());
+                            newlyDetectedPrinters.forEach(printer ->
+                            {
+                                deviceDetectionListener.deviceDetected(printer);
+                            });
                         }
 
                     } catch (SocketTimeoutException ex)
                     {
-                        remainingWaitTime_ms = 0;
+                        // We should issue a new request for server callbacks
+                        keepSearching = false;
                     }
-                }
-
-                List<DetectedDevice> newlyDetectedPrinters = searchForDevices(serverAddresses);
-
-                List<DetectedDevice> printersToDisconnect = new ArrayList<>();
-                List<DetectedDevice> printersToConnect = new ArrayList<>();
-
-                //Deal with disconnections
-                currentPrinters.forEach(existingPrinter ->
-                {
-                    if (!newlyDetectedPrinters.contains(existingPrinter))
-                    {
-                        printersToDisconnect.add(existingPrinter);
-                    }
-                });
-
-                //Now new connections
-                newlyDetectedPrinters.forEach(newPrinter ->
-                {
-                    if (!currentPrinters.contains(newPrinter))
-                    {
-                        printersToConnect.add(newPrinter);
-                    }
-                });
-
-                for (DetectedDevice printerToDisconnect : printersToDisconnect)
-                {
-                    steno.info("Disconnecting from remote printer " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                    deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
-                    currentPrinters.remove(printerToDisconnect);
-                }
-
-                for (DetectedDevice printerToConnect : printersToConnect)
-                {
-                    steno.info("We have found a new printer " + printerToConnect);
-                    currentPrinters.add(printerToConnect);
-                    deviceDetectionListener.deviceDetected(printerToConnect);
                 }
             } catch (IOException ex)
             {
@@ -150,49 +110,45 @@ public class RemotePrinterDetector extends DeviceDetector
         }
     }
 
-    private List<DetectedDevice> searchForDevices(Set<InetAddress> serverAddresses)
+    private List<DetectedDevice> searchForDevices(InetAddress address)
     {
         List<DetectedDevice> foundPrinters = new ArrayList<>();
 
-        for (InetAddress address : serverAddresses)
+        String url = "http://" + address.getHostAddress() + ":9000/api/discovery";
+
+        try
         {
-            String url = "http://" + address.getHostAddress() + ":9000/api/discovery";
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-            try
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+
+            con.setConnectTimeout(5000);
+            int responseCode = con.getResponseCode();
+
+            if (responseCode == 200)
             {
-                URL obj = new URL(url);
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-                // optional default is GET
-                con.setRequestMethod("GET");
-
-                //add request header
-                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-
-                con.setConnectTimeout(5000);
-                int responseCode = con.getResponseCode();
-
-                if (responseCode == 200)
+                steno.info("Asking " + address.getHostAddress() + " for printers");
+                DiscoveryResponse discoveryResponse = mapper.readValue(con.getInputStream(), DiscoveryResponse.class);
+                discoveryResponse.getPrinterIDs().forEach(printerID ->
                 {
-                    steno.info("Asking " + address.getHostAddress() + " for printers");
-                    DiscoveryResponse discoveryResponse = mapper.readValue(con.getInputStream(), DiscoveryResponse.class);
-                    discoveryResponse.getPrinterIDs().forEach(printerID ->
-                    {
-                        RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);
-                        foundPrinters.add(remotePrinter);
-                        steno.info("Got " + remotePrinter.getConnectionHandle());
-                    });
+                    RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);
+                    foundPrinters.add(remotePrinter);
+                    steno.info("Got " + remotePrinter.getConnectionHandle());
+                });
 
 //                    steno.info("Got response from @ " + address.getHostAddress() + " : " + discoveryResponse.toString());
-                } else
-                {
-                    steno.warning("No response from @ " + address.getHostAddress());
-                }
-            } catch (IOException ex)
+            } else
             {
-                steno.error("Error whilst polling for remote printers @ " + address.getHostAddress());
+                steno.warning("No response from @ " + address.getHostAddress());
             }
-
+        } catch (IOException ex)
+        {
+            steno.error("Error whilst polling for remote printers @ " + address.getHostAddress());
         }
 
         return foundPrinters;
