@@ -45,7 +45,7 @@ public class LanguageDataResourceBundleTest
     public void testLocaleUK()
     {
         Locale.setDefault(Locale.ENGLISH);
-        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.utils.LanguageDataResourceBundle", new UTF8Control());
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.utils.language.LanguageDataResourceBundle", new UTF8Control());
         assertEquals("Nozzle firmware control", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(172, bundle.keySet().size());
     }
