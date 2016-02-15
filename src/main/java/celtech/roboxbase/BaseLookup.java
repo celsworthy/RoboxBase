@@ -184,10 +184,8 @@ public class BaseLookup
         StenographerFactory.changeAllLogLevels(logLevel);
 
         steno.debug("Starting AutoMaker - loading resources...");
-        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.utils.LanguageDataResourceBundle",
+        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.utils.language.LanguageDataResourceBundle",
                 appLocale, new UTF8Control());
-//        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.utils.LanguageDataResourceBundle",
-//                new UTF8Control());
         BaseLookup.setApplicationEnvironment(new ApplicationEnvironment(i18nBundle, appLocale));
         BaseLookup.setTaskExecutor(new LiveTaskExecutor());
         steno.debug("Detected locale - " + appLocale.toLanguageTag());

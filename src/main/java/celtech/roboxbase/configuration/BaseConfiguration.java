@@ -64,6 +64,8 @@ public class BaseConfiguration
     public static final String headFileExtension = ".roboxhead";
 
     public static final String modelStorageDirectoryPath = "Models";
+    public static final String userTempDirectoryPath = "Temp";
+    private static String userTempFileDirectory = null;
 
     public static final String filamentDirectoryPath = "Filaments";
     public static final String filamentFileExtension = ".roboxfilament";
@@ -481,6 +483,21 @@ public class BaseConfiguration
         }
 
         return userPrintProfileFileDirectory;
+    }
+
+    public static String getUserTempDirectory()
+    {
+        userTempFileDirectory = getUserStorageDirectory() + userTempDirectoryPath
+                + '/';
+
+        File dirHandle = new File(userTempFileDirectory);
+
+        if (!dirHandle.exists())
+        {
+            dirHandle.mkdirs();
+        }
+
+        return userTempFileDirectory;
     }
 
     public static String getApplicationStorageDirectory()

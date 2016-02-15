@@ -1,4 +1,4 @@
-package celtech.roboxbase.utils;
+package celtech.roboxbase.utils.language;
 
 /**
  *
