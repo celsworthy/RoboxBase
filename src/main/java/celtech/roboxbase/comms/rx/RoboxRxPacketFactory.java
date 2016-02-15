@@ -70,6 +70,9 @@ public class RoboxRxPacketFactory
                 case SEND_FILE:
                     returnVal = new SendFile();
                     break;
+                case PRINTER_NOT_FOUND:
+                    returnVal = new PrinterNotFound();
+                    break;
                 default:
                     break;
             }

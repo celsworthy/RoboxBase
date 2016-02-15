@@ -65,7 +65,9 @@ public enum RxPacketTypeEnum
     /**
      *
      */
-    DEBUG_DATA((byte)0xEF, false, 0);
+    DEBUG_DATA((byte)0xEF, false, 0),
+    
+    PRINTER_NOT_FOUND((byte)0, false, 0);
     
     private final byte commandByte;
     private final boolean containsLengthField;
