@@ -1,6 +1,7 @@
 package celtech.roboxbase.utils.exporters;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.utils.models.MeshForProcessing;
 import celtech.roboxbase.utils.threed.CentreCalculations;
 import celtech.roboxbase.utils.threed.MeshToWorldTransformer;
 import java.io.File;
@@ -36,7 +37,7 @@ public class AMFOutputConverter implements MeshFileOutputConverter
     private Stenographer steno = StenographerFactory.getStenographer(AMFOutputConverter.class.
             getName());
 
-    void outputProject(Map<MeshToWorldTransformer, List<MeshView>> meshMap, XMLStreamWriter streamWriter) throws XMLStreamException
+    void outputProject(List<MeshForProcessing> meshesForProcessing, XMLStreamWriter streamWriter) throws XMLStreamException
     {
         Map<MeshView, Integer> vertexOffsetForModels = new HashMap<>();
 
@@ -50,22 +51,17 @@ public class AMFOutputConverter implements MeshFileOutputConverter
         int vertexOffset = 0;
         streamWriter.writeStartElement("vertices");
 
-        for (Map.Entry<MeshToWorldTransformer, List<MeshView>> meshEntry : meshMap.entrySet())
+        for (MeshForProcessing meshForProcessing : meshesForProcessing)
         {
-            for (MeshView meshView : meshEntry.getValue())
-            {
-                vertexOffsetForModels.put(meshView, vertexOffset);
-                int numVerticesWritten = outputVertices(meshEntry.getKey(), meshView, streamWriter);
-                vertexOffset += numVerticesWritten;
-            }
+            vertexOffsetForModels.put(meshForProcessing.getMeshView(), vertexOffset);
+            int numVerticesWritten = outputVertices(meshForProcessing.getMeshToWorldTransformer(), meshForProcessing.getMeshView(), streamWriter);
+            vertexOffset += numVerticesWritten;
         }
+
         streamWriter.writeEndElement();
-        for (Map.Entry<MeshToWorldTransformer, List<MeshView>> meshEntry : meshMap.entrySet())
+        for (MeshForProcessing meshForProcessing : meshesForProcessing)
         {
-            for (MeshView meshView : meshEntry.getValue())
-            {
-                outputVolume(meshView, vertexOffsetForModels.get(meshView), streamWriter);
-            }
+            outputVolume(meshForProcessing.getMeshView(), vertexOffsetForModels.get(meshForProcessing.getMeshView()), streamWriter);
         }
         streamWriter.writeEndElement();
         streamWriter.writeEndElement();
@@ -189,14 +185,14 @@ public class AMFOutputConverter implements MeshFileOutputConverter
     }
 
     @Override
-    public MeshExportResult outputFile(Map<MeshToWorldTransformer, List<MeshView>> meshMap, String printJobUUID, boolean outputAsSingleFile)
+    public MeshExportResult outputFile(List<MeshForProcessing> meshesForProcessing, String printJobUUID, boolean outputAsSingleFile)
     {
-        return outputFile(meshMap, printJobUUID, BaseConfiguration.getPrintSpoolDirectory()
+        return outputFile(meshesForProcessing, printJobUUID, BaseConfiguration.getPrintSpoolDirectory()
                 + printJobUUID + File.separator, outputAsSingleFile);
     }
 
     @Override
-    public MeshExportResult outputFile(Map<MeshToWorldTransformer, List<MeshView>> meshMap, String printJobUUID, String printJobDirectory,
+    public MeshExportResult outputFile(List<MeshForProcessing> meshesForProcessing, String printJobUUID, String printJobDirectory,
             boolean outputAsSingleFile)
     {
         List<String> createdFiles = new ArrayList<>();
@@ -225,7 +221,7 @@ public class AMFOutputConverter implements MeshFileOutputConverter
                     handler);
             //=================================
 
-            outputProject(meshMap, prettyPrintWriter);
+            outputProject(meshesForProcessing, prettyPrintWriter);
             xmlStreamWriter.flush();
             xmlStreamWriter.close();
         } catch (IOException ex)

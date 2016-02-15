@@ -9,7 +9,7 @@ import celtech.roboxbase.postprocessor.nouveau.PostProcessor;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeature;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
 import celtech.roboxbase.printerControl.PrintJob;
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.CameraTriggerManager;

@@ -3,7 +3,7 @@ package celtech.roboxbase.services.slicer;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.TimeUtils;
@@ -118,11 +118,11 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 || printerToUse.headProperty().get() == null
                 || printerToUse.headProperty().get().headTypeProperty().get() == Head.HeadType.SINGLE_MATERIAL_HEAD)
         {
-            meshExportResult = outputConverter.outputFile(printableMeshes.getMeshMap(), printJobUUID, printJobDirectory,
+            meshExportResult = outputConverter.outputFile(printableMeshes.getMeshesForProcessing(), printJobUUID, printJobDirectory,
                     true);
         } else
         {
-            meshExportResult = outputConverter.outputFile(printableMeshes.getMeshMap(), printJobUUID, printJobDirectory,
+            meshExportResult = outputConverter.outputFile(printableMeshes.getMeshesForProcessing(), printJobUUID, printJobDirectory,
                     false);
         }
 

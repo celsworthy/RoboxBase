@@ -1,6 +1,6 @@
 package celtech.roboxbase.services.postProcessor;
 
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.CameraTriggerManager;

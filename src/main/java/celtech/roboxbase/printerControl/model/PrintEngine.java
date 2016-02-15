@@ -15,7 +15,7 @@ import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.PrintQueueStatus;
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
@@ -687,7 +687,7 @@ public class PrintEngine implements ControllableService
 
         // Overwrite the settings 
         PrintableMeshes actualMeshesToPrint = new PrintableMeshes(
-                printableMeshes.getMeshMap(),
+                printableMeshes.getMeshesForProcessing(),
                 printableMeshes.getUsedExtruders(),
                 printableMeshes.getExtruderForModel(),
                 printableMeshes.getRequiredPrintJobID(),

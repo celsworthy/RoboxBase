@@ -1,6 +1,6 @@
 package celtech.roboxbase.services.slicer;
 
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import javafx.concurrent.Task;
 

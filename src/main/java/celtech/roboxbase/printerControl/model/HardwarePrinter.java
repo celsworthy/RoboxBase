@@ -59,7 +59,7 @@ import celtech.roboxbase.configuration.PrinterModel;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.printerControl.PrintActionUnavailableException;
 import celtech.roboxbase.printerControl.PrintJobRejectedException;
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.PurgeRequiredException;
 import celtech.roboxbase.printerControl.comms.commands.GCodeConstants;

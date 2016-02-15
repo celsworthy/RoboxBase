@@ -1,16 +1,12 @@
-package celtech.roboxbase.printerControl;
+package celtech.roboxbase.utils.models;
 
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.services.CameraTriggerData;
-import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
-import celtech.roboxbase.utils.threed.MeshToWorldTransformer;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import javafx.scene.shape.MeshView;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
@@ -19,7 +15,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  */
 public class PrintableMeshes
 {
-    private final Map<MeshToWorldTransformer, List<MeshView>> meshMap;
+
+    private final List<MeshForProcessing> meshesForProcessing;
     private final Set<Integer> usedExtruders;
     private final List<Integer> extruderForModel;
     private final String requiredPrintJobID;
@@ -32,7 +29,7 @@ public class PrintableMeshes
     private final boolean cameraEnabled;
     private final CameraTriggerData cameraTriggerData;
 
-    public PrintableMeshes(Map<MeshToWorldTransformer, List<MeshView>> meshMap,
+    public PrintableMeshes(List<MeshForProcessing> meshesForProcessing,
             Set<Integer> usedExtruders,
             List<Integer> extruderForModel,
             String requiredPrintJobID,
@@ -45,7 +42,7 @@ public class PrintableMeshes
             boolean cameraEnabled,
             CameraTriggerData cameraTriggerData)
     {
-        this.meshMap = meshMap;
+        this.meshesForProcessing = meshesForProcessing;
         this.usedExtruders = usedExtruders;
         this.extruderForModel = extruderForModel;
         this.requiredPrintJobID = requiredPrintJobID;
@@ -59,9 +56,9 @@ public class PrintableMeshes
         this.cameraTriggerData = cameraTriggerData;
     }
 
-    public Map<MeshToWorldTransformer, List<MeshView>> getMeshMap()
+    public List<MeshForProcessing> getMeshesForProcessing()
     {
-        return meshMap;
+        return meshesForProcessing;
     }
 
     public Set<Integer> getUsedExtruders()

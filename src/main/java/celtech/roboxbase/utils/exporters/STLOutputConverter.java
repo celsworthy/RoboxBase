@@ -1,6 +1,7 @@
 package celtech.roboxbase.utils.exporters;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.utils.models.MeshForProcessing;
 import celtech.roboxbase.utils.threed.CentreCalculations;
 import celtech.roboxbase.utils.threed.MeshToWorldTransformer;
 import java.io.DataOutputStream;
@@ -39,15 +40,15 @@ public class STLOutputConverter implements MeshFileOutputConverter
     }
 
     @Override
-    public MeshExportResult outputFile(Map<MeshToWorldTransformer, List<MeshView>> meshMap,
+    public MeshExportResult outputFile(List<MeshForProcessing> meshesForProcessing,
             String printJobUUID, boolean outputAsSingleFile)
     {
-        return outputFile(meshMap, printJobUUID, BaseConfiguration.getPrintSpoolDirectory()
+        return outputFile(meshesForProcessing, printJobUUID, BaseConfiguration.getPrintSpoolDirectory()
                 + printJobUUID + File.separator, outputAsSingleFile);
     }
 
     @Override
-    public MeshExportResult outputFile(Map<MeshToWorldTransformer, List<MeshView>> meshMap,
+    public MeshExportResult outputFile(List<MeshForProcessing> meshesForProcessing,
             String printJobUUID, String printJobDirectory,
             boolean outputAsSingleFile)
     {
@@ -64,26 +65,21 @@ public class STLOutputConverter implements MeshFileOutputConverter
 
             createdFiles.add(tempModelFilenameWithPath);
 
-            centroids.add(outputMeshViewsInSingleFile(tempModelFilenameWithPath, meshMap));
+            centroids.add(outputMeshViewsInSingleFile(tempModelFilenameWithPath, meshesForProcessing));
         } else
         {
-            for (Entry<MeshToWorldTransformer, List<MeshView>> meshEntry : meshMap.entrySet())
+            for (MeshForProcessing meshForProcessing : meshesForProcessing)
             {
-                for (MeshView meshView : meshEntry.getValue())
-                {
-                    String tempModelFilename = printJobUUID
-                            + "-" + modelFileCount + BaseConfiguration.stlTempFileExtension;
-                    String tempModelFilenameWithPath = printJobDirectory + tempModelFilename;
+                String tempModelFilename = printJobUUID
+                        + "-" + modelFileCount + BaseConfiguration.stlTempFileExtension;
+                String tempModelFilenameWithPath = printJobDirectory + tempModelFilename;
 
-                    Map<MeshToWorldTransformer, List<MeshView>> miniMap = new HashMap<>();
-                    List<MeshView> meshViewToOutput = new ArrayList<>();
-                    meshViewToOutput.add(meshView);
-                    miniMap.put(meshEntry.getKey(), meshViewToOutput);
+                List<MeshForProcessing> miniMap = new ArrayList<>();
+                miniMap.add(new MeshForProcessing(meshForProcessing.getMeshView(), meshForProcessing.getMeshToWorldTransformer()));
 
-                    centroids.add(outputMeshViewsInSingleFile(tempModelFilenameWithPath, miniMap));
-                    createdFiles.add(tempModelFilename);
-                    modelFileCount++;
-                }
+                centroids.add(outputMeshViewsInSingleFile(tempModelFilenameWithPath, miniMap));
+                createdFiles.add(tempModelFilename);
+                modelFileCount++;
             }
         }
 
@@ -105,7 +101,7 @@ public class STLOutputConverter implements MeshFileOutputConverter
      * @return
      */
     private Vector3D outputMeshViewsInSingleFile(final String tempModelFilenameWithPath,
-            Map<MeshToWorldTransformer, List<MeshView>> meshMap)
+            List<MeshForProcessing> meshesForProcessing)
     {
         CentreCalculations centreCalc = new CentreCalculations();
 
@@ -122,15 +118,12 @@ public class STLOutputConverter implements MeshFileOutputConverter
                 int totalNumberOfFacets = 0;
                 ByteBuffer headerByteBuffer = null;
 
-                for (Entry<MeshToWorldTransformer, List<MeshView>> meshEntry : meshMap.entrySet())
+                for (MeshForProcessing meshForProcessing : meshesForProcessing)
                 {
-                    for (MeshView meshView : meshEntry.getValue())
-                    {
-                        TriangleMesh triangles = (TriangleMesh) meshView.getMesh();
-                        ObservableFaceArray faceArray = triangles.getFaces();
-                        int numberOfFacets = faceArray.size() / 6;
-                        totalNumberOfFacets += numberOfFacets;
-                    }
+                    TriangleMesh triangles = (TriangleMesh) meshForProcessing.getMeshView().getMesh();
+                    ObservableFaceArray faceArray = triangles.getFaces();
+                    int numberOfFacets = faceArray.size() / 6;
+                    totalNumberOfFacets += numberOfFacets;
                 }
 
                 //File consists of:
@@ -162,44 +155,41 @@ public class STLOutputConverter implements MeshFileOutputConverter
                 //  3 floats for facet normals
                 //  3 x 3 floats for vertices (x,y,z * 3)
                 //  2 byte spacer
-                for (Entry<MeshToWorldTransformer, List<MeshView>> meshEntry : meshMap.entrySet())
+                for (MeshForProcessing meshForProcessing : meshesForProcessing)
                 {
-                    MeshToWorldTransformer meshToWorldTransformer = meshEntry.getKey();
+                    MeshToWorldTransformer meshToWorldTransformer = meshForProcessing.getMeshToWorldTransformer();
 
-                    for (MeshView meshView : meshEntry.getValue())
+                    TriangleMesh triangles = (TriangleMesh) meshForProcessing.getMeshView().getMesh();
+                    int[] faceArray = triangles.getFaces().toArray(null);
+                    float[] pointArray = triangles.getPoints().toArray(null);
+                    int numberOfFacets = faceArray.length / 6;
+
+                    for (int facetNumber = 0; facetNumber < numberOfFacets; facetNumber++)
                     {
-                        TriangleMesh triangles = (TriangleMesh) meshView.getMesh();
-                        int[] faceArray = triangles.getFaces().toArray(null);
-                        float[] pointArray = triangles.getPoints().toArray(null);
-                        int numberOfFacets = faceArray.length / 6;
+                        dataBuffer.rewind();
+                        // Output zero normals
+                        dataBuffer.putFloat(0);
+                        dataBuffer.putFloat(0);
+                        dataBuffer.putFloat(0);
 
-                        for (int facetNumber = 0; facetNumber < numberOfFacets; facetNumber++)
+                        for (int vertexNumber = 0; vertexNumber < 3; vertexNumber++)
                         {
-                            dataBuffer.rewind();
-                            // Output zero normals
-                            dataBuffer.putFloat(0);
-                            dataBuffer.putFloat(0);
-                            dataBuffer.putFloat(0);
+                            int vertexIndex = faceArray[(facetNumber * 6) + (vertexNumber * 2)];
 
-                            for (int vertexNumber = 0; vertexNumber < 3; vertexNumber++)
-                            {
-                                int vertexIndex = faceArray[(facetNumber * 6) + (vertexNumber * 2)];
+                            Point3D vertex = meshToWorldTransformer.transformMeshToRealWorldCoordinates(
+                                    pointArray[vertexIndex * 3],
+                                    pointArray[(vertexIndex * 3) + 1],
+                                    pointArray[(vertexIndex * 3) + 2]);
 
-                                Point3D vertex = meshToWorldTransformer.transformMeshToRealWorldCoordinates(
-                                        pointArray[vertexIndex * 3],
-                                        pointArray[(vertexIndex * 3) + 1],
-                                        pointArray[(vertexIndex * 3) + 2]);
+                            centreCalc.processPoint(vertex.getX(), vertex.getY(), vertex.getZ());
 
-                                centreCalc.processPoint(vertex.getX(), vertex.getY(), vertex.getZ());
-
-                                dataBuffer.putFloat((float) vertex.getX());
-                                dataBuffer.putFloat((float) vertex.getZ());
-                                dataBuffer.putFloat(-(float) vertex.getY());
-                            }
-                            dataBuffer.putShort(blankSpace);
-
-                            dataOutput.write(dataBuffer.array());
+                            dataBuffer.putFloat((float) vertex.getX());
+                            dataBuffer.putFloat((float) vertex.getZ());
+                            dataBuffer.putFloat(-(float) vertex.getY());
                         }
+                        dataBuffer.putShort(blankSpace);
+
+                        dataOutput.write(dataBuffer.array());
                     }
                 }
             } catch (IOException ex)

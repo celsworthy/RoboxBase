@@ -4,7 +4,7 @@
 package celtech.roboxbase.services.printing;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.printerControl.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.slicer.AbstractSlicerService;
 import celtech.roboxbase.services.slicer.SliceResult;
