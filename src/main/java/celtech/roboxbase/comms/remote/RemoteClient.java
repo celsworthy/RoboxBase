@@ -1,6 +1,7 @@
 package celtech.roboxbase.comms.remote;
 
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
+import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,21 +35,35 @@ public class RemoteClient implements LowLevelInterface
     }
 
     @Override
-    public boolean connect(String printerID)
+    public boolean connect(String printerID) throws RoboxCommsException
     {
         boolean success = false;
-        RemoteWebHelper.postData(connectUrlString);
+        try
+        {
+            RemoteWebHelper.postData(connectUrlString);
+        } catch (IOException ex)
+        {
+            steno.error("Failed to connect to remote printer " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to connect to remote printer " + remotePrinterHandle);
+        }
         return success;
     }
 
     @Override
-    public void disconnect(String printerID)
+    public void disconnect(String printerID) throws RoboxCommsException
     {
-        RemoteWebHelper.postData(disconnectUrlString);
+        try
+        {
+            RemoteWebHelper.postData(disconnectUrlString);
+        } catch (IOException ex)
+        {
+            steno.error("Failed to disconnect from remote printer " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to disconnect from remote printer " + remotePrinterHandle);
+        }
     }
 
     @Override
-    public RoboxRxPacket writeToPrinter(String printerID, RoboxTxPacket messageToWrite)
+    public RoboxRxPacket writeToPrinter(String printerID, RoboxTxPacket messageToWrite) throws RoboxCommsException
     {
         RoboxRxPacket returnedPacket = null;
 
@@ -59,6 +74,7 @@ public class RemoteClient implements LowLevelInterface
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);
         }
 
         return returnedPacket;

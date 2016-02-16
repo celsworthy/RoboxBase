@@ -145,6 +145,7 @@ public class RemotePrinterDetector extends DeviceDetector
         } catch (IOException ex)
         {
             steno.error("Error whilst polling for remote printers @ " + address.getHostAddress());
+            ex.printStackTrace();
         }
 
         return foundPrinters;

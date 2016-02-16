@@ -31,14 +31,28 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     @Override
     protected boolean connectToPrinter()
     {
-        remoteClient.connect(printerHandle.getConnectionHandle());
-        return true;
+        boolean success = false;
+        try
+        {
+            remoteClient.connect(printerHandle.getConnectionHandle());
+            success = true;
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Failed to connect to printer");
+        }
+        return success;
     }
 
     @Override
     protected void disconnectPrinter()
     {
-        remoteClient.disconnect(printerHandle.getConnectionHandle());
+        try
+        {
+            remoteClient.disconnect(printerHandle.getConnectionHandle());
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Failed to disconnect from printer");
+        }
         controlInterface.disconnected(printerHandle);
         keepRunning = false;
     }
@@ -54,8 +68,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
             if (rxPacket instanceof PrinterNotFound)
             {
                 actionOnCommsFailure();
-            }
-            else if (!dontPublishResult)
+            } else if (!dontPublishResult)
             {
                 printerToUse.processRoboxResponse(rxPacket);
             }
