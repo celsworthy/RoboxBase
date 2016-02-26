@@ -350,7 +350,7 @@ public class BaseConfiguration
             installationProperties.load(input);
         } catch (IOException ex)
         {
-            steno.exception("loading project", ex);
+            steno.warning("Couldn't load application.properties");
         } finally
         {
             if (input != null)
@@ -360,7 +360,7 @@ public class BaseConfiguration
                     input.close();
                 } catch (IOException ex)
                 {
-                    steno.exception("loading project", ex);
+                    steno.exception("Error closing properties file", ex);
                 }
             }
         }
@@ -372,7 +372,8 @@ public class BaseConfiguration
         {
             loadProjectProperties();
         }
-        if (applicationVersion == null)
+        if (installationProperties != null
+                && applicationVersion == null)
         {
             applicationVersion = installationProperties.getProperty("version");
         }
