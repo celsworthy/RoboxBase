@@ -34,7 +34,11 @@ public enum MaterialType
     /**
      *
      */
-    TPU("TPU", 1.2);
+    TPU("TPU", 1.2),
+    /**
+     *
+     */
+    PCP("PCP", 1.19);
 
     private String friendlyName;
     /**
