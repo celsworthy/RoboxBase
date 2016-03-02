@@ -286,6 +286,7 @@ public abstract class CommandInterface extends Thread
                             } catch (RoboxCommsException ex)
                             {
                                 steno.error("Failure during printer status request. " + ex.toString());
+                                disconnectPrinter();
                             }
                         }
                     } catch (InterruptedException ex)
