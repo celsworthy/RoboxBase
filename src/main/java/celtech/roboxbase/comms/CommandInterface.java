@@ -53,9 +53,9 @@ public abstract class CommandInterface extends Thread
     private boolean loadingFirmware = false;
 
     protected boolean suppressComms = false;
-    
+
     private String printerName = null;
-    
+
     private StatusResponse latestStatusResponse = null;
     private AckResponse latestErrorResponse = null;
 
@@ -163,28 +163,31 @@ public abstract class CommandInterface extends Thread
                                     + requiredFirmwareVersionString);
 
 //                            Lookup.setFirmwareVersion()
-                            // Is the SD card present?
-                            try
+                            //ROB-931 - don't check for presence of the SD card if firmware version earlier than 691
+                            if (firmwareResponse.getFirmwareRevisionFloat() >= 691)
                             {
-                                StatusRequest request = (StatusRequest) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST);
-                                firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
-                                StatusResponse response = (StatusResponse) writeToPrinter(request, true);
-                                if (!response.issdCardPresent())
+                                // Is the SD card present?
+                                try
                                 {
-                                    steno.warning("SD Card not present");
-                                    BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
-                                    disconnectPrinter();
-                                    keepRunning = false;
+                                    StatusRequest request = (StatusRequest) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST);
+                                    firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
+                                    StatusResponse response = (StatusResponse) writeToPrinter(request, true);
+                                    if (!response.issdCardPresent())
+                                    {
+                                        steno.warning("SD Card not present");
+                                        BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
+                                        disconnectPrinter();
+                                        keepRunning = false;
+                                        break;
+                                    } else
+                                    {
+                                        BaseLookup.getSystemNotificationHandler().clearAllDialogsOnDisconnect();
+                                    }
+                                } catch (RoboxCommsException ex)
+                                {
+                                    steno.error("Failure during printer status request. " + ex.toString());
                                     break;
                                 }
-                                else
-                                {
-                                    BaseLookup.getSystemNotificationHandler().clearAllDialogsOnDisconnect();
-                                }
-                            } catch (RoboxCommsException ex)
-                            {
-                                steno.error("Failure during printer status request. " + ex.toString());
-                                break;
                             }
 
                             // Tell the user to update
@@ -282,7 +285,7 @@ public abstract class CommandInterface extends Thread
                                 latestStatusResponse = (StatusResponse) writeToPrinter(RoboxTxPacketFactory.createPacket(
                                         TxPacketTypeEnum.STATUS_REQUEST));
 
-                                latestErrorResponse = (AckResponse)writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
+                                latestErrorResponse = (AckResponse) writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
                             } catch (RoboxCommsException ex)
                             {
                                 steno.error("Failure during printer status request. " + ex.toString());
@@ -396,12 +399,12 @@ public abstract class CommandInterface extends Thread
 
         }
     }
-    
+
     public void operateRemotely(boolean enableRemoteOperation)
     {
         suppressComms = enableRemoteOperation;
     }
-    
+
     public AckResponse getLastErrorResponse()
     {
         return latestErrorResponse;
