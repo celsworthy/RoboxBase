@@ -80,21 +80,24 @@ public interface SystemNotificationManager
     boolean showApplicationUpgradeDialog(String applicationName);
 
     public PurgeResponse showPurgeDialog();
+
     public PurgeResponse showPurgeDialog(boolean allowAutoPrint);
 
     public boolean showJobsTransferringShutdownDialog();
 
     public void showProgramInvalidHeadDialog(TaskResponder<HeadFile> taskResponse);
 
+    public void hideProgramInvalidHeadDialog();
+
     public void showHeadNotRecognisedDialog(String printerName);
 
     /**
-     * Show a dialog to the user asking them to choose between available Continue, Abort or Retry
-     * actions when a printer error has occurred.
+     * Show a dialog to the user asking them to choose between available
+     * Continue, Abort or Retry actions when a printer error has occurred.
      */
     public Optional<PrinterErrorChoice> showPrinterErrorDialog(String title, String message,
-        boolean showContinueOption,
-        boolean showAbortOption, boolean showRetryOption, boolean showOKOption);
+            boolean showContinueOption,
+            boolean showAbortOption, boolean showRetryOption, boolean showOKOption);
 
     public void showReelNotRecognisedDialog(String printerName);
 
@@ -117,8 +120,8 @@ public interface SystemNotificationManager
     public void showFilamentStuckMessage();
 
     public void showLoadFilamentNowMessage();
-    
+
     public boolean showModelIsInvalidDialog(Set<String> modelNames);
-    
+
     public void clearAllDialogsOnDisconnect();
 }

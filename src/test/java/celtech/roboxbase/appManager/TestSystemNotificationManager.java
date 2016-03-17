@@ -251,4 +251,9 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     {
         return PurgeResponse.PRINT_WITH_PURGE;
     }
+    
+    @Override
+    public void hideProgramInvalidHeadDialog()
+    {
+    }
 }

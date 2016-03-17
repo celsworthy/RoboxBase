@@ -310,4 +310,10 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
         outputNotification(title + " : " + message);
     }
 
+    @Override
+    public void hideProgramInvalidHeadDialog()
+    {
+        outputNotification("Hide invalid head dialog");
+    }
+
 }

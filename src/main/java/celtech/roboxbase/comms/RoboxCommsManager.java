@@ -114,12 +114,10 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         {
             boolean noNeedToAddPrinter = false;
 
-//                steno.info("Found printer on " + detectedPrinter);
             for (DetectedDevice pendingPrinterToCheck : pendingPrinters.keySet())
             {
                 if (detectedPrinter.equals(pendingPrinterToCheck))
                 {
-//                        steno.info("Found already pending printer " + detectedPrinter);
                     noNeedToAddPrinter = true;
                     break;
                 }
@@ -131,7 +129,6 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
                 {
                     if (detectedPrinter.equals(activePrinterToCheck))
                     {
-//                            steno.info("Found already active printer " + detectedPrinter);
                         noNeedToAddPrinter = true;
                         break;
                     }
