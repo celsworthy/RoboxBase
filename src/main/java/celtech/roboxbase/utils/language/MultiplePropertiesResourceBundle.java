@@ -231,13 +231,13 @@ public abstract class MultiplePropertiesResourceBundle extends ResourceBundle
             String baseFileName = baseName + ".properties";
             String resourcePath = getResourcePath();
             String resourceName = resourcePath + baseFileName;
-            steno.info("Looking for files named '" + resourceName + "'");
+            steno.debug("Looking for files named '" + resourceName + "'");
 
             Enumeration<URL> names = cl.getResources(resourceName);
             while (names.hasMoreElements())
             {
                 URL jarUrl = names.nextElement();
-                steno.info("inspecting: " + jarUrl);
+                steno.debug("inspecting: " + jarUrl);
                 if ("jar".equals(jarUrl.getProtocol()))
                 {
                     String path = jarUrl.getFile();
@@ -246,7 +246,7 @@ public abstract class MultiplePropertiesResourceBundle extends ResourceBundle
                     {
                         filename = filename.substring(5);
                     }
-                    steno.info("Going to open jar " + filename);
+                    steno.debug("Going to open jar " + filename);
 
                     JarURLConnection jarCon = (JarURLConnection) jarUrl.openConnection();
                     JarFile jar = jarCon.getJarFile();
@@ -295,7 +295,7 @@ public abstract class MultiplePropertiesResourceBundle extends ResourceBundle
             }
 
         });
-        steno.info("Combine ResourceBundles named: " + bundleNames);
+        steno.debug("Combine ResourceBundles named: " + bundleNames);
         return bundleNames;
     }
 
