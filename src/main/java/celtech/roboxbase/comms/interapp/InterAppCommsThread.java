@@ -1,7 +1,6 @@
 package celtech.roboxbase.comms.interapp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
@@ -25,6 +24,11 @@ public class InterAppCommsThread extends Thread
     private Socket serverSocket = null;
     private final ObjectMapper mapper = new ObjectMapper();
     private InterAppCommsConsumer commsConsumer = null;
+
+    public InterAppCommsThread()
+    {
+        this.setName("InterAppComms");
+    }
 
     @Override
     public void run()
@@ -50,14 +54,6 @@ public class InterAppCommsThread extends Thread
             {
                 steno.error("Error trying to listen for InterApp comms");
             }
-        }
-
-        try
-        {
-            serverSocket.close();
-        } catch (IOException ex)
-        {
-            steno.error("Error attempting to shutdown InterApp comms");
         }
     }
 
@@ -114,5 +110,12 @@ public class InterAppCommsThread extends Thread
     public void shutdown()
     {
         keepRunning = false;
+        try
+        {
+            initialServerSocket.close();
+        } catch (IOException ex)
+        {
+            steno.exception("Error whilst closing inter app comms socket", ex);
+        }
     }
 }
