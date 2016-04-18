@@ -18,6 +18,7 @@ import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
 import celtech.roboxbase.services.firmware.FirmwareLoadService;
 import celtech.roboxbase.utils.PrinterUtils;
+import java.util.Locale;
 import javafx.concurrent.WorkerStateEvent;
 import libertysystems.configuration.ConfigItemIsAnArray;
 import libertysystems.configuration.ConfigNotLoadedException;
@@ -58,6 +59,7 @@ public abstract class CommandInterface extends Thread
 
     private StatusResponse latestStatusResponse = null;
     private AckResponse latestErrorResponse = null;
+    private PrinterIDResponse lastPrinterIDResponse = null;
 
     /**
      *
@@ -215,8 +217,6 @@ public abstract class CommandInterface extends Thread
                 case CHECKING_ID:
                     steno.debug("Check id " + printerHandle);
 
-                    PrinterIDResponse lastPrinterIDResponse = null;
-
                     try
                     {
                         lastPrinterIDResponse = printerToUse.readPrinterID();
@@ -255,6 +255,17 @@ public abstract class CommandInterface extends Thread
                         determinePrinterStatus(statusResponse);
 
                         controlInterface.printerConnected(printerHandle);
+
+                        //Stash the connected printer info
+                        String printerIDToUse = null;
+                        if (lastPrinterIDResponse != null
+                                && lastPrinterIDResponse.getAsFormattedString() != null)
+                        {
+                            printerIDToUse = lastPrinterIDResponse.getAsFormattedString();
+                        }
+                        BaseConfiguration.getCoreMemory().setLastPrinterSerial(printerIDToUse);
+                        BaseConfiguration.getCoreMemory().setLastPrinterFirmwareVersion(firmwareVersionInUse);
+
                         commsState = RoboxCommsState.CONNECTED;
                     } catch (RoboxCommsException ex)
                     {

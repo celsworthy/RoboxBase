@@ -16,9 +16,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public class PrinterIDResponse extends RoboxRxPacket
 {
-    
+
     private final String charsetToUse = "US-ASCII";
-    
+
     private String model;
     private String edition;
     private String weekOfManufacture;
@@ -46,43 +46,43 @@ public class PrinterIDResponse extends RoboxRxPacket
     public boolean populatePacket(byte[] byteData, float requiredFirmwareVersion)
     {
         setMessagePayloadBytes(byteData);
-        
+
         boolean success = false;
-        
+
         try
         {
             int byteOffset = 1;
-            
+
             this.model = new String(byteData, byteOffset, PrinterIDDataStructure.modelBytes, charsetToUse);
             this.model = this.model.trim();
             byteOffset += PrinterIDDataStructure.modelBytes;
-            
+
             this.edition = new String(byteData, byteOffset, PrinterIDDataStructure.editionBytes, charsetToUse);
             this.edition = this.edition.trim();
             byteOffset += PrinterIDDataStructure.editionBytes;
-            
+
             this.weekOfManufacture = new String(byteData, byteOffset, PrinterIDDataStructure.weekOfManufactureBytes, charsetToUse);
             this.weekOfManufacture = this.weekOfManufacture.trim();
             byteOffset += PrinterIDDataStructure.weekOfManufactureBytes;
-            
+
             this.yearOfManufacture = new String(byteData, byteOffset, PrinterIDDataStructure.yearOfManufactureBytes, charsetToUse);
             this.yearOfManufacture = this.yearOfManufacture.trim();
             byteOffset += PrinterIDDataStructure.yearOfManufactureBytes;
-            
+
             this.poNumber = new String(byteData, byteOffset, PrinterIDDataStructure.poNumberBytes, charsetToUse);
             this.poNumber = this.poNumber.trim();
             byteOffset += PrinterIDDataStructure.poNumberBytes;
-            
+
             this.serialNumber = new String(byteData, byteOffset, PrinterIDDataStructure.serialNumberBytes, charsetToUse);
             this.serialNumber = this.serialNumber.trim();
             byteOffset += PrinterIDDataStructure.serialNumberBytes;
-            
+
             this.checkByte = new String(byteData, byteOffset, PrinterIDDataStructure.checkByteBytes, charsetToUse);
             this.checkByte = this.checkByte.trim();
             byteOffset += PrinterIDDataStructure.checkByteBytes;
-            
+
             byteOffset += WritePrinterID.BYTES_FOR_FIRST_PAD;
-            
+
             this.printerFriendlyName = new String(byteData, byteOffset, PrinterIDDataStructure.printerFriendlyNameBytes, charsetToUse);
             this.printerFriendlyName = this.printerFriendlyName.trim();
             // beta testers will have unencoded printer names.
@@ -92,22 +92,22 @@ public class PrinterIDResponse extends RoboxRxPacket
                 this.printerFriendlyName = StringToBase64Encoder.decode(this.printerFriendlyName);
             }
             byteOffset += PrinterIDDataStructure.printerFriendlyNameBytes;
-            
+
             byteOffset += WritePrinterID.BYTES_FOR_SECOND_PAD;
-            
+
             String colourDigits = new String(byteData, byteOffset,
                     PrinterIDDataStructure.colourBytes * 3, charsetToUse);
             byteOffset += PrinterIDDataStructure.colourBytes * 3;
-            
+
             printerColourWebString = stringToColor(colourDigits).toString();
-            
+
             success = true;
-            
+
         } catch (UnsupportedEncodingException ex)
         {
             steno.error("Failed to convert byte array to Printer ID Response");
         }
-        
+
         return success;
     }
 
@@ -119,7 +119,7 @@ public class PrinterIDResponse extends RoboxRxPacket
     public String toString()
     {
         StringBuilder outputString = new StringBuilder();
-        
+
         outputString.append(">>>>>>>>>>\n");
         outputString.append("Packet type:");
         outputString.append(getPacketType().name());
@@ -127,7 +127,7 @@ public class PrinterIDResponse extends RoboxRxPacket
         outputString.append("ID: " + getModel());
         outputString.append("\n");
         outputString.append(">>>>>>>>>>\n");
-        
+
         return outputString.toString();
     }
 
@@ -217,59 +217,59 @@ public class PrinterIDResponse extends RoboxRxPacket
     {
         return printerFriendlyName;
     }
-    
+
     public void setModel(String model)
     {
         this.model = model;
     }
-    
+
     public void setEdition(String edition)
     {
         this.edition = edition;
     }
-    
+
     public void setWeekOfManufacture(String weekOfManufacture)
     {
         this.weekOfManufacture = weekOfManufacture;
     }
-    
+
     public void setYearOfManufacture(String yearOfManufacture)
     {
         this.yearOfManufacture = yearOfManufacture;
     }
-    
+
     public void setPoNumber(String poNumber)
     {
         this.poNumber = poNumber;
     }
-    
+
     public void setSerialNumber(String serialNumber)
     {
         this.serialNumber = serialNumber;
     }
-    
+
     public void setPrinterColour(String printerColourString)
     {
         printerColourWebString = printerColourString;
     }
-    
+
     @JsonIgnore
     public void setPrinterColourFromColor(Color printerColour)
     {
         this.printerColourWebString = printerColour.toString();
     }
-    
+
     public void setPrinterFriendlyName(String printerFriendlyName)
     {
         this.printerFriendlyName = printerFriendlyName;
     }
-    
+
     @Override
     public int packetLength(float requiredFirmwareVersion)
     {
         return 257;
     }
-    
+
     @Override
     public int hashCode()
     {
@@ -283,9 +283,9 @@ public class PrinterIDResponse extends RoboxRxPacket
                 append(checkByte).
                 append(printerFriendlyName).
                 append(printerColourWebString).
-                toHashCode();        
+                toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj)
     {
@@ -297,7 +297,7 @@ public class PrinterIDResponse extends RoboxRxPacket
         {
             return true;
         }
-        
+
         PrinterIDResponse rhs = (PrinterIDResponse) obj;
         return new EqualsBuilder().
                 // if deriving: appendSuper(super.equals(obj)).
@@ -311,5 +311,25 @@ public class PrinterIDResponse extends RoboxRxPacket
                 append(printerFriendlyName, rhs.printerFriendlyName).
                 append(printerColourWebString, rhs.printerColourWebString).
                 isEquals();
+    }
+
+    @JsonIgnore
+    public String getAsFormattedString()
+    {
+        StringBuilder idString = new StringBuilder();
+        idString.append(model);
+        idString.append("-");
+        idString.append(edition);
+        idString.append("-");
+        idString.append(weekOfManufacture);
+        idString.append(yearOfManufacture);
+        idString.append("-");
+        idString.append(poNumber);
+        idString.append("-");
+        idString.append(serialNumber);
+        idString.append("-");
+        idString.append(checkByte);
+
+        return idString.toString();
     }
 }

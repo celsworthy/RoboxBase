@@ -1,11 +1,14 @@
 package celtech.roboxbase.configuration;
 
+import celtech.roboxbase.crypto.CryptoFileStore;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -116,6 +119,19 @@ public class BaseConfiguration
     public static final int maxPrintSpoolFiles = 20;
 
     private static String applicationLanguageRaw = null;
+
+    private static CoreMemory coreMemory = null;
+
+    public static void initialise(Class classToCheck)
+    {
+        getApplicationInstallDirectory(classToCheck);
+        loadCoreMemory();
+    }
+
+    public static void shutdown()
+    {
+        saveCoreMemory();
+    }
 
     /**
      * Used in testing only
@@ -584,5 +600,30 @@ public class BaseConfiguration
     public static String getBinariesDirectory()
     {
         return BaseConfiguration.getCommonApplicationDirectory() + "bin/";
+    }
+
+    private static void loadCoreMemory()
+    {
+        InputStream input = null;
+
+        if (coreMemory == null)
+        {
+            coreMemory = new CoreMemory();
+        }
+    }
+
+    public static void saveCoreMemory()
+    {
+        if (coreMemory == null)
+        {
+            loadCoreMemory();
+        }
+
+        coreMemory.save();
+    }
+
+    public static CoreMemoryData getCoreMemory()
+    {
+        return coreMemory.coreMemoryData;
     }
 }
