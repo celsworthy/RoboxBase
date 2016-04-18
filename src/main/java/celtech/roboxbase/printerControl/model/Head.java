@@ -1,6 +1,5 @@
 package celtech.roboxbase.printerControl.model;
 
-
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
@@ -545,5 +544,22 @@ public class Head implements Cloneable, RepairableComponent
         uniqueID.set(idToCreate);
 
         dataChanged.set(!dataChanged.get());
+    }
+
+    public String getFormattedSerial()
+    {
+        StringBuilder formattedHeadSerial = new StringBuilder();
+        formattedHeadSerial.append(typeCodeProperty().get());
+        formattedHeadSerial.append("-");
+        formattedHeadSerial.append(getWeekNumber());
+        formattedHeadSerial.append(getYearNumber());
+        formattedHeadSerial.append("-");
+        formattedHeadSerial.append(getPONumber());
+        formattedHeadSerial.append("-");
+        formattedHeadSerial.append(getSerialNumber());
+        formattedHeadSerial.append("-");
+        formattedHeadSerial.append(getChecksum());
+
+        return formattedHeadSerial.toString();
     }
 }

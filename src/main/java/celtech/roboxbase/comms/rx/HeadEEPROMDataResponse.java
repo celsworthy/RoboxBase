@@ -245,7 +245,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 steno.error("Couldn't parse hours used - " + hoursUsedString);
             }
 
-            if (headEEPROMData.getUniqueID().length() == 24)
+            if (headEEPROMData.getUniqueID().length() == 23)
             {
                 String inTheBeginning = headEEPROMData.getUniqueID();
                 headEEPROMData.setWeekNumber(inTheBeginning.substring(8, 10));

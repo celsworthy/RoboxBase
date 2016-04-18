@@ -306,13 +306,27 @@ public class NozzleAssignmentUtilities
                         {
                             //Assuming that we'll only be here with a single material nozzle
                             //In this case nozzle 0 corresponds to tool 0
-                            try
+                            if (layerNode.getLayerNumber() == 0)
                             {
-                                NozzleProxy requiredNozzle = nozzleControlUtilities.chooseNozzleProxyByTask(sectionUnderConsideration);
-                                requiredToolNumber = requiredNozzle.getNozzleReferenceNumber();
-                            } catch (UnableToFindSectionNodeException ex)
+                                int notionalNozzleNumber = slicerParametersFile.getFirstLayerNozzle();
+                                if (notionalNozzleNumber >= 0
+                                        && notionalNozzleNumber <= 1)
+                                {
+                                    requiredToolNumber = notionalNozzleNumber;
+                                } else
+                                {
+                                    requiredToolNumber = 0;
+                                }
+                            } else
                             {
-                                throw new RuntimeException("Failed to determine correct nozzle - single material mode");
+                                try
+                                {
+                                    NozzleProxy requiredNozzle = nozzleControlUtilities.chooseNozzleProxyByTask(sectionUnderConsideration);
+                                    requiredToolNumber = requiredNozzle.getNozzleReferenceNumber();
+                                } catch (UnableToFindSectionNodeException ex)
+                                {
+                                    throw new RuntimeException("Failed to determine correct nozzle - single material mode");
+                                }
                             }
                         } else if ((postProcessingMode == PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL
                                 || postProcessingMode == PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL)
