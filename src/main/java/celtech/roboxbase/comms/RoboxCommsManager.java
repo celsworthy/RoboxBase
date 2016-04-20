@@ -242,10 +242,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         activePrinters.put(detectedPrinter, printer);
         printer.connectionEstablished();
 
-        BaseLookup.getTaskExecutor().runOnGUIThread(() ->
-        {
-            BaseLookup.getConnectedPrinters().add(printer);
-        });
+        BaseLookup.printerConnected(printer);
     }
 
     /**
@@ -272,10 +269,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         }
         activePrinters.remove(printerHandle);
 
-        BaseLookup.getTaskExecutor().runOnGUIThread(() ->
-        {
-            BaseLookup.getConnectedPrinters().remove(printerToRemove);
-        });
+        BaseLookup.printerDisconnected(printerToRemove);
     }
 
     public void addDummyPrinter()

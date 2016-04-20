@@ -29,7 +29,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     }
 
     @Override
-    protected boolean connectToPrinter()
+    protected boolean connectToPrinterImpl()
     {
         boolean success = false;
         try
@@ -44,7 +44,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     }
 
     @Override
-    protected void disconnectPrinter()
+    protected void disconnectPrinterImpl()
     {
         try
         {
@@ -58,7 +58,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     }
 
     @Override
-    public synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite,
+    public synchronized RoboxRxPacket writeToPrinterImpl(RoboxTxPacket messageToWrite,
             boolean dontPublishResult) throws RoboxCommsException
     {
         RoboxRxPacket rxPacket = remoteClient.writeToPrinter(printerHandle.getConnectionHandle(), messageToWrite);

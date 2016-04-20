@@ -43,10 +43,13 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
 
         DummyPrinterCommandInterface commandInterface
                 = new DummyPrinterCommandInterface(printerStatusConsumer, printerHandle, false, 500);
+        commandInterface.connectToPrinter();
 
         Printer printer = new HardwarePrinter(null, commandInterface);
 
         printer.sendRawGCode("DEFAULS", false);
+        commandInterface.doStatusRequest();
+        
         printer.readHeadEEPROM(false);
         System.out.println("head is " + printer.headProperty().get());
         int numNozzleHeaters = printer.headProperty().get().getNozzleHeaters().size();

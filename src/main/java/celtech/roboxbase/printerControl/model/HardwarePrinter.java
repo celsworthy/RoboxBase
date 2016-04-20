@@ -581,6 +581,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     /**
      * Reset the purge temperature for the given head, printer settings and
      * nozzle heater number.
+     *
      * @param headToWrite
      * @param nozzleHeaterNumber
      */
@@ -1194,7 +1195,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             });
         }
 
-        return response.getGCodeResponse();
+        if (response != null)
+        {
+            return response.getGCodeResponse();
+        } else
+        {
+            return null;
+        }
     }
 
     private boolean transmitDataFileStart(final String fileID, boolean jobCanBeReprinted) throws RoboxCommsException

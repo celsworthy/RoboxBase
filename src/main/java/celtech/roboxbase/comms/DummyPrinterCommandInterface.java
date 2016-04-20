@@ -226,14 +226,14 @@ public class DummyPrinterCommandInterface extends CommandInterface
     }
 
     @Override
-    protected boolean connectToPrinter()
+    protected boolean connectToPrinterImpl()
     {
         steno.info("Dummy printer connected");
         return true;
     }
 
     @Override
-    protected void disconnectPrinter()
+    protected void disconnectPrinterImpl()
     {
         steno.info("Dummy printer disconnected");
     }
@@ -343,8 +343,34 @@ public class DummyPrinterCommandInterface extends CommandInterface
         errorStatus.getFirmwareErrors().clear();
     }
 
+    public void doStatusRequest()
+    {
+        RoboxRxPacket response = null;
+
+        currentStatus.setAmbientTemperature((int) (Math.random() * 100));
+        handleNozzleTempChange();
+        handleBedTempChange();
+
+        if (!printJobID.equals(NOTHING_PRINTING_JOB_ID))
+        {
+            printJobLineNo += 100;
+
+            if (printJobLineNo >= linesInCurrentPrintJob)
+            {
+                printJobLineNo = 0;
+                printJobID = NOTHING_PRINTING_JOB_ID;
+            }
+        }
+        currentStatus.setPrintJobLineNumber(printJobLineNo);
+        currentStatus.setRunningPrintJobID(printJobID);
+        currentStatus.setHeadPowerOn(true);
+
+        response = (RoboxRxPacket) currentStatus;
+        printerToUse.processRoboxResponse(response);
+    }
+
     @Override
-    public RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
+    public RoboxRxPacket writeToPrinterImpl(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
     {
         RoboxRxPacket response = null;
 
@@ -365,25 +391,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             response = (RoboxRxPacket) idResponse;
         } else if (messageToWrite instanceof StatusRequest)
         {
-            currentStatus.setAmbientTemperature((int) (Math.random() * 100));
-            handleNozzleTempChange();
-            handleBedTempChange();
-
-            if (!printJobID.equals(NOTHING_PRINTING_JOB_ID))
-            {
-                printJobLineNo += 100;
-
-                if (printJobLineNo >= linesInCurrentPrintJob)
-                {
-                    printJobLineNo = 0;
-                    printJobID = NOTHING_PRINTING_JOB_ID;
-                }
-            }
-            currentStatus.setPrintJobLineNumber(printJobLineNo);
-            currentStatus.setRunningPrintJobID(printJobID);
-            currentStatus.setHeadPowerOn(true);
-
-            response = (RoboxRxPacket) currentStatus;
+            doStatusRequest();
         } else if (messageToWrite instanceof AbortPrint)
         {
             steno.debug("ABORT print");

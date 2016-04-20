@@ -41,6 +41,7 @@ public class BaseLookup
 
     private static PrinterListChangesNotifier printerListChangesNotifier;
     private static final ObservableList<Printer> connectedPrinters = FXCollections.observableArrayList();
+    private static final ObservableList<Printer> connectedPrintersUnmodifiable = FXCollections.unmodifiableObservableList(connectedPrinters);
 
     /**
      * The database of known filaments.
@@ -159,9 +160,35 @@ public class BaseLookup
         return printerListChangesNotifier;
     }
 
+    public static void printerConnected(Printer printer)
+    {
+        BaseLookup.getTaskExecutor().runOnGUIThread(() ->
+        {
+            doPrinterConnect(printer);
+        });
+    }
+
+    private static synchronized void doPrinterConnect(Printer printer)
+    {
+        connectedPrinters.add(printer);
+    }
+
+    public static void printerDisconnected(Printer printer)
+    {
+        BaseLookup.getTaskExecutor().runOnGUIThread(() ->
+        {
+            doPrinterDisconnect(printer);
+        });
+    }
+
+    private static synchronized void doPrinterDisconnect(Printer printer)
+    {
+        connectedPrinters.remove(printer);
+    }
+
     public static ObservableList<Printer> getConnectedPrinters()
     {
-        return connectedPrinters;
+        return connectedPrintersUnmodifiable;
     }
 
     public static void setFilamentContainer(FilamentContainer filamentContainer)

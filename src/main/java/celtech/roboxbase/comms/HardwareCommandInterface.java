@@ -33,13 +33,13 @@ public class HardwareCommandInterface extends CommandInterface
     }
 
     @Override
-    protected boolean connectToPrinter()
+    protected boolean connectToPrinterImpl()
     {
         return serialPortManager.connect(115200);
     }
 
     @Override
-    protected void disconnectPrinter()
+    protected void disconnectPrinterImpl()
     {
         if (serialPortManager != null
                 && serialPortManager.serialPort != null)
@@ -61,7 +61,7 @@ public class HardwareCommandInterface extends CommandInterface
     }
 
     @Override
-    public synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite,
+    public synchronized RoboxRxPacket writeToPrinterImpl(RoboxTxPacket messageToWrite,
             boolean dontPublishResult) throws RoboxCommsException
     {
         RoboxRxPacket receivedPacket = null;
