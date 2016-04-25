@@ -326,6 +326,14 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
             {
                 commandInterface.disconnectPrinter();
             }
+            else
+            {
+                steno.info("CI was null");
+            }
+        }
+        else
+        {
+            steno.info("not in active list");
         }
     }
 }
