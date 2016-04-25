@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import libertysystems.stenographer.Stenographer;
@@ -26,6 +27,11 @@ public class SerialDeviceDetector extends DeviceDetector
     private final String deviceDetectorStringLinux;
     private final String deviceDetectionCommand;
     private final String notConnectedString = "NOT_CONNECTED";
+
+    // This list is used to ensure that we don't fall foul of windows very slow usb disconnection and attempt reconnects
+    // when the device has just been removed...
+    private static final int suppressPrinterForCycles = 5;
+    private Map<DetectedDevice, Integer> printersToSuppress = new HashMap<>();
 
     public SerialDeviceDetector(String pathToBinaries,
             String vendorID,
@@ -126,6 +132,7 @@ public class SerialDeviceDetector extends DeviceDetector
                 if (!newlyDetectedPrinters.contains(existingPrinter))
                 {
                     printersToDisconnect.add(existingPrinter);
+                    printersToSuppress.put(existingPrinter, suppressPrinterForCycles);
                 }
             });
 
@@ -142,7 +149,13 @@ public class SerialDeviceDetector extends DeviceDetector
             {
                 if (!currentPrinters.contains(newPrinter))
                 {
-                    printersToConnect.add(newPrinter);
+                    if (!printersToSuppress.containsKey(newPrinter))
+                    {
+                        printersToConnect.add(newPrinter);
+                    } else
+                    {
+                        steno.info("Suppressed printer: " + newPrinter);
+                    }
                 }
             });
 
@@ -152,6 +165,17 @@ public class SerialDeviceDetector extends DeviceDetector
                 currentPrinters.add(printerToConnect);
                 deviceDetectionListener.deviceDetected(printerToConnect);
             }
+            
+            // Process the suppression counter
+            HashMap<DetectedDevice, Integer> newSuppressedPrinters = new HashMap<>();
+            for (Map.Entry<DetectedDevice, Integer> suppressedPrinterEntry : printersToSuppress.entrySet())
+            {
+                if (suppressedPrinterEntry.getValue() > 0)
+                {
+                    newSuppressedPrinters.put(suppressedPrinterEntry.getKey(), suppressedPrinterEntry.getValue() - 1);
+                }
+            }
+            printersToSuppress = newSuppressedPrinters;
 
             try
             {
