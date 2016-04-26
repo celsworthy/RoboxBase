@@ -2807,9 +2807,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 nozzle1ZOffset,
                 nozzle1BOffset);
 
-        commandInterface.writeToPrinter(writeHeadEEPROM);
+        AckResponse response = (AckResponse)commandInterface.writeToPrinter(writeHeadEEPROM);
 
-        if (readback)
+        if (readback && !response.isError())
         {
             readHeadEEPROM(false);
         }
