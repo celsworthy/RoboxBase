@@ -316,6 +316,18 @@ public class CuraGCodeParserTest
         assertEquals(0, ((ExtrusionNode) dOnlyExtrudeResult.valueStack.peek(0)).getMovement().getZ(), 0.001);
         assertEquals(0, ((ExtrusionNode) dOnlyExtrudeResult.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(1.3, ((ExtrusionNode) dOnlyExtrudeResult.valueStack.peek(0)).getExtrusion().getD(), 0.0001);
+
+        gcodeParser.resetLayer();
+
+        String spiralExtrude = "G1 F100 X1.4 Y12.3 Z0.3 D1.3\n";
+        ParsingResult spiralExtrudeResult = runner.run(spiralExtrude);
+        assertFalse(spiralExtrudeResult.hasErrors());
+        assertTrue(spiralExtrudeResult.matched);
+        assertEquals(1.4, ((ExtrusionNode) spiralExtrudeResult.valueStack.peek(0)).getMovement().getX(), 0.001);
+        assertEquals(12.3, ((ExtrusionNode) spiralExtrudeResult.valueStack.peek(0)).getMovement().getY(), 0.001);
+        assertEquals(0.3, ((ExtrusionNode) spiralExtrudeResult.valueStack.peek(0)).getMovement().getZ(), 0.001);
+        assertEquals(0, ((ExtrusionNode) spiralExtrudeResult.valueStack.peek(0)).getExtrusion().getE(), 0.001);
+        assertEquals(1.3, ((ExtrusionNode) spiralExtrudeResult.valueStack.peek(0)).getExtrusion().getD(), 0.0001);
     }
 
     @Test
