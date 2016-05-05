@@ -9,10 +9,17 @@ import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.postprocessor.RoboxiserResult;
+import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeDirectiveNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.InnerPerimeterSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.LayerChangeDirectiveNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.SkinSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.DurationCalculationException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.SupportsPrintTimeCalculation;
@@ -24,7 +31,6 @@ import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
-import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.TimeUtils;
 import java.io.BufferedReader;
@@ -34,6 +40,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javafx.beans.property.DoubleProperty;
@@ -94,9 +101,16 @@ public class PostProcessor
 
     private final TimeUtils timeUtils = new TimeUtils();
 
+    private static final double timeForInitialHoming_s = 20;
+    private static final double timeForPurgeAndLevelling_s = 40;
+    private static final double timeForNozzleSelect_s = 1;
+    private static final double zMoveRate_mms = 4;
+    private static final double nozzlePositionChange_s = 0.25;
+    // Add a percentage to each movement to factor in acceleration across the whole print
+    private static final double movementFudgeFactor = 1.1;
+    
     public PostProcessor(String nameOfPrint,
             Set<Integer> usedExtruders,
-            List<Integer> extruderNumberForModel,
             Printer printer,
             String gcodeFileToProcess,
             String gcodeOutputFile,
@@ -106,6 +120,7 @@ public class PostProcessor
             PostProcessorFeatureSet postProcessorFeatureSet,
             String headType,
             DoubleProperty taskProgress,
+            Map<Integer, Integer> objectToNozzleNumberMap,
             CameraTriggerData cameraTriggerData,
             boolean safetyFeaturesRequired)
     {
@@ -149,7 +164,7 @@ public class PostProcessor
 
         postProcessorUtilityMethods = new UtilityMethods(featureSet, settings, headType, cameraTriggerData);
         nodeManagementUtilities = new NodeManagementUtilities(featureSet);
-        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, extruderNumberForModel);
+        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
         closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType);
     }
 
@@ -592,6 +607,11 @@ public class PostProcessor
         ToolSelectNode firstToolSelectNodeWithSameNumber = null;
         double cumulativeTimeInLastTool = 0;
 
+        if (layerNode.getLayerNumber() == 0)
+        {
+            timeForLayer += timeForInitialHoming_s + timeForPurgeAndLevelling_s;
+        }
+
         while (layerIterator.hasNext())
         {
             GCodeEventNode foundNode = layerIterator.next();
@@ -611,7 +631,7 @@ public class PostProcessor
                 {
                     try
                     {
-                        double time = lastMovementProvider.timeToReach((MovementProvider) foundNode);
+                        double time = lastMovementProvider.timeToReach((MovementProvider) foundNode) * movementFudgeFactor;
                         timeForLayer += time;
                         timeInThisTool += time;
                     } catch (DurationCalculationException ex)
@@ -641,6 +661,27 @@ public class PostProcessor
                     ((FeedrateProvider) lastMovementProvider).getFeedrate().setFeedRate_mmPerMin(lastLayerPostProcessResult.getLastFeedrateInForce());
                 }
                 lastFeedrate = ((FeedrateProvider) lastMovementProvider).getFeedrate().getFeedRate_mmPerMin();
+            } else if (foundNode instanceof ToolSelectNode)
+            {
+                timeForLayer += timeForNozzleSelect_s;
+            } else if (foundNode instanceof LayerChangeDirectiveNode)
+            {
+                LayerChangeDirectiveNode lNode = (LayerChangeDirectiveNode) foundNode;
+                double heightChange = lNode.getMovement().getZ() - layerNode.getLayerHeight_mm();
+                if (heightChange > 0)
+                {
+                    timeForLayer += heightChange / zMoveRate_mms;
+                }
+            } else if (foundNode instanceof NozzleValvePositionNode)
+            {
+                timeForLayer += nozzlePositionChange_s;
+            } else if (!(foundNode instanceof FillSectionNode)
+                    && !(foundNode instanceof InnerPerimeterSectionNode)
+                    && !(foundNode instanceof SkinSectionNode)
+                    && !(foundNode instanceof OuterPerimeterSectionNode)
+                    && !(foundNode instanceof MCodeNode))
+            {
+                steno.info("Not possible to calculate time for: " + foundNode.getClass().getName() + " : " + foundNode.toString());
             }
 
             if (foundNode instanceof ToolSelectNode)

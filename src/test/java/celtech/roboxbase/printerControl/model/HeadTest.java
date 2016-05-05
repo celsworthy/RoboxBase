@@ -48,8 +48,6 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
         Printer printer = new HardwarePrinter(null, commandInterface);
 
         printer.sendRawGCode("DEFAULS", false);
-        commandInterface.doStatusRequest();
-        
         printer.readHeadEEPROM(false);
         System.out.println("head is " + printer.headProperty().get());
         int numNozzleHeaters = printer.headProperty().get().getNozzleHeaters().size();

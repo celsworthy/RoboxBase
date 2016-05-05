@@ -15,7 +15,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.ExtrusionProvider;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ public class NozzleAssignmentUtilities
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer(NozzleAssignmentUtilities.class.getName());
-    private final List<NozzleProxy> nozzleProxies;
     private final SlicerParametersFile slicerParametersFile;
     private final HeadFile headFile;
     private final PostProcessorFeatureSet featureSet;
@@ -40,47 +38,24 @@ public class NozzleAssignmentUtilities
 
     private final NozzleManagementUtilities nozzleControlUtilities;
     private final Map<Integer, Integer> objectToNozzleNumberMap;
-    private final Map<Integer, Integer> extruderToNozzleMap;
-    private final Map<Integer, Integer> nozzleToExtruderMap;
 
     public NozzleAssignmentUtilities(List<NozzleProxy> nozzleProxies,
             SlicerParametersFile slicerParametersFile,
             HeadFile headFile,
             PostProcessorFeatureSet featureSet,
             PostProcessingMode postProcessingMode,
-            List<Integer> extruderNumberForModel)
+            Map<Integer, Integer> objectToNozzleNumberMap)
     {
-        this.nozzleProxies = nozzleProxies;
         this.slicerParametersFile = slicerParametersFile;
         this.headFile = headFile;
         this.featureSet = featureSet;
         this.postProcessingMode = postProcessingMode;
+        this.objectToNozzleNumberMap = objectToNozzleNumberMap;
 
-        nozzleControlUtilities = new NozzleManagementUtilities(nozzleProxies, slicerParametersFile,
+        nozzleControlUtilities = new NozzleManagementUtilities(nozzleProxies,
+                slicerParametersFile,
                 headFile);
-
-        extruderToNozzleMap = new HashMap<>();
-        nozzleToExtruderMap = new HashMap<>();
-        for (int extruderNumber = 0; extruderNumber < 2; extruderNumber++)
-        {
-            Optional<NozzleProxy> proxy = nozzleControlUtilities.chooseNozzleProxyByExtruderNumber(
-                    extruderNumber);
-            if (proxy.isPresent())
-            {
-                extruderToNozzleMap.put(extruderNumber, proxy.get().getNozzleReferenceNumber());
-                nozzleToExtruderMap.put(proxy.get().getNozzleReferenceNumber(), extruderNumber);
             }
-        }
-
-        objectToNozzleNumberMap = new HashMap<>();
-        int objectIndex = 0;
-
-        for (int extruderNumber : extruderNumberForModel)
-        {
-            objectToNozzleNumberMap.put(objectIndex, extruderToNozzleMap.get(extruderNumber));
-            objectIndex++;
-        }
-    }
 
     public class ExtrusionAssignmentResult
     {

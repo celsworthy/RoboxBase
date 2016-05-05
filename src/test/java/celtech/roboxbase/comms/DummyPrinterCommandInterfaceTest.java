@@ -29,16 +29,16 @@ public class DummyPrinterCommandInterfaceTest extends BaseEnvironmentConfiguredT
         StatusConsumer statusConsumer = new StatusConsumer();
         DummyPrinterCommandInterface commandInterface = new DummyPrinterCommandInterface(
                 statusConsumer, printerHandle, false, 500);
+        commandInterface.connectToPrinter();
+        
         HardwarePrinter hardwarePrinter = new HardwarePrinter(statusConsumer, commandInterface);
         commandInterface.setPrinter(hardwarePrinter);
-        commandInterface.connectToPrinter();
 
         hardwarePrinter.sendRawGCode("ATTACH HEAD RBX01-DM", true);
-        commandInterface.doStatusRequest();
 
         hardwarePrinter.setNozzleHeaterTargetTemperature(0, 200);
 
-        assertEquals(200, commandInterface.nozzleTargetTemperatureS);
+        assertEquals(210, commandInterface.nozzleTargetTemperatureS);
 
 //        NozzleHeater nozzleHeater = hardwarePrinter.headProperty().get().getNozzleHeaters().get(0);
 //        assertEquals(200, nozzleHeater.nozzleTargetTemperatureProperty().get());

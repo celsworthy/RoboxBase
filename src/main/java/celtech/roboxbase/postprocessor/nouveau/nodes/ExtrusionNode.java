@@ -97,6 +97,9 @@ public class ExtrusionNode extends GCodeEventNode implements ExtrusionProvider, 
         }
         
         stringToOutput.append(getCommentText());
+        
+        stringToOutput.append(":");
+        stringToOutput.append(elidedExtrusion);
         return stringToOutput.toString().trim();
     }
 

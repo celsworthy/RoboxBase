@@ -1,5 +1,6 @@
 package celtech.roboxbase.services.postProcessor;
 
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;

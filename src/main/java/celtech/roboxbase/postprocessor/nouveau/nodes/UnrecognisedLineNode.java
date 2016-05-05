@@ -8,13 +8,14 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
  */
 public class UnrecognisedLineNode extends GCodeEventNode implements Renderable
 {
+
     private final String discardedLine;
 
     public UnrecognisedLineNode(String discardedLine)
     {
         this.discardedLine = discardedLine;
     }
-    
+
     public String getDiscardedLine()
     {
         return discardedLine;
@@ -24,5 +25,11 @@ public class UnrecognisedLineNode extends GCodeEventNode implements Renderable
     public String renderForOutput()
     {
         return "; " + discardedLine;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Unrecognised: " + discardedLine;
     }
 }

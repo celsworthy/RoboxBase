@@ -422,6 +422,106 @@ public abstract class GCodeEventNode
         return it;
     }
 
+    public IteratorWithOrigin<GCodeEventNode> treeSpanningBackwardsAndMeIterator()
+    {
+        IteratorWithOrigin<GCodeEventNode> it = new IteratorWithOrigin<GCodeEventNode>()
+        {
+            private GCodeEventNode originNode;
+            private int currentIndex;
+            private IteratorWithOrigin<GCodeEventNode> parentIterator = null;
+            private Iterator<GCodeEventNode> childIterator = null;
+            private boolean originNodeConsumed = false;
+
+            @Override
+            public void setOriginNode(GCodeEventNode originNode)
+            {
+                this.originNode = originNode;
+                if (parent.isPresent())
+                {
+                    currentIndex = parent.get().children.indexOf(originNode) - 1;
+                } else
+                {
+                    currentIndex = -1;
+                }
+            }
+
+            @Override
+            public boolean hasNext()
+            {
+                return currentIndex >= 0
+                        || ((parentIterator != null && parentIterator.hasNext())
+                        || (childIterator != null && childIterator.hasNext())
+                        || (originNode != null && originNode.hasParent()));
+            }
+
+            @Override
+            public GCodeEventNode next()
+            {
+                if (!originNodeConsumed)
+                {
+                    originNodeConsumed = true;
+                    return originNode;
+                }
+
+                if (childIterator != null
+                        && childIterator.hasNext())
+                {
+                    return childIterator.next();
+                } else
+                {
+                    childIterator = null;
+                }
+
+                if (parentIterator != null
+                        && parentIterator.hasNext())
+                {
+                    return parentIterator.next();
+//                    if (sibling.isLeaf())
+//                    {
+//                        return sibling;
+//                    } else
+//                    {
+//                        childIterator = sibling.childrenAndMeBackwardsIterator();
+//                        return childIterator.next();
+//                    }
+                } else
+                {
+                    parentIterator = null;
+                }
+
+                if (currentIndex >= 0)
+                {
+                    GCodeEventNode child = parent.get().children.get(currentIndex--);
+                    if (child.isLeaf())
+                    {
+                        return child;
+                    } else
+                    {
+                        childIterator = child.childrenAndMeBackwardsIterator();
+                        return childIterator.next();
+                    }
+                } else
+                {
+                    //Look upwards from the origin node
+                    GCodeEventNode parentNode = originNode.parent.get();
+                    parentIterator = parentNode.treeSpanningBackwardsIterator();
+                    parentIterator.setOriginNode(parentNode);
+                    originNode = null;
+                    return parentNode;
+                }
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        it.setOriginNode(this);
+        return it;
+    }
+
     public Iterator<GCodeEventNode> childIterator()
     {
         return children.listIterator();

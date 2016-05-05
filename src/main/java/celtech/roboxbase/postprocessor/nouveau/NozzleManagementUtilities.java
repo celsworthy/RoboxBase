@@ -1,7 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
-import celtech.roboxbase.configuration.fileRepresentation.NozzleData;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
@@ -149,35 +148,6 @@ public class NozzleManagementUtilities
         } else
         {
             nozzleProxy = nozzleProxies.get(slicerParametersFile.getFillNozzle());
-        }
-
-        return nozzleProxy;
-    }
-
-    protected Optional<NozzleProxy> chooseNozzleProxyByExtruderNumber(final int extruderNumber)
-    {
-        Optional<NozzleProxy> nozzleProxy = Optional.empty();
-
-        String extruderLetter = "";
-
-        switch (extruderNumber)
-        {
-            case 0:
-                extruderLetter = "E";
-                break;
-            case 1:
-                extruderLetter = "D";
-                break;
-        }
-
-        for (int nozzleIndex = 0; nozzleIndex < headFile.getNozzles().size(); nozzleIndex++)
-        {
-            NozzleData nozzleData = headFile.getNozzles().get(nozzleIndex);
-            if (nozzleData.getAssociatedExtruder().equals(extruderLetter))
-            {
-                nozzleProxy = Optional.of(nozzleProxies.get(nozzleIndex));
-                break;
-            }
         }
 
         return nozzleProxy;

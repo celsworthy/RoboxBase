@@ -300,9 +300,11 @@ public abstract class CommandInterface extends Thread
                                 latestErrorResponse = (AckResponse) writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
                             } catch (RoboxCommsException ex)
                             {
-                                steno.error("Failure during printer status request. " + ex.toString());
-                                disconnectPrinter();
+                                if (isConnected)
+                                {
+                                    steno.exception("Failure during printer status request.", ex);
                             }
+                        }
                         }
                     } catch (InterruptedException ex)
                     {
@@ -373,15 +375,21 @@ public abstract class CommandInterface extends Thread
     {
         if (isConnected)
         {
-            return writeToPrinterImpl(messageToWrite, false);
+            return writeToPrinter(messageToWrite, false);
         } else
         {
             return null;
         }
     }
 
-    public final RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite,
-            boolean dontPublishResult) throws RoboxCommsException
+    /**
+     *
+     * @param messageToWrite
+     * @param dontPublishResult
+     * @return
+     * @throws RoboxCommsException
+     */
+    public final synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
     {
         if (isConnected)
         {
@@ -392,7 +400,7 @@ public abstract class CommandInterface extends Thread
         }
     }
 
-    protected abstract RoboxRxPacket writeToPrinterImpl(RoboxTxPacket messageToWrite,
+    public abstract RoboxRxPacket writeToPrinterImpl(RoboxTxPacket messageToWrite,
             boolean dontPublishResult) throws RoboxCommsException;
 
     /**
@@ -414,6 +422,10 @@ public abstract class CommandInterface extends Thread
         return isConnected;
     }
 
+    /**
+     *
+     * @return
+     */
     protected abstract boolean connectToPrinterImpl();
 
     /**
@@ -425,6 +437,9 @@ public abstract class CommandInterface extends Thread
         disconnectPrinterImpl();
     }
 
+    /**
+     *
+     */
     protected abstract void disconnectPrinterImpl();
 
     private void determinePrinterStatus(StatusResponse statusResponse)

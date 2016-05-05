@@ -14,10 +14,11 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.ExtrusionProvider;
-import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -145,13 +146,15 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
             nozzleProxies.add(proxy);
         }
 
+        Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
+
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
                 paramFile,
                 singleMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
-                extrudersForModel);
+                objectToNozzleNumberMap);
 
         assertEquals(3, testLayer.getChildren().size());
 
@@ -295,13 +298,17 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
 
+        Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
+        objectToNozzleNumberMap.put(0, 0);
+        objectToNozzleNumberMap.put(1, 1);
+
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
                 paramFile,
                 dualMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
-                extrudersForModel);
+                objectToNozzleNumberMap);
 
         assertEquals(2, testLayer.getChildren().size());
         assertEquals(3, object1.getChildren().size());
@@ -442,14 +449,18 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
 
+        Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
+        objectToNozzleNumberMap.put(0, 0);
+        objectToNozzleNumberMap.put(1, 1);
+        objectToNozzleNumberMap.put(2, 0);
+
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
                 paramFile,
                 dualMaterialHead,
                 ppFeatures,
-                PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL,
-                extrudersForModel
-        );
+                PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
+                objectToNozzleNumberMap);
 
         assertEquals(3, testLayer.getChildren().size());
         assertEquals(3, object1.getChildren().size());
@@ -601,13 +612,18 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
 
+        Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
+        objectToNozzleNumberMap.put(0, 1);
+        objectToNozzleNumberMap.put(1, 0);
+        objectToNozzleNumberMap.put(2, 1);
+
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
                 paramFile,
                 dualMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
-                extrudersForModel);
+                objectToNozzleNumberMap);
 
         assertEquals(3, testLayer.getChildren().size());
         assertEquals(3, object1.getChildren().size());

@@ -1,8 +1,11 @@
 package celtech.roboxbase.configuration.fileRepresentation;
 
+import celtech.roboxbase.printerControl.model.Extruder;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -83,5 +86,21 @@ public class HeadFile
     public String toString()
     {
         return name;
+    }
+
+    @JsonIgnore
+    public Optional<Integer> getNozzleNumberForExtruderNumber(int extruderNumber)
+    {
+        Optional returnVal = Optional.empty();
+
+        for (int nozzleIndex = 0; nozzleIndex < nozzles.size(); nozzleIndex++)
+        {
+            if (nozzles.get(nozzleIndex).getAssociatedExtruder().equalsIgnoreCase(Extruder.getExtruderLetterForNumber(extruderNumber)))
+            {
+                returnVal = Optional.of(nozzleIndex);
+                break;
+}
+        }
+        return returnVal;
     }
 }
