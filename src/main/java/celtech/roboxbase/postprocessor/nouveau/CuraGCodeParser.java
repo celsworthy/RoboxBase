@@ -811,7 +811,11 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                                 ' ',
                                 "Y", FloatingPointNumber(),
                                 yValue.set(Double.valueOf(match())),
-                                Optional(' ')
+                                Optional(' '),
+                                Optional(Sequence(
+                                                "Z", FloatingPointNumber(),
+                                                zValue.set(Double.valueOf(match())),
+                                                Optional(' ')))
                         )
                 ),
                 OneOrMore(

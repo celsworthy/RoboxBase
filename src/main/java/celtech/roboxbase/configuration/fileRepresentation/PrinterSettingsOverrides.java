@@ -36,6 +36,7 @@ public class PrinterSettingsOverrides
     private final BooleanProperty printSupportOverride = new SimpleBooleanProperty(false);
     private final ObjectProperty<SupportType> printSupportTypeOverride = new SimpleObjectProperty<>(SupportType.MATERIAL_1);
     private boolean raftOverride = false;
+    private boolean spiralPrintOverride = false;
 
     public PrinterSettingsOverrides()
     {
@@ -149,6 +150,8 @@ public class PrinterSettingsOverrides
 
     /**
      * Standard profiles must have the overrides applied.
+     * @param settingsByProfileName
+     * @return 
      */
     public SlicerParametersFile applyOverrides(SlicerParametersFile settingsByProfileName)
     {
@@ -157,6 +160,13 @@ public class PrinterSettingsOverrides
         profileCopy.setFillDensity_normalised(fillDensityOverride);
         profileCopy.setGenerateSupportMaterial(printSupportOverride.get());
         profileCopy.setPrintRaft(raftOverride);
+        profileCopy.setSpiralPrint(spiralPrintOverride);
+        
+        if (spiralPrintOverride)
+        {
+            profileCopy.setNumberOfPerimeters(1);
+        }
+        
         return profileCopy;
     }
 
@@ -233,6 +243,20 @@ public class PrinterSettingsOverrides
         if (this.raftOverride != raftOverride)
         {
             this.raftOverride = raftOverride;
+            toggleDataChanged();
+        }
+    }
+
+    public boolean getSpiralPrintOverride()
+    {
+        return spiralPrintOverride;
+}
+
+    public void setSpiralPrintOverride(boolean spiralPrintOverride)
+    {
+        if (this.spiralPrintOverride != spiralPrintOverride)
+        {
+            this.spiralPrintOverride = spiralPrintOverride;
             toggleDataChanged();
         }
     }
