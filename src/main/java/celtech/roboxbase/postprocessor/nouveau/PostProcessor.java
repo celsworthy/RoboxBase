@@ -9,6 +9,7 @@ import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.postprocessor.RoboxiserResult;
+import celtech.roboxbase.postprocessor.nouveau.filamentSaver.FilamentSaver;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeDirectiveNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
@@ -20,6 +21,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkinSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.SkirtSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.DurationCalculationException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.SupportsPrintTimeCalculation;
@@ -98,6 +100,7 @@ public class PostProcessor
     private final NodeManagementUtilities nodeManagementUtilities;
     private final NozzleAssignmentUtilities nozzleControlUtilities;
     private final CloseLogic closeLogic;
+    private final FilamentSaver heaterSaver;
 
     private final TimeUtils timeUtils = new TimeUtils();
 
@@ -108,7 +111,7 @@ public class PostProcessor
     private static final double nozzlePositionChange_s = 0.25;
     // Add a percentage to each movement to factor in acceleration across the whole print
     private static final double movementFudgeFactor = 1.1;
-    
+
     public PostProcessor(String nameOfPrint,
             Set<Integer> usedExtruders,
             Printer printer,
@@ -166,6 +169,7 @@ public class PostProcessor
         nodeManagementUtilities = new NodeManagementUtilities(featureSet);
         nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
         closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType);
+        heaterSaver = new FilamentSaver();
     }
 
     public RoboxiserResult processInput()
@@ -236,9 +240,10 @@ public class PostProcessor
 
             StringBuilder layerBuffer = new StringBuilder();
 
-            LayerPostProcessResult parseResultCycle1 = new LayerPostProcessResult(null, 0, 0, 0, defaultObjectNumber, null, null, null, 0, -1);
-            LayerPostProcessResult parseResultCycle2 = null;
             OpenResult lastOpenResult = null;
+
+            List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
+            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, 0, 0, 0, 0, defaultObjectNumber, null, null, null, 0, -1);
 
             for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
             {
@@ -258,47 +263,10 @@ public class PostProcessor
                 {
                     if (layerCounter >= 0)
                     {
-                        if (parseResultCycle2 != null
-                                && parseResultCycle2.getLayerData() != null)
-                        {
-                            timeUtils.timerStart(this, assignExtrusionTimerName);
-                            NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(parseResultCycle2.getLayerData());
-                            timeUtils.timerStop(this, assignExtrusionTimerName);
-
-                            //Now output the layer before the LAST layer - it was held until now in case it needed to be modified before output
-                            //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
-                            //NOTE
-                            //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
-                            //NOTE
-                            if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
-                            {
-                                timeUtils.timerStart(this, openTimerName);
-                                lastOpenResult = postProcessorUtilityMethods.insertOpens(parseResultCycle2.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
-                                timeUtils.timerStop(this, openTimerName);
-                            }
-
-                            timeUtils.timerStart(this, writeOutputTimerName);
-                            outputUtilities.writeLayerToFile(parseResultCycle2.getLayerData(), writer);
-                            timeUtils.timerStop(this, writeOutputTimerName);
-                            postProcessorUtilityMethods.updateLayerToLineNumber(parseResultCycle2, layerNumberToLineNumber, writer);
-                            predictedDuration += postProcessorUtilityMethods.updateLayerToPredictedDuration(parseResultCycle2, layerNumberToPredictedDuration, writer);
-
-                            if (parseResultCycle2.getLayerData().getLayerNumber() == 0)
-                            {
-                                outputUtilities.outputTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
-                            }
-
-                            finalEVolume += assignmentResult.getEVolume();
-                            finalDVolume += assignmentResult.getDVolume();
-                            timeForPrint_secs += parseResultCycle2.getTimeForLayer();
-                        }
-                        parseResultCycle2 = parseResultCycle1;
-
-                        //Parse anything that has gone before
-                        LayerPostProcessResult parseResultCycle0 = parseLayer(layerBuffer, parseResultCycle1, writer, headFile.getType());
-
-                        parseResultCycle1 = parseResultCycle0;
-                        parseResultCycle0 = null;
+                        //Parse the layer!
+                        LayerPostProcessResult parseResult = parseLayer(layerBuffer, lastPostProcessResult, writer, headFile.getType());
+                        postProcessResults.add(parseResult);
+                        lastPostProcessResult = parseResult;
                     }
 
                     layerCounter++;
@@ -316,20 +284,22 @@ public class PostProcessor
             }
 
             //This catches the last layer - if we had no data it won't do anything
-            LayerPostProcessResult parseResult = parseLayer(layerBuffer, parseResultCycle1, writer, headFile.getType());
+            LayerPostProcessResult lastLayerParseResult = parseLayer(layerBuffer, lastPostProcessResult, writer, headFile.getType());
+            postProcessResults.add(lastLayerParseResult);
 
-            finalEVolume += parseResult.getEVolume();
-            finalDVolume += parseResult.getDVolume();
-            timeForPrint_secs += parseResult.getTimeForLayer();
+            timeUtils.timerStart(this, heaterSaverTimerName);
+            if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
+            {
+                heaterSaver.saveHeaters(postProcessResults);
+            }
+            timeUtils.timerStop(this, heaterSaverTimerName);
 
-            if (parseResultCycle2 != null
-                    && parseResultCycle2.getLayerData() != null)
+            for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
             {
                 timeUtils.timerStart(this, assignExtrusionTimerName);
-                NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(parseResultCycle2.getLayerData());
+                NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
                 timeUtils.timerStop(this, assignExtrusionTimerName);
 
-                //Now output the layer before the LAST layer - it was held until now in case it needed to be modified before output
                 //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
                 //NOTE
                 //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
@@ -337,76 +307,20 @@ public class PostProcessor
                 if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
                 {
                     timeUtils.timerStart(this, openTimerName);
-                    lastOpenResult = postProcessorUtilityMethods.insertOpens(parseResultCycle2.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
+                    lastOpenResult = postProcessorUtilityMethods.insertOpens(resultToBeProcessed.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
                     timeUtils.timerStop(this, openTimerName);
                 }
 
                 timeUtils.timerStart(this, writeOutputTimerName);
-                outputUtilities.writeLayerToFile(parseResultCycle2.getLayerData(), writer);
+                outputUtilities.writeLayerToFile(resultToBeProcessed.getLayerData(), writer);
                 timeUtils.timerStop(this, writeOutputTimerName);
-                postProcessorUtilityMethods.updateLayerToLineNumber(parseResultCycle2, layerNumberToLineNumber, writer);
-                predictedDuration += postProcessorUtilityMethods.updateLayerToPredictedDuration(parseResultCycle2, layerNumberToPredictedDuration, writer);
+                postProcessorUtilityMethods.updateLayerToLineNumber(resultToBeProcessed, layerNumberToLineNumber, writer);
+                predictedDuration += postProcessorUtilityMethods.updateLayerToPredictedDuration(resultToBeProcessed, layerNumberToPredictedDuration, writer);
 
                 finalEVolume += assignmentResult.getEVolume();
                 finalDVolume += assignmentResult.getDVolume();
-                timeForPrint_secs += parseResultCycle2.getTimeForLayer();
+                timeForPrint_secs += resultToBeProcessed.getTimeForLayer();
             }
-
-            if (parseResultCycle1 != null
-                    && parseResultCycle1.getLayerData() != null)
-            {
-                timeUtils.timerStart(this, assignExtrusionTimerName);
-                NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(parseResultCycle1.getLayerData());
-                timeUtils.timerStop(this, assignExtrusionTimerName);
-
-                //Now output the layer before the LAST layer - it was held until now in case it needed to be modified before output
-                //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
-                //NOTE
-                //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
-                //NOTE
-                if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
-                {
-                    timeUtils.timerStart(this, openTimerName);
-                    lastOpenResult = postProcessorUtilityMethods.insertOpens(parseResultCycle1.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
-                    timeUtils.timerStop(this, openTimerName);
-                }
-
-                timeUtils.timerStart(this, writeOutputTimerName);
-                outputUtilities.writeLayerToFile(parseResultCycle1.getLayerData(), writer);
-                timeUtils.timerStop(this, writeOutputTimerName);
-                postProcessorUtilityMethods.updateLayerToLineNumber(parseResultCycle1, layerNumberToLineNumber, writer);
-                predictedDuration += postProcessorUtilityMethods.updateLayerToPredictedDuration(parseResultCycle1, layerNumberToPredictedDuration, writer);
-
-                finalEVolume += assignmentResult.getEVolume();
-                finalDVolume += assignmentResult.getDVolume();
-                timeForPrint_secs += parseResultCycle1.getTimeForLayer();
-            }
-
-            //Now output the final result
-            timeUtils.timerStart(this, assignExtrusionTimerName);
-            NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(parseResult.getLayerData());
-            timeUtils.timerStop(this, assignExtrusionTimerName);
-
-            //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
-            //NOTE
-            //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
-            //NOTE
-            if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
-            {
-                timeUtils.timerStart(this, openTimerName);
-                lastOpenResult = postProcessorUtilityMethods.insertOpens(parseResult.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
-                timeUtils.timerStop(this, openTimerName);
-            }
-
-            timeUtils.timerStart(this, writeOutputTimerName);
-            outputUtilities.writeLayerToFile(parseResult.getLayerData(), writer);
-            timeUtils.timerStop(this, writeOutputTimerName);
-            postProcessorUtilityMethods.updateLayerToLineNumber(parseResult, layerNumberToLineNumber, writer);
-            predictedDuration += postProcessorUtilityMethods.updateLayerToPredictedDuration(parseResultCycle1, layerNumberToPredictedDuration, writer);
-
-            finalEVolume += assignmentResult.getEVolume();
-            finalDVolume += assignmentResult.getDVolume();
-            timeForPrint_secs += parseResult.getTimeForLayer();
 
             timeUtils.timerStart(this, writeOutputTimerName);
             outputUtilities.appendPostPrintFooter(writer, finalEVolume, finalDVolume, timeForPrint_secs,
@@ -582,12 +496,6 @@ public class PostProcessor
         postProcessResult.setLastObjectNumber(lastObjectNumber);
         timeUtils.timerStop(this, layerResultTimerName);
 
-//        if (printer.headProperty().get().headTypeProperty().get() == HeadType.DUAL_MATERIAL_HEAD)
-//        {
-//            timeUtils.timerStart(this, heaterSaverTimerName);
-//            postProcessorUtilityMethods.heaterSave(layerNode, lastLayerParseResult);
-//            timeUtils.timerStop(this, heaterSaverTimerName);
-//        }
         return postProcessResult;
     }
 
@@ -598,6 +506,7 @@ public class PostProcessor
         float eValue = 0;
         float dValue = 0;
         double timeForLayer = 0;
+        double cumulativeTime = 0;
         double timeInThisTool = 0;
         int lastFeedrate = -1;
 
@@ -606,6 +515,11 @@ public class PostProcessor
         ToolSelectNode lastToolSelectNode = null;
         ToolSelectNode firstToolSelectNodeWithSameNumber = null;
         double cumulativeTimeInLastTool = 0;
+
+        if (lastLayerPostProcessResult != null)
+        {
+            cumulativeTime = lastLayerPostProcessResult.getTimeForLayer_cumulative_secs();
+        }
 
         if (layerNode.getLayerNumber() == 0)
         {
@@ -664,6 +578,7 @@ public class PostProcessor
             } else if (foundNode instanceof ToolSelectNode)
             {
                 timeForLayer += timeForNozzleSelect_s;
+                timeInThisTool += timeForNozzleSelect_s;
             } else if (foundNode instanceof LayerChangeDirectiveNode)
             {
                 LayerChangeDirectiveNode lNode = (LayerChangeDirectiveNode) foundNode;
@@ -671,14 +586,17 @@ public class PostProcessor
                 if (heightChange > 0)
                 {
                     timeForLayer += heightChange / zMoveRate_mms;
+                    timeInThisTool += heightChange / zMoveRate_mms;
                 }
             } else if (foundNode instanceof NozzleValvePositionNode)
             {
                 timeForLayer += nozzlePositionChange_s;
+                timeInThisTool += nozzlePositionChange_s;
             } else if (!(foundNode instanceof FillSectionNode)
                     && !(foundNode instanceof InnerPerimeterSectionNode)
                     && !(foundNode instanceof SkinSectionNode)
                     && !(foundNode instanceof OuterPerimeterSectionNode)
+                    && !(foundNode instanceof SkirtSectionNode)
                     && !(foundNode instanceof MCodeNode))
             {
                 steno.info("Not possible to calculate time for: " + foundNode.getClass().getName() + " : " + foundNode.toString());
@@ -730,6 +648,8 @@ public class PostProcessor
                     }
                 }
             }
+
+            foundNode.setFinishTimeFromStartOfPrint_secs(cumulativeTime + timeForLayer);
         }
 
         if (lastSectionNode == null)
@@ -747,7 +667,10 @@ public class PostProcessor
             cumulativeTimeInLastTool += timeInThisTool;
         }
 
-        return new LayerPostProcessResult(layerNode, eValue, dValue, timeForLayer, -1,
+        cumulativeTime += timeForLayer;
+        layerNode.setFinishTimeFromStartOfPrint_secs(cumulativeTime);
+
+        return new LayerPostProcessResult(layerNode, eValue, dValue, timeForLayer, cumulativeTime, -1,
                 lastSectionNode, lastToolSelectNode, firstToolSelectNodeWithSameNumber, cumulativeTimeInLastTool, lastFeedrate);
     }
 
@@ -772,7 +695,7 @@ public class PostProcessor
         steno.debug(assignExtrusionTimerName + " " + timeUtils.timeTimeSoFar_ms(this, assignExtrusionTimerName));
         steno.debug(layerResultTimerName + " " + timeUtils.timeTimeSoFar_ms(this, layerResultTimerName));
         steno.debug(parseLayerTimerName + " " + timeUtils.timeTimeSoFar_ms(this, parseLayerTimerName));
-//        steno.info(heaterSaverTimerName + " " + timeUtils.timeTimeSoFar_ms(this, heaterSaverTimerName));
+        steno.info(heaterSaverTimerName + " " + timeUtils.timeTimeSoFar_ms(this, heaterSaverTimerName));
         steno.debug(writeOutputTimerName + " " + timeUtils.timeTimeSoFar_ms(this, writeOutputTimerName));
         steno.debug("============");
     }

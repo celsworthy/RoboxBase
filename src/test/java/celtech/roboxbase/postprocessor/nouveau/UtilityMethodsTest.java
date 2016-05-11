@@ -12,7 +12,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.NozzlePositionProvider;
-import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
 import java.util.ArrayList;
 import java.util.List;
@@ -679,7 +678,7 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
                 paramFile,
                 "RBX01-DM",
                 null);
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 10, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 10, null, null, null, 0, -1);
 
         OutputUtilities opUtils = new OutputUtilities();
 

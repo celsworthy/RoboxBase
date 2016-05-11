@@ -1,6 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
@@ -15,6 +14,7 @@ public class LayerPostProcessResult
     private final float eVolume;
     private final float dVolume;
     private final double timeForLayer_secs;
+    private final double timeForLayer_cumulative_secs;
     private final LayerNode layerData;
     private Optional<Integer> lastObjectNumber = Optional.empty();
     private int lastFeedrateInForce = -1;
@@ -28,6 +28,7 @@ public class LayerPostProcessResult
             float eVolume,
             float dVolume,
             double timeForLayer_secs,
+            double timeForLayer_cumulative_secs,
             int lastObjectNumber,
             SectionNode sectionNode,
             ToolSelectNode toolSelectNode,
@@ -39,6 +40,7 @@ public class LayerPostProcessResult
         this.eVolume = eVolume;
         this.dVolume = dVolume;
         this.timeForLayer_secs = timeForLayer_secs;
+        this.timeForLayer_cumulative_secs = timeForLayer_cumulative_secs;
         this.lastObjectNumber = Optional.of(lastObjectNumber);
         this.lastSectionNodeInForce = sectionNode;
         this.lastToolSelectInForce = toolSelectNode;
@@ -65,6 +67,11 @@ public class LayerPostProcessResult
     public double getTimeForLayer()
     {
         return timeForLayer_secs;
+    }
+
+    public double getTimeForLayer_cumulative_secs()
+    {
+        return timeForLayer_cumulative_secs;
     }
 
     public Optional<Integer> getLastObjectNumber()

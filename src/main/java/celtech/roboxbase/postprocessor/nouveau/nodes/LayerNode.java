@@ -63,6 +63,6 @@ public class LayerNode extends GCodeEventNode implements Renderable
         threeDPformatter.setMinimumFractionDigits(3);
         threeDPformatter.setGroupingUsed(false);
         
-        return ";LAYER:" + layerNumber + " height:" + threeDPformatter.format(layerHeight_mm);
+        return ";LAYER:" + layerNumber + " height:" + threeDPformatter.format(layerHeight_mm) + getCommentText();
     }
 }

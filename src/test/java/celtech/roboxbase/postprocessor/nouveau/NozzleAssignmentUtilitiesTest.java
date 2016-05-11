@@ -296,7 +296,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
             nozzleProxies.add(proxy);
         }
 
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 0, null, null, null, 0, -1);
 
         Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
         objectToNozzleNumberMap.put(0, 0);
@@ -447,7 +447,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
             nozzleProxies.add(proxy);
         }
 
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 0, null, null, null, 0, -1);
 
         Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
         objectToNozzleNumberMap.put(0, 0);
@@ -610,7 +610,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
             nozzleProxies.add(proxy);
         }
 
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 0, null, null, null, 0, -1);
 
         Map<Integer, Integer> objectToNozzleNumberMap = new HashMap();
         objectToNozzleNumberMap.put(0, 1);

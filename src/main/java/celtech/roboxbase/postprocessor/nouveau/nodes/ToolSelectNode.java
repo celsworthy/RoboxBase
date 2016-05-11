@@ -52,6 +52,7 @@ public class ToolSelectNode extends GCodeEventNode implements Renderable
         {
             stringToReturn += "T" + getToolNumber();
             stringToReturn += getCommentText();
+            stringToReturn += " ; Tool Node duration: " + getEstimatedDuration();
         }
 
         return stringToReturn;

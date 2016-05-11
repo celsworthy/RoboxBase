@@ -19,6 +19,7 @@ public abstract class GCodeEventNode
     private Optional<Integer> gCodeLineNumber = Optional.empty();
     private Optional<GCodeEventNode> parent = Optional.empty();
     protected final LinkedList<GCodeEventNode> children = new LinkedList<>();
+    private Optional<Double> finishTimeFromStartOfPrint_secs = Optional.empty();
 
     public GCodeEventNode()
     {
@@ -705,5 +706,15 @@ public abstract class GCodeEventNode
     public void setGCodeLineNumber(int gCodeLineNumber)
     {
         this.gCodeLineNumber = Optional.of(gCodeLineNumber);
+    }
+
+    public Optional<Double> getFinishTimeFromStartOfPrint_secs()
+    {
+        return finishTimeFromStartOfPrint_secs;
+}
+
+    public void setFinishTimeFromStartOfPrint_secs(double value)
+    {
+        finishTimeFromStartOfPrint_secs = Optional.of(value);
     }
 }

@@ -11,7 +11,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.UnretractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
-import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
 import java.util.Optional;
 import org.junit.Test;
@@ -90,7 +89,7 @@ public class NodeManagementUtilitiesTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
         NodeManagementUtilities nodeManagementUtilities = new NodeManagementUtilities(ppFeatures);
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 0, null, null, null, 0, -1);
 
         assertEquals(2, testLayer.getChildren().size());
         assertSame(outer, orphan1.getChildren().get(0));
@@ -153,7 +152,7 @@ public class NodeManagementUtilitiesTest extends BaseEnvironmentConfiguredTest
 //        testProject.setPrintQuality(PrintQualityEnumeration.CUSTOM);
 
         NodeManagementUtilities nodeManagementUtilities = new NodeManagementUtilities(ppFeatures);
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 10, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 10, null, null, null, 0, -1);
 
         assertEquals(2, testLayer.getChildren().size());
         assertSame(outer, orphan1.getChildren().get(0));
