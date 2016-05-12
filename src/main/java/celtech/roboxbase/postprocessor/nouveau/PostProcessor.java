@@ -51,6 +51,8 @@ import libertysystems.stenographer.StenographerFactory;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
+import celtech.roboxbase.postprocessor.nouveau.verifier.OutputVerifier;
+import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
 
 /**
  *
@@ -402,7 +404,7 @@ public class PostProcessor
                 result.setSuccess(false);
             } else
             {
-            result.setSuccess(true);
+                result.setSuccess(true);
             }
         } catch (IOException ex)
         {
