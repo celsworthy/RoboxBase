@@ -75,6 +75,7 @@ public class PostProcessor
     private final String parseLayerTimerName = "ParseLayer";
     private final String writeOutputTimerName = "WriteOutput";
     private final String countLinesTimerName = "CountLines";
+    private final String outputVerifierTimerName = "OutputVerifier";
 
     private final String nameOfPrint;
     private final Set<Integer> usedExtruders;
@@ -101,6 +102,7 @@ public class PostProcessor
     private final NozzleAssignmentUtilities nozzleControlUtilities;
     private final CloseLogic closeLogic;
     private final FilamentSaver heaterSaver;
+    private final OutputVerifier outputVerifier;
 
     private final TimeUtils timeUtils = new TimeUtils();
 
@@ -170,6 +172,7 @@ public class PostProcessor
         nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
         closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType);
         heaterSaver = new FilamentSaver();
+        outputVerifier = new OutputVerifier();
     }
 
     public RoboxiserResult processInput()
@@ -363,12 +366,44 @@ public class PostProcessor
 
             result.setRoboxisedStatistics(roboxisedStatistics);
 
+            timeUtils.timerStart(this, outputVerifierTimerName);
+            List<VerifierResult> verificationResults = outputVerifier.verifyAllLayers(postProcessResults, headFile.getType());
+            timeUtils.timerStop(this, outputVerifierTimerName);
+
+            if (verificationResults.size() > 0)
+            {
+                steno.error("Fatal errors found in post-processed file");
+                for (VerifierResult verifierResult : verificationResults)
+                {
+                    if (verifierResult.getNodeInError() instanceof Renderable)
+                    {
+                        steno.error(verifierResult.getResultType().getDescription()
+                                + " at Layer:" + verifierResult.getLayerNumber()
+                                + " Tool:" + verifierResult.getToolnumber()
+                                + " Node:" + ((Renderable) verifierResult.getNodeInError()).renderForOutput());
+                    } else
+                    {
+                        steno.error(verifierResult.getResultType().getDescription()
+                                + " at Layer:" + verifierResult.getLayerNumber()
+                                + " Tool:" + verifierResult.getToolnumber()
+                                + " Node:" + verifierResult.getNodeInError().toString());
+                    }
+                }
+                steno.error("======================================");
+            }
+
             outputPostProcessingTimerReport();
 
             timeUtils.timerStop(this, "PostProcessor");
             steno.info("Post-processing took " + timeUtils.timeTimeSoFar_ms(this, "PostProcessor") + "ms");
 
+            if (verificationResults.size() > 0)
+            {
+                result.setSuccess(false);
+            } else
+            {
             result.setSuccess(true);
+            }
         } catch (IOException ex)
         {
             steno.error("Error reading post-processor input file: " + gcodeFileToProcess);
@@ -696,6 +731,7 @@ public class PostProcessor
         steno.debug(layerResultTimerName + " " + timeUtils.timeTimeSoFar_ms(this, layerResultTimerName));
         steno.debug(parseLayerTimerName + " " + timeUtils.timeTimeSoFar_ms(this, parseLayerTimerName));
         steno.info(heaterSaverTimerName + " " + timeUtils.timeTimeSoFar_ms(this, heaterSaverTimerName));
+        steno.info(outputVerifierTimerName + " " + timeUtils.timeTimeSoFar_ms(this, outputVerifierTimerName));
         steno.debug(writeOutputTimerName + " " + timeUtils.timeTimeSoFar_ms(this, writeOutputTimerName));
         steno.debug("============");
     }
