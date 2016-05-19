@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -470,11 +471,18 @@ public class PrintEngine implements ControllableService
     {
         int numberOfLines = printJobStatistics.getNumberOfLines();
         linesInPrintingFile.set(numberOfLines);
-        List<Double> layerNumberToPredictedDuration = printJobStatistics.
-                getLayerNumberToPredictedDuration();
+        Map<Integer, Double> layerNumberToPredictedDuration_E = printJobStatistics
+                .getLayerNumberToPredictedDuration_E_FeedrateDependent();
+        Map<Integer, Double> layerNumberToPredictedDuration_D = printJobStatistics
+                .getLayerNumberToPredictedDuration_FeedrateIndependent();
+        Map<Integer, Double> layerNumberToPredictedDuration_feedrateIndependent = printJobStatistics
+                .getLayerNumberToPredictedDuration_FeedrateIndependent();
         List<Integer> layerNumberToLineNumber = printJobStatistics.getLayerNumberToLineNumber();
         etcCalculator = new ETCCalculator(associatedPrinter,
-                layerNumberToPredictedDuration, layerNumberToLineNumber);
+                layerNumberToPredictedDuration_E,
+                layerNumberToPredictedDuration_D,
+                layerNumberToPredictedDuration_feedrateIndependent,
+                layerNumberToLineNumber);
 
         progressNumLayers.set(layerNumberToLineNumber.size());
         primaryProgressPercent.unbind();
@@ -884,14 +892,7 @@ public class PrintEngine implements ControllableService
                             f2.lastModified()));
             for (int i = 0; i < filesToDelete; i++)
             {
-                try
-                {
-                    FileUtils.deleteDirectory(filesOnDisk[i]);
-                } catch (IOException ex)
-                {
-                    steno.error("Error whilst deleting "
-                            + filesOnDisk[i].toString());
-                }
+                FileUtils.deleteQuietly(filesOnDisk[i]);
             }
         }
     }
@@ -1192,6 +1193,7 @@ public class PrintEngine implements ControllableService
                     case PRINTING_PROJECT:
                     case RUNNING_MACRO_FILE:
                         associatedPrinter.setPrinterStatus(PrinterStatus.IDLE);
+                        steno.info("Print Job complete - " + associatedPrinter.getPrinterIdentity().printerFriendlyName.get() + "---------------------------------------<");
                         break;
                 }
                 macroBeingRun.set(null);

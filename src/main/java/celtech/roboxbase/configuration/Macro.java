@@ -36,7 +36,8 @@ public enum Macro
     COMMISSIONING_XMOTOR("x_commissioning", "printerStatus.macro.testX", "C1"),
     COMMISSIONING_YMOTOR("y_commissioning", "printerStatus.macro.testY", "C2"),
     COMMISSIONING_ZMOTOR_DIRECTION("commissioning_level_gantry_test", "printerStatus.macro.testZ", "C3"),
-    COMMISSIONING_HEAD_FLUSH("commissioning_head_flush", "printerStatus.macro.headFlush", "C4");
+    COMMISSIONING_HEAD_FLUSH("commissioning_head_flush", "printerStatus.macro.headFlush", "C4"),
+    COMMISSIONING_EJECT_STUCK_MATERIAL("commissioning_eject_stuck_material", "printerStatus.macro.ejectStuckMaterial", "C5");
 
     private String macroFileName;
     private String i18nKey;

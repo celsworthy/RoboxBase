@@ -1,5 +1,8 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
+
+
 /**
  *
  * @author Ian
@@ -12,18 +15,21 @@ public class OpenResult
     private final boolean nozzleOpen;
     private final int lastToolNumber;
     private final int opensInLastTool;
+    private final ExtrusionNode lastNozzleClose;
 
     public OpenResult(double outstandingEReplenish,
             double outstandingDReplenish,
             boolean nozzleOpen,
             int lastToolNumber,
-            int opensInLastTool)
+            int opensInLastTool,
+            ExtrusionNode lastNozzleClose)
     {
         this.outstandingEReplenish = outstandingEReplenish;
         this.outstandingDReplenish = outstandingDReplenish;
         this.nozzleOpen = nozzleOpen;
         this.lastToolNumber = lastToolNumber;
         this.opensInLastTool = opensInLastTool;
+        this.lastNozzleClose = lastNozzleClose;
     }
 
     public double getOutstandingDReplenish()
@@ -59,5 +65,10 @@ public class OpenResult
     public int getOpensInLastTool()
     {
         return opensInLastTool;
+    }
+
+    public ExtrusionNode getLastNozzleClose()
+    {
+        return lastNozzleClose;
     }
 }

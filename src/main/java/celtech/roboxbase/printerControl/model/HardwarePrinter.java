@@ -1309,6 +1309,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 TxPacketTypeEnum.INITIATE_PRINT);
         gcodePacket.setMessagePayload(printJobUUID);
 
+        steno.info("Initiate Print sent to " + printerIdentity.printerFriendlyName.get() + " - Print Job " + printJobUUID + " starting ----------------------------------->");
         commandInterface.writeToPrinter(gcodePacket);
     }
 
@@ -3998,7 +3999,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                                 chosenHead.allocateRandomID();
                                                 head.set(chosenHead);
                                                 steno.info("Reprogrammed head as " + chosenHeadFile.
-                                                        getName()
+                                                        getTypeCode()
                                                         + " with ID " + head.get().uniqueID.get());
                                                 try
                                                 {

@@ -4,8 +4,6 @@ import celtech.roboxbase.postprocessor.nouveau.LayerPostProcessResult;
 import celtech.roboxbase.postprocessor.nouveau.helpers.LayerDefinition;
 import celtech.roboxbase.postprocessor.nouveau.helpers.TestDataGenerator;
 import celtech.roboxbase.postprocessor.nouveau.helpers.ToolDefinition;
-import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import java.util.ArrayList;
@@ -122,7 +120,7 @@ public class FilamentSaverTest
             new ToolDefinition(1, 15),
             new ToolDefinition(1, 14),
             new ToolDefinition(1, 16),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -157,7 +155,7 @@ public class FilamentSaverTest
         {
             new ToolDefinition(1, 14),
             new ToolDefinition(1, 16),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -232,7 +230,7 @@ public class FilamentSaverTest
         {
             new ToolDefinition(1, 35),
             new ToolDefinition(1, 25),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -249,9 +247,9 @@ public class FilamentSaverTest
         assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0)).isTAndNumber());
 
         //M103 because this is layer 0
-        assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3) instanceof MCodeNode);
-        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).isTOnly());
+        assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4) instanceof MCodeNode);
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).isTOnly());
 
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(4) instanceof MCodeNode);
@@ -269,7 +267,7 @@ public class FilamentSaverTest
         {
             //Inserts: M104 T0
             new ToolDefinition(0, 260),
-                //Inserts: M104 T in T0 section
+            //Inserts: M104 T in T0 section
             new ToolDefinition(1, 10),
             new ToolDefinition(0, 6),
             //Inserts: M104 S0
@@ -279,7 +277,7 @@ public class FilamentSaverTest
         {
             new ToolDefinition(1, 35),
             new ToolDefinition(1, 25),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -297,8 +295,8 @@ public class FilamentSaverTest
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1) instanceof ToolSelectNode);
         assertEquals(19, allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().size());
-        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).isTOnly());
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).isTOnly());
 
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(4) instanceof MCodeNode);
@@ -331,7 +329,7 @@ public class FilamentSaverTest
             new ToolDefinition(0, 24),
             //Inserts: M104 S0
             new ToolDefinition(1, 75),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -349,8 +347,8 @@ public class FilamentSaverTest
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1) instanceof ToolSelectNode);
         assertEquals(19, allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().size());
-        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).isTOnly());
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).isTOnly());
 
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(4) instanceof MCodeNode);
@@ -358,9 +356,9 @@ public class FilamentSaverTest
         assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(4)).isSAndNumber());
 
         //M103 because this is layer 0
-        assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(18) instanceof MCodeNode);
-        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(18)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(18)).isSOnly());
+        assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(20) instanceof MCodeNode);
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(20)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(5).getChildren().get(20)).isSOnly());
 
         assertEquals(5, allLayerPostProcessResults.get(1).getLayerData().getChildren().size());
 
@@ -393,7 +391,7 @@ public class FilamentSaverTest
             new ToolDefinition(0, 24),
             //Inserts: M104 S0
             new ToolDefinition(1, 75),
-            new ToolDefinition(1, 150)
+            new ToolDefinition(1, 200)
         }));
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
@@ -411,8 +409,8 @@ public class FilamentSaverTest
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1) instanceof ToolSelectNode);
         assertEquals(19, allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().size());
-        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(3)).isTOnly());
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).getChildren().get(4)).isTOnly());
 
         //M103 because this is layer 0
         assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(4) instanceof MCodeNode);
@@ -421,13 +419,15 @@ public class FilamentSaverTest
 
         assertEquals(5, allLayerPostProcessResults.get(1).getLayerData().getChildren().size());
 
-        assertTrue(allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(9) instanceof MCodeNode);
-        assertEquals(104, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(9)).getMNumber());
-        assertTrue(((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(9)).isSOnly());
+        assertTrue(allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(11) instanceof MCodeNode);
+        assertEquals(104, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(11)).getMNumber());
+        assertTrue(((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0).getChildren().get(11)).isSOnly());
 
         assertTrue(allLayerPostProcessResults.get(1).getLayerData().getChildren().get(2) instanceof MCodeNode);
         assertEquals(104, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(2)).getMNumber());
         assertTrue(((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(2)).isSAndNumber());
         assertEquals(0, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(2)).getSNumber());
     }
+
+ 
 }

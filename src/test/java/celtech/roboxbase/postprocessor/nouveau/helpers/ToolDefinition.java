@@ -6,13 +6,26 @@ package celtech.roboxbase.postprocessor.nouveau.helpers;
  */
 public class ToolDefinition
 {
+
     private final int toolNumber;
     private final double duration;
+    private final float extrusion;
 
-    public ToolDefinition(int toolNumber, double duration)
+    public ToolDefinition(int toolNumber,
+            double duration)
     {
         this.toolNumber = toolNumber;
         this.duration = duration;
+        this.extrusion = 0;
+    }
+
+    public ToolDefinition(int toolNumber,
+            double duration,
+            float extrusion)
+    {
+        this.toolNumber = toolNumber;
+        this.duration = duration;
+        this.extrusion = extrusion;
     }
 
     public int getToolNumber()
@@ -23,5 +36,10 @@ public class ToolDefinition
     public double getDuration()
     {
         return duration;
+    }
+
+    public float getExtrusion()
+    {
+        return extrusion;
     }
 }

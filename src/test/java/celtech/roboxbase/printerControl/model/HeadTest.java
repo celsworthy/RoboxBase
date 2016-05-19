@@ -132,4 +132,80 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
         boolean result = Head.isTypeCodeInDatabase(typeCode);
         assertEquals(expResult, result);
     }
+
+    @Test
+    public void testValidateSerial()
+    {
+        //        RBX01-DM-2516-0023059-0002-4
+        boolean validResult = Head.validateSerial("RBX01-DM",
+                "25",
+                "16",
+                "0023059",
+                "0002",
+                "4");
+
+        assertTrue(validResult);
+        boolean failDueToNulls = Head.validateSerial(null,
+                "25",
+                "16",
+                "0023059",
+                "0002",
+                "4");
+
+        assertFalse(failDueToNulls);
+
+        boolean failDueToNulls1 = Head.validateSerial("RBX01-DM",
+                null,
+                "16",
+                "0023059",
+                "0002",
+                "4");
+
+        assertFalse(failDueToNulls1);
+
+        boolean failDueToNulls2 = Head.validateSerial("RBX01-DM",
+                "25",
+                null,
+                "0023059",
+                "0002",
+                "4");
+
+        assertFalse(failDueToNulls2);
+
+        boolean failDueToNulls3 = Head.validateSerial("RBX01-DM",
+                "25",
+                "16",
+                null,
+                "0002",
+                "4");
+
+        assertFalse(failDueToNulls3);
+
+        boolean failDueToNulls4 = Head.validateSerial("RBX01-DM",
+                "25",
+                "16",
+                "0023059",
+                null,
+                "4");
+
+        assertFalse(failDueToNulls4);
+
+        boolean failDueToNulls5 = Head.validateSerial("RBX01-DM",
+                "25",
+                "16",
+                "0023059",
+                "0002",
+                null);
+
+        assertFalse(failDueToNulls5);
+
+        boolean failDueToBadChecksum = Head.validateSerial("RBX01-DM",
+                "25",
+                "16",
+                "0023059",
+                "0002",
+                "1");
+
+        assertFalse(failDueToBadChecksum);
+    }
 }

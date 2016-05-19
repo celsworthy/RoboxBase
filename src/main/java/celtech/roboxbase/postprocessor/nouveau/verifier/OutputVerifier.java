@@ -114,8 +114,8 @@ public class OutputVerifier
                     }
 
                     if (nozzlePosition < 1
-                            && (((ExtrusionNode) node).getExtrusion().isDInUse()
-                            || ((ExtrusionNode) node).getExtrusion().isEInUse())
+                            && ((((ExtrusionNode) node).getExtrusion().isDInUse() && ((ExtrusionNode) node).getExtrusion().getD() > 0)
+                            || (((ExtrusionNode) node).getExtrusion().isEInUse() && ((ExtrusionNode) node).getExtrusion().getE() > 0))
                             && !resultTypes.contains(ResultType.EXTRUDE_NOT_FULLY_OPEN))
                     {
                         output.add(new VerifierResult(ResultType.EXTRUDE_NOT_FULLY_OPEN, node, layerCounter, currentToolNumber));

@@ -7,7 +7,9 @@ import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,15 +33,17 @@ public class PrintJobStatisticsTest
         double volumeUsed = 100;
         int lineNumberOfFirstExtrusion = 5;
         List<Integer> layerNumberToLineNumber = new ArrayList<>();
-        List<Double> layerNumberToPredictedDuration = new ArrayList<Double>();
+        Map<Integer, Double> layerNumberToPredictedDuration_E = new HashMap<>();
+        Map<Integer, Double> layerNumberToPredictedDuration_D = new HashMap<>();
+        Map<Integer, Double> layerNumberToPredictedDuration_feedrateIndependent = new HashMap<>();
 
         layerNumberToLineNumber.add(6);
         layerNumberToLineNumber.add(7);
         layerNumberToLineNumber.add(8);
 
-        layerNumberToPredictedDuration.add(1.2);
-        layerNumberToPredictedDuration.add(2.3);
-        layerNumberToPredictedDuration.add(3.4);
+        layerNumberToPredictedDuration_E.put(0, 1.2);
+        layerNumberToPredictedDuration_E.put(1, 2.3);
+        layerNumberToPredictedDuration_E.put(2, 3.4);
 
         PrintJobStatistics printJobStatistics = new PrintJobStatistics(
                 projectName,
@@ -48,8 +52,11 @@ public class PrintJobStatisticsTest
                 lineNumberOfFirstExtrusion,
                 volumeUsed,
                 0,
-                lineNumberOfFirstExtrusion, layerNumberToLineNumber,
-                layerNumberToPredictedDuration,
+                lineNumberOfFirstExtrusion,
+                layerNumberToLineNumber,
+                layerNumberToPredictedDuration_E,
+                layerNumberToPredictedDuration_D,
+                layerNumberToPredictedDuration_feedrateIndependent,
                 6.9);
 
         File testFile = temporaryFolder.newFile();
@@ -63,8 +70,12 @@ public class PrintJobStatisticsTest
                 readIntoPrintJobStatistics.getLayerHeight(), 0.001);
         assertEquals(printJobStatistics.getLayerNumberToLineNumber(),
                 readIntoPrintJobStatistics.getLayerNumberToLineNumber());
-        assertEquals(printJobStatistics.getLayerNumberToPredictedDuration(),
-                readIntoPrintJobStatistics.getLayerNumberToPredictedDuration());
+        assertEquals(printJobStatistics.getLayerNumberToPredictedDuration_E_FeedrateDependent(),
+                readIntoPrintJobStatistics.getLayerNumberToPredictedDuration_E_FeedrateDependent());
+        assertEquals(printJobStatistics.getLayerNumberToPredictedDuration_D_FeedrateDependent(),
+                readIntoPrintJobStatistics.getLayerNumberToPredictedDuration_D_FeedrateDependent());
+        assertEquals(printJobStatistics.getLayerNumberToPredictedDuration_FeedrateIndependent(),
+                readIntoPrintJobStatistics.getLayerNumberToPredictedDuration_FeedrateIndependent());
         assertEquals(printJobStatistics.getLineNumberOfFirstExtrusion(),
                 readIntoPrintJobStatistics.getLineNumberOfFirstExtrusion());
         assertEquals(printJobStatistics.getNumberOfLines(),

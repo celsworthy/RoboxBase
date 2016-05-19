@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -23,7 +24,9 @@ public class PrintJobStatistics
     private double eVolumeUsed;
     private double dVolumeUsed;
     private List<Integer> layerNumberToLineNumber;
-    private List<Double> layerNumberToPredictedDuration;
+    private Map<Integer, Double> layerNumberToPredictedDuration_E_FeedrateDependent;
+    private Map<Integer, Double> layerNumberToPredictedDuration_D_FeedrateDependent;
+    private Map<Integer, Double> layerNumberToPredictedDuration_FeedrateIndependent;
     private double predictedDuration;
     private int lineNumberOfFirstExtrusion;
 
@@ -37,7 +40,9 @@ public class PrintJobStatistics
         dVolumeUsed = 0;
         lineNumberOfFirstExtrusion = 0;
         layerNumberToLineNumber = null;
-        layerNumberToPredictedDuration = null;
+        layerNumberToPredictedDuration_E_FeedrateDependent = null;
+        layerNumberToPredictedDuration_D_FeedrateDependent = null;
+        layerNumberToPredictedDuration_FeedrateIndependent = null;
         predictedDuration = 0;
     }
 
@@ -50,8 +55,11 @@ public class PrintJobStatistics
             double dVolumeUsed,
             int lineNumberOfFirstExtrusion,
             List<Integer> layerNumberToLineNumber,
-            List<Double> layerNumberToPredictedDuration,
-            double predictedDuration)
+            Map<Integer, Double> layerNumberToPredictedDuration_E_FeedrateDependent,
+            Map<Integer, Double> layerNumberToPredictedDuration_D_FeedrateDependent,
+            Map<Integer, Double> layerNumberToPredictedDuration_FeedrateIndependent,
+            double predictedDuration
+    )
     {
         this.projectName = projectName;
         this.profileName = profileName;
@@ -61,7 +69,9 @@ public class PrintJobStatistics
         this.dVolumeUsed = dVolumeUsed;
         this.lineNumberOfFirstExtrusion = lineNumberOfFirstExtrusion;
         this.layerNumberToLineNumber = layerNumberToLineNumber;
-        this.layerNumberToPredictedDuration = layerNumberToPredictedDuration;
+        this.layerNumberToPredictedDuration_E_FeedrateDependent = layerNumberToPredictedDuration_E_FeedrateDependent;
+        this.layerNumberToPredictedDuration_D_FeedrateDependent = layerNumberToPredictedDuration_D_FeedrateDependent;
+        this.layerNumberToPredictedDuration_FeedrateIndependent = layerNumberToPredictedDuration_FeedrateIndependent;
         this.predictedDuration = predictedDuration;
     }
 
@@ -104,12 +114,19 @@ public class PrintJobStatistics
         return layerNumberToLineNumber;
     }
 
-    /**
-     * @return the layerNumberToPredictedDuration
-     */
-    public List<Double> getLayerNumberToPredictedDuration()
+    public Map<Integer, Double> getLayerNumberToPredictedDuration_E_FeedrateDependent()
     {
-        return layerNumberToPredictedDuration;
+        return layerNumberToPredictedDuration_E_FeedrateDependent;
+    }
+
+    public Map<Integer, Double> getLayerNumberToPredictedDuration_D_FeedrateDependent()
+    {
+        return layerNumberToPredictedDuration_D_FeedrateDependent;
+    }
+
+    public Map<Integer, Double> getLayerNumberToPredictedDuration_FeedrateIndependent()
+    {
+        return layerNumberToPredictedDuration_FeedrateIndependent;
     }
 
     /**
@@ -178,9 +195,19 @@ public class PrintJobStatistics
         this.layerNumberToLineNumber = layerNumberToLineNumber;
     }
 
-    public void setLayerNumberToPredictedDuration(List<Double> layerNumberToPredictedDuration)
+    public void setLayerNumberToPredictedDuration_E_FeedrateDependent(Map<Integer, Double> layerNumberToPredictedDuration_E_FeedrateDependent)
     {
-        this.layerNumberToPredictedDuration = layerNumberToPredictedDuration;
+        this.layerNumberToPredictedDuration_E_FeedrateDependent = layerNumberToPredictedDuration_E_FeedrateDependent;
+    }
+
+    public void setLayerNumberToPredictedDuration_D_FeedrateDependent(Map<Integer, Double> layerNumberToPredictedDuration_D_FeedrateDependent)
+    {
+        this.layerNumberToPredictedDuration_D_FeedrateDependent = layerNumberToPredictedDuration_D_FeedrateDependent;
+    }
+
+    public void setLayerNumberToPredictedDuration_FeedrateIndependent(Map<Integer, Double> layerNumberToPredictedDuration_FeedrateIndependent)
+    {
+        this.layerNumberToPredictedDuration_FeedrateIndependent = layerNumberToPredictedDuration_FeedrateIndependent;
     }
 
     public void setPredictedDuration(double predictedDuration)

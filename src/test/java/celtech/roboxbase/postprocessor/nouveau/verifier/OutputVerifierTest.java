@@ -68,9 +68,7 @@ public class OutputVerifierTest
         OutputVerifier instance = new OutputVerifier();
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
-        assertEquals(2, verifierResults.size());
-        assertEquals(VerifierResult.ResultType.EXTRUDE_NOT_FULLY_OPEN, verifierResults.get(0).getResultType());
-        assertEquals(VerifierResult.ResultType.EXTRUDE_NOT_FULLY_OPEN, verifierResults.get(1).getResultType());
+        assertEquals(0, verifierResults.size());
     }
 
     /**
@@ -174,4 +172,40 @@ public class OutputVerifierTest
         assertEquals(0, verifierResults.size());
     }
 
+    /**
+     * Test of verifyAllLayers method, of class OutputVerifier.
+     */
+    @Test
+    public void testVerifyAllLayers_nozzleCloseInExtrusionWithRetract()
+    {
+        System.out.println("nozzleCloseInExtrusionWithRetract");
+
+        List<LayerDefinition> layers = new ArrayList<>();
+        layers.add(new LayerDefinition(0, new ToolDefinition[]
+        {
+            new ToolDefinition(0, 5),
+            new ToolDefinition(1, 500)
+        }));
+
+        List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
+
+        NozzleValvePositionNode openNozzle = new NozzleValvePositionNode();
+        openNozzle.getNozzlePosition().setB(1.0);
+        allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0).addChildAtStart(openNozzle);
+
+        ExtrusionNode extrusionToOperateOn = ((ExtrusionNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0).getAbsolutelyTheLastEvent());
+        extrusionToOperateOn.getExtrusion().dNotInUse();
+        extrusionToOperateOn.getExtrusion().eNotInUse();
+        extrusionToOperateOn.getNozzlePosition().setB(0);
+        extrusionToOperateOn.getExtrusion().setE(-10);
+
+        NozzleValvePositionNode openNozzle2 = new NozzleValvePositionNode();
+        openNozzle2.getNozzlePosition().setB(1.0);
+        allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).addChildAtStart(openNozzle2);
+
+        OutputVerifier instance = new OutputVerifier();
+        List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
+
+        assertEquals(0, verifierResults.size());
+    }
 }

@@ -678,7 +678,7 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
                 paramFile,
                 "RBX01-DM",
                 null);
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, 0, 0, 0, 10, null, null, null, 0, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1);
 
         OutputUtilities opUtils = new OutputUtilities();
 

@@ -31,11 +31,6 @@ public class FilamentSaver
             null, null
         };
 
-        double[] toolUseSinceLastClose =
-        {
-            0, 0
-        };
-
         // We assume that both heaters were on at the start
         boolean[] nozzleHeaterOn =
         {
@@ -70,7 +65,7 @@ public class FilamentSaver
                     //Do we need to switch the heater on for this tool?
                     if (nozzleHeaterOn[thisToolNumber] == false)
                     {
-                        double targetTimeAfterStart = Math.max(0, toolSelect.getFinishTimeFromStartOfPrint_secs().get() - toolSelect.getEstimatedDuration() - heatUpTime_secs);
+                        double targetTimeAfterStart = Math.max(0, toolSelect.getFinishTimeFromStartOfPrint_secs().get() - heatUpTime_secs);
 
                         FoundHeatUpNode foundNodeToHeatBefore = findNodeToHeatBefore(allLayerPostProcessResults, layerCounter, toolSelect, targetTimeAfterStart);
 
@@ -88,7 +83,7 @@ public class FilamentSaver
 
                     //Do we need to switch the other tool heater off?
                     double finishTimeForOtherTool = (lastToolSelects[otherToolNumber] != null) ? lastToolSelects[otherToolNumber].getFinishTimeFromStartOfPrint_secs().get() : 0;
-                    if ((toolSelect.getFinishTimeFromStartOfPrint_secs().get() - finishTimeForOtherTool + toolUseSinceLastClose[thisToolNumber] > switchOffTime_secs)
+                    if ((toolSelect.getFinishTimeFromStartOfPrint_secs().get() - finishTimeForOtherTool > switchOffTime_secs)
                             && nozzleHeaterOn[otherToolNumber])
                     {
                         if (lastToolSelects[otherToolNumber] == null)
@@ -103,12 +98,7 @@ public class FilamentSaver
                             MCodeNode heaterOffNode = generateHeaterOffNode(((LayerNode)lastToolSelects[otherToolNumber].getParent().get()).getLayerNumber(), otherToolNumber);
                             nodesToAdd.add(new NodeAddStore(lastToolSelects[otherToolNumber], heaterOffNode, true));
                         }
-                        toolUseSinceLastClose[thisToolNumber] = 0;
-                        toolUseSinceLastClose[otherToolNumber] = 0;
                         nozzleHeaterOn[otherToolNumber] = false;
-                    } else
-                    {
-                        toolUseSinceLastClose[thisToolNumber] += toolSelect.getEstimatedDuration();
                     }
 
                     //Remember things for next iteration...
@@ -136,10 +126,12 @@ public class FilamentSaver
         switch (heaterNumber)
         {
             case 0:
+                //Extruder D
                 heaterOffNode.setSNumber(0);
                 heaterOffNode.appendCommentText("Switch heater 0 off");
                 break;
             case 1:
+                //Extruder E
                 heaterOffNode.setTNumber(0);
                 heaterOffNode.appendCommentText("Switch heater 1 off");
                 break;
@@ -155,10 +147,12 @@ public class FilamentSaver
         switch (heaterNumber)
         {
             case 0:
+                //Extruder D
                 heaterOnNode.setSOnly(true);
                 heaterOnNode.appendCommentText("Switch heater 0 on");
                 break;
             case 1:
+                //Extruder E
                 heaterOnNode.setTOnly(true);
                 heaterOnNode.appendCommentText("Switch heater 1 on");
                 break;
