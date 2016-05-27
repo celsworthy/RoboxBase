@@ -157,7 +157,7 @@ public class PostProcessor
         nodeManagementUtilities = new NodeManagementUtilities(featureSet);
         nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
         closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType);
-        heaterSaver = new FilamentSaver();
+        heaterSaver = new FilamentSaver(100, 120);
         outputVerifier = new OutputVerifier();
     }
 

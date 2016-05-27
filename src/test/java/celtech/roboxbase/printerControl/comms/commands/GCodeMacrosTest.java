@@ -18,20 +18,26 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     {
         System.out.println("scoreMacroFilename");
 
+        // File: DC, DC, DC
+        // Specification: DC, DC, DC
         String filename1 = "before_print.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
                 null,
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(0, score1);
+        assertEquals(6, score1);
 
+        // File: DM, DC, DC
+        // Specification: DC, DC, DC
         String filename2 = "before_print#RBX01-DM.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
                 null,
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(-1, score2);
+        assertEquals(2, score2);
 
+        // File: DM, 0 DC
+        // Specification: DC, DC, DC
         String filename3 = "before_print#RBX01-DM#N0.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
                 null,
@@ -39,19 +45,21 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
                 GCodeMacros.SafetyIndicator.DONT_CARE);
         assertEquals(-2, score3);
 
+        // File: DM, 0 DC
+        // Specification: DM, DC, DC
         String filename4 = "before_print#RBX01-DM#N0.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
                 "RBX01-DM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(0, score4);
+        assertEquals(2, score4);
 
         String filename5 = "before_print#RBX01-DM#N0.gcode";
         int score5 = GCodeMacros.scoreMacroFilename(filename5,
                 "RBX01-DM",
                 GCodeMacros.NozzleUseIndicator.NOZZLE_0,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(2, score5);
+        assertEquals(6, score5);
 
         String filename6 = "before_print#RBX01-DM#N0.gcode";
         int score6 = GCodeMacros.scoreMacroFilename(filename6,
@@ -65,14 +73,14 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(0, score7);
+        assertEquals(5, score7);
 
         String filename8 = "before_print#RBX01-SM.gcode";
         int score8 = GCodeMacros.scoreMacroFilename(filename8,
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(1, score8);
+        assertEquals(6, score8);
     }
 
     @Test
@@ -89,27 +97,27 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
-        assertEquals(-3, score1);
+        assertEquals(0, score1);
 
         String filename2 = "eject_stuck_material#N1.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
-        assertEquals(-1, score2);
+        assertEquals(4, score2);
 
         String filename3 = "eject_stuck_material#RBX01-DM#N0.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
-        assertEquals(-1, score3);
+        assertEquals(1, score3);
 
         String filename4 = "eject_stuck_material#RBX01-DM#N1.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
-        assertEquals(1, score4);
+        assertEquals(5, score4);
     }
 }

@@ -21,23 +21,18 @@ public enum Macro
     TEST_Z("z_test", "printerStatus.macro.testZ", "M9"),
     LEVEL_Y("level_Y", "printerStatus.macro.levellingY", "M10"),
     CLEAN_NOZZLE("nozzle_clean", "printerStatus.macro.cleanNozzle", "M11"),
-    
     PURGE_MATERIAL("PurgeMaterial", "printerStatus.purging", "M13"),
-    
     EJECT_STUCK_MATERIAL("eject_stuck_material", "printerStatus.macro.ejectStuckMaterial", "M18"),
-    
     REMOVE_HEAD("Remove_Head", "printerStatus.macro.removeHead", "M20"),
-    
     MINI_PURGE("Short_Purge", "printerStatus.macro.miniPurge", "M21"),
-    
     BEFORE_NOZZLE_CALIBRATION("before_Nozzle_Cal", "printerStatus.macro.beforeNozzleCal", "M22"),
-    
     // Commissionator macros
     COMMISSIONING_XMOTOR("x_commissioning", "printerStatus.macro.testX", "C1"),
     COMMISSIONING_YMOTOR("y_commissioning", "printerStatus.macro.testY", "C2"),
     COMMISSIONING_ZMOTOR_DIRECTION("commissioning_level_gantry_test", "printerStatus.macro.testZ", "C3"),
     COMMISSIONING_HEAD_FLUSH("commissioning_head_flush", "printerStatus.macro.headFlush", "C4"),
-    COMMISSIONING_EJECT_STUCK_MATERIAL("commissioning_eject_stuck_material", "printerStatus.macro.ejectStuckMaterial", "C5");
+    COMMISSIONING_EJECT_STUCK_MATERIAL("commissioning_eject_stuck_material", "printerStatus.macro.ejectStuckMaterial", "C5"),
+    COMMISSIONING_EJECT("commissioning_eject", "printerStatus.macro.ejectingFilament", "C6");
 
     private String macroFileName;
     private String i18nKey;
@@ -67,11 +62,11 @@ public enum Macro
         String jobNumber = String.format("%1$-16s", macroJobNumber).replace(' ', '-');
         return jobNumber;
     }
-    
+
     public static Optional<Macro> getMacroForPrintJobID(String printJobID)
     {
         Optional<Macro> foundMacro = Optional.empty();
-        
+
         for (Macro macro : Macro.values())
         {
             if (macro.getMacroJobNumber().equalsIgnoreCase(printJobID.trim()))
@@ -80,7 +75,7 @@ public enum Macro
                 break;
             }
         }
-        
+
         return foundMacro;
     }
 }
