@@ -133,6 +133,10 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 || printer.headProperty().get() == null)
         {
             headFileToUse = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
+                ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
+                ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+                ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
+                ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
         } else
         {
             headFileToUse = HeadContainer.getHeadByID(printer.headProperty().get().typeCodeProperty().get());

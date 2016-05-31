@@ -3,6 +3,7 @@ package celtech.roboxbase.postprocessor.nouveau.nodes.providers;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 /**
@@ -133,6 +134,11 @@ public final class Movement implements Renderable
     public Vector2D toVector2D()
     {
         return new Vector2D(x, y);
+    }
+    
+    public Vector3D toVector3D()
+    {
+        return new Vector3D(x, y, z);
     }
     
     public Movement clone()
