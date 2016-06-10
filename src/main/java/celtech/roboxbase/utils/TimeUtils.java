@@ -63,6 +63,15 @@ public class TimeUtils
         return String.format("%02d:%02d", hours, minutes);
     }
 
+    public static String convertToHoursMinutesSeconds(final int secondsInput)
+    {
+        int minutes = (int) (secondsInput / 60);
+        int hours = minutes / 60;
+        minutes = minutes - (60 * hours);
+        int seconds = secondsInput - (minutes * 60) - (hours * 3600);
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
     public void timerStart(Object referenceObject, String timerTitle)
     {
         String objectName = referenceObject.toString();
@@ -134,13 +143,6 @@ public class TimeUtils
                 timeSoFar_ms = timerMap.get(timerTitle).getTimeSoFar_ms();
                 foundTimer = true;
             }
-        }
-
-        if (!foundTimer)
-        {
-            throw new TimerNotFoundException("Attempted to get time so far for a non-existent timer for object:" + objectName
-                    + " class:" + referenceObject.getClass().getCanonicalName()
-                    + " timerTitle: " + timerTitle);
         }
 
         return timeSoFar_ms;

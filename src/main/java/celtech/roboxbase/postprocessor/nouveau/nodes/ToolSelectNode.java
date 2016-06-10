@@ -1,6 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau.nodes;
 
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
+import java.util.Optional;
 
 /**
  *
@@ -15,6 +16,7 @@ public class ToolSelectNode extends GCodeEventNode implements Renderable
     private int toolNumber = -1;
     private boolean outputSuppressed = false;
     private double estimatedDuration_ignoresFeedrate = 0;
+    private Optional<Double> startTimeFromStartOfPrint_secs = Optional.empty();
 
     public int getToolNumber()
     {
@@ -44,6 +46,16 @@ public class ToolSelectNode extends GCodeEventNode implements Renderable
     public double getEstimatedDuration()
     {
         return estimatedDuration_ignoresFeedrate;
+    }
+
+    public Optional<Double> getStartTimeFromStartOfPrint_secs()
+    {
+        return startTimeFromStartOfPrint_secs;
+    }
+
+    public void setStartTimeFromStartOfPrint_secs(double value)
+    {
+        startTimeFromStartOfPrint_secs = Optional.of(value);
     }
 
     @Override

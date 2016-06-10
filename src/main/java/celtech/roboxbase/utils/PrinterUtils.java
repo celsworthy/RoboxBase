@@ -13,6 +13,7 @@ import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.printing.PrintService;
 import celtech.roboxbase.utils.tasks.Cancellable;
+import java.util.List;
 import java.util.Set;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -21,6 +22,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -265,13 +267,16 @@ public class PrinterUtils
      * @param usedExtruders
      * @return 
      */
-    public static boolean isPurgeNecessary(Printer printer, Set<Integer> usedExtruders)
+    public static boolean isPurgeNecessary(Printer printer, List<Boolean> usedExtruders)
     {
         boolean purgeIsNecessary = false;
 
-        for (Integer extruderNumber : usedExtruders)
+        for (int extruderNumber = 0; extruderNumber < usedExtruders.size(); extruderNumber++)
         {
+            if (usedExtruders.get(extruderNumber))
+            {
             purgeIsNecessary |= isPurgeNecessaryForExtruder(printer, extruderNumber);
+            }
         };
 
         return purgeIsNecessary;
@@ -341,7 +346,7 @@ public class PrinterUtils
      * @param printer
      * @return
      */
-    public PurgeResponse offerPurgeIfNecessary(Printer printer, Set<Integer> usedExtruders)
+    public PurgeResponse offerPurgeIfNecessary(Printer printer, ObservableList<Boolean> usedExtruders)
     {
         PurgeResponse purgeConsent = PurgeResponse.NOT_NECESSARY;
         if (isPurgeNecessary(printer, usedExtruders) && purgeDialogVisible == false)

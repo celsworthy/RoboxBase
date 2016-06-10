@@ -67,6 +67,7 @@ public class TestDataGenerator
 
             if (updateDuration)
             {
+                tsNode.setStartTimeFromStartOfPrint_secs(currentLayerTime);
                 tsNode.setEstimatedDuration(tool.getDuration());
                 tsNode.setFinishTimeFromStartOfPrint_secs(currentLayerTime + tool.getDuration());
             }

@@ -674,10 +674,14 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
             nozzleProxies.add(proxy);
         }
 
+        NodeManagementUtilities nmu = new NodeManagementUtilities(ppFeatures, nozzleProxies);
+
         UtilityMethods utilityMethods = new UtilityMethods(ppFeatures,
                 paramFile,
                 "RBX01-DM",
-                null);
+                nmu,
+                null
+        );
         LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1);
 
         OutputUtilities opUtils = new OutputUtilities();

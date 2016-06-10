@@ -1851,12 +1851,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         double bedTarget = 0;
         double ambientTarget = 0;
 
-        Set<Integer> usedExtruders = printableMeshes.getUsedExtruders();
+        List<Boolean> usedExtruders = printableMeshes.getUsedExtruders();
 
         boolean needToOverrideTempsForReel0 = false;
         if (filament0 != FilamentContainer.UNKNOWN_FILAMENT)
         {
-            if (usedExtruders.contains(0)
+            if (usedExtruders.get(0)
                     && !reels.containsKey(0)
                     || (reels.containsKey(0) && !reels.get(0).isSameAs(filament0)))
             {
@@ -1869,7 +1869,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         {
             // Never attempt to override for filament 1 if we aren't using a dual material head
             if (headProperty().get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD
-                    && usedExtruders.contains(1)
+                    && usedExtruders.get(1)
                     && !reels.containsKey(1)
                     || (reels.containsKey(1) && !reels.get(1).isSameAs(filament1)))
             {
@@ -1878,12 +1878,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         }
 
         //Set up bed and ambient targets
-        if (usedExtruders.contains(0) && !usedExtruders.contains(1))
+        if (usedExtruders.get(0) && !usedExtruders.get(1))
         {
             bedFirstLayerTarget = filament0.getFirstLayerBedTemperature();
             bedTarget = filament0.getBedTemperature();
             ambientTarget = filament0.getAmbientTemperature();
-        } else if (!usedExtruders.contains(0) && usedExtruders.contains(1))
+        } else if (!usedExtruders.get(0) && usedExtruders.get(1))
         {
             bedFirstLayerTarget = filament1.getFirstLayerBedTemperature();
             bedTarget = filament1.getBedTemperature();

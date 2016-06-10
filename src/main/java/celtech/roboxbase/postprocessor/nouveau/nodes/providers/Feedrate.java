@@ -1,9 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau.nodes.providers;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Locale;
-
 /**
  *
  * @author Ian
@@ -12,7 +8,7 @@ public final class Feedrate implements Renderable
 {
     private boolean isFeedRateSet = false;
     private int feedRate_mmPerMin = 0;
-    private int feedRate_mmPerSec = 0;
+    private double feedRate_mmPerSec = 0;
     
     public boolean isFeedrateSet()
     {
@@ -34,7 +30,7 @@ public final class Feedrate implements Renderable
      *
      * @return
      */
-    public int getFeedRate_mmPerSec()
+    public double getFeedRate_mmPerSec()
     {
         return feedRate_mmPerSec;
     }
@@ -47,18 +43,18 @@ public final class Feedrate implements Renderable
     {
         isFeedRateSet = true;
         this.feedRate_mmPerMin = feedRate_mmPerMin;
-        this.feedRate_mmPerSec = (int)((double)feedRate_mmPerMin / 60.0);
+        this.feedRate_mmPerSec = feedRate_mmPerMin / 60.0;
     }
 
     /**
      *
      * @param feedRate_mmPerSec
      */
-    public void setFeedRate_mmPerSec(int feedRate_mmPerSec)
+    public void setFeedRate_mmPerSec(double feedRate_mmPerSec)
     {
         isFeedRateSet = true;
         this.feedRate_mmPerSec = feedRate_mmPerSec;
-        this.feedRate_mmPerMin = feedRate_mmPerSec * 60;
+        this.feedRate_mmPerMin = (int)(feedRate_mmPerSec * 60);
     }
 
     /**

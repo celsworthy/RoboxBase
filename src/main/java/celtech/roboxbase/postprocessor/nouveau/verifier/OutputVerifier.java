@@ -1,6 +1,8 @@
 package celtech.roboxbase.postprocessor.nouveau.verifier;
 
 import celtech.roboxbase.postprocessor.nouveau.LayerPostProcessResult;
+import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeature;
+import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
@@ -21,6 +23,13 @@ import java.util.Set;
  */
 public class OutputVerifier
 {
+
+    private final PostProcessorFeatureSet featureSet;
+
+    public OutputVerifier(PostProcessorFeatureSet featureSet)
+    {
+        this.featureSet = featureSet;
+    }
 
     public List<VerifierResult> verifyAllLayers(final List<LayerPostProcessResult> allLayerPostProcessResults, final HeadType headType)
     {
@@ -113,7 +122,8 @@ public class OutputVerifier
                         }
                     }
 
-                    if (nozzlePosition < 1
+                    if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES)
+                            && nozzlePosition < 1
                             && ((((ExtrusionNode) node).getExtrusion().isDInUse() && ((ExtrusionNode) node).getExtrusion().getD() > 0)
                             || (((ExtrusionNode) node).getExtrusion().isEInUse() && ((ExtrusionNode) node).getExtrusion().getE() > 0))
                             && !resultTypes.contains(ResultType.EXTRUDE_NOT_FULLY_OPEN))

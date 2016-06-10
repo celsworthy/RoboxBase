@@ -1,5 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
@@ -28,32 +29,44 @@ public class NodeManagementUtilities
 {
 
     private final PostProcessorFeatureSet featureSet;
+    private final List<NozzleProxy> nozzleProxies;
 
-    public NodeManagementUtilities(PostProcessorFeatureSet featureSet)
+    public NodeManagementUtilities(PostProcessorFeatureSet featureSet,
+            List<NozzleProxy> nozzleProxies)
     {
         this.featureSet = featureSet;
+        this.nozzleProxies = nozzleProxies;
     }
 
-    protected void removeUnretractNodes(LayerNode layerNode)
+    protected void rehabilitateUnretractNodes(LayerNode layerNode)
     {
-        if (featureSet.isEnabled(PostProcessorFeature.REMOVE_ALL_UNRETRACTS))
-        {
-            Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
-            List<UnretractNode> nodesToDelete = new ArrayList<>();
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+        List<UnretractNode> nodesToDelete = new ArrayList<>();
+        NozzleProxy nozzleInUse = nozzleProxies.get(0);
 
-            while (layerIterator.hasNext())
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+
+            if (node instanceof ToolSelectNode)
             {
-                GCodeEventNode node = layerIterator.next();
-                if (node instanceof UnretractNode)
+                nozzleInUse = nozzleProxies.get(((ToolSelectNode) node).getToolNumber());
+            } else if (node instanceof UnretractNode)
+            {
+                if (featureSet.isEnabled(PostProcessorFeature.REMOVE_ALL_UNRETRACTS))
                 {
                     nodesToDelete.add((UnretractNode) node);
+                } else
+                {
+                    //We need to put the appropriate value in for the unretract
+                    ((UnretractNode) node).getExtrusion().setE(nozzleInUse.getNozzleParameters().getEjectionVolume());
                 }
             }
+        }
 
-            for (UnretractNode unretractNode : nodesToDelete)
-            {
-                unretractNode.removeFromParent();
-            }
+        for (UnretractNode unretractNode : nodesToDelete)
+        {
+            unretractNode.removeFromParent();
         }
     }
 
@@ -123,6 +136,8 @@ public class NodeManagementUtilities
         List<SectionNode> sectionNodes = new ArrayList<>();
         SectionNode lastSectionNode = null;
 
+        NozzleProxy nozzleInUse = nozzleProxies.get(0);
+
         while (layerIterator.hasNext())
         {
             GCodeEventNode node = layerIterator.next();
@@ -132,6 +147,8 @@ public class NodeManagementUtilities
                 sectionNodes.clear();
                 lastSectionNode = null;
                 lastExtrusionNode = null;
+
+                nozzleInUse = nozzleProxies.get(((ToolSelectNode) node).getToolNumber());
             } else if (node instanceof ExtrusionNode)
             {
                 Optional<SectionNode> parentSection = lookForParentSectionNode(node);
@@ -153,6 +170,13 @@ public class NodeManagementUtilities
                 RetractNode retractNode = (RetractNode) node;
                 retractNode.setExtrusionSinceLastRetract(extrusionInRetract);
                 retractNode.setSectionsToConsider(sectionNodes);
+
+                if (!featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
+                {
+                    //We need to put the appropriate value in for the retract
+                    retractNode.getExtrusion().setE(-nozzleInUse.getNozzleParameters().getEjectionVolume());
+                }
+
                 List<SectionNode> newSectionNodes = new ArrayList<>();
                 newSectionNodes.addAll(sectionNodes);
                 sectionNodes = newSectionNodes;
@@ -466,7 +490,7 @@ public class NodeManagementUtilities
             this.availableExtrusion = availableExtrusion;
             this.lastNodeExamined = lastNodeExamined;
         }
-        
+
         public double getAvailableExtrusion()
         {
             return availableExtrusion;

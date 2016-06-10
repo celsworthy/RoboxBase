@@ -16,6 +16,11 @@ public class PostProcessorFeatureSet
         featureSet.add(feature);
     }
     
+    public void disableFeature(PostProcessorFeature feature)
+    {
+        featureSet.remove(feature);
+    }
+    
     public boolean isEnabled(PostProcessorFeature feature)
     {
         return featureSet.contains(feature);

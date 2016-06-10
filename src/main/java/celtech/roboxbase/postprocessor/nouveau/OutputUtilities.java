@@ -9,6 +9,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalcResult;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
+import celtech.roboxbase.utils.TimeUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,23 +62,28 @@ public class OutputUtilities
             }
             writer.writeOutput("; End of Post print gcode\n");
             writer.writeOutput(";\n");
+            writer.writeOutput("; Time and volume summary\n");
+            writer.writeOutput("; =======================\n");
+            writer.writeOutput(";\n");
             writer.writeOutput("; Extruder E\n");
             writer.writeOutput("; ----------\n");
             writer.writeOutput("; Volume of material - " + timeAndVolumeCalcResult.getExtruderEStats().getVolume() + "\n");
-            writer.writeOutput("; Feedrate dependent time - " + timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration() + " seconds\n");
+            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("; ==========\n");
             writer.writeOutput("; Extruder D\n");
             writer.writeOutput("; ----------\n");
             writer.writeOutput("; Volume of material - " + timeAndVolumeCalcResult.getExtruderDStats().getVolume() + "\n");
-            writer.writeOutput("; Feedrate dependent time - " + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration() + " seconds\n");
-            writer.writeOutput("; Activities independent of feedrate\n");
+            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("; ==========\n");
             writer.writeOutput("; ----------------------------------\n");
-            writer.writeOutput("; Time - " + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration() + " seconds\n");
-            writer.writeOutput("; =======================================================\n");
+            writer.writeOutput("; Feedrate independent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("==================================================================\n");
             writer.writeOutput("; Total print time estimate - "
-                    + timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
+                    + TimeUtils.convertToHoursMinutesSeconds((int) (timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
                     + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
-                    + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()
-                    + " seconds\n");
+                            + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()))
+                    + "\n");
+            writer.writeOutput("===================================================================\n");
             writer.writeOutput(";\n");
         } catch (IOException | MacroLoadException ex)
         {
@@ -102,13 +108,13 @@ public class OutputUtilities
                 nozzleTemp.setTOnly(true);
             }
 
-            nozzleTemp.setCommentText("Go to nozzle temperature from loaded reel - don't wait");
+            nozzleTemp.setCommentText(" Go to nozzle temperature from loaded reel - don't wait");
             writer.writeOutput(nozzleTemp.renderForOutput());
             writer.newLine();
 
             MCodeNode bedTemp = new MCodeNode(140);
 
-            bedTemp.setCommentText("Go to bed temperature from loaded reel - don't wait");
+            bedTemp.setCommentText(" Go to bed temperature from loaded reel - don't wait");
             writer.writeOutput(bedTemp.renderForOutput());
             writer.newLine();
         } catch (IOException ex)

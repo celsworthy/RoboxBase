@@ -1,6 +1,8 @@
 package celtech.roboxbase.postprocessor.nouveau.verifier;
 
 import celtech.roboxbase.postprocessor.nouveau.LayerPostProcessResult;
+import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeature;
+import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
 import celtech.roboxbase.postprocessor.nouveau.helpers.LayerDefinition;
 import celtech.roboxbase.postprocessor.nouveau.helpers.TestDataGenerator;
 import celtech.roboxbase.postprocessor.nouveau.helpers.ToolDefinition;
@@ -65,7 +67,10 @@ public class OutputVerifierTest
 
         List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
 
-        OutputVerifier instance = new OutputVerifier();
+        PostProcessorFeatureSet featureSet = new PostProcessorFeatureSet();
+        featureSet.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+
+        OutputVerifier instance = new OutputVerifier(featureSet);
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
         assertEquals(0, verifierResults.size());
@@ -92,7 +97,10 @@ public class OutputVerifierTest
         openNozzle.getNozzlePosition().setB(1.0);
         allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0).addChildAtStart(openNozzle);
 
-        OutputVerifier instance = new OutputVerifier();
+        PostProcessorFeatureSet featureSet = new PostProcessorFeatureSet();
+        featureSet.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+
+        OutputVerifier instance = new OutputVerifier(featureSet);
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
         assertEquals(0, verifierResults.size());
@@ -130,7 +138,10 @@ public class OutputVerifierTest
         heatNozzle0.setSOnly(true);
         allLayerPostProcessResults.get(0).getLayerData().getChildren().get(2).addChildAtStart(heatNozzle0);
 
-        OutputVerifier instance = new OutputVerifier();
+        PostProcessorFeatureSet featureSet = new PostProcessorFeatureSet();
+        featureSet.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+
+        OutputVerifier instance = new OutputVerifier(featureSet);
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
         assertEquals(0, verifierResults.size());
@@ -166,7 +177,10 @@ public class OutputVerifierTest
         openNozzle2.getNozzlePosition().setB(1.0);
         allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).addChildAtStart(openNozzle2);
 
-        OutputVerifier instance = new OutputVerifier();
+        PostProcessorFeatureSet featureSet = new PostProcessorFeatureSet();
+        featureSet.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+
+        OutputVerifier instance = new OutputVerifier(featureSet);
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
         assertEquals(0, verifierResults.size());
@@ -203,7 +217,10 @@ public class OutputVerifierTest
         openNozzle2.getNozzlePosition().setB(1.0);
         allLayerPostProcessResults.get(0).getLayerData().getChildren().get(1).addChildAtStart(openNozzle2);
 
-        OutputVerifier instance = new OutputVerifier();
+        PostProcessorFeatureSet featureSet = new PostProcessorFeatureSet();
+        featureSet.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+
+        OutputVerifier instance = new OutputVerifier(featureSet);
         List<VerifierResult> verifierResults = instance.verifyAllLayers(allLayerPostProcessResults, HeadType.DUAL_MATERIAL_HEAD);
 
         assertEquals(0, verifierResults.size());

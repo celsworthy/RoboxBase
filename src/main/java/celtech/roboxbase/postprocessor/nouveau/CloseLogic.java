@@ -51,13 +51,14 @@ public class CloseLogic
     private final SlicerParametersFile settings;
 
     public CloseLogic(SlicerParametersFile settings,
-            PostProcessorFeatureSet featureSet, String headType)
+            PostProcessorFeatureSet featureSet, String headType,
+            NodeManagementUtilities nodeManagementUtilities)
     {
         this.settings = settings;
         this.featureSet = featureSet;
 
         closeUtilities = new CloseUtilities(settings, headType);
-        nodeManagementUtilities = new NodeManagementUtilities(featureSet);
+        this.nodeManagementUtilities = nodeManagementUtilities;
     }
 
     protected InScopeEvents extractAvailableMovements(GCodeEventNode startingNode,

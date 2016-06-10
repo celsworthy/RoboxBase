@@ -70,7 +70,7 @@ public class PostProcessor
     private final String outputVerifierTimerName = "OutputVerifier";
 
     private final String nameOfPrint;
-    private final Set<Integer> usedExtruders;
+    private final List<Boolean> usedExtruders;
     private final Printer printer;
     private final String gcodeFileToProcess;
     private final String gcodeOutputFile;
@@ -100,7 +100,7 @@ public class PostProcessor
     private final TimeUtils timeUtils = new TimeUtils();
 
     public PostProcessor(String nameOfPrint,
-            Set<Integer> usedExtruders,
+            List<Boolean> usedExtruders,
             Printer printer,
             String gcodeFileToProcess,
             String gcodeOutputFile,
@@ -153,12 +153,18 @@ public class PostProcessor
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
         }
 
-        postProcessorUtilityMethods = new UtilityMethods(featureSet, settings, headType, cameraTriggerData);
-        nodeManagementUtilities = new NodeManagementUtilities(featureSet);
+        if (headFile.getValves() == Head.ValveType.NOT_FITTED)
+        {
+            featureSet.disableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
+            featureSet.disableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+        }
+
+        nodeManagementUtilities = new NodeManagementUtilities(featureSet, nozzleProxies);
+        postProcessorUtilityMethods = new UtilityMethods(featureSet, slicerParametersFile, headType, nodeManagementUtilities, cameraTriggerData);
         nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
-        closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType);
+        closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType, nodeManagementUtilities);
         heaterSaver = new FilamentSaver(100, 120);
-        outputVerifier = new OutputVerifier();
+        outputVerifier = new OutputVerifier(featureSet);
     }
 
     public RoboxiserResult processInput()
@@ -202,12 +208,12 @@ public class PostProcessor
 
             if (headFile.getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
             {
-                nozzle0HeatRequired = usedExtruders.contains(1)
+                nozzle0HeatRequired = usedExtruders.get(1)
                         || postProcessingMode == PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
-                eRequired = usedExtruders.contains(0);
-                nozzle1HeatRequired = usedExtruders.contains(0)
+                eRequired = usedExtruders.get(0);
+                nozzle1HeatRequired = usedExtruders.get(0)
                         || postProcessingMode == PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL;
-                dRequired = usedExtruders.contains(1);
+                dRequired = usedExtruders.get(1);
             } else
             {
                 nozzle0HeatRequired = false;
@@ -246,7 +252,7 @@ public class PostProcessor
                     if (layerCounter >= 0)
                     {
                         //Parse the layer!
-                        LayerPostProcessResult parseResult = parseLayer(layerBuffer, lastPostProcessResult, writer, headFile.getType());
+                        LayerPostProcessResult parseResult = parseLayer(layerBuffer, lastPostProcessResult);
                         postProcessResults.add(parseResult);
                         lastPostProcessResult = parseResult;
                     }
@@ -266,7 +272,7 @@ public class PostProcessor
             }
 
             //This catches the last layer - if we had no data it won't do anything
-            LayerPostProcessResult lastLayerParseResult = parseLayer(layerBuffer, lastPostProcessResult, writer, headFile.getType());
+            LayerPostProcessResult lastLayerParseResult = parseLayer(layerBuffer, lastPostProcessResult);
             postProcessResults.add(lastLayerParseResult);
 
             if (printerOverrides.getSpiralPrintOverride())
@@ -303,13 +309,18 @@ public class PostProcessor
             timeUtils.timerStart(this, heaterSaverTimerName);
             if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
             {
-                heaterSaver.saveHeaters(postProcessResults);
+                heaterSaver.saveHeaters(postProcessResults, nozzle0HeatRequired, nozzle1HeatRequired);
             }
             timeUtils.timerStop(this, heaterSaverTimerName);
 
             for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
             {
                 timeUtils.timerStart(this, writeOutputTimerName);
+                if (resultToBeProcessed.getLayerData().getLayerNumber() == 1
+                        && headFile.getType() == HeadType.SINGLE_MATERIAL_HEAD)
+                {
+                    outputUtilities.outputTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
+                }
                 outputUtilities.writeLayerToFile(resultToBeProcessed.getLayerData(), writer);
                 timeUtils.timerStop(this, writeOutputTimerName);
                 postProcessorUtilityMethods.updateLayerToLineNumber(resultToBeProcessed, layerNumberToLineNumber, writer);
@@ -442,7 +453,8 @@ public class PostProcessor
         return result;
     }
 
-    private LayerPostProcessResult parseLayer(StringBuilder layerBuffer, LayerPostProcessResult lastLayerParseResult, GCodeOutputWriter writer, HeadType headType)
+    private LayerPostProcessResult parseLayer(StringBuilder layerBuffer,
+            LayerPostProcessResult lastLayerParseResult)
     {
         LayerPostProcessResult parseResultAtEndOfThisLayer = null;
 
@@ -473,7 +485,7 @@ public class PostProcessor
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
                 int lastFeedrate = gcodeParser.getFeedrateInForce();
-                parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult, headType);
+                parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
             }
         } else
@@ -484,11 +496,11 @@ public class PostProcessor
         return parseResultAtEndOfThisLayer;
     }
 
-    private LayerPostProcessResult postProcess(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult, HeadType headType)
+    private LayerPostProcessResult postProcess(LayerNode layerNode,
+            LayerPostProcessResult lastLayerParseResult)
     {
-        // We never want unretracts
         timeUtils.timerStart(this, unretractTimerName);
-        nodeManagementUtilities.removeUnretractNodes(layerNode);
+        nodeManagementUtilities.rehabilitateUnretractNodes(layerNode);
         timeUtils.timerStop(this, unretractTimerName);
 
         timeUtils.timerStart(this, orphanTimerName);
@@ -547,17 +559,17 @@ public class PostProcessor
             if (foundNode instanceof FeedrateProvider)
             {
                 if (((FeedrateProvider) foundNode).getFeedrate().getFeedRate_mmPerMin() < 0)
-            {
-                    if (lastFeedrate < 0)
                 {
+                    if (lastFeedrate < 0)
+                    {
                         ((FeedrateProvider) foundNode).getFeedrate().setFeedRate_mmPerMin(lastLayerPostProcessResult.getLastFeedrateInForce());
-                        } else
-                        {
+                    } else
+                    {
                         ((FeedrateProvider) foundNode).getFeedrate().setFeedRate_mmPerMin(lastFeedrate);
-                        }
                     }
-                lastFeedrate = ((FeedrateProvider) foundNode).getFeedrate().getFeedRate_mmPerMin();
                 }
+                lastFeedrate = ((FeedrateProvider) foundNode).getFeedrate().getFeedRate_mmPerMin();
+            }
 
             if (foundNode instanceof ToolSelectNode)
             {
@@ -578,8 +590,8 @@ public class PostProcessor
             } else if (foundNode instanceof SectionNode)
             {
                 lastSectionNode = (SectionNode) foundNode;
-                    }
-                    }
+            }
+        }
 
         if (lastSectionNode == null)
         {

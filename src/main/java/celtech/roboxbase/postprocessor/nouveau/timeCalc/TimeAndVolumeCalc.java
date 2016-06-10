@@ -11,10 +11,15 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkinSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkirtSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.ToolReselectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.UnrecognisedLineNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.UnretractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.DurationCalculationException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.SupportsPrintTimeCalculation;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.ExtrusionProvider;
@@ -347,7 +352,8 @@ public class TimeAndVolumeCalc
         double timeInThisTool = 0;
 
         ToolSelectNode lastToolSelectNode = null;
-        int lastFeedrateInForce = 0;
+        //Default the feedrate to 200mm/s
+        double feedrateInForce_mm_sec = 200;
         double lastB = 0;
         double lastZ = 0;
         TMove lastTMove = null;
@@ -389,6 +395,8 @@ public class TimeAndVolumeCalc
                 //If the tool is selected (or reselected) stash the current elapsed time in tool
                 if (node instanceof ToolSelectNode)
                 {
+                    ((ToolSelectNode)node).setStartTimeFromStartOfPrint_secs(timeFromStart);
+                    
                     if (lastToolSelectNode != null)
                     {
                         lastToolSelectNode.setEstimatedDuration(timeInThisTool);
@@ -401,9 +409,19 @@ public class TimeAndVolumeCalc
 
                 double eventDuration = -1;
 
+                if (node instanceof FeedrateProvider)
+                {
+                    if (((FeedrateProvider) node).getFeedrate().isFeedrateSet())
+                    {
+                        feedrateInForce_mm_sec = ((FeedrateProvider) node).getFeedrate().getFeedRate_mmPerSec();
+                    }
+                }
+
                 if (node instanceof MovementProvider)
                 {
                     Movement sourceMovement = null;
+                    feedrateInForce_mm_sec = ((FeedrateProvider) node).getFeedrate().getFeedRate_mmPerSec();
+
                     if (lastNodeContainingMovement != null)
                     {
                         sourceMovement = ((MovementProvider) lastNodeContainingMovement).getMovement();
@@ -414,7 +432,6 @@ public class TimeAndVolumeCalc
                         tNode.getMovement().setY(0);
                         tNode.getMovement().setZ(0);
                         sourceMovement = tNode.getMovement();
-                        lastFeedrateInForce = ((FeedrateProvider) node).getFeedrate().getFeedRate_mmPerSec();
                     }
 
 //                            eventDuration = lastNodeSupportingPrintTimeCalcs.timeToReach((MovementProvider) node) * movementFudgeFactor;
@@ -466,7 +483,7 @@ public class TimeAndVolumeCalc
                         moves[5] = relB;
                     }
 
-                    TMoveResult result = calculate_run_time(lastTMove, lastFeedrateInForce, moves);
+                    TMoveResult result = calculate_run_time(lastTMove, feedrateInForce_mm_sec, moves);
                     lastTMove = result.tMove;
                     eventDuration = result.duration;
 
@@ -508,18 +525,6 @@ public class TimeAndVolumeCalc
 //                                    + layerNode.getLayerNumber(), ex);
 //                        }
                     lastNodeContainingMovement = node;
-
-                    if (((FeedrateProvider) lastNodeContainingMovement).getFeedrate().getFeedRate_mmPerSec() < 0)
-                    {
-                        if (lastFeedrateInForce > 0)
-                        {
-                            ((FeedrateProvider) lastNodeContainingMovement).getFeedrate().setFeedRate_mmPerSec(lastFeedrateInForce);
-                        } else
-                        {
-                            steno.warning("Couldn't set feedrate during time calculation");
-                        }
-                    }
-                    lastFeedrateInForce = ((FeedrateProvider) lastNodeContainingMovement).getFeedrate().getFeedRate_mmPerSec();
                 } else if (node instanceof ToolSelectNode)
                 {
                     eventDuration = timeForNozzleSelect_s;
@@ -573,7 +578,7 @@ public class TimeAndVolumeCalc
                             moves[5] = relB;
                         }
 
-                        TMoveResult result = calculate_run_time(lastTMove, lastFeedrateInForce, moves);
+                        TMoveResult result = calculate_run_time(lastTMove, feedrateInForce_mm_sec, moves);
                         lastTMove = result.tMove;
                         eventDuration = result.duration;
                     }
@@ -592,7 +597,7 @@ public class TimeAndVolumeCalc
                     lastB = newVal;
                     moves[5] = relB;
 
-                    TMoveResult result = calculate_run_time(lastTMove, lastFeedrateInForce, moves);
+                    TMoveResult result = calculate_run_time(lastTMove, feedrateInForce_mm_sec, moves);
                     lastTMove = result.tMove;
                     eventDuration = result.duration;
 
@@ -624,7 +629,12 @@ public class TimeAndVolumeCalc
                         && !(node instanceof SkinSectionNode)
                         && !(node instanceof OuterPerimeterSectionNode)
                         && !(node instanceof SkirtSectionNode)
-                        && !(node instanceof MCodeNode))
+                        && !(node instanceof SupportSectionNode)
+                        && !(node instanceof UnrecognisedLineNode)
+                        && !(node instanceof MCodeNode)
+                        && !(node instanceof RetractNode)
+                        && !(node instanceof UnretractNode)
+                        && !(node instanceof ToolReselectNode))
                 {
                     steno.info("Not possible to calculate time for: " + node.getClass().getName() + " : " + node.toString());
                 }

@@ -62,8 +62,9 @@ public class PrinterUtilsTest extends BaseEnvironmentConfiguredTest
         testNozzleHeater.lastFilamentTemperatureProperty().set(NOZZLE_TEMP
                 - BaseConfiguration.maxPermittedTempDifferenceForPurge + 1);
 
-        Set<Integer> usedExtruders = new HashSet();
-        usedExtruders.add(0);
+        List<Boolean> usedExtruders = new ArrayList();
+        usedExtruders.add(0, true);
+        usedExtruders.add(1, false);
 
         boolean purgeIsNecessary = PrinterUtils.getInstance().isPurgeNecessary(printer, usedExtruders);
         assertFalse(purgeIsNecessary);
@@ -108,8 +109,9 @@ public class PrinterUtilsTest extends BaseEnvironmentConfiguredTest
         testNozzleHeater1.lastFilamentTemperatureProperty().set(NOZZLE_TEMP_1
                 - BaseConfiguration.maxPermittedTempDifferenceForPurge + 1);
         
-        Set<Integer> usedExtruders = new HashSet();
-        usedExtruders.add(0);
+        List<Boolean> usedExtruders = new ArrayList();
+        usedExtruders.add(0, true);
+        usedExtruders.add(1, false);
 
         boolean purgeIsNecessary = PrinterUtils.getInstance().isPurgeNecessary(printer, usedExtruders);
         assertFalse(purgeIsNecessary);

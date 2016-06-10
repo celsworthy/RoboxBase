@@ -17,7 +17,7 @@ public class PrintableMeshes
 {
 
     private final List<MeshForProcessing> meshesForProcessing;
-    private final Set<Integer> usedExtruders;
+    private final List<Boolean> usedExtruders;
     private final List<Integer> extruderForModel;
     private final String requiredPrintJobID;
     private final SlicerParametersFile settings;
@@ -30,7 +30,7 @@ public class PrintableMeshes
     private final CameraTriggerData cameraTriggerData;
 
     public PrintableMeshes(List<MeshForProcessing> meshesForProcessing,
-            Set<Integer> usedExtruders,
+            List<Boolean> usedExtruders,
             List<Integer> extruderForModel,
             String requiredPrintJobID,
             SlicerParametersFile settings,
@@ -61,7 +61,7 @@ public class PrintableMeshes
         return meshesForProcessing;
     }
 
-    public Set<Integer> getUsedExtruders()
+    public List<Boolean> getUsedExtruders()
     {
         return usedExtruders;
     }

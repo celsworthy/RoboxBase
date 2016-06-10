@@ -3,8 +3,8 @@
  */
 package celtech.roboxbase.comms;
 
-import celtech.roboxbase.printerControl.model.HeaterMode;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
+import celtech.roboxbase.printerControl.model.HeaterMode;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
 import org.junit.Test;
 import static org.junit.Assert.*;

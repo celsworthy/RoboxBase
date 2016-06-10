@@ -17,14 +17,11 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.MergeableWithToolchange;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NodeProcessingException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.ToolReselectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.DurationCalculationException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithStartPoint;
-import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.SupportsPrintTimeCalculation;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Movement;
-import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.NozzlePositionProvider;
-import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.CameraTriggerManager;
 import java.util.ArrayList;
@@ -45,6 +42,7 @@ public class UtilityMethods
 
     private final Stenographer steno = StenographerFactory.getStenographer(UtilityMethods.class.getName());
     private final PostProcessorFeatureSet ppFeatureSet;
+    private final NodeManagementUtilities nodeManagementUtilities;
     private final CloseLogic closeLogic;
     private final SlicerParametersFile settings;
     private final CameraTriggerManager cameraTriggerManager;
@@ -52,11 +50,13 @@ public class UtilityMethods
     public UtilityMethods(final PostProcessorFeatureSet ppFeatureSet,
             SlicerParametersFile settings,
             String headType,
+            NodeManagementUtilities nodeManagementUtilities,
             CameraTriggerData cameraTriggerData)
     {
         this.ppFeatureSet = ppFeatureSet;
         this.settings = settings;
-        this.closeLogic = new CloseLogic(settings, ppFeatureSet, headType);
+        this.nodeManagementUtilities = nodeManagementUtilities;
+        this.closeLogic = new CloseLogic(settings, ppFeatureSet, headType, nodeManagementUtilities);
         this.cameraTriggerManager = new CameraTriggerManager(null);
         cameraTriggerManager.setTriggerData(cameraTriggerData);
     }
@@ -81,6 +81,8 @@ public class UtilityMethods
 
             Iterator<GCodeEventNode> layerBackwards = layerNode.childBackwardsIterator();
 
+            if (ppFeatureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
+            {
             while (layerBackwards.hasNext())
             {
                 GCodeEventNode layerChild = layerBackwards.next();
@@ -91,6 +93,7 @@ public class UtilityMethods
                 }
             }
         }
+    }
     }
 
     protected void suppressUnnecessaryToolChangesAndInsertToolchangeCloses(LayerNode layerNode,
@@ -473,7 +476,7 @@ public class UtilityMethods
             if (toolReselectsToAdd.containsKey(entryToUpdate.getKey()))
             {
                 int toolToReselect = toolReselectsToAdd.get(entryToUpdate.getKey());
-                ToolSelectNode reselect = new ToolSelectNode();
+                ToolReselectNode reselect = new ToolReselectNode();
                 reselect.setToolNumber(toolToReselect);
                 reselect.appendCommentText("Reselect nozzle");
                 entryToUpdate.getKey().addSiblingBefore(reselect);
