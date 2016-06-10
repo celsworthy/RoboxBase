@@ -269,7 +269,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 commands.add(configLoadCommand);
                 commands.add(configFile);
                 commands.add("-o");
-                commands.add("\"" + tempGcodeFilename + "\"");
+                commands.add(tempGcodeFilename);
                 if (!printCenterCommand.equals(""))
                 {
                     commands.add(printCenterCommand);
@@ -297,7 +297,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 commands.add(configLoadCommand);
                 commands.add(configFile);
                 commands.add("-o");
-                commands.add("\"" + tempGcodeFilename + "\"");
+                commands.add(tempGcodeFilename);
                 if (!printCenterCommand.equals(""))
                 {
                     commands.add(printCenterCommand);
