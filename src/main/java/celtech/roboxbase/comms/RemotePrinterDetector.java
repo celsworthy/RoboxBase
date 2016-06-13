@@ -128,6 +128,14 @@ public class RemotePrinterDetector extends DeviceDetector
             } catch (IOException ex)
             {
                 steno.error("Unable to query for remote hosts");
+                List<DetectedDevice> printersToDisconnect = new ArrayList<>(currentPrinters);
+
+                for (DetectedDevice printerToDisconnect : printersToDisconnect)
+                {
+                    steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
+                    deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
+                    currentPrinters.remove(printerToDisconnect);
+                }
             }
 
             try

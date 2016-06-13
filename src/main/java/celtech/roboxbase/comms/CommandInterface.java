@@ -307,6 +307,7 @@ public abstract class CommandInterface extends Thread
                                 if (isConnected)
                                 {
                                     steno.exception("Failure during printer status request.", ex);
+                                    disconnectPrinter();
                                 }
                             }
                         }
