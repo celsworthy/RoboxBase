@@ -83,10 +83,40 @@ public class RemotePrinterDetector extends DeviceDetector
                                 RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII")))
                         {
                             List<DetectedDevice> newlyDetectedPrinters = searchForDevices(recv.getAddress());
-                            newlyDetectedPrinters.forEach(printer ->
+
+                            //Deal with disconnections
+                            List<DetectedDevice> printersToDisconnect = new ArrayList<>();
+                            currentPrinters.forEach(existingPrinter ->
                             {
-                                deviceDetectionListener.deviceDetected(printer);
+                                if (!newlyDetectedPrinters.contains(existingPrinter))
+                                {
+                                    printersToDisconnect.add(existingPrinter);
+                                }
                             });
+
+                            for (DetectedDevice printerToDisconnect : printersToDisconnect)
+                            {
+                                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
+                                deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
+                                currentPrinters.remove(printerToDisconnect);
+                            }
+
+                            //Now new connections
+                            List<DetectedDevice> printersToConnect = new ArrayList<>();
+                            newlyDetectedPrinters.forEach(newPrinter ->
+                            {
+                                if (!currentPrinters.contains(newPrinter))
+                                {
+                                    printersToConnect.add(newPrinter);
+                                }
+                            });
+
+                            for (DetectedDevice printerToConnect : printersToConnect)
+                            {
+                                steno.info("We have found a new printer " + printerToConnect);
+                                currentPrinters.add(printerToConnect);
+                                deviceDetectionListener.deviceDetected(printerToConnect);
+                            }
                         }
 
                     } catch (SocketTimeoutException ex)
