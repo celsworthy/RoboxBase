@@ -1,5 +1,6 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.AckResponse;
@@ -165,37 +166,40 @@ public abstract class CommandInterface extends Thread
                                     + firmwareResponse.getFirmwareRevisionString() + " and should be "
                                     + requiredFirmwareVersionString);
 
-//                            Lookup.setFirmwareVersion()
-                            //ROB-931 - don't check for presence of the SD card if firmware version earlier than 691
-                            if (firmwareResponse.getFirmwareRevisionFloat() >= 691)
+                            if (BaseConfiguration.isApplicationFeatureEnabled(ApplicationFeature.AUTO_UPDATE_FIRMWARE))
                             {
-                                // Is the SD card present?
-                                try
+//                            Lookup.setFirmwareVersion()
+                                //ROB-931 - don't check for presence of the SD card if firmware version earlier than 691
+                                if (firmwareResponse.getFirmwareRevisionFloat() >= 691)
                                 {
-                                    StatusRequest request = (StatusRequest) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST);
-                                    firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
-                                    StatusResponse response = (StatusResponse) writeToPrinter(request, true);
-                                    if (!response.issdCardPresent())
+                                    // Is the SD card present?
+                                    try
                                     {
-                                        steno.warning("SD Card not present");
-                                        BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
-                                        disconnectPrinter();
-                                        keepRunning = false;
+                                        StatusRequest request = (StatusRequest) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST);
+                                        firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
+                                        StatusResponse response = (StatusResponse) writeToPrinter(request, true);
+                                        if (!response.issdCardPresent())
+                                        {
+                                            steno.warning("SD Card not present");
+                                            BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
+                                            disconnectPrinter();
+                                            keepRunning = false;
+                                            break;
+                                        } else
+                                        {
+                                            BaseLookup.getSystemNotificationHandler().clearAllDialogsOnDisconnect();
+                                        }
+                                    } catch (RoboxCommsException ex)
+                                    {
+                                        steno.error("Failure during printer status request. " + ex.toString());
                                         break;
-                                    } else
-                                    {
-                                        BaseLookup.getSystemNotificationHandler().clearAllDialogsOnDisconnect();
                                     }
-                                } catch (RoboxCommsException ex)
-                                {
-                                    steno.error("Failure during printer status request. " + ex.toString());
-                                    break;
                                 }
-                            }
 
-                            // Tell the user to update
-                            loadRequiredFirmware = BaseLookup.getSystemNotificationHandler().
-                                    askUserToUpdateFirmware();
+                                // Tell the user to update
+                                loadRequiredFirmware = BaseLookup.getSystemNotificationHandler().
+                                        askUserToUpdateFirmware();
+                            }
                         }
 
                         if (loadRequiredFirmware)
@@ -303,8 +307,8 @@ public abstract class CommandInterface extends Thread
                                 if (isConnected)
                                 {
                                     steno.exception("Failure during printer status request.", ex);
+                                }
                             }
-                        }
                         }
                     } catch (InterruptedException ex)
                     {

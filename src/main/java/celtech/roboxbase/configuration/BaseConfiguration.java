@@ -1,5 +1,6 @@
 package celtech.roboxbase.configuration;
 
+import celtech.roboxbase.ApplicationFeature;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
 import libertysystems.stenographer.Stenographer;
@@ -118,6 +121,8 @@ public class BaseConfiguration
     private static String applicationLanguageRaw = null;
 
     private static CoreMemory coreMemory = null;
+
+    private static final Set<ApplicationFeature> applicationFeatures = new HashSet();
 
     public static void initialise(Class classToCheck)
     {
@@ -622,5 +627,20 @@ public class BaseConfiguration
     public static CoreMemoryData getCoreMemory()
     {
         return coreMemory.coreMemoryData;
+    }
+
+    public static void enableApplicationFeature(ApplicationFeature feature)
+    {
+        applicationFeatures.add(feature);
+    }
+
+    public static void disableApplicationFeature(ApplicationFeature feature)
+    {
+        applicationFeatures.remove(feature);
+    }
+
+    public static boolean isApplicationFeatureEnabled(ApplicationFeature feature)
+    {
+        return applicationFeatures.contains(feature);
     }
 }
