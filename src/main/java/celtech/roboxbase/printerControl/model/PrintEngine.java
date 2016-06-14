@@ -474,7 +474,7 @@ public class PrintEngine implements ControllableService
         Map<Integer, Double> layerNumberToPredictedDuration_E = printJobStatistics
                 .getLayerNumberToPredictedDuration_E_FeedrateDependent();
         Map<Integer, Double> layerNumberToPredictedDuration_D = printJobStatistics
-                .getLayerNumberToPredictedDuration_FeedrateIndependent();
+                .getLayerNumberToPredictedDuration_D_FeedrateDependent();
         Map<Integer, Double> layerNumberToPredictedDuration_feedrateIndependent = printJobStatistics
                 .getLayerNumberToPredictedDuration_FeedrateIndependent();
         List<Integer> layerNumberToLineNumber = printJobStatistics.getLayerNumberToLineNumber();

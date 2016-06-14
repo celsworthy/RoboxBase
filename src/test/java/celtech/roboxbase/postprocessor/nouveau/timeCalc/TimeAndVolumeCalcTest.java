@@ -4,7 +4,10 @@ import celtech.roboxbase.postprocessor.nouveau.LayerPostProcessResult;
 import celtech.roboxbase.postprocessor.nouveau.helpers.LayerDefinition;
 import celtech.roboxbase.postprocessor.nouveau.helpers.TestDataGenerator;
 import celtech.roboxbase.postprocessor.nouveau.helpers.ToolDefinition;
+import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.printerControl.model.Head;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,15 +56,26 @@ public class TimeAndVolumeCalcTest
     public void testCalculateVolumeAndTime()
     {
         System.out.println("testCalculateVolumeAndTime");
-        List<LayerDefinition> layers = new ArrayList<>();
-        layers.add(new LayerDefinition(0, new ToolDefinition[]
-        {
-            new ToolDefinition(0, 50, 100),
-            new ToolDefinition(1, 500, 5000)
-        }));
 
-        List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults_NoDuration(layers);
+        List<LayerPostProcessResult> allLayerPostProcessResults = new ArrayList<>();
+        LayerNode ln0 = new LayerNode(0);
+        ToolSelectNode ts0 = new ToolSelectNode();
+        ts0.setToolNumber(0);
+        ExtrusionNode en0 = new ExtrusionNode();
+        en0.getMovement().setX(100);
+        en0.getMovement().setY(100);
+        en0.getFeedrate().setFeedRate_mmPerMin(200);
+        ExtrusionNode en1 = new ExtrusionNode();
+        en1.getMovement().setX(0);
+        en1.getMovement().setY(0);
+        en1.getFeedrate().setFeedRate_mmPerMin(200);
+        ts0.addChildAtEnd(en0);
+        ts0.addChildAtEnd(en1);
+        ln0.getChildren().add(ts0);
         
+        LayerPostProcessResult ppr1 = new LayerPostProcessResult(ln0, 0, null, null, null, 200);
+        allLayerPostProcessResults.add(ppr1);
+
         TimeAndVolumeCalc timeAndVolumeCalc = new TimeAndVolumeCalc(Head.HeadType.DUAL_MATERIAL_HEAD);
         TimeAndVolumeCalcResult result = timeAndVolumeCalc.calculateVolumeAndTime(allLayerPostProcessResults);
 
