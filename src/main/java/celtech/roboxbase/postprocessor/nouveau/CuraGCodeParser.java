@@ -1,6 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.configuration.PrintBed;
 import celtech.roboxbase.postprocessor.nouveau.nodes.CommentNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
@@ -23,6 +22,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.UnrecognisedLineNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.UnretractNode;
+import celtech.roboxbase.printerControl.model.Printer;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.parboiled.Action;
@@ -39,48 +39,52 @@ import org.parboiled.support.Var;
 //@BuildParseTree
 public class CuraGCodeParser extends BaseParser<GCodeEventNode>
 {
-    
+
     private final Stenographer steno = StenographerFactory.getStenographer(CuraGCodeParser.class.getName());
     private LayerNode thisLayer = new LayerNode();
     private int feedrateInForce = -1;
     private int startingLineNumber = 0;
     private double currentLayerHeight = 0;
     protected Var<Integer> currentObject = new Var<>(-1);
-    
+    private Printer activePrinter = null;
+    private double printVolumeWidth = 0;
+    private double printVolumeDepth = 0;
+    private double printVolumeHeight = 0;
+
     public int getStartingLineNumber()
     {
         return startingLineNumber;
     }
-    
+
     public void setStartingLineNumber(int startingLineNumber)
     {
         this.startingLineNumber = startingLineNumber;
     }
-    
+
     public void setFeedrateInForce(int feedrate)
     {
         this.feedrateInForce = feedrate;
     }
-    
+
     public int getFeedrateInForce()
     {
         return feedrateInForce;
     }
-    
+
     public LayerNode getLayerNode()
     {
         return thisLayer;
     }
-    
+
     public void resetLayer()
     {
         thisLayer = new LayerNode();
     }
-    
+
     private void validateXPosition(double value)
     {
-        if (value > PrintBed.getPrintVolumeMaximums().getX()
-                || value < PrintBed.getPrintVolumeMinimums().getX())
+        if (value > printVolumeWidth
+                || value < 0)
         {
             throw new ParserInputException("X value outside bed: " + value);
         }
@@ -89,8 +93,8 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     //Inbound Y translates to Z
     private void validateYPosition(double value)
     {
-        if (value > PrintBed.getPrintVolumeMaximums().getZ()
-                || value < PrintBed.getPrintVolumeMinimums().getZ())
+        if (value > printVolumeDepth
+                || value < 0)
         {
             throw new ParserInputException("Y value outside bed: " + value);
         }
@@ -99,13 +103,13 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     //Inbound Z translates to -Y
     private void validateZPosition(double value)
     {
-        if (-value > PrintBed.getPrintVolumeMaximums().getY()
-                || -value < PrintBed.getPrintVolumeMinimums().getY())
+        if (value > printVolumeHeight
+                || value < 0)
         {
             throw new ParserInputException("Z value outside bed: " + value);
         }
     }
-    
+
     public Rule Layer()
     {
         return Sequence(
@@ -141,7 +145,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 }
         );
     }
-    
+
     Rule Preamble()
     {
         return Sequence(
@@ -168,7 +172,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     {
         ObjectSectionActionClass objectSectionAction = new ObjectSectionActionClass();
         Var<Integer> objectNumber = new Var<>(0);
-        
+
         return Sequence(
                 Sequence('T', OneOrMore(Digit()),
                         objectNumber.set(Integer.valueOf(match())),
@@ -222,7 +226,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     Rule OrphanObjectSection()
     {
         OrphanObjectSectionActionClass orphanObjectSectionAction = new OrphanObjectSectionActionClass();
-        
+
         return Sequence(
                 // Orphan - make this part of the current object
                 IsASection(),
@@ -356,7 +360,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 }
         );
     }
-    
+
     //Cura skirt Section
     Rule SkirtSection()
     {
@@ -454,7 +458,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 }
         );
     }
-    
+
     Rule NotASection()
     {
         return Sequence(
@@ -465,7 +469,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 TestNot(SupportInterfaceSectionNode.designator),
                 TestNot(SupportSectionNode.designator));
     }
-    
+
     Rule AnySection()
     {
         return FirstOf(
@@ -478,7 +482,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 SkirtSection(),
                 OrphanSection());
     }
-    
+
     Rule IsASection()
     {
         return FirstOf(
@@ -516,7 +520,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     Rule CommentDirective()
     {
         Var<String> commentValue = new Var<>();
-        
+
         return Sequence(
                 TestNot(FillSectionNode.designator),
                 TestNot(InnerPerimeterSectionNode.designator),
@@ -547,7 +551,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Integer> sValue = new Var<>();
         Var<Boolean> tPresent = new Var<>();
         Var<Integer> tValue = new Var<>();
-        
+
         return Sequence(
                 Sequence('M', OneToThreeDigits(),
                         mValue.set(Integer.valueOf(match())),
@@ -583,7 +587,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     {
                         MCodeNode node = new MCodeNode();
                         node.setMNumber(mValue.get());
-                        
+
                         if (sPresent.isSet() && sValue.isNotSet())
                         {
                             node.setSOnly(true);
@@ -591,7 +595,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.setSNumber(sValue.get());
                         }
-                        
+
                         if (tPresent.isSet() && tValue.isNotSet())
                         {
                             node.setTOnly(true);
@@ -599,9 +603,9 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.setTNumber(tValue.get());
                         }
-                        
+
                         node.setGCodeLineNumber(startingLineNumber);
-                        
+
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -613,7 +617,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     Rule GCodeDirective()
     {
         Var<Integer> gcodeValue = new Var<>();
-        
+
         return Sequence('G', OneOrTwoDigits(),
                 gcodeValue.set(Integer.valueOf(match())),
                 Newline(),
@@ -638,7 +642,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Float> dValue = new Var<>();
         Var<Float> eValue = new Var<>();
         Var<Integer> fValue = new Var<>();
-        
+
         return Sequence("G1 ",
                 Optional(
                         Feedrate(fValue)
@@ -688,7 +692,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Float> dValue = new Var<>();
         Var<Float> eValue = new Var<>();
         Var<Integer> fValue = new Var<>();
-        
+
         return Sequence("G1 ",
                 Optional(
                         Feedrate(fValue)
@@ -739,7 +743,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Integer> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
-        
+
         return Sequence("G0 ",
                 Optional(
                         Feedrate(fValue)
@@ -763,26 +767,26 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         TravelNode node = new TravelNode();
-                        
+
                         if (fValue.isSet())
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
-                        
+
                         if (xValue.isSet())
                         {
                             validateXPosition(xValue.get());
                             node.getMovement().setX(xValue.get());
                         }
-                        
+
                         if (yValue.isSet())
                         {
                             validateYPosition(yValue.get());
                             node.getMovement().setY(yValue.get());
                         }
-                        
+
                         node.setGCodeLineNumber(startingLineNumber);
-                        
+
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -800,7 +804,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Double> zValue = new Var<>();
         Var<Float> eValue = new Var<>();
         Var<Float> dValue = new Var<>();
-        
+
         return Sequence("G1 ",
                 Optional(
                         Feedrate(fValue)
@@ -837,45 +841,45 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         ExtrusionNode node = new ExtrusionNode();
-                        
+
                         if (fValue.isSet())
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
-                        
+
                         if (xValue.isSet())
                         {
                             validateXPosition(xValue.get());
                             node.getMovement().setX(xValue.get());
                         }
-                        
+
                         if (yValue.isSet())
                         {
                             validateYPosition(yValue.get());
                             node.getMovement().setY(yValue.get());
                         }
-                        
+
                         if (zValue.isSet())
                         {
                             validateZPosition(zValue.get());
                             node.getMovement().setZ(zValue.get());
                         }
-                        
+
                         if (dValue.isSet())
                         {
                             node.getExtrusion().setD(dValue.get());
                         }
-                        
+
                         if (eValue.isSet())
                         {
                             node.getExtrusion().setE(eValue.get());
                         }
-                        
+
                         node.setGCodeLineNumber(startingLineNumber);
-                        
+
                         context.getValueStack()
                         .push(node);
-                        
+
                         return true;
                     }
                 }
@@ -891,7 +895,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        
+
         return Sequence("G0 ",
                 Optional(
                         Feedrate(fValue)
@@ -919,46 +923,40 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         LayerChangeDirectiveNode node = new LayerChangeDirectiveNode();
-                        
+
                         if (fValue.isSet())
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
-                        
-                        try
+
+                        if (xValue.isSet())
                         {
-                            if (xValue.isSet())
-                            {
-                                node.getMovement().setX(xValue.get());
-                                validateXPosition(xValue.get());
-                            }
-                            
-                            if (yValue.isSet())
-                            {
-                                node.getMovement().setY(yValue.get());
-                                validateYPosition(yValue.get());
-                            }
-                            
-                            if (zValue.isSet())
-                            {
-                                node.getMovement().setZ(zValue.get());
-                                validateZPosition(zValue.get());
-                                currentLayerHeight = zValue.get();
-                            }
-                            
-                            node.setGCodeLineNumber(startingLineNumber);
-                            
-                            context.getValueStack().push(node);
-                        } catch (ParserInputException ex)
-                        {
-                            steno.warning("Discarded node with out of bounds values: " + node.renderForOutput());
+                            node.getMovement().setX(xValue.get());
+                            validateXPosition(xValue.get());
                         }
+
+                        if (yValue.isSet())
+                        {
+                            node.getMovement().setY(yValue.get());
+                            validateYPosition(yValue.get());
+                        }
+
+                        if (zValue.isSet())
+                        {
+                            node.getMovement().setZ(zValue.get());
+                            validateZPosition(zValue.get());
+                            currentLayerHeight = zValue.get();
+                        }
+
+                        node.setGCodeLineNumber(startingLineNumber);
+
+                        context.getValueStack().push(node);
                         return true;
                     }
                 }
         );
     }
-    
+
     @SuppressSubnodes
     Rule ChildDirective()
     {
@@ -973,43 +971,43 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 UnrecognisedLine()
         );
     }
-    
+
     @SuppressSubnodes
     Rule OneOrTwoDigits()
     {
         return FirstOf(TwoDigits(), Digit());
     }
-    
+
     @SuppressSubnodes
     Rule TwoOrThreeDigits()
     {
         return FirstOf(ThreeDigits(), TwoDigits());
     }
-    
+
     @SuppressSubnodes
     Rule OneToThreeDigits()
     {
         return FirstOf(ThreeDigits(), TwoDigits(), Digit());
     }
-    
+
     @SuppressSubnodes
     Rule TwoDigits()
     {
         return Sequence(Digit(), Digit());
     }
-    
+
     @SuppressSubnodes
     Rule ThreeDigits()
     {
         return Sequence(Digit(), Digit(), Digit());
     }
-    
+
     @SuppressSubnodes
     Rule Digit()
     {
         return CharRange('0', '9');
     }
-    
+
     @SuppressSubnodes
     Rule IntegerNumber()
     {
@@ -1017,7 +1015,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 Optional('-'),
                 OneOrMore(Digit()));
     }
-    
+
     @SuppressSubnodes
     Rule FloatingPointNumber()
     {
@@ -1026,7 +1024,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 PositiveFloatingPointNumber()
         );
     }
-    
+
     @SuppressSubnodes
     Rule PositiveFloatingPointNumber()
     {
@@ -1036,7 +1034,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 Ch('.'),
                 OneOrMore(Digit()));
     }
-    
+
     @SuppressSubnodes
     Rule NegativeFloatingPointNumber()
     {
@@ -1047,7 +1045,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 Ch('.'),
                 OneOrMore(Digit()));
     }
-    
+
     @SuppressSubnodes
     Rule Feedrate(Var<Integer> feedrate)
     {
@@ -1100,7 +1098,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 Newline()
         );
     }
-    
+
     @SuppressSubnodes
     Rule Newline()
     {
@@ -1116,10 +1114,19 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     }
                 });
     }
-    
+
     @SuppressSubnodes
     Rule NotNewline()
     {
         return NoneOf("\n");
+    }
+
+    public void setPrintVolumeBounds(double printVolumeWidth,
+            double printVolumeDepth,
+            double printVolumeHeight)
+    {
+        this.printVolumeWidth = printVolumeWidth;
+        this.printVolumeDepth = printVolumeDepth;
+        this.printVolumeHeight = printVolumeHeight;
     }
 }

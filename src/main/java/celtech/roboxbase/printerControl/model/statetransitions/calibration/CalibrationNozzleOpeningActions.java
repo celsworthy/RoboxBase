@@ -10,8 +10,7 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.NozzleHeater;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.PrintBed;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
@@ -158,9 +157,10 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
 
         printer.readHeadEEPROM(false);
 
-        printer.goToXYZPosition(PrintBed.getPrintVolumeCentre().getX(),
-                PrintBed.getPrintVolumeCentre().getZ(),
-                -PrintBed.getPrintVolumeCentre().getY());
+        printer.goToXYZPosition(printer.getPrintVolumeCentre().getX(),
+                printer.getPrintVolumeCentre().getY(),
+                50);
+        
         if (PrinterUtils.waitOnBusy(printer, userOrErrorCancellable))
         {
             return;

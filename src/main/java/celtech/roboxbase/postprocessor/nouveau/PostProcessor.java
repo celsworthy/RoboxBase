@@ -463,6 +463,9 @@ public class PostProcessor
         {
             CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
             );
+            gcodeParser.setPrintVolumeBounds(printer.printerConfigurationProperty().get().getPrintVolumeWidth(),
+                    printer.printerConfigurationProperty().get().getPrintVolumeDepth(),
+                    printer.printerConfigurationProperty().get().getPrintVolumeHeight());
 
             if (lastLayerParseResult
                     != null)

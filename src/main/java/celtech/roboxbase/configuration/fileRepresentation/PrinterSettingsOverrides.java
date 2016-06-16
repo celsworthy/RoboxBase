@@ -1,7 +1,7 @@
 package celtech.roboxbase.configuration.fileRepresentation;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;

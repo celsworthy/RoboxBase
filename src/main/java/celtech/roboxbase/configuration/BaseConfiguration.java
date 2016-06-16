@@ -62,6 +62,10 @@ public class BaseConfiguration
 
     public static final String applicationStorageDirectoryComponent = "ApplicationDataStorageDirectory";
 
+    private static String printerFileDirectory = null;
+    public static final String printerDirectoryPath = "Printers";
+    public static final String printerFileExtension = ".roboxprinter";
+
     private static String headFileDirectory = null;
     public static final String headDirectoryPath = "Heads";
     public static final String headFileExtension = ".roboxhead";
@@ -333,6 +337,16 @@ public class BaseConfiguration
         }
 
         return headFileDirectory;
+    }
+
+    public static String getApplicationPrinterDirectory()
+    {
+        if (printerFileDirectory == null)
+        {
+            printerFileDirectory = getCommonApplicationDirectory() + printerDirectoryPath + '/';
+        }
+
+        return printerFileDirectory;
     }
 
     public static boolean isAutoRepairHeads()

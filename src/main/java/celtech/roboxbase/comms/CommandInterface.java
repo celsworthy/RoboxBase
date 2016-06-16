@@ -14,6 +14,9 @@ import celtech.roboxbase.comms.tx.RoboxTxPacketFactory;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
@@ -232,13 +235,28 @@ public abstract class CommandInterface extends Thread
                                 || (printerName.length() > 0
                                 && printerName.charAt(0) == '\0'))
                         {
-                            steno.info("Connected to unknown printer");
+                            steno.info("Connected to unknown printer - setting to RBX01");
                             BaseLookup.getSystemNotificationHandler().
                                     showNoPrinterIDDialog(printerToUse);
                             lastPrinterIDResponse = printerToUse.readPrinterID();
+                            printerName = PrinterContainer.defaultPrinterID;
                         } else
                         {
                             steno.info("Connected to printer " + printerName);
+                        }
+
+                        if (lastPrinterIDResponse.getModel() != null)
+                        {
+                            PrinterDefinitionFile printerConfigFile = PrinterContainer.getPrinterByID(lastPrinterIDResponse.getModel());
+                            printerToUse.setPrinterConfiguration(printerConfigFile);
+                            for (PrinterEdition editionUnderExamination : printerConfigFile.getEditions())
+                            {
+                                if (editionUnderExamination.getTypeCode().equalsIgnoreCase(lastPrinterIDResponse.getEdition()))
+                                {
+                                    printerToUse.setPrinterEdition(editionUnderExamination);
+                                    break;
+                                }
+                            }
                         }
                     } catch (PrinterException ex)
                     {

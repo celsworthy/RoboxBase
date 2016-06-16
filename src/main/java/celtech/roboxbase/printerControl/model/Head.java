@@ -2,7 +2,7 @@ package celtech.roboxbase.printerControl.model;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.rx.HeadEEPROMDataResponse;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.NozzleData;
 import celtech.roboxbase.configuration.fileRepresentation.NozzleHeaterData;

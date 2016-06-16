@@ -1,6 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;

@@ -1,7 +1,6 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.HeadContainer;
 import celtech.roboxbase.configuration.PrintProfileFileFilter;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;

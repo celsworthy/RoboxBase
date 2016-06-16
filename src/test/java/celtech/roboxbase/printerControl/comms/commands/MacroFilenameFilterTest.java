@@ -2,7 +2,7 @@ package celtech.roboxbase.printerControl.comms.commands;
 
 import celtech.roboxbase.printerControl.comms.commands.MacroFilenameFilter;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.printerControl.model.Head;
 import java.io.File;
 import java.io.FilenameFilter;

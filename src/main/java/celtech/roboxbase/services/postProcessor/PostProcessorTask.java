@@ -1,7 +1,7 @@
 package celtech.roboxbase.services.postProcessor;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.postprocessor.RoboxiserResult;

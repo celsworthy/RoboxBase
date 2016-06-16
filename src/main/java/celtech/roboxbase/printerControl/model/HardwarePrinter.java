@@ -52,11 +52,11 @@ import celtech.roboxbase.comms.tx.WritePrinterID;
 import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
 import celtech.roboxbase.comms.events.ErrorConsumer;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.PrinterEdition;
-import celtech.roboxbase.configuration.PrinterModel;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.printerControl.PrintActionUnavailableException;
 import celtech.roboxbase.printerControl.PrintJobRejectedException;
 import celtech.roboxbase.utils.models.PrintableMeshes;
@@ -85,7 +85,9 @@ import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
 import celtech.roboxbase.utils.ColourStringConverter;
+import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.PrinterUtils;
+import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
@@ -121,6 +123,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -185,6 +188,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      */
     private final PrinterIdentity printerIdentity = new PrinterIdentity();
     private final PrinterAncillarySystems printerAncillarySystems = new PrinterAncillarySystems();
+    private final ObjectProperty<PrinterDefinitionFile> printerConfiguration = new SimpleObjectProperty<>(null);
+    private final ObjectProperty<PrinterEdition> printerEdition = new SimpleObjectProperty<>(null);
     private final ObjectProperty<Head> head = new SimpleObjectProperty<>(null);
     private final ObservableMap<Integer, Reel> reels = FXCollections.observableHashMap();
     private final ObservableMap<Integer, Filament> effectiveFilaments = FXCollections.observableHashMap();
@@ -491,6 +496,68 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public PrinterAncillarySystems getPrinterAncillarySystems()
     {
         return printerAncillarySystems;
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty()
+    {
+        return printerConfiguration;
+    }
+
+    @Override
+    public void setPrinterConfiguration(PrinterDefinitionFile printerConfigurationFile)
+    {
+        this.printerConfiguration.set(printerConfigurationFile);
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty()
+    {
+        return printerEdition;
+    }
+
+    @Override
+    public void setPrinterEdition(PrinterEdition printerEdition)
+    {
+        this.printerEdition.set(printerEdition);
+    }
+
+    @Override
+    public Point3D getPrintVolumeCentre()
+    {
+        if (printerConfiguration.get() != null)
+        {
+            return new Point3D(printerConfiguration.get().getPrintVolumeWidth() / 2,
+                    printerConfiguration.get().getPrintVolumeDepth() / 2,
+                    printerConfiguration.get().getPrintVolumeHeight() / 2);
+        } else
+        {
+            return Point3D.ZERO;
+        }
+    }
+
+    @Override
+    public boolean isBiggerThanPrintVolume(RectangularBounds bounds)
+    {
+        boolean biggerThanPrintArea = false;
+
+        if (printerConfiguration.get() != null)
+        {
+            double xSize = bounds.getWidth();
+            double ySize = bounds.getHeight();
+            double zSize = bounds.getDepth();
+
+            double epsilon = 0.001;
+
+            if (MathUtils.compareDouble(xSize, printerConfiguration.get().getPrintVolumeWidth(), epsilon) == MathUtils.MORE_THAN
+                    || MathUtils.compareDouble(ySize, printerConfiguration.get().getPrintVolumeHeight(), epsilon) == MathUtils.MORE_THAN
+                    || MathUtils.compareDouble(zSize, printerConfiguration.get().getPrintVolumeDepth(), epsilon) == MathUtils.MORE_THAN)
+            {
+                biggerThanPrintArea = true;
+            }
+        }
+
+        return biggerThanPrintArea;
     }
 
     @Override
@@ -2158,14 +2225,14 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void updatePrinterModelAndEdition(PrinterModel model, PrinterEdition edition) throws PrinterException
+    public void updatePrinterModelAndEdition(PrinterDefinitionFile printerDefinition, PrinterEdition printerEdition) throws PrinterException
     {
         WritePrinterID writeIDCmd
                 = (WritePrinterID) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.WRITE_PRINTER_ID);
 
         PrinterIdentity newIdentity = printerIdentity.clone();
-        newIdentity.printermodel.set(model.getCodeName());
-        newIdentity.printeredition.set(edition.getCodeName());
+        newIdentity.printermodel.set(printerDefinition.getTypeCode());
+        newIdentity.printeredition.set(printerEdition.getTypeCode());
         writeIDCmd.populatePacket(
                 newIdentity.printerUniqueID.get(),
                 newIdentity.printermodel.get(),

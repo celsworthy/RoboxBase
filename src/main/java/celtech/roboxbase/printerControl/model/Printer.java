@@ -11,8 +11,8 @@ import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.comms.rx.*;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.PrinterEdition;
-import celtech.roboxbase.configuration.PrinterModel;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
@@ -22,6 +22,7 @@ import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateT
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
+import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
 import java.util.List;
@@ -31,6 +32,7 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 
 /**
@@ -45,6 +47,17 @@ public interface Printer extends RoboxResponseConsumer
 
         NOZZLE_HEATER_0, NOZZLE_HEATER_1, NOZZLE_HEATER_BOTH;
     }
+
+    public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty();
+    public void setPrinterConfiguration(PrinterDefinitionFile printerConfigurationFile);
+    
+    public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty();
+    public void setPrinterEdition(PrinterEdition printerEdition);
+    
+    //Returns Width, Depth and Height centre point
+    public Point3D getPrintVolumeCentre();
+    
+    public boolean isBiggerThanPrintVolume(RectangularBounds bounds);
 
     public ReadOnlyObjectProperty<Head> headProperty();
 
@@ -415,7 +428,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void updatePrinterName(String chosenPrinterName) throws PrinterException;
 
-    public void updatePrinterModelAndEdition(PrinterModel model, PrinterEdition edition) throws PrinterException;
+    public void updatePrinterModelAndEdition(PrinterDefinitionFile printerDefinition, PrinterEdition printerEdition) throws PrinterException;
 
     public void updatePrinterWeek(String weekIdentifier) throws PrinterException;
 

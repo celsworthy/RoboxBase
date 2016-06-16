@@ -1,7 +1,7 @@
 package celtech.roboxbase.printerControl.comms.commands;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import java.io.File;
 import java.io.FilenameFilter;
 

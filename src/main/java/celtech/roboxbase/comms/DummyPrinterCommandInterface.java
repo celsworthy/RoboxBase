@@ -4,7 +4,7 @@ import celtech.roboxbase.comms.remote.EEPROMState;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.printerControl.model.HeaterMode;
 import celtech.roboxbase.comms.remote.PauseStatus;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.AckResponse;

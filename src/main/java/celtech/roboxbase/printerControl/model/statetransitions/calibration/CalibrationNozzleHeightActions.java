@@ -8,8 +8,7 @@ import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.NozzleHeater;
 import celtech.roboxbase.printerControl.model.Head;
-import celtech.roboxbase.configuration.PrintBed;
-import celtech.roboxbase.configuration.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.NozzleData;
 import celtech.roboxbase.printerControl.PrinterStatus;
@@ -138,8 +137,8 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
         }
 
         printer.goToZPosition(50);
-        printer.goToXYPosition(PrintBed.getPrintVolumeCentre().getX(),
-                PrintBed.getPrintVolumeCentre().getZ());
+        printer.goToXYPosition(printer.getPrintVolumeCentre().getX(),
+                printer.getPrintVolumeCentre().getY());
         if (PrinterUtils.waitOnBusy(printer, userOrErrorCancellable))
         {
             return;

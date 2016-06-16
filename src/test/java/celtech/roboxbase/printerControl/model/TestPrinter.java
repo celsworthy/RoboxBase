@@ -8,8 +8,6 @@ import celtech.roboxbase.comms.remote.EEPROMState;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.MaterialType;
-import celtech.roboxbase.configuration.PrinterEdition;
-import celtech.roboxbase.configuration.PrinterModel;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.comms.CommandInterface;
@@ -26,6 +24,8 @@ import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
@@ -33,6 +33,7 @@ import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndY
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
+import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
 import java.util.List;
@@ -44,6 +45,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 
 /**
@@ -725,11 +727,6 @@ public class TestPrinter implements Printer
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public void updatePrinterModelAndEdition(PrinterModel model, PrinterEdition edition) throws PrinterException
-    {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     @Override
     public void updatePrinterWeek(String weekIdentifier) throws PrinterException
     {
@@ -1099,6 +1096,48 @@ public class TestPrinter implements Printer
 
     @Override
     public void cleanNozzle(int nozzleNumber, boolean blockUntilFinished, Cancellable cancellable, boolean safetyFeaturesRequired) throws PrinterException
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setPrinterConfiguration(PrinterDefinitionFile printerConfigurationFile)
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Point3D getPrintVolumeCentre()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean isBiggerThanPrintVolume(RectangularBounds bounds)
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setPrinterEdition(PrinterEdition printerEdition)
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void updatePrinterModelAndEdition(PrinterDefinitionFile printerDefinition, PrinterEdition printerEdition) throws PrinterException
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

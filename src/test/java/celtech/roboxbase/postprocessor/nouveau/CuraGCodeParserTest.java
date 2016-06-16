@@ -178,6 +178,8 @@ public class CuraGCodeParserTest
     {
         String inputData = "G0 F12000 X88.302 Y42.421\n";
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.TravelDirective());
         ParsingResult result = runner.run(inputData);
 
@@ -292,6 +294,8 @@ public class CuraGCodeParserTest
     public void extrusionDirective()
     {
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.ExtrusionDirective());
 
         String eOnlyExtrude = "G1 X1.4 Y12.3 E1.3\n";
@@ -336,6 +340,8 @@ public class CuraGCodeParserTest
         String inputData = "G0 Z1.3\n";
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.LayerChangeDirective());
         ParsingResult result = runner.run(inputData);
 
@@ -415,6 +421,8 @@ public class CuraGCodeParserTest
                 + "G0 F12000 X114.903 Y73.184\n";
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(inputData);
 
@@ -455,6 +463,8 @@ public class CuraGCodeParserTest
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.ObjectSection());
         ParsingResult result = runner.run(inputData);
 
@@ -514,6 +524,8 @@ public class CuraGCodeParserTest
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.OrphanObjectSection());
         ParsingResult result = runner.run(inputData);
 
@@ -638,6 +650,8 @@ public class CuraGCodeParserTest
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(inputData);
 
@@ -712,6 +726,8 @@ public class CuraGCodeParserTest
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(layer0);
 
@@ -739,6 +755,8 @@ public class CuraGCodeParserTest
                 + "G1 X12.3 Y14.5 E1.00000\n";
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.FillSection());
         ParsingResult result = runner.run(inputData);
 
@@ -765,6 +783,8 @@ public class CuraGCodeParserTest
                 + "G1 F1800 E0.00000\n"
                 + "G1 X12.3 Y14.5 E1.00000\n";
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.InnerPerimeterSection());
         ParsingResult result = runner.run(inputData);
 
@@ -790,8 +810,9 @@ public class CuraGCodeParserTest
                 + "G0 F12000 X88.302 Y42.421 Z1.020\n"
                 + "G1 F1800 E0.00000\n"
                 + "G1 X12.3 Y14.5 E1.00000\n";
-        CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
-        );
+        CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.OuterPerimeterSection());
         ParsingResult result = runner.run(inputData);
 
@@ -819,6 +840,8 @@ public class CuraGCodeParserTest
                 + "G1 X12.3 Y14.5 E1.00000\n";
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.SupportSection());
         ParsingResult result = runner.run(inputData);
 
@@ -909,6 +932,8 @@ public class CuraGCodeParserTest
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
         );
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.AnySection());
 
         ParsingResult result = runner.run(section1);
@@ -977,6 +1002,8 @@ public class CuraGCodeParserTest
                 + "G1 X101.219 Y76.188 E0.10096\n";
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
+
         TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(inputData);
 
@@ -1117,6 +1144,7 @@ public class CuraGCodeParserTest
                 + "G1 X99.154 Y76.773 E0.17121\n";
 
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+        gcodeParser.setPrintVolumeBounds(210, 150, 100);
         BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(inputData);
 
