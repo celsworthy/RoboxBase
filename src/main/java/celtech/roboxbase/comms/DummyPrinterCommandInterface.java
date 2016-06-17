@@ -392,6 +392,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
         } else if (messageToWrite instanceof StatusRequest)
         {
             doStatusRequest();
+            response = currentStatus;
         } else if (messageToWrite instanceof AbortPrint)
         {
             steno.debug("ABORT print");

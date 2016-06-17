@@ -245,19 +245,27 @@ public abstract class CommandInterface extends Thread
                             steno.info("Connected to printer " + printerName);
                         }
 
+                        PrinterDefinitionFile printerConfigFile = null;
+
                         if (lastPrinterIDResponse.getModel() != null)
                         {
-                            PrinterDefinitionFile printerConfigFile = PrinterContainer.getPrinterByID(lastPrinterIDResponse.getModel());
-                            printerToUse.setPrinterConfiguration(printerConfigFile);
-                            for (PrinterEdition editionUnderExamination : printerConfigFile.getEditions())
+                            printerConfigFile = PrinterContainer.getPrinterByID(lastPrinterIDResponse.getModel());
+                        }
+
+                        if (printerConfigFile == null)
+                        {
+                            printerConfigFile = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
+                        }
+                        printerToUse.setPrinterConfiguration(printerConfigFile);
+                        for (PrinterEdition editionUnderExamination : printerConfigFile.getEditions())
+                        {
+                            if (editionUnderExamination.getTypeCode().equalsIgnoreCase(lastPrinterIDResponse.getEdition()))
                             {
-                                if (editionUnderExamination.getTypeCode().equalsIgnoreCase(lastPrinterIDResponse.getEdition()))
-                                {
-                                    printerToUse.setPrinterEdition(editionUnderExamination);
-                                    break;
-                                }
+                                printerToUse.setPrinterEdition(editionUnderExamination);
+                                break;
                             }
                         }
+
                     } catch (PrinterException ex)
                     {
                         steno.error("Error whilst checking printer ID");
