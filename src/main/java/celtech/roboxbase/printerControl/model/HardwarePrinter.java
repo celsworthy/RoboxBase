@@ -294,7 +294,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         this.commandInterface = commandInterface;
         this.filamentLoadedGetter = filamentLoadedGetter;
         this.doNotCheckForPresenceOfHead = doNotCheckForPresenceOfHead;
-
+        
         printEngine = new PrintEngine(this);
 
         extruders.add(firstExtruderNumber, new Extruder(firstExtruderLetter));
