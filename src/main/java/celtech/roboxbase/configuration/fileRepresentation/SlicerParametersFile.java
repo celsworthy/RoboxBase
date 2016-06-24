@@ -32,13 +32,13 @@ public class SlicerParametersFile
 
         SupportType(String description)
         {
-            this.description = BaseLookup.i18n(description);
+            this.description = description;
         }
 
         @Override
         public String toString()
         {
-            return description;
+            return BaseLookup.i18n(description);
         }
     }
 
