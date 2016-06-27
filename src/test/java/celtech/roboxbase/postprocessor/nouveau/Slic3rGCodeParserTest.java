@@ -1,6 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.postprocessor.nouveau.Slic3rGCodeParser;
 import celtech.roboxbase.postprocessor.nouveau.nodes.CommentNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
@@ -13,8 +12,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanSectionNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.UnretractNode;
 import org.junit.After;
@@ -25,7 +22,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
-import org.parboiled.parserunners.TracingParseRunner;
 import org.parboiled.support.ParsingResult;
 import org.parboiled.support.Var;
 
@@ -120,7 +116,7 @@ public class Slic3rGCodeParserTest
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
 
         Var<Integer> feedrateResult = new Var<>();
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.Feedrate(feedrateResult));
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Feedrate(feedrateResult));
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -137,7 +133,7 @@ public class Slic3rGCodeParserTest
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
 
         Var<String> commentResult = new Var<>();
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.Comment(commentResult));
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Comment(commentResult));
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -153,7 +149,7 @@ public class Slic3rGCodeParserTest
         String inputData = " ;" + commentPart + "\n";
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class
         );
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.CommentDirective());
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.CommentDirective());
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -182,7 +178,7 @@ public class Slic3rGCodeParserTest
         String commentPart = " move to first perimeter point";
         String inputData = "G1 X112.395 Y82.193 F356.000 ;" + commentPart + "\n";
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.TravelDirective());
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.TravelDirective());
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -220,7 +216,7 @@ public class Slic3rGCodeParserTest
         String commentPart = " unretract";
         String inputData = "G1 E0.30000 F1200.00000 ;" + commentPart + "\n";
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.UnretractDirective());
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.UnretractDirective());
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -311,7 +307,7 @@ public class Slic3rGCodeParserTest
         String commentPart = " move to next layer (66)";
         String inputData = "G1 Z0.300 F12000.000 ;" + commentPart + "\n";
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.LayerChangeDirective());
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.LayerChangeDirective());
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());

@@ -25,7 +25,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
-import org.parboiled.parserunners.TracingParseRunner;
 import org.parboiled.support.ParsingResult;
 import org.parboiled.support.Var;
 
@@ -137,7 +136,7 @@ public class CuraGCodeParserTest
         Slic3rGCodeParser gcodeParser = Parboiled.createParser(Slic3rGCodeParser.class);
 
         Var<String> commentResult = new Var<>();
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.Comment(commentResult));
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Comment(commentResult));
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());
@@ -1004,7 +1003,7 @@ public class CuraGCodeParserTest
         CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
         gcodeParser.setPrintVolumeBounds(210, 150, 100);
 
-        TracingParseRunner runner = new TracingParseRunner<>(gcodeParser.Layer());
+        BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
         ParsingResult result = runner.run(inputData);
 
         assertFalse(result.hasErrors());

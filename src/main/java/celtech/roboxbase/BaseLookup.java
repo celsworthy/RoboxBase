@@ -3,7 +3,6 @@ package celtech.roboxbase;
 import celtech.roboxbase.i18n.UTF8Control;
 import celtech.roboxbase.appManager.ConsoleSystemNotificationManager;
 import celtech.roboxbase.appManager.SystemNotificationManager;
-import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappings;
@@ -14,14 +13,8 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesNotifier;
 import celtech.roboxbase.utils.tasks.LiveTaskExecutor;
 import celtech.roboxbase.utils.tasks.TaskExecutor;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
@@ -220,18 +213,7 @@ public class BaseLookup
         
         steno.debug("Starting AutoMaker - loading resources...");
         
-        URL[] urls = new URL[1];
-        File file = new File(BaseConfiguration.getCommonApplicationDirectory().concat("Language"));
-        try
-        {
-            urls[0] = file.toURI().toURL();
-        } catch (MalformedURLException ex)
-        {
-            steno.info("Failed to load resource bundle URL");
-        }
-        
-        ClassLoader loader = new URLClassLoader(urls);
-        ResourceBundle i18nBundle = ResourceBundle.getBundle("LanguageData", Locale.getDefault(), loader, new UTF8Control());
+        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData", new UTF8Control());
         
         BaseLookup.setApplicationEnvironment(
                 new ApplicationEnvironment(i18nBundle, appLocale));
