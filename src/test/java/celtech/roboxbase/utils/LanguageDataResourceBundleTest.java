@@ -55,7 +55,7 @@ public class LanguageDataResourceBundleTest
                 "");
 
         Locale.setDefault(Locale.FRANCE);
-        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData", Locale.getDefault());
         assertEquals(
                 "Contrôle firmware de la buse", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
