@@ -1,5 +1,6 @@
 package celtech.roboxbase.i18n;
 
+import celtech.roboxbase.BaseLookup;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,7 +41,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
      */
     private Map<String, Object> combined;
 
-    private Set<Locale> availableLocales = new HashSet<>();
+    private final Set<Locale> availableLocales = new HashSet<>();
 
     /**
      * Construct a <code>MultiplePropertiesResourceBundle</code> for the passed
@@ -128,7 +129,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             };
             URLClassLoader cl = new URLClassLoader(urlsToSearch);
 
-            bundle = ResourceBundle.getBundle(resourceName, Locale.getDefault(), cl, new UTF8Control());
+            bundle = ResourceBundle.getBundle(resourceName, BaseLookup.getApplicationLocale(), cl, new UTF8Control());
             Enumeration<String> keys = bundle.getKeys();
             String key = null;
             while (keys.hasMoreElements())

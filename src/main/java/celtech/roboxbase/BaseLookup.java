@@ -37,7 +37,8 @@ public class BaseLookup
     private static final Stenographer steno = StenographerFactory.getStenographer(
             BaseLookup.class.getName());
 
-    private static ApplicationEnvironment applicationEnvironment;
+    private static ResourceBundle i18nbundle;
+    private static Locale applicationLocale;
     private static TaskExecutor taskExecutor;
     private static SlicerMappings slicerMappings;
     private static GCodeOutputWriterFactory<GCodeOutputWriter> postProcessorGCodeOutputWriterFactory;
@@ -55,30 +56,14 @@ public class BaseLookup
      */
     private static FilamentContainer filamentContainer;
 
-    /**
-     * @return the applicationEnvironment
-     */
-    public static ApplicationEnvironment getApplicationEnvironment()
-    {
-        return applicationEnvironment;
-    }
-
     public static ResourceBundle getLanguageBundle()
     {
-        return applicationEnvironment.getLanguageBundle();
-    }
-
-    /**
-     * @param applicationEnvironment the applicationEnvironment to set
-     */
-    public static void setApplicationEnvironment(ApplicationEnvironment applicationEnvironment)
-    {
-        BaseLookup.applicationEnvironment = applicationEnvironment;
+        return i18nbundle;
     }
 
     public static String i18n(String stringId)
     {
-        String langString = applicationEnvironment.getLanguageBundle().getString(stringId);
+        String langString = i18nbundle.getString(stringId);
         langString = substituteTemplates(langString);
         return langString;
     }
@@ -217,6 +202,11 @@ public class BaseLookup
     {
         return availableLocales;
     }
+    
+    public static Locale getApplicationLocale()
+    {
+        return applicationLocale;
+    }
 
     public static void setupDefaultValues(LogLevel logLevel, Locale appLocale, SystemNotificationManager notificationManager)
     {
@@ -224,13 +214,12 @@ public class BaseLookup
 
         steno.debug("Starting AutoMaker - loading resources...");
 
+        applicationLocale = appLocale;
+
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
-        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData", appLocale);
-
-        BaseLookup.setApplicationEnvironment(
-                new ApplicationEnvironment(i18nBundle, appLocale));
+        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
