@@ -227,7 +227,7 @@ public class BaseLookup
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
-        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        ResourceBundle i18nBundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData", appLocale);
 
         BaseLookup.setApplicationEnvironment(
                 new ApplicationEnvironment(i18nBundle, appLocale));

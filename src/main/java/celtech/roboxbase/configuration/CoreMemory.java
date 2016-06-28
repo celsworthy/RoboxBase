@@ -30,14 +30,7 @@ public class CoreMemory
 
         if (!coreMemoryFile.exists())
         {
-            coreMemoryData = new CoreMemoryData();
-            try
-            {
-                mapper.writeValue(coreMemoryFile, coreMemoryData);
-            } catch (IOException ex)
-            {
-                steno.error("Error trying to load slicer mapping file");
-            }
+            writeNewCoreMemory(coreMemoryFile);
         } else
         {
             try
@@ -46,13 +39,26 @@ public class CoreMemory
 
             } catch (IOException ex)
             {
-                steno.exception("Error loading core memory file " + coreMemoryFile.getAbsolutePath(), ex);
+                steno.exception("Error loading core memory file " + coreMemoryFile.getAbsolutePath() + " - writing new memory", ex);
+                writeNewCoreMemory(coreMemoryFile);
             }
+        }
+    }
+
+    private void writeNewCoreMemory(File coreMemoryFile)
+    {
+        coreMemoryData = new CoreMemoryData();
+        try
+        {
+            mapper.writeValue(coreMemoryFile, coreMemoryData);
+        } catch (IOException ex)
+        {
+            steno.error("Error trying to write core memory file");
         }
     }
 
     public void save()
     {
-        
+
     }
 }
