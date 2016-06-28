@@ -6,9 +6,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 {
@@ -37,6 +39,8 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
      * MultiplePropertiesResourceBundle.
      */
     private Map<String, Object> combined;
+
+    private Set<Locale> availableLocales = new HashSet<>();
 
     /**
      * Construct a <code>MultiplePropertiesResourceBundle</code> for the passed
@@ -79,7 +83,6 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     {
         String baseToWorkOn = baseDirectory.replaceFirst("\\/$", "");
         int lastSlash = baseToWorkOn.lastIndexOf("/");
-        System.out.println("Input:" + baseDirectory + " ModInput:" + baseToWorkOn + " Lang:" + languageFolderName + " BaseName:" + baseName + " ind:" + lastSlash);
         if (lastSlash >= 0)
         {
             this.baseDirectory = baseToWorkOn.substring(0, lastSlash + 1);
@@ -90,7 +93,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         }
         this.languageFolderName = languageFolderName;
         this.baseName = baseName;
-        System.out.println("BaseDir:" + this.baseDirectory + " Lang:" + this.languageFolderName + " BaseName:" + baseName);
+        loadBundlesOnce();
     }
 
     @Override
@@ -154,6 +157,41 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 
             addBundleData(commonResourcePath, baseName);
             addBundleData(specifiedResourcePath, baseName);
+
+            addAvailableLocales(commonResourcePath);
         }
+    }
+
+    private void addAvailableLocales(String commonResourcePath)
+    {
+        File commonDir = new File(commonResourcePath);
+        
+        availableLocales.add(Locale.ENGLISH);
+
+        for (String filename : commonDir.list())
+        {
+            filename = filename.replaceFirst(".properties", "");
+
+            Locale locale = null;
+
+            String[] languageStringParts = filename.split("_");
+
+            switch (languageStringParts.length)
+            {
+                case 2:
+                    locale = new Locale(languageStringParts[1]);
+                    availableLocales.add(locale);
+                    break;
+                case 3:
+                    locale = new Locale(languageStringParts[1], languageStringParts[2]);
+                    availableLocales.add(locale);
+                    break;
+            }
+        }
+    }
+
+    public Set<Locale> getAvailableLocales()
+    {
+        return availableLocales;
     }
 }
