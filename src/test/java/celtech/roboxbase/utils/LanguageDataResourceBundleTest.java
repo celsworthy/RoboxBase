@@ -27,7 +27,9 @@ public class LanguageDataResourceBundleTest
 
         testProperties.setProperty("language", "UK");
 
-        String installDir = "/Users/ianhudson/Development/RoboxBase/target/test-classes/InstallDir/AutoMaker";
+        URL applicationInstallURL = LanguageDataResourceBundleTest.class.getResource("/InstallDir/AutoMaker/");        
+        String installDir = applicationInstallURL.getPath();
+
         BaseConfiguration.setInstallationProperties(
                 testProperties,
                 installDir,
@@ -41,26 +43,28 @@ public class LanguageDataResourceBundleTest
                 1033, bundle.keySet().size());
     }
 
-//    @Test
-//    public void testLocaleFrance_included()
-//    {
-//        Properties testProperties = new Properties();
-//
-//        testProperties.setProperty("language", "FRANCE");
-//
-//        String installDir = "/Users/ianhudson/Development/RoboxBase/target/test-classes/InstallDir/AutoMaker";
-//        BaseConfiguration.setInstallationProperties(
-//                testProperties,
-//                installDir,
-//                "");
-//
-//        Locale.setDefault(Locale.FRANCE);
-//        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
-//        assertEquals(
-//                "Contrôle firmware de la buse", bundle.getString("error.ERROR_B_POSITION_LOST"));
-//        assertEquals(
-//                1033, bundle.keySet().size());
-//    }
+    @Test
+    public void testLocaleFrance_included()
+    {
+        Properties testProperties = new Properties();
+
+        testProperties.setProperty("language", "FRANCE");
+
+        URL applicationInstallURL = LanguageDataResourceBundleTest.class.getResource("/InstallDir/AutoMaker/");        
+        String installDir = applicationInstallURL.getPath();
+
+        BaseConfiguration.setInstallationProperties(
+                testProperties,
+                installDir,
+                "");
+
+        Locale.setDefault(Locale.FRANCE);
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        assertEquals(
+                "Contrôle firmware de la buse", bundle.getString("error.ERROR_B_POSITION_LOST"));
+        assertEquals(
+                1033, bundle.keySet().size());
+    }
 
     @Test
     public void testLocaleNonExistent()
@@ -69,7 +73,9 @@ public class LanguageDataResourceBundleTest
 
         testProperties.setProperty("language", "ITALIAN");
 
-        String installDir = "/Users/ianhudson/Development/RoboxBase/target/test-classes/InstallDir/AutoMaker";
+        URL applicationInstallURL = LanguageDataResourceBundleTest.class.getResource("/InstallDir/AutoMaker/");        
+        String installDir = applicationInstallURL.getPath();
+
         BaseConfiguration.setInstallationProperties(
                 testProperties,
                 installDir,

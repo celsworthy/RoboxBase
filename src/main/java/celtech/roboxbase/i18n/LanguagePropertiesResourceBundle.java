@@ -82,11 +82,11 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         System.out.println("Input:" + baseDirectory + " ModInput:" + baseToWorkOn + " Lang:" + languageFolderName + " BaseName:" + baseName + " ind:" + lastSlash);
         if (lastSlash >= 0)
         {
-            this.baseDirectory = baseDirectory.substring(0, lastSlash + 1);
-            terminalDirectoryName = baseDirectory.substring(lastSlash + 1);
+            this.baseDirectory = baseToWorkOn.substring(0, lastSlash + 1);
+            terminalDirectoryName = baseToWorkOn.substring(lastSlash + 1);
         } else
         {
-            this.baseDirectory = baseDirectory;
+            this.baseDirectory = baseToWorkOn;
         }
         this.languageFolderName = languageFolderName;
         this.baseName = baseName;
