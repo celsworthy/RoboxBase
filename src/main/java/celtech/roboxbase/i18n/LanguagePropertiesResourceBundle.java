@@ -1,6 +1,7 @@
 package celtech.roboxbase.i18n;
 
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.configuration.BaseConfiguration;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,9 +13,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 {
+
+    private final Stenographer steno = StenographerFactory.getStenographer(LanguagePropertiesResourceBundle.class.getName());
 
     /**
      * The base name for the ResourceBundles to load in.
@@ -42,6 +47,11 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     private Map<String, Object> combined;
 
     private final Set<Locale> availableLocales = new HashSet<>();
+
+    public LanguagePropertiesResourceBundle()
+    {
+        this(BaseConfiguration.getApplicationInstallDirectory(null), "Language", "LanguageData");
+    }
 
     /**
      * Construct a <code>MultiplePropertiesResourceBundle</code> for the passed
@@ -119,6 +129,8 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 
     private void addBundleData(String resourcePath, String resourceName)
     {
+        steno.debug("Adding language resources from " + resourcePath + " with resource name " + resourceName);
+
         ResourceBundle bundle = null;
         try
         {
@@ -166,7 +178,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     private void addAvailableLocales(String commonResourcePath)
     {
         File commonDir = new File(commonResourcePath);
-        
+
         availableLocales.add(Locale.ENGLISH);
 
         for (String filename : commonDir.list())
@@ -181,10 +193,12 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             {
                 case 2:
                     locale = new Locale(languageStringParts[1]);
+                    steno.debug("Adding locale: " + locale.getDisplayName());
                     availableLocales.add(locale);
                     break;
                 case 3:
                     locale = new Locale(languageStringParts[1], languageStringParts[2]);
+                    steno.debug("Adding locale: " + locale.getDisplayName());
                     availableLocales.add(locale);
                     break;
             }

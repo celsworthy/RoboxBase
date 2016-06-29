@@ -12,6 +12,8 @@ import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
@@ -19,6 +21,7 @@ import java.util.ResourceBundle.Control;
  */
 public class UTF8Control extends Control
 {
+    private final Stenographer steno = StenographerFactory.getStenographer(UTF8Control.class.getName());
 
     /**
      * Instantiates a resource bundle for the given bundle name of the given
@@ -132,6 +135,7 @@ public class UTF8Control extends Control
         } else if (format.equals("java.properties"))
         {
             final String resourceName = toResourceName0(bundleName, "properties");
+            steno.debug("Loading resource name " + resourceName);
             if (resourceName == null)
             {
                 return bundle;
