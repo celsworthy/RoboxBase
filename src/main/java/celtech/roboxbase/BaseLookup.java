@@ -5,7 +5,7 @@ import celtech.roboxbase.appManager.SystemNotificationManager;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappings;
-import celtech.roboxbase.i18n.LanguageData;
+import celtech.roboxbase.i18n.languagedata.LanguageData;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.GCodeOutputWriterFactory;
 import celtech.roboxbase.postprocessor.LiveGCodeOutputWriter;
@@ -221,7 +221,7 @@ public class BaseLookup
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
-        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData");
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());

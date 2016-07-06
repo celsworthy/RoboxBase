@@ -1,6 +1,7 @@
-package celtech.roboxbase.i18n;
+package celtech.roboxbase.i18n.languagedata;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.i18n.LanguagePropertiesResourceBundle;
 
 /**
  *

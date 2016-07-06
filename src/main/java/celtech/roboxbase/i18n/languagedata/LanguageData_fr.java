@@ -1,4 +1,4 @@
-package celtech.roboxbase.i18n;
+package celtech.roboxbase.i18n.languagedata;
 
 /**
  *
