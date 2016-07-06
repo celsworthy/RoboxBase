@@ -151,13 +151,15 @@ public class BaseConfiguration
             String applicationInstallDirectory, String userStorageDirectory)
     {
         installationProperties = testingProperties;
+        steno.info("App dir: " + applicationInstallDirectory);
         BaseConfiguration.applicationInstallDirectory = applicationInstallDirectory;
         try
         {
             applicationInstallDirectoryURI = new URI("file:/" + applicationInstallDirectory).getSchemeSpecificPart();
+            steno.info("App dir URI: " + applicationInstallDirectoryURI);
         } catch (URISyntaxException ex)
         {
-            steno.error("Failed to setup install URI");
+            steno.exception("Failed to setup install URI", ex);
         }
         BaseConfiguration.userStorageDirectory = userStorageDirectory;
     }
