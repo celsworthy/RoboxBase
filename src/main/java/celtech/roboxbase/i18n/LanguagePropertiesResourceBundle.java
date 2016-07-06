@@ -48,11 +48,6 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 
     private final Set<Locale> availableLocales = new HashSet<>();
 
-    public LanguagePropertiesResourceBundle()
-    {
-        this(BaseConfiguration.getApplicationInstallDirectory(null), "Language", "LanguageData");
-    }
-
     /**
      * Construct a <code>MultiplePropertiesResourceBundle</code> for the passed
      * in base-name.
@@ -104,6 +99,8 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         }
         this.languageFolderName = languageFolderName;
         this.baseName = baseName;
+                steno.info("combined is null " + (combined == null));
+
         loadBundlesOnce();
     }
 

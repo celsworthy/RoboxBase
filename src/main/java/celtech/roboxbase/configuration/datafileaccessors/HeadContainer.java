@@ -39,11 +39,11 @@ public class HeadContainer
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
-    private ArrayList<HeadFile> ingestHeads(File[] userheads)
+    private ArrayList<HeadFile> ingestHeads(File[] headFiles)
     {
         ArrayList<HeadFile> headList = new ArrayList<>();
 
-        for (File headFile : userheads)
+        for (File headFile : headFiles)
         {
             try
             {

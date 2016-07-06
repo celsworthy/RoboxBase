@@ -51,6 +51,7 @@ public class BaseConfiguration
 
     private static Configuration configuration = null;
     private static String applicationInstallDirectory = null;
+    private static String applicationInstallDirectoryURI = null;
 
     private static String commonApplicationDirectory = null;
 
@@ -151,6 +152,13 @@ public class BaseConfiguration
     {
         installationProperties = testingProperties;
         BaseConfiguration.applicationInstallDirectory = applicationInstallDirectory;
+        try
+        {
+            applicationInstallDirectoryURI = new URI("file:/" + applicationInstallDirectory).getSchemeSpecificPart();
+        } catch (URISyntaxException ex)
+        {
+            steno.error("Failed to setup install URI");
+        }
         BaseConfiguration.userStorageDirectory = userStorageDirectory;
     }
 
@@ -266,6 +274,15 @@ public class BaseConfiguration
         return applicationShortName;
     }
 
+    public static String getApplicationInstallDirectoryURI()
+    {
+        if (applicationInstallDirectoryURI == null)
+        {
+            getApplicationInstallDirectory(null);
+        }
+        return applicationInstallDirectoryURI;
+    }
+
     public static String getApplicationInstallDirectory(Class classToCheck)
     {
         if (configuration == null)
@@ -287,29 +304,24 @@ public class BaseConfiguration
                 String fakeAppDirectory = configuration.getFilenameString(applicationConfigComponent,
                         "FakeInstallDirectory",
                         null);
+
+                String path;
+
                 if (fakeAppDirectory == null)
                 {
-                    try
-                    {
-                        String path = classToCheck.getProtectionDomain().getCodeSource().getLocation().getPath();
-                        URI uri = new URI(path);
-                        File file = new File(uri.getSchemeSpecificPart());
-                        String actualPath = file.getCanonicalPath();
-                        actualPath = actualPath.replaceFirst("[a-zA-Z0-9]*\\.jar", "");
-                        applicationInstallDirectory = actualPath;
-                    } catch (URISyntaxException ex)
-                    {
-                        steno.error(
-                                "URI Syntax Exception whilst attempting to determine the application path - the application is unlikely to run correctly.");
-                    } catch (IOException ex)
-                    {
-                        steno.error(
-                                "IO Exception whilst attempting to determine the application path - the application is unlikely to run correctly.");
-                    }
+                    path = classToCheck.getProtectionDomain().getCodeSource().getLocation().getPath();
+
                 } else
                 {
-                    applicationInstallDirectory = fakeAppDirectory;
+                    path = fakeAppDirectory;
                 }
+
+                File filePath = new File(path);
+                URI uri = filePath.toURI();
+                applicationInstallDirectoryURI = uri.getSchemeSpecificPart();
+                String actualPath = path.replaceFirst("[a-zA-Z0-9]*\\.jar", "");
+                applicationInstallDirectory = actualPath;
+
             } catch (ConfigNotLoadedException ex)
             {
                 steno.error(

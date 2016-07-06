@@ -128,10 +128,11 @@ public class FilamentSaver
                     {
                         if (lastToolSelects[otherToolNumber] == null)
                         {
-                            //We need to switch off the other heater at the start of this layer
-                            // Add a node before the first node in the layer.
-                            MCodeNode heaterOffNode = generateHeaterOffNode(layerCounter, otherToolNumber);
-                            nodesToAdd.add(new NodeAddStore(layerPostProcessResult.getLayerData().getChildren().get(0), heaterOffNode, false));
+                            //We need to switch off the other heater at the start of the print
+                            MCodeNode heaterOffNode = generateHeaterOffNode(0, otherToolNumber);
+                            nodesToAdd.add(new NodeAddStore(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0), heaterOffNode, false));
+                            nozzleHeaterState[otherToolNumber] = HeaterState.OFF;
+                            needToSwitchToSubsequentLayerTemps[otherToolNumber] = false;
                         } else
                         {
                             //We need to switch off the other heater after the last tool select for the other tool...

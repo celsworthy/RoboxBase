@@ -22,27 +22,34 @@ public class SlicerParametersFile
         /**
          * Use material 1 as support. Implies all objects printed with material 2.
          */
-        MATERIAL_1("supportType.material1"),
+        MATERIAL_1("supportType.material1", 0),
         /**
          * Use material 2 as support. Implies all objects printed with material 1.
          */
-        MATERIAL_2("supportType.material2");
+        MATERIAL_2("supportType.material2", 1);
 
-        String description;
+        private String description;
+        private int extruderNumber;
 
-        SupportType(String description)
+        SupportType(String description, int extruderNumber)
         {
-            this.description = description;
+            this.description = BaseLookup.i18n(description);
+            this.extruderNumber = extruderNumber;
         }
 
         @Override
         public String toString()
         {
-            return BaseLookup.i18n(description);
+            return description;
         }
+        
+        public int getExtruderNumber()
+        {
+            return extruderNumber;
+    }
     }
 
-    private int version = 6;
+    private int version = 7;
     private String profileName;
     private String headType;
     private SlicerType slicerOverride;
@@ -60,6 +67,9 @@ public class SlicerParametersFile
     private int numberOfPerimeters;
     private int brimWidth_mm;
     private boolean spiralPrint;
+    private boolean supportGapEnabled;
+    private float supportXYDistance_mm;
+    private float supportZDistance_mm;
 
     /*
      * Nozzle data
@@ -826,6 +836,39 @@ public class SlicerParametersFile
         firePropertyChange("zHopDistance", null, zHopDistance);
     }
 
+    public float getSupportXYDistance_mm()
+    {
+        return supportXYDistance_mm;
+    }
+
+    public void setSupportXYDistance_mm(float supportXYDistance)
+    {
+        this.supportXYDistance_mm = supportXYDistance;
+        firePropertyChange("supportXYDistance_mm", null, supportXYDistance);
+    }
+
+    public float getSupportZDistance_mm()
+    {
+        return supportZDistance_mm;
+    }
+
+    public void setSupportZDistance_mm(float supportZDistance)
+    {
+        this.supportZDistance_mm = supportZDistance;
+        firePropertyChange("supportZDistance_mm", null, supportZDistance);
+    }
+
+    public boolean getSupportGapEnabled()
+    {
+        return supportGapEnabled;
+    }
+
+    public void setSupportGapEnabled(boolean supportGapEnabled)
+    {
+        this.supportGapEnabled = supportGapEnabled;
+        firePropertyChange("supportGapEnabled", null, supportGapEnabled);
+    }
+
     @Override
     public SlicerParametersFile clone()
     {
@@ -848,6 +891,9 @@ public class SlicerParametersFile
         clone.numberOfPerimeters = numberOfPerimeters;
         clone.brimWidth_mm = brimWidth_mm;
         clone.spiralPrint = spiralPrint;
+        clone.supportGapEnabled = supportGapEnabled;
+        clone.supportXYDistance_mm = supportXYDistance_mm;
+        clone.supportZDistance_mm = supportZDistance_mm;
 
         /*
          * Nozzle data

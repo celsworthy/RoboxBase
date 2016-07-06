@@ -37,11 +37,12 @@ public class BaseEnvironmentConfiguredTest
 
         testProperties.setProperty("language", "UK");
         URL applicationInstallURL = BaseEnvironmentConfiguredTest.class.getResource("/InstallDir/AutoMaker/");
+        String applicationInstallDir = BaseEnvironmentConfiguredTest.class.getResource("/InstallDir/AutoMaker/").getFile();
         userStorageFolderPath = temporaryUserStorageFolder.getRoot().getAbsolutePath()
             + File.separator;
         BaseConfiguration.setInstallationProperties(
             testProperties,
-            applicationInstallURL.getFile(),
+            applicationInstallDir,
             userStorageFolderPath);
         
         File filamentDir = new File(userStorageFolderPath
@@ -58,8 +59,6 @@ public class BaseEnvironmentConfiguredTest
         // force initialisation
         URL configURL = BaseEnvironmentConfiguredTest.class.getResource("/Base.configFile.xml");
         System.setProperty("libertySystems.configFile", configURL.getFile());
-        String installDir = BaseConfiguration.getApplicationInstallDirectory(
-            BaseLookup.class);
         SlicerParametersContainer.getInstance();
 
         BaseLookup.setTaskExecutor(new TestTaskExecutor());

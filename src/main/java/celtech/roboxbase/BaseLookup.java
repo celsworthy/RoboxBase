@@ -1,13 +1,11 @@
 package celtech.roboxbase;
 
-import celtech.roboxbase.i18n.UTF8Control;
 import celtech.roboxbase.appManager.ConsoleSystemNotificationManager;
 import celtech.roboxbase.appManager.SystemNotificationManager;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappings;
 import celtech.roboxbase.i18n.LanguageData;
-import celtech.roboxbase.i18n.LanguagePropertiesResourceBundle;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.GCodeOutputWriterFactory;
 import celtech.roboxbase.postprocessor.LiveGCodeOutputWriter;
@@ -15,7 +13,6 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesNotifier;
 import celtech.roboxbase.utils.tasks.LiveTaskExecutor;
 import celtech.roboxbase.utils.tasks.TaskExecutor;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -206,6 +203,11 @@ public class BaseLookup
     public static Locale getApplicationLocale()
     {
         return applicationLocale;
+    }
+
+    public static void setApplicationLocale(Locale locale)
+    {
+        applicationLocale = locale;
     }
 
     public static void setupDefaultValues(LogLevel logLevel, Locale appLocale, SystemNotificationManager notificationManager)

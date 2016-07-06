@@ -567,4 +567,41 @@ public class FilamentSaverTest
         assertTrue(((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0)).isTOnly());
         assertTrue(((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0)).isSOnly());
     }
+
+    /**
+     * Test of saveHeaters method, of class FilamentSaver.
+     */
+    @Test
+    public void testSaveHeaters_failureToManageSwitchOffWithShortFirstLayer()
+    {
+        //Test that we switch off at the right point when multiple uses of the first heater are present
+        System.out.println("failureToManageSwitchOffWithShortFirstLayer");
+        List<LayerDefinition> layers = new ArrayList<>();
+        layers.add(new LayerDefinition(0, new ToolDefinition[]
+        {
+            new ToolDefinition(0, 116)
+        }));
+        layers.add(new LayerDefinition(1, new ToolDefinition[]
+        {
+            new ToolDefinition(0, 77)
+        }));
+
+        List<LayerPostProcessResult> allLayerPostProcessResults = TestDataGenerator.generateLayerResults(layers);
+        FilamentSaver instance = new FilamentSaver(100, 120);
+        instance.saveHeaters(allLayerPostProcessResults, true, true);
+
+        assertEquals(2, allLayerPostProcessResults.size());
+        assertEquals(2, allLayerPostProcessResults.get(0).getLayerData().getChildren().size());
+        //M103 because this is layer 0
+        assertTrue(allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0) instanceof MCodeNode);
+        assertEquals(103, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0)).getMNumber());
+        assertEquals(0, ((MCodeNode) allLayerPostProcessResults.get(0).getLayerData().getChildren().get(0)).getSNumber());
+
+        assertEquals(2, allLayerPostProcessResults.get(1).getLayerData().getChildren().size());
+        //M104 S (T isn't needed)
+        assertTrue(allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0) instanceof MCodeNode);
+        assertEquals(104, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0)).getMNumber());
+        assertEquals(true, ((MCodeNode) allLayerPostProcessResults.get(1).getLayerData().getChildren().get(0)).isSOnly());
+
+    }
 }

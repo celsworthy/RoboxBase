@@ -206,26 +206,6 @@ public class PostProcessor
 
             int defaultObjectNumber = 0;
 
-            if (headFile.getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
-            {
-                nozzle0HeatRequired = usedExtruders.get(1)
-                        || postProcessingMode == PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
-                eRequired = usedExtruders.get(0);
-                nozzle1HeatRequired = usedExtruders.get(0)
-                        || postProcessingMode == PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL;
-                dRequired = usedExtruders.get(1);
-            } else
-            {
-                nozzle0HeatRequired = false;
-                nozzle1HeatRequired = false;
-                eRequired = true;
-            }
-
-            outputUtilities.prependPrePrintHeader(writer, headFile.getTypeCode(),
-                    nozzle0HeatRequired,
-                    nozzle1HeatRequired,
-                    safetyFeaturesRequired);
-
             StringBuilder layerBuffer = new StringBuilder();
 
             OpenResult lastOpenResult = null;
@@ -305,6 +285,22 @@ public class PostProcessor
             timeUtils.timerStart(this, timeAndVolumeCalcTimerName);
             TimeAndVolumeCalcResult timeAndVolumeCalcResult = timeAndVolumeCalc.calculateVolumeAndTime(postProcessResults);
             timeUtils.timerStop(this, timeAndVolumeCalcTimerName);
+
+            if (headFile.getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                eRequired = nozzle1HeatRequired = timeAndVolumeCalcResult.getExtruderEStats().getVolume() > 0;
+                dRequired = nozzle0HeatRequired = timeAndVolumeCalcResult.getExtruderDStats().getVolume() > 0;
+            } else
+            {
+                nozzle0HeatRequired = false;
+                nozzle1HeatRequired = false;
+                eRequired = true;
+            }
+
+            outputUtilities.prependPrePrintHeader(writer, headFile.getTypeCode(),
+                    nozzle0HeatRequired,
+                    nozzle1HeatRequired,
+                    safetyFeaturesRequired);
 
             timeUtils.timerStart(this, heaterSaverTimerName);
             if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
