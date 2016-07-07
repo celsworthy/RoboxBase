@@ -2,16 +2,10 @@ package celtech.roboxbase.utils;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.i18n.UTF8Control;
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import libertysystems.stenographer.LogLevel;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -38,7 +32,7 @@ public class LanguageDataResourceBundleTest
 
         BaseLookup.setApplicationLocale(Locale.UK);
 
-        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData");
         assertEquals(
                 "Nozzle firmware control", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
@@ -62,7 +56,7 @@ public class LanguageDataResourceBundleTest
                 installDir,
                 "");
 
-        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData");
         assertEquals(
                 "Contrôle firmware de la buse", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
@@ -86,7 +80,7 @@ public class LanguageDataResourceBundleTest
                 installDir,
                 "");
 
-        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.LanguageData");
+        ResourceBundle bundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData");
         assertEquals(
                 "Nozzle firmware control", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
