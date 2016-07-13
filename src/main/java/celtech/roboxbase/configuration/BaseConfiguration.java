@@ -20,6 +20,7 @@ import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -503,6 +504,23 @@ public class BaseConfiguration
                 }
             }
         }
+
+        if (userStorageDirectory != null)
+        {
+            File userStorageDirRef = new File(userStorageDirectory);
+
+            if (!userStorageDirRef.exists())
+            {
+                try
+                {
+                    FileUtils.forceMkdir(userStorageDirRef);
+                } catch (IOException ex)
+                {
+                    steno.exception("Couldn't create user storage directory: " + userStorageDirectory, ex);
+                }
+            }
+        }
+
         return userStorageDirectory;
     }
 

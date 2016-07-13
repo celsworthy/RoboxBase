@@ -99,7 +99,6 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         }
         this.languageFolderName = languageFolderName;
         this.baseName = baseName;
-                steno.info("combined is null " + (combined == null));
 
         loadBundlesOnce();
     }
@@ -132,25 +131,28 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         try
         {
             File propFile = new File(resourcePath);
-            URL[] urlsToSearch =
-            {
-                propFile.toURI().toURL()
-            };
-            URLClassLoader cl = new URLClassLoader(urlsToSearch);
 
-            bundle = ResourceBundle.getBundle(resourceName, BaseLookup.getApplicationLocale(), cl, new UTF8Control());
-            Enumeration<String> keys = bundle.getKeys();
-            String key = null;
-            while (keys.hasMoreElements())
+            if (propFile.exists())
             {
-                key = keys.nextElement();
-                combined.put(key, bundle.getObject(key));
+                URL[] urlsToSearch =
+                {
+                    propFile.toURI().toURL()
+                };
+                URLClassLoader cl = new URLClassLoader(urlsToSearch);
+
+                bundle = ResourceBundle.getBundle(resourceName, BaseLookup.getApplicationLocale(), cl, new UTF8Control());
+                Enumeration<String> keys = bundle.getKeys();
+                String key = null;
+                while (keys.hasMoreElements())
+                {
+                    key = keys.nextElement();
+                    combined.put(key, bundle.getObject(key));
+                }
             }
         } catch (MalformedURLException ex)
         {
             System.err.println("Failed to load multi-language data");
         }
-
     }
 
     /**

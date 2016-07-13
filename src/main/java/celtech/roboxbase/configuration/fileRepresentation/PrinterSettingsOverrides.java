@@ -28,7 +28,7 @@ public class PrinterSettingsOverrides
 
     private final StringProperty customSettingsName = new SimpleStringProperty();
     private final ObjectProperty<PrintQualityEnumeration> printQuality
-            = new SimpleObjectProperty<>(PrintQualityEnumeration.DRAFT);
+            = new SimpleObjectProperty<>(PrintQualityEnumeration.NORMAL);
     private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
 
     private int brimOverride = 0;
