@@ -12,7 +12,7 @@ public class LanguageData extends LanguagePropertiesResourceBundle
 
     public LanguageData()
     {
-        super(BaseConfiguration.getApplicationInstallDirectoryURI(), "Language", "LanguageData");
+        super(BaseConfiguration.getApplicationInstallDirectory(null), "Language", "LanguageData");
     }
 
 }

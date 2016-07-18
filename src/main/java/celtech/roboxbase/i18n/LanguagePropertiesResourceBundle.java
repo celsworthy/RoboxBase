@@ -1,9 +1,9 @@
 package celtech.roboxbase.i18n;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.configuration.BaseConfiguration;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
@@ -125,7 +125,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 
     private void addBundleData(String resourcePath, String resourceName)
     {
-        steno.debug("Adding language resources from " + resourcePath + " with resource name " + resourceName);
+        steno.info("Adding language resources from " + resourcePath + " with resource name " + resourceName);
 
         ResourceBundle bundle = null;
         try
@@ -176,6 +176,8 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 
     private void addAvailableLocales(String commonResourcePath)
     {
+        steno.info("Loading locales from " + commonResourcePath);
+        
         File commonDir = new File(commonResourcePath);
 
         availableLocales.add(Locale.ENGLISH);
