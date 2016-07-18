@@ -52,7 +52,6 @@ public class BaseConfiguration
 
     private static Configuration configuration = null;
     private static String applicationInstallDirectory = null;
-    private static URI applicationInstallDirectoryURI = null;
 
     private static String commonApplicationDirectory = null;
 
@@ -154,14 +153,6 @@ public class BaseConfiguration
         installationProperties = testingProperties;
         steno.info("App dir: " + applicationInstallDirectory);
         BaseConfiguration.applicationInstallDirectory = applicationInstallDirectory;
-        try
-        {
-            applicationInstallDirectoryURI = new URI("file:/" + applicationInstallDirectory);
-            steno.info("App dir URI: " + applicationInstallDirectoryURI);
-        } catch (URISyntaxException ex)
-        {
-            steno.exception("Failed to setup install URI", ex);
-        }
         BaseConfiguration.userStorageDirectory = userStorageDirectory;
     }
 
@@ -275,15 +266,6 @@ public class BaseConfiguration
             }
         }
         return applicationShortName;
-    }
-
-    public static URI getApplicationInstallDirectoryURI()
-    {
-        if (applicationInstallDirectoryURI == null)
-        {
-            getApplicationInstallDirectory(null);
-        }
-        return applicationInstallDirectoryURI;
     }
 
     public static String getApplicationInstallDirectory(Class classToCheck)
