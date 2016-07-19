@@ -221,11 +221,11 @@ public class BaseLookup
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
-        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData");
+        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", appLocale);
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
-        steno.debug("Detected locale - " + appLocale.toLanguageTag());
+        steno.info("Using locale - " + appLocale.toLanguageTag());
 
         printerListChangesNotifier = new PrinterListChangesNotifier(BaseLookup.getConnectedPrinters());
 
