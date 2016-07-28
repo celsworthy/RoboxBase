@@ -170,7 +170,11 @@ public class RemotePrinterDetector extends DeviceDetector
 
             if (responseCode == 200)
             {
-                DiscoveryResponse discoveryResponse = mapper.readValue(con.getInputStream(), DiscoveryResponse.class);
+                int availChars = con.getInputStream().available();
+                byte[] inputData = new byte[availChars];
+                con.getInputStream().read(inputData, 0, availChars);
+                steno.info("Got " + availChars + " chars");
+                DiscoveryResponse discoveryResponse = mapper.readValue(inputData, DiscoveryResponse.class);
                 discoveryResponse.getPrinterIDs().forEach(printerID ->
                 {
                     RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);

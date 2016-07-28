@@ -179,9 +179,11 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
                         doNotCheckForPresenceOfHead);
                 break;
             case ROBOX_REMOTE:
-                newPrinter = new HardwarePrinter(this, new RoboxRemoteCommandInterface(
+                RoboxRemoteCommandInterface commandInterface = new RoboxRemoteCommandInterface(
                         this, (RemoteDetectedPrinter) detectedPrinter, suppressPrinterIDChecks,
-                        sleepBetweenStatusChecksMS), filamentLoadedGetter,
+                        sleepBetweenStatusChecksMS);
+
+                newPrinter = new HardwarePrinter(this, commandInterface, filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
                 break;
             default:
@@ -325,13 +327,11 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
             if (commandInterface != null)
             {
                 commandInterface.disconnectPrinter();
-            }
-            else
+            } else
             {
                 steno.info("CI was null");
             }
-        }
-        else
+        } else
         {
             steno.info("not in active list");
         }

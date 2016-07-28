@@ -119,6 +119,8 @@ public class FilamentContainer
 
         ArrayList<Filament> filaments = null;
 
+        steno.info("Base dir is " + BaseConfiguration.getCommonApplicationDirectory());
+        steno.info("Filament dir is " + BaseConfiguration.getApplicationFilamentDirectory());
         File applicationFilamentDirHandle = new File(
                 BaseConfiguration.getApplicationFilamentDirectory());
         File[] applicationfilaments = applicationFilamentDirHandle.listFiles(
@@ -156,6 +158,7 @@ public class FilamentContainer
 
         for (File filamentFile : filamentFiles)
         {
+            steno.info("Ingesting file " + filamentFile.getAbsolutePath());
             try
             {
                 Properties filamentProperties = new Properties();

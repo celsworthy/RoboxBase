@@ -177,31 +177,36 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     private void addAvailableLocales(String commonResourcePath)
     {
         steno.info("Loading locales from " + commonResourcePath);
-        
+
         File commonDir = new File(commonResourcePath);
 
         availableLocales.add(Locale.ENGLISH);
 
-        for (String filename : commonDir.list())
+        String[] filenamesToIngest = commonDir.list();
+
+        if (filenamesToIngest != null)
         {
-            filename = filename.replaceFirst(".properties", "");
-
-            Locale locale = null;
-
-            String[] languageStringParts = filename.split("_");
-
-            switch (languageStringParts.length)
+            for (String filename : filenamesToIngest)
             {
-                case 2:
-                    locale = new Locale(languageStringParts[1]);
-                    steno.debug("Adding locale: " + locale.getDisplayName());
-                    availableLocales.add(locale);
-                    break;
-                case 3:
-                    locale = new Locale(languageStringParts[1], languageStringParts[2]);
-                    steno.debug("Adding locale: " + locale.getDisplayName());
-                    availableLocales.add(locale);
-                    break;
+                filename = filename.replaceFirst(".properties", "");
+
+                Locale locale = null;
+
+                String[] languageStringParts = filename.split("_");
+
+                switch (languageStringParts.length)
+                {
+                    case 2:
+                        locale = new Locale(languageStringParts[1]);
+                        steno.debug("Adding locale: " + locale.getDisplayName());
+                        availableLocales.add(locale);
+                        break;
+                    case 3:
+                        locale = new Locale(languageStringParts[1], languageStringParts[2]);
+                        steno.debug("Adding locale: " + locale.getDisplayName());
+                        availableLocales.add(locale);
+                        break;
+                }
             }
         }
     }
