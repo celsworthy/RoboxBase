@@ -10,6 +10,7 @@ import java.util.List;
 public class DiscoveryResponse
 {
 
+    private String serverVersion;
     private List<String> printerIDs;
 
     public DiscoveryResponse()
@@ -17,9 +18,23 @@ public class DiscoveryResponse
         // Jackson deserialization
     }
 
-    public DiscoveryResponse(List<String> printerIDs)
+    public DiscoveryResponse(String serverVersion,
+            List<String> printerIDs)
     {
+        this.serverVersion = serverVersion;
         this.printerIDs = printerIDs;
+    }
+
+    @JsonProperty
+    public String getServerVersion()
+    {
+        return serverVersion;
+    }
+
+    @JsonProperty
+    public void setServerVersion(String serverVersion)
+    {
+        this.serverVersion = serverVersion;
     }
 
     @JsonProperty
@@ -33,12 +48,15 @@ public class DiscoveryResponse
     {
         this.printerIDs = printerIDs;
     }
-    
+
     @Override
     public String toString()
     {
         StringBuilder output = new StringBuilder();
         output.append("DiscoveryResponse");
+        output.append('\n');
+        output.append("Server version:");
+        output.append(serverVersion);
         output.append('\n');
         printerIDs.forEach(id ->
         {
@@ -46,7 +64,7 @@ public class DiscoveryResponse
             output.append('\n');
         });
         output.append("================");
-        
+
         return output.toString();
     }
 }

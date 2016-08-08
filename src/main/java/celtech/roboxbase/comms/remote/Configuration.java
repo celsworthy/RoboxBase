@@ -10,6 +10,12 @@ public class Configuration
     public static final String discoveryService = "/discovery";
     
     /**
+     * Admin API
+     */
+    public static final String adminAPIService = "/admin";
+    public static final String shutdown = "/shutdown";
+
+    /**
      * High Level API
      */
     public static final String highLevelAPIService = "/remoteControl";

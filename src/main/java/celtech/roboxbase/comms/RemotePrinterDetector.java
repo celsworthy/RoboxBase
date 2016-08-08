@@ -12,9 +12,9 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -30,7 +30,8 @@ public class RemotePrinterDetector extends DeviceDetector
     private boolean initialised = false;
     private InetAddress group = null;
     private DatagramSocket s = null;
-    private List<DetectedDevice> currentPrinters = new ArrayList<>();
+    private final Map<InetAddress, DetectedServer> validInServiceServers = new HashMap<>();
+    private final Map<InetAddress, DetectedServer> incorrectVersionServers = new HashMap<>();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public RemotePrinterDetector(DeviceDetectionListener listener)
@@ -68,6 +69,8 @@ public class RemotePrinterDetector extends DeviceDetector
 
                 boolean keepSearching = true;
 
+                Map<InetAddress, DetectedServer> newlyDiscoveredServers = new HashMap<>();
+
                 while (keepSearching)
                 {
                     try
@@ -82,60 +85,137 @@ public class RemotePrinterDetector extends DeviceDetector
                         if (Arrays.equals(Arrays.copyOf(buf, RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII").length),
                                 RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII")))
                         {
-                            List<DetectedDevice> newlyDetectedPrinters = searchForDevices(recv.getAddress());
-
-                            //Deal with disconnections
-                            List<DetectedDevice> printersToDisconnect = new ArrayList<>();
-                            currentPrinters.forEach(existingPrinter ->
-                            {
-                                if (!newlyDetectedPrinters.contains(existingPrinter))
-                                {
-                                    printersToDisconnect.add(existingPrinter);
-                                }
-                            });
-
-                            for (DetectedDevice printerToDisconnect : printersToDisconnect)
-                            {
-                                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                                deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
-                                currentPrinters.remove(printerToDisconnect);
-                            }
-
-                            //Now new connections
-                            List<DetectedDevice> printersToConnect = new ArrayList<>();
-                            newlyDetectedPrinters.forEach(newPrinter ->
-                            {
-                                if (!currentPrinters.contains(newPrinter))
-                                {
-                                    printersToConnect.add(newPrinter);
-                                }
-                            });
-
-                            for (DetectedDevice printerToConnect : printersToConnect)
-                            {
-                                steno.info("We have found a new printer " + printerToConnect);
-                                currentPrinters.add(printerToConnect);
-                                deviceDetectionListener.deviceDetected(printerToConnect);
-                            }
+                            DetectedServer detectedServer = searchForDevices(recv.getAddress());
+                            newlyDiscoveredServers.put(recv.getAddress(), detectedServer);
                         }
-
                     } catch (SocketTimeoutException ex)
                     {
                         // We should issue a new request for server callbacks
                         keepSearching = false;
+
+                        // 
+                        // Case 1: The server is no longer there
+                        //
+                        List<InetAddress> serversToRemoveFromIncorrectVersionList = new ArrayList<>();
+
+                        incorrectVersionServers.entrySet().forEach((currentEntry) ->
+                        {
+                            if (!newlyDiscoveredServers.containsKey(currentEntry.getKey()))
+                            {
+                                serversToRemoveFromIncorrectVersionList.add(currentEntry.getKey());
+                            }
+                        });
+
+                        serversToRemoveFromIncorrectVersionList.forEach(address ->
+                        {
+                            incorrectVersionServers.remove(address);
+                        });
+
+                        List<InetAddress> serversToDisconnect = new ArrayList<>();
+
+                        validInServiceServers.entrySet().forEach((currentEntry) ->
+                        {
+                            if (!newlyDiscoveredServers.containsKey(currentEntry.getKey()))
+                            {
+                                serversToDisconnect.add(currentEntry.getKey());
+                                // Delete all of the printers that were associated with that server
+                                currentEntry.getValue().getAttachedPrinters().forEach(printer ->
+                                {
+                                    disconnectPrinter(printer);
+                                });
+                                currentEntry.getValue().removeAllPrinters();
+                            }
+                        });
+
+                        serversToDisconnect.forEach(address ->
+                        {
+                            validInServiceServers.remove(address);
+                        });
+
+                        // Case 2: The server is there but one or more printers have gone
+                        newlyDiscoveredServers.entrySet().forEach((newServerEntry) ->
+                        {
+                            if (validInServiceServers.containsKey(newServerEntry.getKey()))
+                            {
+                                //Deal with disconnections
+                                // In the old list but not the new
+                                validInServiceServers.get(newServerEntry.getKey()).getAttachedPrinters().forEach(existingPrinter ->
+                                {
+                                    if (!newServerEntry.getValue().getAttachedPrinters().contains(existingPrinter))
+                                    {
+                                        validInServiceServers.get(newServerEntry.getKey()).removeAttachedPrinter(existingPrinter);
+                                        disconnectPrinter(existingPrinter);
+                                    }
+                                });
+                            }
+                        });
+
+                        // Case 3: The server is there but one or more printers have been added
+                        newlyDiscoveredServers.entrySet().forEach((newServerEntry) ->
+                        {
+                            if (validInServiceServers.containsKey(newServerEntry.getKey()))
+                            {
+                                //Deal with new connections
+                                // In the new list but not the old
+
+                                newServerEntry.getValue().getAttachedPrinters().forEach(newPrinter ->
+                                {
+                                    if (!validInServiceServers.get(newServerEntry.getKey()).getAttachedPrinters().contains(newPrinter))
+                                    {
+                                        validInServiceServers.get(newServerEntry.getKey()).addAttachedPrinter(newPrinter);
+                                        connectPrinter(newPrinter);
+                                    }
+                                });
+                            }
+                        });
+
+                        newlyDiscoveredServers.entrySet().forEach((newServerEntry) ->
+                        {
+                            if (!validInServiceServers.containsKey(newServerEntry.getKey()))
+                            {
+                                if (BaseConfiguration.getApplicationVersion().equals(newServerEntry.getValue().getVersion()))
+                                {
+                                    validInServiceServers.put(newServerEntry.getKey(), newServerEntry.getValue());
+
+                                    // Case 4: This is a newly detected server and the version is correct
+                                    newServerEntry.getValue().getAttachedPrinters().forEach(newPrinter ->
+                                    {
+                                        connectPrinter(newPrinter);
+                                    });
+                                } else
+                                {
+                                    // Case 5: This is a newly detected server but the version is wrong
+                                    if (!incorrectVersionServers.containsKey(newServerEntry.getKey()))
+                                    {
+                                        steno.info("Found a server at " + newServerEntry.getKey()
+                                                + " but it's version - " + newServerEntry.getValue().getVersion()
+                                                + " doesn't match mine - " + BaseConfiguration.getApplicationVersion());
+                                        incorrectVersionServers.put(newServerEntry.getKey(), newServerEntry.getValue());
+                                    }
+                                }
+                            }
+                        });
                     }
                 }
             } catch (IOException ex)
             {
                 steno.error("Unable to query for remote hosts");
-                List<DetectedDevice> printersToDisconnect = new ArrayList<>(currentPrinters);
 
-                for (DetectedDevice printerToDisconnect : printersToDisconnect)
+                // Remove all of the servers and their attached printers
+                incorrectVersionServers.clear();
+
+                validInServiceServers.values().forEach(server ->
                 {
-                    steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                    deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
-                    currentPrinters.remove(printerToDisconnect);
-                }
+                    server.getAttachedPrinters().forEach(printer ->
+                    {
+                        steno.info("Disconnecting from " + printer + " as it doesn't seem to be present anymore");
+                        disconnectPrinter(printer);
+                    });
+
+                    server.removeAllPrinters();
+                });
+
+                validInServiceServers.clear();
             }
 
             try
@@ -148,9 +228,21 @@ public class RemotePrinterDetector extends DeviceDetector
         }
     }
 
-    private List<DetectedDevice> searchForDevices(InetAddress address)
+    private void disconnectPrinter(DetectedDevice printer)
     {
-        List<DetectedDevice> foundPrinters = new ArrayList<>();
+        steno.info("Disconnecting from " + printer + " as it doesn't seem to be present anymore");
+        deviceDetectionListener.deviceNoLongerPresent(printer);
+    }
+
+    private void connectPrinter(DetectedDevice printer)
+    {
+        steno.info("We have found a new printer " + printer);
+        deviceDetectionListener.deviceDetected(printer);
+    }
+
+    private DetectedServer searchForDevices(InetAddress address)
+    {
+        DetectedServer detectedServer = null;
 
         String url = "http://" + address.getHostAddress() + ":9000/api/discovery";
 
@@ -173,13 +265,10 @@ public class RemotePrinterDetector extends DeviceDetector
                 int availChars = con.getInputStream().available();
                 byte[] inputData = new byte[availChars];
                 con.getInputStream().read(inputData, 0, availChars);
-                steno.info("Got " + availChars + " chars");
                 DiscoveryResponse discoveryResponse = mapper.readValue(inputData, DiscoveryResponse.class);
-                discoveryResponse.getPrinterIDs().forEach(printerID ->
-                {
-                    RemoteDetectedPrinter remotePrinter = new RemoteDetectedPrinter(address, PrinterConnectionType.ROBOX_REMOTE, printerID);
-                    foundPrinters.add(remotePrinter);
-                });
+
+                steno.info("Got a response from a server at version: " + discoveryResponse.getServerVersion());
+                detectedServer = new DetectedServer(address, discoveryResponse);
             } else
             {
                 steno.warning("No response from @ " + address.getHostAddress());
@@ -190,6 +279,6 @@ public class RemotePrinterDetector extends DeviceDetector
             ex.printStackTrace();
         }
 
-        return foundPrinters;
+        return detectedServer;
     }
 }
