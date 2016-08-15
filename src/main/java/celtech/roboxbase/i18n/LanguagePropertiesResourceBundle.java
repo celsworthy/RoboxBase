@@ -87,6 +87,8 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             String languageFolderName,
             String baseName)
     {
+        //Assumes that we always have / as a separator...
+        steno.info("Language base is " + baseDirectory);
         String baseToWorkOn = baseDirectory.replaceFirst("\\/$", "");
         int lastSlash = baseToWorkOn.lastIndexOf("/");
         if (lastSlash >= 0)
