@@ -96,6 +96,8 @@ public class BaseConfiguration
 
     private static final String commonFileDirectoryPath = "CEL Robox" + File.separator;
 
+    public static final int mmOfFilamentOnAReel = 240000;
+
     /**
      * The extension for statistics files in print spool directories
      */

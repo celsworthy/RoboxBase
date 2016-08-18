@@ -787,8 +787,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         return canCancel;
     }
 
-    @Override
-    public void cancel(TaskResponder responder) throws PrinterException
+    private void doCancel(TaskResponder responder, boolean force) throws PrinterException
     {
         if (!canCancel.get())
         {
@@ -809,6 +808,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             setPrinterStatus(PrinterStatus.IDLE);
 
         }, "Aborting").start();
+    }
+
+    @Override
+    public void cancel(TaskResponder responder) throws PrinterException
+    {
+        doCancel(responder, false);
+    }
+
+    @Override
+    public void forcedCancel(TaskResponder responder) throws PrinterException
+    {
+        doCancel(responder, true);
     }
 
     private boolean doAbortActivity(Cancellable cancellable)
@@ -4028,7 +4039,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     if (headData != null)
                                     {
                                         newHead = new Head(headData);
-                                        newHead.updateFromEEPROMData(headResponse.getHeadEEPROMData());
+                                        newHead.updateFromEEPROMData(headResponse);
                                     } else
                                     {
                                         steno.error("Attempt to create head with invalid or absent type code");
@@ -4038,7 +4049,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                 } else
                                 {
                                     // Head already attached to model
-                                    head.get().updateFromEEPROMData(headResponse.getHeadEEPROMData());
+                                    head.get().updateFromEEPROMData(headResponse);
                                 }
 
                                 // Check to see if the data is in bounds
@@ -4140,7 +4151,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             if (headData != null)
                             {
                                 newHead = new Head(headData);
-                                newHead.updateFromEEPROMData(headResponse.getHeadEEPROMData());
+                                newHead.updateFromEEPROMData(headResponse);
                             } else
                             {
                                 steno.error("Attempt to create head with invalid or absent type code");
@@ -4149,7 +4160,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         } else
                         {
                             // Head already attached to model
-                            head.get().updateFromEEPROMData(headResponse.getHeadEEPROMData());
+                            head.get().updateFromEEPROMData(headResponse);
                         }
                     }
                     break;

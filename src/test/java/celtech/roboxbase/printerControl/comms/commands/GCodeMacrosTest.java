@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
  */
 public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 {
+
     /**
      * Test of getMacroContents method, of class GCodeMacros.
      */
@@ -73,7 +74,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
-        assertEquals(5, score7);
+        assertEquals(6, score7);
 
         String filename8 = "before_print#RBX01-SM.gcode";
         int score8 = GCodeMacros.scoreMacroFilename(filename8,
@@ -119,5 +120,113 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
         assertEquals(5, score4);
+    }
+
+    @Test
+    public void testScoreMacroFilename_DefaultSM() throws Exception
+    {
+        System.out.println("scoreMacroFilename_DefaultSM");
+
+        String headTypeToScoreAgainst = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;
+        GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.DONT_CARE;
+
+        String filename1 = "before_print.gcode";
+        int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(6, score1);
+
+        String filename2 = "before_print#RBX01-DL.gcode";
+        int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(2, score2);
+
+        String filename3 = "before_print#RBX01-DM#N0.gcode";
+        int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(-2, score3);
+
+        String filename4 = "before_print#RBX01-DM#NB.gcode";
+        int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(-2, score4);
+}
+
+    @Test
+    public void testScoreMacroFilename_safeties() throws Exception
+    {
+        System.out.println("scoreMacroFilename_safeties");
+
+        String headTypeToScoreAgainst = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;
+        GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.DONT_CARE;
+
+        String filename1 = "before_print.gcode";
+        int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(6, score1);
+
+        String filename2 = "before_print#U.gcode";
+        int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(2, score2);
+
+        String filename3 = "before_print#S.gcode";
+        int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(2, score3);
+
+        safetyToScoreAgainst = GCodeMacros.SafetyIndicator.SAFETIES_OFF;
+        String filename4 = "before_print#U.gcode";
+        int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(6, score4);
+
+        String filename5 = "before_print#RBX01-SL.gcode";
+        int score5 = GCodeMacros.scoreMacroFilename(filename5,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(1, score5);
+    }
+
+    @Test
+    public void testScoreMacroFilename_unrecognisedHead() throws Exception
+    {
+        System.out.println("scoreMacroFilename_unrecognisedHead");
+
+        String headTypeToScoreAgainst = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;
+        GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.DONT_CARE;
+
+        String filename1 = "before_print.gcode";
+        int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(6, score1);
+
+        String filename2 = "before_print#XXXXX-XX.gcode";
+        int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                headTypeToScoreAgainst,
+                nozzleToScoreAgainst,
+                safetyToScoreAgainst);
+        assertEquals(2, score2);
     }
 }

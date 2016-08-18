@@ -302,11 +302,14 @@ public class GCodeMacros
         int highestScore = -999;
         int indexOfHighestScoringFilename = -1;
 
+        steno.debug("Assessing macro against head:" + headTypeCode + " nozzles:" + nozzleUse + " safeties:" + safeties);
+
         if (matchingMacroFilenames.length > 0)
         {
             for (int filenameCounter = 0; filenameCounter < matchingMacroFilenames.length; filenameCounter++)
             {
                 int score = scoreMacroFilename(matchingMacroFilenames[filenameCounter], headTypeCode, nozzleUse, safeties);
+                steno.debug("Assessed macro file " + matchingMacroFilenames[filenameCounter] + " as score " + score);
                 if (score > highestScore)
                 {
                     indexOfHighestScoringFilename = filenameCounter;
@@ -358,15 +361,12 @@ public class GCodeMacros
 
         String[] filenameSplit = filename.split("\\.");
 
-        HeadFile specifiedHeadFile = null;
-        if (headTypeCode != null)
-        {
-            specifiedHeadFile = HeadContainer.getHeadByID(headTypeCode);
-        }
+        String specifiedHeadFile = headTypeCode;
+        String fileHeadFile = null;
+
         NozzleUseIndicator specifiedNozzleUseIndicator = nozzleUse;
         SafetyIndicator specifiedSafetyIndicator = safeties;
 
-        HeadFile fileHeadFile = null;
         NozzleUseIndicator fileNozzleUseIndicator = null;
         SafetyIndicator fileSafetyIndicator = null;
 
@@ -381,15 +381,16 @@ public class GCodeMacros
             {
                 if (namePartCounter > 0)
                 {
-                    if (HeadContainer.getHeadByID(namePart) != null)
-                    {
-                        fileHeadFile = HeadContainer.getHeadByID(namePart);
-                    } else if (NozzleUseIndicator.getEnumForFilenameCode(namePart) != null)
+                    if (NozzleUseIndicator.getEnumForFilenameCode(namePart) != null)
                     {
                         fileNozzleUseIndicator = NozzleUseIndicator.getEnumForFilenameCode(namePart);
                     } else if (SafetyIndicator.getEnumForFilenameCode(namePart) != null)
                     {
                         fileSafetyIndicator = SafetyIndicator.getEnumForFilenameCode(namePart);
+                    } else
+                    {
+                        //It wasn't a nozzle spec or a safety spec, so it must be a head...
+                        fileHeadFile = namePart;
                     }
                 }
                 namePartCounter++;
@@ -397,12 +398,15 @@ public class GCodeMacros
 
             // Not specified and not present -- 2 points
             // Specified and equal -- 2 points
+            // Specified as SM head and file is DC -- 2 
             // Specified, not equal but file is DC -- 1 points
             // Otherwise -2 points
             if ((specifiedHeadFile == null
                     && fileHeadFile == null)
                     || (specifiedHeadFile != null
-                    && specifiedHeadFile == fileHeadFile))
+                    && specifiedHeadFile.equals(fileHeadFile))
+                    || (specifiedHeadFile != null && specifiedHeadFile.equals(HeadContainer.defaultHeadID)
+                    && fileHeadFile == null))
             {
                 score += 2;
             } else if (specifiedHeadFile != null

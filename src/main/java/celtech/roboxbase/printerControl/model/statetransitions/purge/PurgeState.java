@@ -3,8 +3,6 @@
  */
 package celtech.roboxbase.printerControl.model.statetransitions.purge;
 
-import celtech.roboxbase.BaseLookup;
-
 /**
  *
  * @author tony
@@ -18,9 +16,9 @@ public enum PurgeState
     HEATING("purgeMaterial.heating", true),
     RUNNING_PURGE("purgeMaterial.inProgress", true),
     FINISHED("purgeMaterial.purgeComplete", false),
-    CANCELLED("", false),
-    CANCELLING("", false),
-    DONE("", false),
+    CANCELLED("purgeMaterial.cancelled", false),
+    CANCELLING("purgeMaterial.cancelling", false),
+    DONE("purgeMaterial.done", false),
     FAILED("purgeMaterial.failed", false);
 
     private final String stepTitleResource;

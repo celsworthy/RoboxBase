@@ -60,7 +60,8 @@ public class CalibrationPrinterErrorHandler
     {
         if (!errorCancellable.cancelled().get())
         {
-            if (error == FirmwareError.B_POSITION_LOST)
+            if (error == FirmwareError.B_POSITION_LOST
+                    || error == FirmwareError.B_POSITION_WARNING)
             {
                 // Do nothing for the moment...
             } else if ((error == FirmwareError.D_FILAMENT_SLIP

@@ -111,7 +111,7 @@ public class Head implements Cloneable, RepairableComponent
         if (headData != null)
         {
             createdHead = new Head(headData);
-            createdHead.updateFromEEPROMData(headResponse.getHeadEEPROMData());
+            createdHead.updateFromEEPROMData(headResponse);
         } else
         {
             steno.error("Attempt to create head with invalid or absent type code");
@@ -343,7 +343,7 @@ public class Head implements Cloneable, RepairableComponent
         }
     }
 
-    public final void updateFromEEPROMData(HeadEEPROMData eepromData)
+    public final void updateFromEEPROMData(HeadEEPROMDataResponse eepromData)
     {
         if (!eepromData.getHeadTypeCode().equals(typeCode.get()))
         {

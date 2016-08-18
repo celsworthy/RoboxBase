@@ -67,7 +67,7 @@ public class FirmwareResponse extends RoboxRxPacket
     public boolean populatePacket(byte[] byteData, float requiredFirmwareVersion)
     {
         setMessagePayloadBytes(byteData);
-        
+
         boolean success = false;
 
         try
@@ -77,7 +77,13 @@ public class FirmwareResponse extends RoboxRxPacket
             byteOffset += firmwareRevisionBytes;
 
             this.firmwareRevisionString = firmwareRevision.trim();
-            this.firmwareRevisionFloat = Float.valueOf(firmwareRevision.trim().substring(1));
+            try
+            {
+                this.firmwareRevisionFloat = Float.valueOf(firmwareRevision.trim().substring(1));
+            } catch (NumberFormatException ex)
+            {
+                steno.warning("Couldn't calculate firmware version number from response");
+            }
 
             success = true;
         } catch (UnsupportedEncodingException ex)

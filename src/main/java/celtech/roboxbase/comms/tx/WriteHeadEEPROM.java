@@ -78,8 +78,15 @@ public class WriteHeadEEPROM extends RoboxTxPacket
         payload.append(decimalFloatFormatter.format(nozzle1YOffset));
         payload.append(decimalFloatFormatter.format(nozzle1ZOffset));
         payload.append(decimalFloatFormatter.format(nozzle1BOffset));
+        
+        int maxFilamentIDLength = 8;
+        filament0ID = (filament0ID.length() > maxFilamentIDLength)?filament0ID.substring(0, maxFilamentIDLength):filament0ID;
+        filament0ID = filament0ID.replaceAll("-", "");
         payload.append(String.format("%1$-8s", filament0ID));
+        filament1ID = (filament1ID.length() > maxFilamentIDLength)?filament1ID.substring(0, maxFilamentIDLength):filament1ID;
+        filament1ID = filament1ID.replaceAll("-", "");
         payload.append(String.format("%1$-8s", filament1ID));
+        
         payload.append(decimalFloatFormatter.format(nozzle2XOffset));
         payload.append(decimalFloatFormatter.format(nozzle2YOffset));
         payload.append(decimalFloatFormatter.format(nozzle2ZOffset));

@@ -128,6 +128,8 @@ public interface Printer extends RoboxResponseConsumer
      */
     public ReadOnlyBooleanProperty canRemoveHeadProperty();
 
+    public void forcedCancel(TaskResponder responder) throws PrinterException;
+    
     public void cancel(TaskResponder responder) throws PrinterException;
 
     public void gotoNozzlePosition(float position);

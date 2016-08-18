@@ -693,7 +693,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     createPacket(RxPacketTypeEnum.HEAD_EEPROM_DATA);
 
             headResponse.updateFromWrite(headWriteCommand);
-            attachedHead.updateFromEEPROMData(headResponse.getHeadEEPROMData());
+            attachedHead.updateFromEEPROMData(headResponse);
 
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
