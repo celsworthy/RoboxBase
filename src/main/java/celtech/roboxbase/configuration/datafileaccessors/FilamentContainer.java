@@ -42,7 +42,7 @@ public class FilamentContainer
     public final Filament createNewFilament = new Filament(null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
             0, 0, false);
-    public static final Filament UNKNOWN_FILAMENT = new Filament(BaseLookup.i18n("materialComponent.unknown"),
+    public static final Filament UNKNOWN_FILAMENT = new Filament("",
             null,
             "",
             1.75f,
