@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 import libertysystems.stenographer.Stenographer;
@@ -18,7 +19,7 @@ import libertysystems.stenographer.StenographerFactory;
 
 public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
 {
-
+    
     private final Stenographer steno = StenographerFactory.getStenographer(LanguagePropertiesResourceBundle.class.getName());
 
     /**
@@ -45,7 +46,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
      * MultiplePropertiesResourceBundle.
      */
     private Map<String, Object> combined;
-
+    
     private final Set<Locale> availableLocales = new HashSet<>();
 
     /**
@@ -102,10 +103,10 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         }
         this.languageFolderName = languageFolderName;
         this.baseName = baseName;
-
+        
         loadBundlesOnce();
     }
-
+    
     @Override
     public Object handleGetObject(String key)
     {
@@ -116,7 +117,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         loadBundlesOnce();
         return combined.get(key);
     }
-
+    
     @Override
     public Enumeration<String> getKeys()
     {
@@ -125,16 +126,16 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         return new ResourceBundleEnumeration(combined.keySet(), (parent != null) ? parent.getKeys()
                 : null);
     }
-
+    
     private void addBundleData(String resourcePath, String resourceName)
     {
         steno.info("Adding language resources from " + resourcePath + " with resource name " + resourceName);
-
+        
         ResourceBundle bundle = null;
         try
         {
             File propFile = new File(resourcePath);
-
+            
             if (propFile.exists())
             {
                 URL[] urlsToSearch =
@@ -142,7 +143,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
                     propFile.toURI().toURL()
                 };
                 URLClassLoader cl = new URLClassLoader(urlsToSearch);
-
+                
                 bundle = ResourceBundle.getBundle(resourceName, BaseLookup.getApplicationLocale(), cl, new UTF8Control());
                 Enumeration<String> keys = bundle.getKeys();
                 String key = null;
@@ -166,37 +167,44 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
         if (combined == null)
         {
             combined = new HashMap<String, Object>(128);
-
+            
             String commonResourcePath = baseDirectory + "Common/" + languageFolderName;
             String specifiedResourcePath = baseDirectory + terminalDirectoryName + "/" + languageFolderName;
-
-            addBundleData(commonResourcePath, baseName);
+            
+            addBundleData(commonResourcePath, "NoUI_" + baseName);
+            try
+            {
+                addBundleData(commonResourcePath, "UI_" + baseName);
+            } catch (MissingResourceException ex)
+            {
+                steno.info("No Common UI language resources loaded");
+            }
             addBundleData(specifiedResourcePath, baseName);
-
+            
             addAvailableLocales(commonResourcePath);
         }
     }
-
+    
     private void addAvailableLocales(String commonResourcePath)
     {
         steno.info("Loading locales from " + commonResourcePath);
-
+        
         File commonDir = new File(commonResourcePath);
-
+        
         availableLocales.add(Locale.ENGLISH);
-
+        
         String[] filenamesToIngest = commonDir.list();
-
+        
         if (filenamesToIngest != null)
         {
             for (String filename : filenamesToIngest)
             {
                 filename = filename.replaceFirst(".properties", "");
-
+                
                 Locale locale = null;
-
+                
                 String[] languageStringParts = filename.split("_");
-
+                
                 switch (languageStringParts.length)
                 {
                     case 2:
@@ -213,7 +221,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             }
         }
     }
-
+    
     public Set<Locale> getAvailableLocales()
     {
         return availableLocales;
