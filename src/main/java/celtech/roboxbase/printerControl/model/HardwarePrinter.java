@@ -294,7 +294,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         this.commandInterface = commandInterface;
         this.filamentLoadedGetter = filamentLoadedGetter;
         this.doNotCheckForPresenceOfHead = doNotCheckForPresenceOfHead;
-        
+
         printEngine = new PrintEngine(this);
 
         extruders.add(firstExtruderNumber, new Extruder(firstExtruderLetter));
@@ -1312,13 +1312,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             });
         }
 
-        if (response != null)
-        {
-            return response.getGCodeResponse();
-        } else
-        {
-            return null;
-        }
+        return (response != null) ? response.getGCodeResponse() : null;
     }
 
     private boolean transmitDataFileStart(final String fileID, boolean jobCanBeReprinted) throws RoboxCommsException

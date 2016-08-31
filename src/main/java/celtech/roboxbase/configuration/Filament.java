@@ -46,8 +46,7 @@ public class Filament implements Serializable, Cloneable
     private final IntegerProperty requiredFirstLayerNozzleTemperature = new SimpleIntegerProperty(0);
     private final IntegerProperty requiredNozzleTemperature = new SimpleIntegerProperty(0);
     private final ObjectProperty<Color> displayColour = new SimpleObjectProperty<>();
-    private final FloatProperty remainingFilament = new SimpleFloatProperty(
-            BaseConfiguration.mmOfFilamentOnAReel);
+    private final FloatProperty remainingFilament = new SimpleFloatProperty(0);
     private final FloatProperty costGBPPerKG = new SimpleFloatProperty(35f);
     private final IntegerProperty defaultLength_m = new SimpleIntegerProperty(0);
 
@@ -87,6 +86,8 @@ public class Filament implements Serializable, Cloneable
         this.displayColour.set(displayColour);
         this.costGBPPerKG.set(costGBPPerKG);
         this.defaultLength_m.set(defaultLength_m);
+        //Remaining filament is in mm on the reel
+        this.remainingFilament.set(defaultLength_m * 1000);
         this.mutable.set(mutable);
     }
 
