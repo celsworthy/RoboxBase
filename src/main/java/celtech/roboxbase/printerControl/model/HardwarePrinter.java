@@ -1955,16 +1955,64 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             bedFirstLayerTarget = filament0.getFirstLayerBedTemperature();
             bedTarget = filament0.getBedTemperature();
             ambientTarget = filament0.getAmbientTemperature();
+
+            //Using extruder 0 for this print
+            //
+            //TODO This is a specific hack for issues with PLA softening in the bowden tube
+            // If we don't need the loaded PLA then eject it
+            if (extruders.get(1).filamentLoadedProperty().get()
+                    && filament1.getMaterial() == MaterialType.PLA)
+            {
+                BaseLookup.getSystemNotificationHandler().showInformationNotification("", BaseLookup.i18n("notification.ejectingNotRequiredFilament"));
+                ejectFilament(1, null);
+            }
         } else if (!usedExtruders.get(0) && usedExtruders.get(1))
         {
             bedFirstLayerTarget = filament1.getFirstLayerBedTemperature();
             bedTarget = filament1.getBedTemperature();
             ambientTarget = filament1.getAmbientTemperature();
+
+            //Using extruder 1 for this print
+            //
+            //TODO This is a specific hack for issues with PLA softening in the bowden tube
+            // If we don't need the loaded PLA then eject it
+            if (extruders.get(0).filamentLoadedProperty().get()
+                    && filament0.getMaterial() == MaterialType.PLA)
+            {
+                BaseLookup.getSystemNotificationHandler().showInformationNotification("", BaseLookup.i18n("notification.ejectingNotRequiredFilament"));
+                ejectFilament(0, null);
+            }
         } else
         {
-            bedFirstLayerTarget = Math.max(filament0.getFirstLayerBedTemperature(), filament1.getFirstLayerBedTemperature());
-            bedTarget = Math.max(filament0.getBedTemperature(), filament1.getBedTemperature());
-            ambientTarget = Math.min(filament0.getAmbientTemperature(), filament1.getAmbientTemperature());
+            //Using both extruders for this print
+            //
+            //TODO This is a specific hack for issues with PLA softening in the bowden tube
+            //Force the bed and ambient temperatures to PLA levels if it is on board
+            //Remove when we deal with material-specific handling
+            if (filament0.getMaterial() != filament1.getMaterial()
+                    && (filament0.getMaterial() == MaterialType.PLA
+                    || filament1.getMaterial() == MaterialType.PLA))
+            {
+                //Tell the code below that we need to send new temperatures
+                needToOverrideTempsForReel0 = true;
+
+                if (filament0.getMaterial() == MaterialType.PLA)
+                {
+                    bedFirstLayerTarget = filament0.getFirstLayerBedTemperature();
+                    bedTarget = filament0.getBedTemperature();
+                    ambientTarget = filament0.getAmbientTemperature();
+                } else
+                {
+                    bedFirstLayerTarget = filament1.getFirstLayerBedTemperature();
+                    bedTarget = filament1.getBedTemperature();
+                    ambientTarget = filament1.getAmbientTemperature();
+                }
+            } else
+            {
+                bedFirstLayerTarget = Math.max(filament0.getFirstLayerBedTemperature(), filament1.getFirstLayerBedTemperature());
+                bedTarget = Math.max(filament0.getBedTemperature(), filament1.getBedTemperature());
+                ambientTarget = Math.min(filament0.getAmbientTemperature(), filament1.getAmbientTemperature());
+            }
         }
 
         // Set up nozzle targets and extrusion multipliers and diameters

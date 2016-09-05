@@ -28,6 +28,8 @@ public interface SystemNotificationManager
 
     void showErrorNotification(String title, String message);
 
+    void showDismissableNotification(String message, String buttonText, NotificationDisplay.NotificationType notificationType);
+
     /**
      * Returns true for no update and false for update
      *
@@ -40,8 +42,6 @@ public interface SystemNotificationManager
     void showCalibrationDialogue();
 
     void showFirmwareUpgradeStatusNotification(FirmwareLoadResult result);
-
-    void showGCodePostProcessFailedNotification();
 
     void showGCodePostProcessSuccessfulNotification();
 
@@ -63,8 +63,6 @@ public interface SystemNotificationManager
 
     void showSDCardNotification();
 
-    void showSliceFailedNotification();
-
     void showSliceSuccessfulNotification();
 
     void configureFirmwareProgressDialog(FirmwareLoadService firmwareLoadService);
@@ -80,13 +78,11 @@ public interface SystemNotificationManager
     boolean showApplicationUpgradeDialog(String applicationName);
 
     public PurgeResponse showPurgeDialog();
-
     public PurgeResponse showPurgeDialog(boolean allowAutoPrint);
 
     public boolean showJobsTransferringShutdownDialog();
 
     public void showProgramInvalidHeadDialog(TaskResponder<HeadFile> taskResponse);
-
     public void hideProgramInvalidHeadDialog();
 
     public void showHeadNotRecognisedDialog(String printerName);

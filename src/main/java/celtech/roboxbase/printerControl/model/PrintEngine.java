@@ -174,7 +174,9 @@ public class PrintEngine implements ControllableService
             steno.info(t.getSource().getTitle() + " has failed");
             if (raiseProgressNotifications)
             {
-                BaseLookup.getSystemNotificationHandler().showSliceFailedNotification();
+                BaseLookup.getNotificationDisplay().displayDismissableNotification(Lookup.i18n(
+                        "notification.sliceFailed"), Lookup.i18n(
+                                "notification.slicerFailure.dismiss"), NotificationDisplay.NotificationType.CAUTION);
             }
             try
             {
@@ -208,7 +210,9 @@ public class PrintEngine implements ControllableService
             {
                 if (raiseProgressNotifications)
                 {
-                    BaseLookup.getSystemNotificationHandler().showSliceFailedNotification();
+                    BaseLookup.getNotificationDisplay().displayDismissableNotification(Lookup.i18n(
+                            "notification.sliceFailed"), BaseLookup.i18n(
+                                    "notification.slicerFailure.dismiss"), NotificationDisplay.NotificationType.CAUTION);
                 }
                 try
                 {
@@ -235,10 +239,6 @@ public class PrintEngine implements ControllableService
         failedGCodePostProcessEventHandler = (WorkerStateEvent t) ->
         {
             steno.info(t.getSource().getTitle() + " has failed");
-            if (raiseProgressNotifications)
-            {
-                BaseLookup.getSystemNotificationHandler().showGCodePostProcessFailedNotification();
-            }
             try
             {
                 associatedPrinter.cancel(null);
@@ -281,10 +281,6 @@ public class PrintEngine implements ControllableService
                 }
             } else
             {
-                if (raiseProgressNotifications)
-                {
-                    BaseLookup.getSystemNotificationHandler().showGCodePostProcessFailedNotification();
-                }
                 try
                 {
                     associatedPrinter.cancel(null);
