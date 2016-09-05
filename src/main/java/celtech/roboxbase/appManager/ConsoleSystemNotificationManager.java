@@ -64,12 +64,6 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
 
     @Override
-    public void showGCodePostProcessFailedNotification()
-    {
-        outputNotification("Post process failed");
-    }
-
-    @Override
     public void showGCodePostProcessSuccessfulNotification()
     {
         outputNotification("Post process success");
@@ -127,12 +121,6 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     public void showSDCardNotification()
     {
         outputNotification("SD card");
-    }
-
-    @Override
-    public void showSliceFailedNotification()
-    {
-        outputNotification("Slice failed");
     }
 
     @Override
@@ -314,6 +302,12 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     public void hideProgramInvalidHeadDialog()
     {
         outputNotification("Hide invalid head dialog");
+    }
+
+    @Override
+    public void showDismissableNotification(String message, String buttonText, NotificationType notificationType)
+    {
+        outputNotification("Dismissable notification: " + notificationType.name() + " : " + message);
     }
 
 }

@@ -28,7 +28,7 @@ public interface SystemNotificationManager
 
     void showErrorNotification(String title, String message);
 
-    void showDismissableNotification(String message, String buttonText, NotificationDisplay.NotificationType notificationType);
+    void showDismissableNotification(String message, String buttonText, NotificationType notificationType);
 
     /**
      * Returns true for no update and false for update

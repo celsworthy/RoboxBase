@@ -2,6 +2,7 @@ package celtech.roboxbase.printerControl.model;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.MaterialType;
+import celtech.roboxbase.appManager.NotificationType;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.SendFile;
@@ -174,9 +175,9 @@ public class PrintEngine implements ControllableService
             steno.info(t.getSource().getTitle() + " has failed");
             if (raiseProgressNotifications)
             {
-                BaseLookup.getNotificationDisplay().displayDismissableNotification(Lookup.i18n(
-                        "notification.sliceFailed"), Lookup.i18n(
-                                "notification.slicerFailure.dismiss"), NotificationDisplay.NotificationType.CAUTION);
+                BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
+                        "notification.sliceFailed"), BaseLookup.i18n(
+                                "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
             }
             try
             {
@@ -210,9 +211,9 @@ public class PrintEngine implements ControllableService
             {
                 if (raiseProgressNotifications)
                 {
-                    BaseLookup.getNotificationDisplay().displayDismissableNotification(Lookup.i18n(
+                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
                             "notification.sliceFailed"), BaseLookup.i18n(
-                                    "notification.slicerFailure.dismiss"), NotificationDisplay.NotificationType.CAUTION);
+                                    "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
                 }
                 try
                 {

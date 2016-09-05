@@ -19,6 +19,7 @@ public class Configuration
      * High Level API
      */
     public static final String highLevelAPIService = "/remoteControl";
+    public static final String openDoorService = "/openDoor";
     public static final String pauseService = "/pause";
     public static final String resumeService = "/resume";
     public static final String cancelService = "/cancel";

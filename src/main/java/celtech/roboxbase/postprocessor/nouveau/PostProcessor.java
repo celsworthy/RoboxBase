@@ -1,6 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.appManager.NotificationType;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
@@ -415,24 +416,24 @@ public class PostProcessor
             if (ex.getCause() instanceof ParserInputException)
             {
                 steno.error("Fatal postprocessing error on layer - out of bounds - " + layerCounter + " got exception: " + ex.getCause().getMessage());
-                Lookup.getSystemNotificationHandler().showDismissableNotification(
-                        Lookup.i18n("notification.postProcessorFailure.modelOutOfBounds"),
-                        Lookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationDisplay.NotificationType.CAUTION);
+                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                        BaseLookup.i18n("notification.postProcessorFailure.modelOutOfBounds"),
+                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                        NotificationType.CAUTION);
             } else if (ex.getCause() != null)
             {
                 steno.error("Fatal postprocessing error on layer " + layerCounter + " got exception: " + ex.getCause().getMessage());
-                Lookup.getSystemNotificationHandler().showDismissableNotification(
-                        Lookup.i18n("notification.postProcessorFailure.unknown"),
-                        Lookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationDisplay.NotificationType.CAUTION);
+                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                        BaseLookup.i18n("notification.postProcessorFailure.unknown"),
+                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                        NotificationType.CAUTION);
             } else
             {
                 steno.error("Fatal postprocessing error on layer " + layerCounter);
-                Lookup.getSystemNotificationHandler().showDismissableNotification(
-                        Lookup.i18n("notification.postProcessorFailure.unknown"),
-                        Lookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationDisplay.NotificationType.CAUTION);
+                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                        BaseLookup.i18n("notification.postProcessorFailure.unknown"),
+                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                        NotificationType.CAUTION);
             }
             ex.printStackTrace();
         } finally
