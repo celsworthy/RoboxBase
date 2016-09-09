@@ -71,7 +71,7 @@ public enum NozzleOpeningCalibrationState
      * Return if the cancel button should be shown for this state.
      */
     public boolean showCancelButton() {
-        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLING);
+        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLING && this != DONE);
     }    
     
     public Optional<String> getDiagramName() {
@@ -84,12 +84,12 @@ public enum NozzleOpeningCalibrationState
 
     public String getStepTitle()
     {
-        if (stepTitleResource == null)
+        if (stepTitleResource == null || stepTitleResource.equals(""))
         {
             return "";
         } else
         {
-            return stepTitleResource;
+            return Lookup.i18n(stepTitleResource);
         }
     }
 }

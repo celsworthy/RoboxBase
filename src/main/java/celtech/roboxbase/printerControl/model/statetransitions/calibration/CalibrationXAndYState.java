@@ -39,7 +39,7 @@ public enum CalibrationXAndYState
      * Return if the cancel button should be shown for this state.
      */
     public boolean showCancelButton() {
-        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLING);
+        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLING && this != DONE);
     }
 
     public Optional<String> getDiagramName()
@@ -54,12 +54,12 @@ public enum CalibrationXAndYState
 
     public String getStepTitle()
     {
-        if (stepTitleResource == null)
+        if (stepTitleResource == null || stepTitleResource.equals(""))
         {
             return "";
         } else
         {
-            return stepTitleResource;
+            return BaseLookup.i18n(stepTitleResource);
         }
     }
 }

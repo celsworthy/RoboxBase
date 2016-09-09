@@ -44,27 +44,29 @@ public enum NozzleHeightCalibrationState
      * Return if the cancel button should be show for this state.
      */
     public boolean showCancelButton() {
-        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLED);
+        return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLED && this != DONE);
     }
 
-    public Optional<String> getDiagramName()
+    public Optional<URL> getDiagramFXMLFileName()
     {
         if (diagramName.equals(""))
         {
             return Optional.empty();
         }
-        return Optional.of(diagramName);
+        return Optional.of(getClass().getResource(
+            ApplicationConfiguration.fxmlDiagramsResourcePath
+            + "nozzleheight" + "/" + diagramName));
 
     }
 
     public String getStepTitle()
     {
-        if (stepTitleResource == null)
+        if (stepTitleResource == null || stepTitleResource.equals(""))
         {
             return "";
         } else
         {
-            return stepTitleResource;
+            return BaseLookup.i18n(stepTitleResource);
         }
     }
 }

@@ -22,6 +22,7 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class CameraTriggerManager
 {
+
     private final Stenographer steno = StenographerFactory.getStenographer(CameraTriggerManager.class.getName());
     private Printer associatedPrinter = null;
     private static final int moveFeedrate_mm_per_min = 12000;
@@ -84,16 +85,18 @@ public class CameraTriggerManager
 
         TravelNode moveBedForward = new TravelNode();
 
-        boolean outputMoveCommand = false;
-        int xMoveInt = triggerData.getxMoveBeforeCapture();
-        moveBedForward.getMovement().setX(xMoveInt);
-        outputMoveCommand = true;
+        boolean outputMoveCommand = BaseLookup.getUserPreferences().isTimelapseMoveBeforeCapture();
 
-        int yMoveInt = triggerData.getyMoveBeforeCapture();
-        moveBedForward.getMovement().setY(yMoveInt);
-        outputMoveCommand = true;
+        if (outputMoveCommand)
+        {
+            int xMoveInt = triggerData.getyMoveBeforeCapture();
+            moveBedForward.getMovement().setX(xMoveInt);
 
-        moveBedForward.getFeedrate().setFeedRate_mmPerMin(moveFeedrate_mm_per_min);
+            int yMoveInt = triggerData.getyMoveBeforeCapture();
+            moveBedForward.getMovement().setY(yMoveInt);
+
+            moveBedForward.getFeedrate().setFeedRate_mmPerMin(moveFeedrate_mm_per_min);
+        }
 
         GCodeDirectiveNode dwellWhilePictureTaken = new GCodeDirectiveNode();
         dwellWhilePictureTaken.setGValue(4);

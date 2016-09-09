@@ -40,7 +40,8 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
     private final Printer printer;
     private HeadEEPROMDataResponse savedHeadData;
 
-    private final float bOffsetStartingValue = 0.8f;
+    private final float bOffsetStartingValue = 0.75f;
+    private final float nozzleTolerance = 0.05f;
     private float nozzle0BOffset = 0;
     private float nozzle1BOffset = 0;
     private final FloatProperty nozzlePosition = new SimpleFloatProperty();
@@ -105,7 +106,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
             steno.debug("Setting B offsets to defaults ("
                     + headReferenceData.getNozzles().get(0).getMinBOffset()
                     + " - "
-                    + headReferenceData.getNozzles().get(1).getMinBOffset()
+                    + headReferenceData.getNozzles().get(1).getMaxBOffset()
                     + ")");
             printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
                     savedHeadData.getUniqueID(),
@@ -115,15 +116,13 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
                     0,
                     0,
                     0,
-                    headReferenceData.getNozzles().get(0).
-                    getDefaultBOffset(),
+                    headReferenceData.getNozzles().get(0).getMinBOffset(),
                     savedHeadData.getFilamentID(0),
                     savedHeadData.getFilamentID(1),
                     0,
                     0,
                     0,
-                    headReferenceData.getNozzles().get(1).
-                    getDefaultBOffset(),
+                    headReferenceData.getNozzles().get(1).getMaxBOffset(),
                     savedHeadData.getLastFilamentTemperature(0),
                     savedHeadData.getLastFilamentTemperature(1),
                     savedHeadData.getHeadHours());
@@ -143,13 +142,13 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
                     0,
                     0,
                     0,
-                    1,
+                    0.7f,
                     savedHeadData.getFilamentID(0),
                     savedHeadData.getFilamentID(1),
                     0,
                     0,
                     0,
-                    -1,
+                    -0.7f,
                     savedHeadData.getLastFilamentTemperature(0),
                     savedHeadData.getLastFilamentTemperature(1),
                     savedHeadData.getHeadHours());
@@ -157,10 +156,11 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
 
         printer.readHeadEEPROM(false);
 
+        printer.selectNozzle(1);
+        printer.sendRawGCode("G0 X" + printer.getPrintVolumeCentre().getX(), false);
         printer.goToXYZPosition(printer.getPrintVolumeCentre().getX(),
-                printer.getPrintVolumeCentre().getY(),
-                50);
-        
+                printer.getPrintVolumeCentre().getY(), 50);
+
         if (PrinterUtils.waitOnBusy(printer, userOrErrorCancellable))
         {
             return;
@@ -190,8 +190,6 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
                 return;
             }
         }
-
-        printer.switchOnHeadLEDs();
     }
 
     private void waitOnNozzleTemperature(int nozzleNumber) throws InterruptedException
@@ -327,7 +325,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         printer.closeNozzleFully();
         // calculate offset
         steno.debug("(FINE) finalise nozzle position set at " + nozzlePosition.get());
-        nozzle0BOffset = bOffsetStartingValue - 0.1f + nozzlePosition.get();
+        nozzle0BOffset = bOffsetStartingValue - nozzleTolerance + nozzlePosition.get();
     }
 
     public void doFinaliseCalibrateFillNozzle() throws PrinterException, CalibrationException
@@ -335,7 +333,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         printer.closeNozzleFully();
         // calculate offset
         steno.debug("(FILL) finalise nozzle position set at " + nozzlePosition);
-        nozzle1BOffset = -bOffsetStartingValue + 0.1f - nozzlePosition.get();
+        nozzle1BOffset = -bOffsetStartingValue + nozzleTolerance - nozzlePosition.get();
     }
 
     public void doConfirmNoMaterialAction() throws PrinterException, RoboxCommsException, InterruptedException, CalibrationException

@@ -130,10 +130,9 @@ public class FilamentContainer
         if (applicationfilaments != null)
         {
             filaments = ingestFilaments(applicationfilaments, false);
+            filaments.sort(Filament.BY_MATERIAL.thenComparing(Filament::compareByFilamentID));
             appFilamentList.addAll(filaments);
-            appFilamentList.sort(Filament.BY_MATERIAL.thenComparing(Filament.BY_NAME));
             completeFilamentList.addAll(filaments);
-            completeFilamentList.sort(Filament.BY_MATERIAL.thenComparing(Filament.BY_NAME));
         } else
         {
             steno.error("No application filaments found");
@@ -144,10 +143,9 @@ public class FilamentContainer
         if (userfilaments != null)
         {
             filaments = ingestFilaments(userfilaments, true);
+            filaments.sort(Filament.BY_MATERIAL.thenComparing(Filament::compareByFilamentID));
             completeFilamentList.addAll(filaments);
-            completeFilamentList.sort(Filament.BY_MATERIAL.thenComparing(Filament.BY_NAME));
             userFilamentList.addAll(filaments);
-            userFilamentList.sort(Filament.BY_MATERIAL.thenComparing(Filament.BY_NAME));
         } else
         {
             steno.info("No user filaments found");

@@ -42,10 +42,10 @@ public class PrinterSettingsOverrides
     public PrinterSettingsOverrides()
     {
         customSettingsName.set("");
-        SlicerParametersFile draftParametersFile = SlicerParametersContainer.getInstance().getSettings(
-                BaseConfiguration.draftSettingsProfileName, HeadContainer.defaultHeadID);
-        brimOverride = draftParametersFile.getBrimWidth_mm();
-        fillDensityOverride = draftParametersFile.getFillDensity_normalised();
+        SlicerParametersFile initialParametersFile = SlicerParametersContainer.getInstance().getSettings(
+                printQuality.get().getFriendlyName(), HeadContainer.defaultHeadID);
+        brimOverride = initialParametersFile.getBrimWidth_mm();
+        fillDensityOverride = initialParametersFile.getFillDensity_normalised();
         printSupportTypeOverride.set(SupportType.MATERIAL_1);
 
         SlicerParametersContainer.addChangesListener(
