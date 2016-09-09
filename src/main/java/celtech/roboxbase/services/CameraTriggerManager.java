@@ -85,7 +85,7 @@ public class CameraTriggerManager
 
         TravelNode moveBedForward = new TravelNode();
 
-        boolean outputMoveCommand = BaseLookup.getUserPreferences().isTimelapseMoveBeforeCapture();
+        boolean outputMoveCommand = triggerData.isMoveBeforeCapture();
 
         if (outputMoveCommand)
         {

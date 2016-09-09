@@ -1,8 +1,9 @@
-package celtech.configuration;
+package celtech.roboxbase.configuration;
 
-import celtech.printerControl.comms.commands.rx.ReelEEPROMDataResponse;
-import celtech.printerControl.model.Reel;
-import celtech.utils.SystemUtils;
+import celtech.roboxbase.MaterialType;
+import celtech.roboxbase.comms.rx.ReelEEPROMDataResponse;
+import celtech.roboxbase.printerControl.model.Reel;
+import celtech.roboxbase.utils.SystemUtils;
 import java.io.Serializable;
 import java.util.Comparator;
 import javafx.beans.property.BooleanProperty;
@@ -134,10 +135,10 @@ public class Filament implements Serializable, Cloneable
     
     public Filament(ReelEEPROMDataResponse response)
     {
-        this.filamentID.set(response.getReelFilamentID());
-        this.friendlyFilamentName.set(response.getReelFriendlyName());
-        this.material.set(response.getReelMaterialType());
-        this.displayColour.set(response.getReelDisplayColour());
+        this.filamentID.set(response.getFilamentID());
+        this.friendlyFilamentName.set(response.getFriendlyName());
+        this.material.set(response.getMaterialType());
+        this.displayColour.set(Color.web(response.getDisplayColourString()));
         this.diameter.set(response.getFilamentDiameter());
         this.filamentMultiplier.set(response.getFilamentMultiplier());
         this.feedRateMultiplier.set(response.getFeedRateMultiplier());
