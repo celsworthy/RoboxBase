@@ -1,5 +1,9 @@
 package celtech.roboxbase.configuration;
 
+import celtech.roboxbase.comms.DetectedServer;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author Ian
@@ -7,8 +11,9 @@ package celtech.roboxbase.configuration;
 public class CoreMemoryData
 {
 
-    private String lastPrinterSerial;
-    private float lastPrinterFirmwareVersion;
+    private String lastPrinterSerial = "";
+    private float lastPrinterFirmwareVersion = 0f;
+    private List<DetectedServer> activeRoboxRoots = new ArrayList();
 
     public CoreMemoryData()
     {
@@ -32,5 +37,15 @@ public class CoreMemoryData
     public void setLastPrinterFirmwareVersion(float lastPrinterFirmwareVersion)
     {
         this.lastPrinterFirmwareVersion = lastPrinterFirmwareVersion;
+    }
+
+    public List<DetectedServer> getActiveRoboxRoots()
+    {
+        return activeRoboxRoots;
+    }
+
+    public void setActiveRoboxRoots(List<DetectedServer> roboxRoots)
+    {
+        this.activeRoboxRoots = roboxRoots;
     }
 }

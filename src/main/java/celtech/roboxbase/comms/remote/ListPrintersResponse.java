@@ -7,34 +7,18 @@ import java.util.List;
  *
  * @author ianhudson
  */
-public class DiscoveryResponse
+public class ListPrintersResponse
 {
-
-    private String serverVersion;
     private List<String> printerIDs;
 
-    public DiscoveryResponse()
+    public ListPrintersResponse()
     {
         // Jackson deserialization
     }
 
-    public DiscoveryResponse(String serverVersion,
-            List<String> printerIDs)
+    public ListPrintersResponse(List<String> printerIDs)
     {
-        this.serverVersion = serverVersion;
         this.printerIDs = printerIDs;
-    }
-
-    @JsonProperty
-    public String getServerVersion()
-    {
-        return serverVersion;
-    }
-
-    @JsonProperty
-    public void setServerVersion(String serverVersion)
-    {
-        this.serverVersion = serverVersion;
     }
 
     @JsonProperty
@@ -53,10 +37,8 @@ public class DiscoveryResponse
     public String toString()
     {
         StringBuilder output = new StringBuilder();
-        output.append("DiscoveryResponse");
+        output.append("ListPrintersResponse");
         output.append('\n');
-        output.append("Server version:");
-        output.append(serverVersion);
         output.append('\n');
         printerIDs.forEach(id ->
         {

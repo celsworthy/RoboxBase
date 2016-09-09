@@ -1,5 +1,6 @@
 package celtech.roboxbase.utils.tasks;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -32,7 +33,13 @@ public class HeadlessTaskExecutor implements TaskExecutor
     @Override
     public void runOnGUIThread(Runnable runnable)
     {
-        runnable.run();
+        if (Platform.isFxApplicationThread())
+        {
+            runnable.run();
+        } else
+        {
+            Platform.runLater(runnable);
+        }
     }
 
     @Override

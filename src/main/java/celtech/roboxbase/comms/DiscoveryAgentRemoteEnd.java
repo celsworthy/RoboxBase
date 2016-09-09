@@ -14,6 +14,12 @@ public class DiscoveryAgentRemoteEnd implements Runnable
 {
 
     private boolean keepRunning = true;
+    private String applicationVersion = null;
+
+    public DiscoveryAgentRemoteEnd(String applicationVersion)
+    {
+        this.applicationVersion = applicationVersion;
+    }
 
     @Override
     public void run()
@@ -32,7 +38,7 @@ public class DiscoveryAgentRemoteEnd implements Runnable
                 if (Arrays.equals(Arrays.copyOf(buf, RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII").length),
                         RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII")))
                 {
-                    byte[] responseBuf = RemoteDiscovery.iAmHereMessage.getBytes("US-ASCII");
+                    byte[] responseBuf = (RemoteDiscovery.iAmHereMessage).getBytes("US-ASCII");
                     DatagramPacket response = new DatagramPacket(responseBuf, responseBuf.length, recv.getAddress(), recv.getPort());
                     s.send(response);
                 }

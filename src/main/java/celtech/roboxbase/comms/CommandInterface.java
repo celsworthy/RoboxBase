@@ -14,6 +14,7 @@ import celtech.roboxbase.comms.tx.RoboxTxPacketFactory;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
@@ -294,8 +295,8 @@ public abstract class CommandInterface extends Thread
                         {
                             printerIDToUse = lastPrinterIDResponse.getAsFormattedString();
                         }
-                        BaseConfiguration.getCoreMemory().setLastPrinterSerial(printerIDToUse);
-                        BaseConfiguration.getCoreMemory().setLastPrinterFirmwareVersion(firmwareVersionInUse);
+                        CoreMemory.getInstance().setLastPrinterSerial(printerIDToUse);
+                        CoreMemory.getInstance().setLastPrinterFirmwareVersion(firmwareVersionInUse);
 
                         commsState = RoboxCommsState.CONNECTED;
                     } catch (RoboxCommsException ex)
