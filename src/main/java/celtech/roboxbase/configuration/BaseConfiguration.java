@@ -134,12 +134,10 @@ public class BaseConfiguration
     public static void initialise(Class classToCheck)
     {
         getApplicationInstallDirectory(classToCheck);
-        loadCoreMemory();
     }
 
     public static void shutdown()
     {
-        saveCoreMemory();
     }
 
     /**
@@ -656,31 +654,6 @@ public class BaseConfiguration
     public static String getBinariesDirectory()
     {
         return BaseConfiguration.getCommonApplicationDirectory() + "bin/";
-    }
-
-    private static void loadCoreMemory()
-    {
-        InputStream input = null;
-
-        if (coreMemory == null)
-        {
-            coreMemory = new CoreMemory();
-        }
-    }
-
-    public static void saveCoreMemory()
-    {
-        if (coreMemory == null)
-        {
-            loadCoreMemory();
-        }
-
-        coreMemory.save();
-    }
-
-    public static CoreMemoryData getCoreMemory()
-    {
-        return coreMemory.coreMemoryData;
     }
 
     public static void enableApplicationFeature(ApplicationFeature feature)

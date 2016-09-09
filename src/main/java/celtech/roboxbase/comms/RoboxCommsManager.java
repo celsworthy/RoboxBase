@@ -3,6 +3,7 @@ package celtech.roboxbase.comms;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
+import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     private int dummyPrinterCounter = 0;
 
     private final SerialDeviceDetector usbSerialDeviceDetector;
-    private final RemotePrinterDetector remoteServerDetector;
+    private final RemotePrinterDetector remotePrinterDetector;
 
     private boolean doNotCheckForPresenceOfHead = false;
     private boolean detectLoadedFilament = false;
@@ -54,7 +55,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         this.searchForRemotePrinters = searchForRemotePrinters;
 
         usbSerialDeviceDetector = new SerialDeviceDetector(pathToBinaries, roboxVendorID, roboxProductID, printerToSearchFor, this);
-        remoteServerDetector = new RemotePrinterDetector(this);
+        remotePrinterDetector = new RemotePrinterDetector(this);
 
         steno = StenographerFactory.getStenographer(this.getClass().getName());
     }
@@ -195,14 +196,20 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
 
     public void start()
     {
+        CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
+        {
+            server.whoAmI();
+            server.connect();
+        });
+        
         if (!usbSerialDeviceDetector.isAlive())
         {
             usbSerialDeviceDetector.start();
         }
 
-        if (!remoteServerDetector.isAlive() && searchForRemotePrinters)
+        if (!remotePrinterDetector.isAlive() && searchForRemotePrinters)
         {
-            remoteServerDetector.start();
+            remotePrinterDetector.start();
         }
     }
 
@@ -212,7 +219,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     public void shutdown()
     {
         usbSerialDeviceDetector.shutdownDetector();
-        remoteServerDetector.shutdownDetector();
+        remotePrinterDetector.shutdownDetector();
 
         List<Printer> printersToShutdown = new ArrayList<>();
         BaseLookup.getConnectedPrinters().forEach(printer ->
