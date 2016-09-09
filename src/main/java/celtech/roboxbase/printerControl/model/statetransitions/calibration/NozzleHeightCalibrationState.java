@@ -47,15 +47,13 @@ public enum NozzleHeightCalibrationState
         return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLED && this != DONE);
     }
 
-    public Optional<URL> getDiagramFXMLFileName()
+    public Optional<String> getDiagramName()
     {
         if (diagramName.equals(""))
         {
             return Optional.empty();
         }
-        return Optional.of(getClass().getResource(
-            ApplicationConfiguration.fxmlDiagramsResourcePath
-            + "nozzleheight" + "/" + diagramName));
+        return Optional.of(diagramName);
 
     }
 

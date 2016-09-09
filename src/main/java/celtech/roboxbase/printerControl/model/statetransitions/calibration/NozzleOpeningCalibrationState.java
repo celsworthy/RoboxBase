@@ -89,7 +89,7 @@ public enum NozzleOpeningCalibrationState
             return "";
         } else
         {
-            return Lookup.i18n(stepTitleResource);
+            return BaseLookup.i18n(stepTitleResource);
         }
     }
 }
