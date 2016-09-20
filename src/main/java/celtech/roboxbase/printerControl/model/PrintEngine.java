@@ -4,6 +4,7 @@ import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.appManager.NotificationType;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -43,7 +44,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -266,6 +266,11 @@ public class PrintEngine implements ControllableService
 
                 makeETCCalculator(printJobStatistics, associatedPrinter);
 
+                if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+                {
+                    ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
+                }
+
                 transferGCodeToPrinterService.reset();
                 transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
                 transferGCodeToPrinterService.setStartFromSequenceNumber(0);
@@ -323,7 +328,7 @@ public class PrintEngine implements ControllableService
             GCodePrintResult result = (GCodePrintResult) (t.getSource().getValue());
             if (result.isSuccess())
             {
-                steno.info(t.getSource().getTitle() + " has succeeded");
+                steno.info("Transfer of file to printer complete for job: " + result.getPrintJobID());
 //                if (associatedPrinter.printerStatusProperty().get()
 //                    == PrinterStatus.EJECTING_STUCK_MATERIAL)
 //                {
@@ -696,6 +701,7 @@ public class PrintEngine implements ControllableService
                 printableMeshes.getMeshesForProcessing(),
                 printableMeshes.getUsedExtruders(),
                 printableMeshes.getExtruderForModel(),
+                printableMeshes.getProjectName(),
                 printableMeshes.getRequiredPrintJobID(),
                 settingsToUse,
                 printableMeshes.getPrintOverrides(),
@@ -735,7 +741,12 @@ public class PrintEngine implements ControllableService
 
         try
         {
-            linesInPrintingFile.set(printJob.getStatistics().getNumberOfLines());
+            PrintJobStatistics printJobStatistics = printJob.getStatistics();
+            linesInPrintingFile.set(printJobStatistics.getNumberOfLines());
+            if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+            {
+                ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
+            }
         } catch (IOException ex)
         {
             steno.error("Couldn't get job statistics for job " + jobUUID);
@@ -1120,8 +1131,6 @@ public class PrintEngine implements ControllableService
 
             if (roboxIsPrinting)
             {
-                boolean incompleteTransfer = false;
-
                 if (!transferGCodeToPrinterService.isRunning())
                 {
                     try
@@ -1130,18 +1139,14 @@ public class PrintEngine implements ControllableService
 
                         if (sendFileData.getFileID() != null && !sendFileData.getFileID().equals(""))
                         {
-                            steno.info("The printer is printing an incomplete job: File ID: "
-                                    + sendFileData.getFileID()
-                                    + " Expected sequence number: " + sendFileData.getExpectedSequenceNumber());
-
-                            reEstablishTransfer(sendFileData.getFileID(),
+                            if (reEstablishTransfer(sendFileData.getFileID(),
                                     sendFileData.
-                                    getExpectedSequenceNumber());
-
-                            printQueueStatus.set(PrintQueueStatus.PRINTING);
-                            setParentPrintStatusIfIdle(PrinterStatus.PRINTING_PROJECT);
-
-                            incompleteTransfer = true;
+                                    getExpectedSequenceNumber()))
+                            {
+                                steno.info("The printer is printing an incomplete job: File ID: "
+                                        + sendFileData.getFileID()
+                                        + " Expected sequence number: " + sendFileData.getExpectedSequenceNumber());
+                            }
                         }
                     } catch (RoboxCommsException ex)
                     {
@@ -1150,38 +1155,35 @@ public class PrintEngine implements ControllableService
                     }
                 }
 
-                if (!incompleteTransfer)
+                Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(printJobID);
+
+                if (macroRunning.isPresent())
                 {
-                    Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(printJobID);
+                    steno.debug("Printer "
+                            + associatedPrinter.getPrinterIdentity().printerFriendlyName.get()
+                            + " is running macro " + macroRunning.get().name());
 
-                    if (macroRunning.isPresent())
+                    macroBeingRun.set(macroRunning.get());
+                    printQueueStatus.set(PrintQueueStatus.RUNNING_MACRO);
+                    setParentPrintStatusIfIdle(PrinterStatus.RUNNING_MACRO_FILE);
+                } else
+                {
+                    makeETCCalculatorForJobOfUUID(printJobID);
+
+                    if (etcAvailable.get())
                     {
-                        steno.debug("Printer "
-                                + associatedPrinter.getPrinterIdentity().printerFriendlyName.get()
-                                + " is running macro " + macroRunning.get().name());
-
-                        macroBeingRun.set(macroRunning.get());
-                        printQueueStatus.set(PrintQueueStatus.RUNNING_MACRO);
-                        setParentPrintStatusIfIdle(PrinterStatus.RUNNING_MACRO_FILE);
+                        updateETCUsingETCCalculator(associatedPrinter.printJobLineNumberProperty().get());
                     } else
                     {
-                        makeETCCalculatorForJobOfUUID(printJobID);
-
-                        if (etcAvailable.get())
-                        {
-                            updateETCUsingETCCalculator(associatedPrinter.printJobLineNumberProperty().get());
-                        } else
-                        {
-                            updateETCUsingLineNumber(associatedPrinter.printJobLineNumberProperty().get());
-                        }
-
-                        steno.debug("Printer "
-                                + associatedPrinter.getPrinterIdentity().printerFriendlyName.get()
-                                + " is printing");
-
-                        printQueueStatus.set(PrintQueueStatus.PRINTING);
-                        setParentPrintStatusIfIdle(PrinterStatus.PRINTING_PROJECT);
+                        updateETCUsingLineNumber(associatedPrinter.printJobLineNumberProperty().get());
                     }
+
+                    steno.debug("Printer "
+                            + associatedPrinter.getPrinterIdentity().printerFriendlyName.get()
+                            + " is printing");
+
+                    printQueueStatus.set(PrintQueueStatus.PRINTING);
+                    setParentPrintStatusIfIdle(PrinterStatus.PRINTING_PROJECT);
                 }
             } else
             {

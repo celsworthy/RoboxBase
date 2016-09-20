@@ -71,6 +71,7 @@ public class PostProcessor
     private final String outputVerifierTimerName = "OutputVerifier";
 
     private final String nameOfPrint;
+    private final String printJobUUID;
     private final List<Boolean> usedExtruders;
     private final Printer printer;
     private final String gcodeFileToProcess;
@@ -100,7 +101,8 @@ public class PostProcessor
 
     private final TimeUtils timeUtils = new TimeUtils();
 
-    public PostProcessor(String nameOfPrint,
+    public PostProcessor(String printJobUUID,
+            String nameOfPrint,
             List<Boolean> usedExtruders,
             Printer printer,
             String gcodeFileToProcess,
@@ -115,6 +117,7 @@ public class PostProcessor
             CameraTriggerData cameraTriggerData,
             boolean safetyFeaturesRequired)
     {
+        this.printJobUUID = printJobUUID;
         this.nameOfPrint = nameOfPrint;
         this.usedExtruders = usedExtruders;
         this.printer = printer;
@@ -352,6 +355,7 @@ public class PostProcessor
             }
 
             PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
+                    printJobUUID,
                     nameOfPrint,
                     statsProfileName,
                     statsLayerHeight,

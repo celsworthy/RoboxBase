@@ -150,12 +150,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private NumberFormat threeDPformatter;
 
-    private final float safeBedTemperatureForOpeningDoor = 60f;
-
-    private int filamentSlipEActionFired = 0;
-    private int filamentSlipDActionFired = 0;
-    private boolean filamentSlipActionInProgress = false;
-
     /*
      * State machine data
      */
@@ -249,6 +243,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private BooleanProperty headPowerOnFlag = new SimpleBooleanProperty(false);
 
     private boolean inCommissioningMode = false;
+
+    /*
+     * Error handling
+     * Some errors should be retained until cleared by the user
+     * Keep an observable list... 
+     */
+    private final ObservableList<FirmwareError> activeErrors = FXCollections.observableArrayList();
 
     @Override
     public CommandInterface getCommandInterface()
@@ -406,13 +407,16 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canCalibrateHead.bind(head.isNotNull()
                 .and(printerStatus.isEqualTo(PrinterStatus.IDLE)));
 
-        canRemoveHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE));
+        canRemoveHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
 
         canPurgeHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY))
                 .and(extruders.get(firstExtruderNumber).filamentLoaded.or(extruders.get(
                                         secondExtruderNumber).filamentLoaded)));
 
-        canOpenDoor.bind(printerStatus.isEqualTo(PrinterStatus.IDLE));
+        canOpenDoor.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
 
         //TODO make this work with multiple extruders
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
@@ -467,8 +471,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             switch (printerStatus)
                             {
                                 case IDLE:
-                                    filamentSlipEActionFired = 0;
-                                    filamentSlipDActionFired = 0;
                                     break;
                             }
 
@@ -3749,6 +3751,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             {
                                                 errorWasConsumed = false;
 
+                                                if (foundError.isRequireUserToClear()
+                                                && !activeErrors.contains(foundError))
+                                                {
+                                                    activeErrors.add(foundError);
+                                                }
+
                                                 if (suppressedFirmwareErrors.contains(foundError)
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
                                                 && doNotCheckForPresenceOfHead)
@@ -4082,6 +4090,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     {
                                         newHead = new Head(headData);
                                         newHead.updateFromEEPROMData(headResponse);
+                                        newHead.name.set(BaseLookup.i18n("headPanel." + newHead.typeCodeProperty().get() + ".titleBold")
+                                                + BaseLookup.i18n("headPanel." + newHead.typeCodeProperty().get() + ".titleLight"));
                                     } else
                                     {
                                         steno.error("Attempt to create head with invalid or absent type code");
@@ -4500,5 +4510,26 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void setCommissioningTestMode(boolean inCommissioningMode)
     {
         this.inCommissioningMode = inCommissioningMode;
+    }
+
+    @Override
+    public void clearError(FirmwareError error)
+    {
+        if (activeErrors.contains(error))
+        {
+            activeErrors.remove(error);
+        }
+    }
+
+    @Override
+    public void clearAllErrors()
+    {
+        activeErrors.clear();
+    }
+
+    @Override
+    public ObservableList<FirmwareError> getActiveErrors()
+    {
+        return activeErrors;
     }
 }

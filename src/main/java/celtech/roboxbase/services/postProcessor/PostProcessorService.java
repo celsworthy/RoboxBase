@@ -1,10 +1,8 @@
 package celtech.roboxbase.services.postProcessor;
 
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
-import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.services.ControllableService;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -17,7 +15,6 @@ public class PostProcessorService extends Service<GCodePostProcessingResult> imp
 {
 
     private String printJobUUID;
-    private String nameOfPrint;
     private PrintableMeshes printableMeshes;
     private Printer printerToUse;
     private boolean insertCameraControl;
@@ -26,11 +23,6 @@ public class PostProcessorService extends Service<GCodePostProcessingResult> imp
     public void setPrintJobUUID(String printJobUUID)
     {
         this.printJobUUID = printJobUUID;
-    }
-
-    public void setNameOfPrint(String nameOfPrint)
-    {
-        this.nameOfPrint = nameOfPrint;
     }
 
     public void setPrintableMeshes(PrintableMeshes printableMeshes)
@@ -56,7 +48,7 @@ public class PostProcessorService extends Service<GCodePostProcessingResult> imp
     @Override
     protected Task<GCodePostProcessingResult> createTask()
     {
-        return new PostProcessorTask(nameOfPrint,
+        return new PostProcessorTask(
                 printJobUUID,
                 printableMeshes,
                 printerToUse,

@@ -94,8 +94,6 @@ public class BaseConfiguration
 
     public static final String printSpoolStorageDirectoryPath = "PrintJobs";
 
-    private static final String commonFileDirectoryPath = "CEL Robox" + File.separator;
-
     public static final int mmOfFilamentOnAReel = 240000;
 
     /**
@@ -488,7 +486,7 @@ public class BaseConfiguration
                     if (Files.exists(regPath, LinkOption.NOFOLLOW_LINKS))
                     {
                         userStorageDirectory = registryValue + "\\"
-                                + commonFileDirectoryPath;
+                                + getApplicationName() + File.separator;
                     }
                 }
             }
@@ -501,7 +499,7 @@ public class BaseConfiguration
                 {
                     userStorageDirectory = configuration.getFilenameString(
                             applicationConfigComponent, userStorageDirectoryComponent, null)
-                            + commonFileDirectoryPath;
+                            + getApplicationName() + File.separator;
                     steno.debug("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {

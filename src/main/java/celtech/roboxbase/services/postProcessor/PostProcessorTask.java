@@ -12,7 +12,6 @@ import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
-import celtech.roboxbase.services.CameraTriggerManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             PostProcessorTask.class.getName());
 
     private final String printJobUUID;
-    private final String nameOfPrint;
     private final PrintableMeshes printableMeshes;
     private final String printJobDirectory;
     private final Printer printerToUse;
@@ -44,7 +42,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
     private final boolean insertCameraControl;
     private final CameraTriggerData cameraTriggerData;
 
-    public PostProcessorTask(String nameOfPrint,
+    public PostProcessorTask(
             String printJobUUID,
             PrintableMeshes printableMeshes,
             Printer printerToUse,
@@ -52,7 +50,6 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             CameraTriggerData cameraTriggerData)
     {
         this.printJobUUID = printJobUUID;
-        this.nameOfPrint = nameOfPrint;
         this.printableMeshes = printableMeshes;
         this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID + File.separator;
         this.printerToUse = printerToUse;
@@ -77,7 +74,6 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                         updateProgress(newValue.doubleValue(), 100.0);
                     });
             postProcessingResult = doPostProcessing(
-                    nameOfPrint,
                     printJobUUID,
                     printableMeshes,
                     printJobDirectory,
@@ -94,7 +90,6 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
     }
 
     public static GCodePostProcessingResult doPostProcessing(
-            String nameOfPrint,
             String printJobUUID,
             PrintableMeshes printableMeshes,
             String printJobDirectory,
@@ -172,7 +167,8 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 objectIndex++;
         }
         PostProcessor postProcessor = new PostProcessor(
-                nameOfPrint,
+                printJobUUID,
+                printableMeshes.getProjectName(),
                 printableMeshes.getUsedExtruders(),
                 printer,
                 gcodeFileToProcess,

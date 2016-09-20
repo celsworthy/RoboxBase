@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class PrintJobStatistics
 {
-
+    private String printJobID;
     private String projectName;
     private String profileName;
     private float layerHeight;
@@ -32,6 +32,7 @@ public class PrintJobStatistics
 
     public PrintJobStatistics()
     {
+        printJobID = "";
         projectName = "";
         profileName = "";
         layerHeight = 0;
@@ -47,6 +48,7 @@ public class PrintJobStatistics
     }
 
     public PrintJobStatistics(
+            String printJobID,
             String projectName,
             String profileName,
             float layerHeight,
@@ -61,6 +63,7 @@ public class PrintJobStatistics
             double predictedDuration
     )
     {
+        this.printJobID = printJobID;
         this.projectName = projectName;
         this.profileName = profileName;
         this.layerHeight = layerHeight;
@@ -80,6 +83,16 @@ public class PrintJobStatistics
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(new File(statisticsFileLocation), this);
+    }
+
+    public String getPrintJobID()
+    {
+        return printJobID;
+    }
+
+    public void setPrintJobID(String printJobID)
+    {
+        this.printJobID = printJobID;
     }
 
     /**

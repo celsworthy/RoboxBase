@@ -28,6 +28,7 @@ public class PrintJobStatisticsTest
     @Test
     public void testWriteToFileAndReadBack() throws IOException
     {
+        String printJobID = "abcde";
         String projectName = "blah";
         String profileName = "blah2";
         double volumeUsed = 100;
@@ -46,6 +47,7 @@ public class PrintJobStatisticsTest
         layerNumberToPredictedDuration_E.put(2, 3.4);
 
         PrintJobStatistics printJobStatistics = new PrintJobStatistics(
+                printJobID,
                 projectName,
                 profileName,
                 1,
