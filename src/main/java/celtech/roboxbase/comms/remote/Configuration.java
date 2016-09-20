@@ -6,7 +6,7 @@ package celtech.roboxbase.comms.remote;
  */
 public class Configuration
 {
-    public static final int remotePort = 80;
+    public static final int remotePort = 8080;
     public static final String discoveryService = "/discovery";
     
     /**
