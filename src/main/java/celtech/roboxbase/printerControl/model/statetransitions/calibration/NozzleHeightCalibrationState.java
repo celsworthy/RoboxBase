@@ -1,6 +1,7 @@
 package celtech.roboxbase.printerControl.model.statetransitions.calibration;
 
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.configuration.BaseConfiguration;
 import java.net.URL;
 import java.util.Optional;
 
@@ -47,16 +48,12 @@ public enum NozzleHeightCalibrationState
         return (this != IDLE && this != FAILED && this != FINISHED && this != CANCELLED && this != DONE);
     }
 
-    public Optional<URL> getDiagramFXMLFileName()
-    {
+    public Optional<String> getDiagramName() {
         if (diagramName.equals(""))
         {
             return Optional.empty();
         }
-        return Optional.of(getClass().getResource(
-            ApplicationConfiguration.fxmlDiagramsResourcePath
-            + "nozzleheight" + "/" + diagramName));
-
+        return Optional.of(diagramName);
     }
 
     public String getStepTitle()

@@ -3748,6 +3748,17 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     .forEach(foundError ->
                                             {
                                                 errorWasConsumed = false;
+                                                
+                                                if (foundError == FirmwareError.Z_TOP_SWITCH)
+                                                {
+                                                    if (head.get() != null)
+                                                    {
+                                                        steno.error("Z+ switch error occurred at " + head.get().headZPosition.get() + "mm");
+                                                    } else
+                                                    {
+                                                        steno.error("Z+ switch occurred - no head so height could not be determined");
+                                                    }
+                                                }
 
                                                 if (suppressedFirmwareErrors.contains(foundError)
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
