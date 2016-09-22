@@ -396,6 +396,12 @@ public interface Printer extends RoboxResponseConsumer
     public AckResponse transmitReportErrors() throws RoboxCommsException;
 
     public void transmitResetErrors() throws RoboxCommsException;
+    
+    public void clearError(FirmwareError error);
+    
+    public void clearAllErrors();
+    
+    public ObservableList<FirmwareError> getActiveErrors();
 
     /*
      * Higher level controls

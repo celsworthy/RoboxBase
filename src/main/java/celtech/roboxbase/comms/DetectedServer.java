@@ -1,5 +1,6 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.remote.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.WhoAreYouResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -124,7 +125,7 @@ public final class DetectedServer
     {
         WhoAreYouResponse response = null;
 
-        String url = "http://" + address.getHostAddress() + ":9000/api/discovery/whoareyou";
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
 
         try
         {
@@ -169,7 +170,7 @@ public final class DetectedServer
     {
         List<DetectedDevice> detectedDevices = new ArrayList();
 
-        String url = "http://" + address.getHostAddress() + ":9000/api/discovery/listPrinters";
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/listPrinters";
 
         try
         {
@@ -204,7 +205,7 @@ public final class DetectedServer
                 serverStatus.set(ServerStatus.NOT_THERE);
                 steno.warning("No response from @ " + address.getHostAddress());
             }
-        } catch (IOException ex)
+        } catch (IOException ex) 
         {
             serverStatus.set(ServerStatus.NOT_THERE);
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);

@@ -55,7 +55,6 @@ import javafx.scene.paint.Color;
  */
 public class TestPrinter implements Printer
 {
-
     private final SimpleObjectProperty<Head> headProperty = new SimpleObjectProperty<>();
     private final ObservableMap<Integer, Reel> reelsProperty = FXCollections.observableHashMap();
     private final ObservableMap<Integer, Filament> effectiveFilaments = FXCollections.observableHashMap();
@@ -1144,6 +1143,24 @@ public class TestPrinter implements Printer
 
     @Override
     public void forcedCancel(TaskResponder responder) throws PrinterException
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void clearError(FirmwareError error)
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public ObservableList<FirmwareError> getActiveErrors()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void clearAllErrors()
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

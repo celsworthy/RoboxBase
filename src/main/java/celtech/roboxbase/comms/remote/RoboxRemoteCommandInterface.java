@@ -8,6 +8,7 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.PrinterNotFound;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 
 /**
@@ -99,5 +100,15 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     public void setSleepBetweenStatusChecks(int sleepMillis)
     {
         sleepBetweenStatusChecks = sleepMillis;
+    }
+
+    public void associateStatisticsWithPrintJob(PrintJobStatistics statistics)
+    {
+        try
+        {
+            remoteClient.associateStatisticsWithPrintJobID(statistics);
+        } catch (RoboxCommsException ex)
+        {
+        }
     }
 }

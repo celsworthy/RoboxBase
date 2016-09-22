@@ -6,7 +6,6 @@ import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 /**
@@ -19,6 +18,7 @@ public class PrintableMeshes
     private final List<MeshForProcessing> meshesForProcessing;
     private final List<Boolean> usedExtruders;
     private final List<Integer> extruderForModel;
+    private final String projectName;
     private final String requiredPrintJobID;
     private final SlicerParametersFile settings;
     private final PrinterSettingsOverrides printOverrides;
@@ -32,6 +32,7 @@ public class PrintableMeshes
     public PrintableMeshes(List<MeshForProcessing> meshesForProcessing,
             List<Boolean> usedExtruders,
             List<Integer> extruderForModel,
+            String projectName,
             String requiredPrintJobID,
             SlicerParametersFile settings,
             PrinterSettingsOverrides printOverrides,
@@ -45,6 +46,7 @@ public class PrintableMeshes
         this.meshesForProcessing = meshesForProcessing;
         this.usedExtruders = usedExtruders;
         this.extruderForModel = extruderForModel;
+        this.projectName = projectName;
         this.requiredPrintJobID = requiredPrintJobID;
         this.settings = settings;
         this.printOverrides = printOverrides;
@@ -69,6 +71,11 @@ public class PrintableMeshes
     public List<Integer> getExtruderForModel()
     {
         return extruderForModel;
+    }
+
+    public String getProjectName()
+    {
+        return projectName;
     }
 
     public String getRequiredPrintJobID()
