@@ -72,7 +72,8 @@ public class ToolSelectNode extends GCodeEventNode implements Renderable
             stringToReturn += "; Suppressed Tool Node -";
             if (getFinishTimeFromStartOfPrint_secs().isPresent())
             {
-                stringToReturn += "T" + getFinishTimeFromStartOfPrint_secs().get();
+                stringToReturn += "T start " + getStartTimeFromStartOfPrint_secs().get();
+                stringToReturn += " T finish " + getFinishTimeFromStartOfPrint_secs().get();
             }
         }
         stringToReturn += " ; Tool Node duration: " + getEstimatedDuration();

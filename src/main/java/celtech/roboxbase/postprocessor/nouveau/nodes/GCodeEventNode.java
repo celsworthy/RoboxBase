@@ -680,13 +680,13 @@ public abstract class GCodeEventNode
 
     public String getCommentText()
     {
-        if (getFinishTimeFromStartOfPrint_secs().isPresent())
-        {
-            return comment.renderComments() + " ; Time " + getFinishTimeFromStartOfPrint_secs().get();
-        } else
-        {
+//        if (getFinishTimeFromStartOfPrint_secs().isPresent())
+//        {
+//            return comment.renderComments() + " ; Time " + getFinishTimeFromStartOfPrint_secs().get();
+//        } else
+//        {
             return comment.renderComments();
-        }
+//        }
     }
 
     public String getRawCommentText()

@@ -1,6 +1,7 @@
 package celtech.roboxbase.configuration;
 
 import celtech.roboxbase.ApplicationFeature;
+import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -132,6 +133,7 @@ public class BaseConfiguration
     public static void initialise(Class classToCheck)
     {
         getApplicationInstallDirectory(classToCheck);
+        PrinterContainer.getCompletePrinterList();
     }
 
     public static void shutdown()
