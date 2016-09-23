@@ -9,6 +9,7 @@ import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import javafx.application.Platform;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -196,12 +197,15 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
 
     public void start()
     {
-        CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
+        Platform.runLater(() ->
         {
-            server.whoAmI();
-            server.connect();
+            CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
+            {
+                server.whoAmI();
+                server.connect();
+            });
         });
-        
+
         if (!usbSerialDeviceDetector.isAlive())
         {
             usbSerialDeviceDetector.start();

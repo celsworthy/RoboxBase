@@ -30,7 +30,7 @@ public class RemoteClient implements LowLevelInterface
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
     {
         this.remotePrinterHandle = remotePrinterHandle;
-        baseUrlString = "http://" + remotePrinterHandle.getAddress().getHostAddress() + ":" + Configuration.remotePort + "/api";
+        baseUrlString = "http://" + remotePrinterHandle.getServerPrinterIsAttachedTo().getAddress().getHostAddress() + ":" + Configuration.remotePort + "/api";
         connectUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.connectService;
         disconnectUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.disconnectService;
         writeToPrinterUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.writeDataService;

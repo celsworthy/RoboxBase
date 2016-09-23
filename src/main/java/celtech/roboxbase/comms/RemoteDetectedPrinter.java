@@ -1,6 +1,5 @@
 package celtech.roboxbase.comms;
 
-import java.net.InetAddress;
 import java.util.Objects;
 
 /**
@@ -9,17 +8,17 @@ import java.util.Objects;
  */
 public class RemoteDetectedPrinter extends DetectedDevice
 {
-    private final InetAddress address;
+    private final DetectedServer serverPrinterIsAttachedTo;
 
-    public RemoteDetectedPrinter(InetAddress address, DeviceDetector.PrinterConnectionType connectionType, String connectionHandle)
+    public RemoteDetectedPrinter(DetectedServer serverPrinterIsAttachedTo, DeviceDetector.PrinterConnectionType connectionType, String connectionHandle)
     {
         super(connectionType, connectionHandle);
-        this.address = address;
+        this.serverPrinterIsAttachedTo = serverPrinterIsAttachedTo;
     }
 
-    public InetAddress getAddress()
+    public DetectedServer getServerPrinterIsAttachedTo()
     {
-        return address;
+        return serverPrinterIsAttachedTo;
     }
 
     @Override
@@ -30,7 +29,7 @@ public class RemoteDetectedPrinter extends DetectedDevice
         if (obj instanceof RemoteDetectedPrinter
                 && ((RemoteDetectedPrinter) obj).getConnectionHandle().equals(getConnectionHandle())
                 && ((RemoteDetectedPrinter) obj).getConnectionType() == getConnectionType()
-                && ((RemoteDetectedPrinter) obj).address.equals(address))
+                && ((RemoteDetectedPrinter) obj).serverPrinterIsAttachedTo.equals(serverPrinterIsAttachedTo))
         {
             equal = true;
         }
@@ -44,13 +43,13 @@ public class RemoteDetectedPrinter extends DetectedDevice
         int hash = 7;
         hash = 97 * hash + Objects.hashCode(getConnectionType());
         hash = 32 * hash + Objects.hashCode(getConnectionHandle());
-        hash = 66 * hash + Objects.hashCode(this.address);
+        hash = 66 * hash + Objects.hashCode(this.serverPrinterIsAttachedTo);
         return hash;
     }
 
     @Override
     public String toString()
     {
-        return super.toString() + ":" + this.address.getHostAddress().toString();
+        return super.toString() + ":" + this.serverPrinterIsAttachedTo.toString();
     }
 }

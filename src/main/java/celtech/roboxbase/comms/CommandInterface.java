@@ -503,4 +503,9 @@ public abstract class CommandInterface extends Thread
     {
         return latestStatusResponse;
     }
+
+    public DetectedDevice getPrinterHandle()
+    {
+        return printerHandle;
+    }
 }

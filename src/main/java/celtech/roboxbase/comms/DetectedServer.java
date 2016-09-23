@@ -196,7 +196,7 @@ public final class DetectedServer
 //                steno.info("Got a response from server " + this.getName() + " " + listPrintersResponse.getPrinterIDs().size() + " printers attached");
                 listPrintersResponse.getPrinterIDs().forEach((printerID) ->
                 {
-                    RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(address, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
+                    RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
                     detectedDevices.add(detectedPrinter);
                 });
                 serverStatus.set(ServerStatus.OK);
