@@ -5,9 +5,11 @@ import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -128,6 +130,9 @@ public class BaseConfiguration
 
     private static CoreMemory coreMemory = null;
 
+    private static Properties applicationMemoryProperties = null;
+    private static final String fileMemoryItem = "FileMemory";
+
     private static final Set<ApplicationFeature> applicationFeatures = new HashSet();
 
     public static void initialise(Class classToCheck)
@@ -138,6 +143,7 @@ public class BaseConfiguration
 
     public static void shutdown()
     {
+        writeApplicationMemory();
     }
 
     /**
@@ -670,4 +676,99 @@ public class BaseConfiguration
     {
         return applicationFeatures.contains(feature);
     }
+
+    private static void loadApplicationMemoryProperties()
+    {
+        InputStream input = null;
+
+        if (applicationMemoryProperties == null)
+        {
+            applicationMemoryProperties = new Properties();
+
+            try
+            {
+                File inputFile = new File(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
+                        + ".properties");
+                if (inputFile.exists())
+                {
+                    input = new FileInputStream(inputFile);
+
+                    // load a properties file
+                    applicationMemoryProperties.load(input);
+                }
+            } catch (IOException ex)
+            {
+                ex.printStackTrace();
+            } finally
+            {
+                if (input != null)
+                {
+                    try
+                    {
+                        input.close();
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    public static String getApplicationMemory(String propertyName)
+    {
+        if (applicationMemoryProperties == null)
+        {
+            loadApplicationMemoryProperties();
+        }
+        return applicationMemoryProperties.getProperty(propertyName);
+    }
+
+    public static void setApplicationMemory(String propertyName, String value)
+    {
+        if (applicationMemoryProperties == null)
+        {
+            loadApplicationMemoryProperties();
+        }
+        applicationMemoryProperties.setProperty(propertyName, value);
+
+        writeApplicationMemory();
+    }
+
+    /**
+     *
+     */
+    public static void writeApplicationMemory()
+    {
+        if (applicationMemoryProperties == null)
+        {
+            loadApplicationMemoryProperties();
+        }
+
+        OutputStream output = null;
+
+        try
+        {
+            output = new FileOutputStream(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
+                    + ".properties");
+
+            applicationMemoryProperties.save(output, BaseConfiguration.getApplicationName() + " runtime properties");
+        } catch (IOException ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            if (output != null)
+            {
+                try
+                {
+                    output.close();
+                } catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 }
