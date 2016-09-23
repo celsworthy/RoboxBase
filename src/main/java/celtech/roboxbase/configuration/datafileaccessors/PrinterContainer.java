@@ -23,14 +23,16 @@ public class PrinterContainer
 
     private static final Stenographer steno = StenographerFactory.getStenographer(PrinterContainer.class.getName());
     private static PrinterContainer instance = null;
-    private static final ObservableList<PrinterDefinitionFile> completePrinterList = FXCollections.observableArrayList();
-    private static final ObservableMap<String, PrinterDefinitionFile> completePrinterMap = FXCollections.observableHashMap();
+    private static ObservableList<PrinterDefinitionFile> completePrinterList;
+    private static ObservableMap<String, PrinterDefinitionFile> completePrinterMap;
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final String defaultPrinterID = "RBX01";
 
     private PrinterContainer()
     {
+        completePrinterList = FXCollections.observableArrayList();
+        completePrinterMap = FXCollections.observableHashMap();
         File printerDirHandle = new File(BaseConfiguration.getApplicationPrinterDirectory());
         File[] printerFiles = printerDirHandle.listFiles(new PrinterFileFilter());
         ArrayList<PrinterDefinitionFile> printers = ingestPrinters(printerFiles);
