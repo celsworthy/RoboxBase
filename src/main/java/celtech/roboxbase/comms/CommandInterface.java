@@ -476,16 +476,19 @@ public abstract class CommandInterface extends Thread
 
     private void determinePrinterStatus(StatusResponse statusResponse)
     {
-        if (PrinterUtils.printJobIDIndicatesPrinting(statusResponse.getRunningPrintJobID()))
+        if (statusResponse != null)
         {
-            if (printerFriendlyName != null)
+            if (PrinterUtils.printJobIDIndicatesPrinting(statusResponse.getRunningPrintJobID()))
             {
-                steno.info(printerFriendlyName + " is printing");
-            } else
-            {
-                steno.error("Connected to an unknown printer that is printing");
-            }
+                if (printerFriendlyName != null)
+                {
+                    steno.info(printerFriendlyName + " is printing");
+                } else
+                {
+                    steno.error("Connected to an unknown printer that is printing");
+                }
 
+            }
         }
     }
 
