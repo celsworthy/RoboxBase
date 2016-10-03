@@ -28,7 +28,7 @@ public class SVGMetaLineHorizontal extends SVGMetaPart
     }
     
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
         double resultantX;
 
@@ -44,7 +44,7 @@ public class SVGMetaLineHorizontal extends SVGMetaPart
         
         DragKnifeMetaCut cut = new DragKnifeMetaCut(currentX, currentY, resultantX, currentY, comment);
         
-        RenderSVGToDragKnifeMetaResult result = new RenderSVGToDragKnifeMetaResult(resultantX, currentY, cut);
+        RenderSVGToStylusMetaResult result = new RenderSVGToStylusMetaResult(resultantX, currentY, cut);
         
         return result;
     }

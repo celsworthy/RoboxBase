@@ -1,6 +1,6 @@
 package celtech.roboxbase.importers.twod.svg.metadata;
 
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,20 +8,20 @@ import java.util.List;
  *
  * @author ianhudson
  */
-public class RenderSVGToDragKnifeMetaResult
+public class RenderSVGToStylusMetaResult
 {
-    private List<DragKnifeMetaPart> dragknifemetaparts = new ArrayList<>();
+    private List<StylusMetaPart> dragknifemetaparts = new ArrayList<>();
     private final double resultantX;
     private final double resultantY;
 
-    public RenderSVGToDragKnifeMetaResult(double resultantX, double resultantY, List<DragKnifeMetaPart> dragknifemetaparts)
+    public RenderSVGToStylusMetaResult(double resultantX, double resultantY, List<StylusMetaPart> dragknifemetaparts)
     {
         this.dragknifemetaparts = dragknifemetaparts;
         this.resultantX = resultantX;
         this.resultantY = resultantY;
     }
 
-    public RenderSVGToDragKnifeMetaResult(double resultantX, double resultantY, DragKnifeMetaPart dragknifemetapart)
+    public RenderSVGToStylusMetaResult(double resultantX, double resultantY, StylusMetaPart dragknifemetapart)
     {
         this.dragknifemetaparts = new ArrayList();
         this.dragknifemetaparts.add(dragknifemetapart);
@@ -29,7 +29,7 @@ public class RenderSVGToDragKnifeMetaResult
         this.resultantY = resultantY;
     }
 
-    public List<DragKnifeMetaPart> getDragKnifeMetaParts()
+    public List<StylusMetaPart> getDragKnifeMetaParts()
     {
         return dragknifemetaparts;
     }

@@ -1,12 +1,14 @@
 package celtech.roboxbase.importers.twod.svg;
 
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
+import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -15,22 +17,24 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author ianhudson
  */
-public class DragKnifeToGCodeEngine
+public class StylusMetaToGCodeEngine
 {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(DragKnifeToGCodeEngine.class.getName());
+    private final Stenographer steno = StenographerFactory.getStenographer(StylusMetaToGCodeEngine.class.getName());
 
     private final String outputFilename;
-    private final List<DragKnifeMetaPart> metaparts;
+    private final List<StylusMetaPart> metaparts;
 
-    public DragKnifeToGCodeEngine(String outputURIString, List<DragKnifeMetaPart> metaparts)
+    public StylusMetaToGCodeEngine(String outputURIString, List<StylusMetaPart> metaparts)
     {
         this.outputFilename = outputURIString;
         this.metaparts = metaparts;
     }
 
-    public void generateGCode()
+    public List<GCodeEventNode> generateGCode()
     {
+        List<GCodeEventNode> gcodeNodes = new ArrayList<>();
+        
         PrintWriter out = null;
         try
         {
@@ -51,12 +55,13 @@ public class DragKnifeToGCodeEngine
 
             String renderResult = null;
 
-            for (DragKnifeMetaPart part : metaparts)
+            for (StylusMetaPart part : metaparts)
             {
                 renderResult = part.renderToGCode();
                 if (renderResult != null)
                 {
                     out.println(renderResult);
+                    gcodeNodes.addAll(part.renderToGCodeNode());
                     renderResult = null;
                 }
             }
@@ -84,5 +89,7 @@ public class DragKnifeToGCodeEngine
                 out.close();
             }
         }
+        
+        return gcodeNodes;
     }
 }

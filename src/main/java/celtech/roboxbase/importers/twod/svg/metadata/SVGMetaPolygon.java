@@ -1,7 +1,7 @@
 package celtech.roboxbase.importers.twod.svg.metadata;
 
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaCut;
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -30,10 +30,10 @@ public class SVGMetaPolygon extends SVGMetaPart
     }
 
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
         double resultantX = currentX, resultantY = currentY;
-        List<DragKnifeMetaPart> cuts = new ArrayList<>();
+        List<StylusMetaPart> cuts = new ArrayList<>();
 
         for (Vector2D point : points)
         {
@@ -43,7 +43,7 @@ public class SVGMetaPolygon extends SVGMetaPart
             resultantY = point.getY();
         }
         
-        RenderSVGToDragKnifeMetaResult result = new RenderSVGToDragKnifeMetaResult(resultantX, resultantY, cuts);
+        RenderSVGToStylusMetaResult result = new RenderSVGToStylusMetaResult(resultantX, resultantY, cuts);
         return result;
     }
 }

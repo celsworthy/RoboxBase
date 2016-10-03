@@ -1,16 +1,24 @@
 package celtech.roboxbase.importers.twod.svg.metadata.dragknife;
 
 import celtech.roboxbase.importers.twod.svg.SVGConverterConfiguration;
+import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
+import com.sun.javafx.geom.Path2D;
+import com.sun.javafx.geom.transform.BaseTransform;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import javafx.geometry.Point2D;
+import javafx.scene.shape.Shape;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 /**
  *
  * @author ianhudson
  */
-public abstract class DragKnifeMetaPart
+public abstract class StylusMetaPart
 {
 
     private Vector2D start;
@@ -19,7 +27,7 @@ public abstract class DragKnifeMetaPart
 
     private final NumberFormat threeDPformatter;
 
-    public DragKnifeMetaPart(double startX, double startY, double endX, double endY, String comment)
+    public StylusMetaPart(double startX, double startY, double endX, double endY, String comment)
     {
         start = new Vector2D(startX, startY);
         end = new Vector2D(endX, endY);
@@ -107,4 +115,32 @@ public abstract class DragKnifeMetaPart
 
         return generatedOutput;
     }
+
+    protected List<GCodeEventNode> renderShapeToGCodeNode(Shape shape)
+    {
+        List<GCodeEventNode> gcodeNodes = new ArrayList<>();
+
+        final Path2D path2D = new Path2D(shape.impl_configShape());
+        final BaseTransform tx = shape.impl_getLeafTransform();
+        PathHelper pathHelper = new PathHelper(path2D, tx, 1.0);
+
+        int numberOfSteps = 10;
+        for (int stepNum = 0; stepNum <= numberOfSteps; stepNum++)
+        {
+            double fraction = (double) stepNum / (double) numberOfSteps;
+            Point2D position = pathHelper.getPosition2D(fraction, false);
+            System.out.println("Input " + fraction + " X:" + position.getX() + " Y:" + position.getY());
+
+            TravelNode newTravel = new TravelNode();
+            newTravel.getMovement().setX(position.getX());
+            newTravel.getMovement().setY(position.getY());
+            newTravel.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
+            gcodeNodes.add(newTravel);
+        }
+
+        return gcodeNodes;
+    }
+
+    public abstract List<GCodeEventNode> renderToGCodeNode();
+
 }

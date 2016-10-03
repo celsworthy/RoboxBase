@@ -8,7 +8,7 @@ import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaLineHorizontal;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaLineVertical;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaMove;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaPart;
-import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaUnhandled;
+import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaQuadraticBezier;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGStartPath;
 import java.util.List;
 import libertysystems.stenographer.Stenographer;
@@ -143,26 +143,27 @@ public class PathParserThing implements PathHandler
     @Override
     public void curvetoCubicSmoothRel(float x1, float y1, float x2, float y2) throws ParseException
     {
-        metaparts.add(new SVGMetaCubicBezier(x1, y1, x2, y2));
-//        metaparts.add(new SVGMetaUnhandled("Curve to Cubic Smooth Rel"));
+        throw new RuntimeException("Curve to Quadratic Smooth Rel");
+//        metaparts.add(new SVGMetaCubicBezier(x1, y1, x2, y2));
     }
 
     @Override
     public void curvetoCubicSmoothAbs(float x1, float y1, float x2, float y2) throws ParseException
     {
-        metaparts.add(new SVGMetaUnhandled("Curve to Cubic Smooth Abs"));
+        throw new RuntimeException("Curve to Cubic Smooth Abs");
+//        metaparts.add(new SVGMetaCubicBezier(x1, y1, x2, y2, true));
     }
 
     @Override
     public void curvetoQuadraticRel(float x1, float y1, float x2, float y2) throws ParseException
     {
-        metaparts.add(new SVGMetaUnhandled("Curve to Quadratic Rel"));
+        metaparts.add(new SVGMetaQuadraticBezier(x1, y1, x2, y2, false));
     }
 
     @Override
     public void curvetoQuadraticAbs(float x1, float y1, float x2, float y2) throws ParseException
     {
-        metaparts.add(new SVGMetaUnhandled("Curve to Quadratic Abs"));
+        metaparts.add(new SVGMetaQuadraticBezier(x1, y1, x2, y2, true));
     }
 
     @Override
@@ -183,7 +184,7 @@ public class PathParserThing implements PathHandler
     public void arcRel(float f, float f1, float f2, boolean bln, boolean bln1, float f3, float f4) throws ParseException
     {
         throw new RuntimeException("Arc Rel");
-//        metaparts.add(new SVGMetaUnhandled("Arc Rel"));
+//        metaparts.add(new SVGMetaArc(f, f, bln1));
     }
 
     @Override

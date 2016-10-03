@@ -14,5 +14,5 @@ public abstract class SVGMetaPart
      * @param currentY
      * @return 
      */
-    public abstract RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY);
+    public abstract RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY);
 }

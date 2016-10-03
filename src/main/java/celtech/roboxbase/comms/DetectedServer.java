@@ -121,8 +121,9 @@ public final class DetectedServer
         serverStatus.set(ServerStatus.UNKNOWN);
     }
 
-    public void whoAmI()
+    public boolean whoAmI()
     {
+        boolean gotAResponse = false;
         WhoAreYouResponse response = null;
 
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
@@ -150,6 +151,7 @@ public final class DetectedServer
 
                 if (response != null)
                 {
+                    gotAResponse = true;
                     name = response.getName();
                     version = response.getServerVersion();
                 }
@@ -161,9 +163,10 @@ public final class DetectedServer
         } catch (IOException ex)
         {
             steno.error("Error whilst asking who are you @ " + address.getHostAddress());
-            ex.printStackTrace();
             serverStatus.set(ServerStatus.NOT_THERE);
         }
+        
+        return gotAResponse;
     }
 
     public List<DetectedDevice> listAttachedPrinters()

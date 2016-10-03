@@ -2,7 +2,7 @@ package celtech.roboxbase.importers.twod.svg.metadata;
 
 import celtech.roboxbase.importers.twod.svg.BezierTools;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaCut;
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -85,7 +85,7 @@ public class SVGMetaCubicBezier extends SVGMetaPart
     }
 
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
         BezierTools bezierTools = new BezierTools();
         List<Vector2D> controlPoints = new ArrayList<>();
@@ -114,7 +114,7 @@ public class SVGMetaCubicBezier extends SVGMetaPart
 
         bezierTools.SetControlPoints(controlPoints);
         List<Vector2D> linePoints = bezierTools.GetDrawingPoints2();
-        List<DragKnifeMetaPart> metaparts = new ArrayList<>();
+        List<StylusMetaPart> metaparts = new ArrayList<>();
         
         double xInUse = currentX;
         double yInUse = currentY;
@@ -128,7 +128,7 @@ public class SVGMetaCubicBezier extends SVGMetaPart
             yInUse = linePoints.get(linePointCounter).getY();
         }
         
-        RenderSVGToDragKnifeMetaResult result = new RenderSVGToDragKnifeMetaResult(resultantX, resultantY, metaparts);
+        RenderSVGToStylusMetaResult result = new RenderSVGToStylusMetaResult(resultantX, resultantY, metaparts);
         return result;
     }
 }

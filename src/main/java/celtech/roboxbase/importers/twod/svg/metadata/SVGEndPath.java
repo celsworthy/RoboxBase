@@ -7,7 +7,7 @@ package celtech.roboxbase.importers.twod.svg.metadata;
 public class SVGEndPath extends SVGMetaPart
 {
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

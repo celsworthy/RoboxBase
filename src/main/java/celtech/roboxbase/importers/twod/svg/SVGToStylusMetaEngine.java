@@ -1,7 +1,7 @@
 package celtech.roboxbase.importers.twod.svg;
 
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
-import celtech.roboxbase.importers.twod.svg.metadata.RenderSVGToDragKnifeMetaResult;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.RenderSVGToStylusMetaResult;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGClosePath;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGEndPath;
 import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaLine;
@@ -16,21 +16,21 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author ianhudson
  */
-public class SVGToDragKnifeMetaEngine
+public class SVGToStylusMetaEngine
 {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(SVGToDragKnifeMetaEngine.class.getName());
+    private final Stenographer steno = StenographerFactory.getStenographer(SVGToStylusMetaEngine.class.getName());
 
-    public List<DragKnifeMetaPart> convertToDragKnifeMetaParts(List<SVGMetaPart> metaparts)
+    public static List<StylusMetaPart> convertToStylusMetaParts(List<SVGMetaPart> metaparts)
     {
-        List<DragKnifeMetaPart> dragknifemetaparts = new ArrayList<>();
+        List<StylusMetaPart> dragknifemetaparts = new ArrayList<>();
 
         double currentX = 0;
         double currentY = 0;
         dragknifemetaparts.clear();
 
         double startX = 0, startY = 0;
-        RenderSVGToDragKnifeMetaResult renderResult = null;
+        RenderSVGToStylusMetaResult renderResult = null;
 
         for (SVGMetaPart part : metaparts)
         {
@@ -51,7 +51,7 @@ public class SVGToDragKnifeMetaEngine
             {
                 currentX = renderResult.getResultantX();
                 currentY = renderResult.getResultantY();
-                for (DragKnifeMetaPart dragknifemetapart : renderResult.getDragKnifeMetaParts())
+                for (StylusMetaPart dragknifemetapart : renderResult.getDragKnifeMetaParts())
                 {
                     dragknifemetaparts.add(dragknifemetapart);
                 }

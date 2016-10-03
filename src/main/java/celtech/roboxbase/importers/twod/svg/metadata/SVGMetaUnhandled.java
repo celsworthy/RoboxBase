@@ -1,6 +1,6 @@
 package celtech.roboxbase.importers.twod.svg.metadata;
 
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaUnhandled;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaUnhandled;
 
 /**
  *
@@ -16,10 +16,10 @@ public class SVGMetaUnhandled extends SVGMetaPart
     }
 
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
-        DragKnifeMetaUnhandled unhandled = new DragKnifeMetaUnhandled(currentX, currentY, currentX, currentY, message);
-        RenderSVGToDragKnifeMetaResult result = new RenderSVGToDragKnifeMetaResult(currentX, currentY, unhandled);
+        StylusMetaUnhandled unhandled = new StylusMetaUnhandled(currentX, currentY, currentX, currentY, message);
+        RenderSVGToStylusMetaResult result = new RenderSVGToStylusMetaResult(currentX, currentY, unhandled);
         
         return result;
     }

@@ -2,7 +2,7 @@ package celtech.roboxbase.importers.twod.svg;
 
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaCut;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaLift;
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPart;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaPlunge;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaTravel;
 import java.util.ArrayList;
@@ -20,15 +20,15 @@ public class DragKnifeCompensator
 
     private final Stenographer steno = StenographerFactory.getStenographer(DragKnifeCompensator.class.getName());
 
-    public List<DragKnifeMetaPart> doCompensation(List<DragKnifeMetaPart> uncompensatedParts, double forwards_value)
+    public List<StylusMetaPart> doCompensation(List<StylusMetaPart> uncompensatedParts, double forwards_value)
     {
         boolean toolDown = false;
 
-        List<DragKnifeMetaPart> compensatedParts = new ArrayList();
+        List<StylusMetaPart> compensatedParts = new ArrayList();
 
-        DragKnifeMetaPart lastPartUnderExamination = null;
+        StylusMetaPart lastPartUnderExamination = null;
 
-        for (DragKnifeMetaPart uncompensatedPart : uncompensatedParts)
+        for (StylusMetaPart uncompensatedPart : uncompensatedParts)
         {
             if (uncompensatedPart.getStart().equals(uncompensatedPart.getEnd()))
             {
@@ -36,7 +36,7 @@ public class DragKnifeCompensator
             } else
             {
 
-                DragKnifeMetaPart compensatedPart = null;
+                StylusMetaPart compensatedPart = null;
                 Vector2D newSpan;
 
                 if (uncompensatedPart instanceof DragKnifeMetaTravel)
@@ -166,9 +166,9 @@ public class DragKnifeCompensator
 //        List<DragKnifeMetaPart> finalPartsList = new ArrayList();
 //
 //        Vector2D lastSegment = null;
-//        DragKnifeMetaPart lastPartUnderExamination = null;
+//        StylusMetaPart lastPartUnderExamination = null;
 //
-//        for (DragKnifeMetaPart partUnderExamination : compensatedParts)
+//        for (StylusMetaPart partUnderExamination : compensatedParts)
 //        {
 //            Vector2D thisSegment = partUnderExamination.getEnd().subtract(partUnderExamination.getStart());
 //
@@ -181,7 +181,7 @@ public class DragKnifeCompensator
 //                    //Continue the last segment by the offset
 //                    try
 //                    {
-//                        DragKnifeMetaPart moveContinuation = lastPartUnderExamination.getClass().newInstance();
+//                        StylusMetaPart moveContinuation = lastPartUnderExamination.getClass().newInstance();
 //                        moveContinuation.setStart(lastPartUnderExamination.getEnd());
 //                        moveContinuation.setEnd(lastPartUnderExamination.getEnd().add(forwards_value, thisSegment.normalize()));
 //                        moveContinuation.setComment("Added continuation");

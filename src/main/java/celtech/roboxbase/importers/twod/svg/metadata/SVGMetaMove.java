@@ -35,7 +35,7 @@ public class SVGMetaMove extends SVGMetaPart
     }
 
     @Override
-    public RenderSVGToDragKnifeMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
+    public RenderSVGToStylusMetaResult renderToDragKnifeMetaParts(double currentX, double currentY)
     {
         double resultantX, resultantY;
 
@@ -53,7 +53,7 @@ public class SVGMetaMove extends SVGMetaPart
         
         DragKnifeMetaTravel travel = new DragKnifeMetaTravel(currentX, currentY, resultantX, resultantY, comment);
 
-        RenderSVGToDragKnifeMetaResult result = new RenderSVGToDragKnifeMetaResult(resultantX, resultantY, travel);
+        RenderSVGToStylusMetaResult result = new RenderSVGToStylusMetaResult(resultantX, resultantY, travel);
         return result;
     }
 }
