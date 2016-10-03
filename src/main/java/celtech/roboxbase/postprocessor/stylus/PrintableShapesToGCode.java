@@ -109,9 +109,9 @@ public class PrintableShapesToGCode
             int numberOfCommands = path2D.getNumCommands();
             final BaseTransform tx = pathToProcess.impl_getLeafTransform();
 
-            PathIterator pathIterator = path2D.getPathIterator(tx);
+            PathIterator pathIterator = path2D.getPathIterator(tx, 0.01f);
             float[] pathData = new float[6];
-            Point2D currentPoint = null;
+            float lastX = 0, lastY = 0;
 
             while (!pathIterator.isDone())
             {
@@ -120,38 +120,48 @@ public class PrintableShapesToGCode
                 switch (elementType)
                 {
                     case PathIterator.SEG_MOVETO:
-                        currentPoint = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
+                        steno.info("Got a SEG_MOVETO");
                         TravelNode travelToStart = new TravelNode();
                         travelToStart.setCommentText("Travel to start of path segment");
                         travelToStart.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getTravelFeedrate());
-                        travelToStart.getMovement().setX(currentPoint.getX());
-                        travelToStart.getMovement().setY(currentPoint.getY());
+                        Point2D currentPoint_moveto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
+                        travelToStart.getMovement().setX(currentPoint_moveto.getX());
+                        travelToStart.getMovement().setY(currentPoint_moveto.getY());
                         gcodeEvents.add(travelToStart);
+                        lastX = pathData[0];
+                        lastY = pathData[1];
                         break;
                     case PathIterator.SEG_LINETO:
-                        currentPoint = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
+                        steno.info("Got a SEG_LINETO");
                         TravelNode straightCut = new TravelNode();
                         straightCut.setCommentText("Straight cut");
                         straightCut.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-                        straightCut.getMovement().setX(currentPoint.getX());
-                        straightCut.getMovement().setY(currentPoint.getY());
+                        Point2D currentPoint_lineto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
+                        straightCut.getMovement().setX(currentPoint_lineto.getX());
+                        straightCut.getMovement().setY(currentPoint_lineto.getY());
                         gcodeEvents.add(straightCut);
+                        lastX = pathData[0];
+                        lastY = pathData[1];
                         break;
                     case PathIterator.SEG_QUADTO:
+                        steno.info("Got a SEG_QUADTO");
                         QuadCurve newQuadCurve = new QuadCurve();
-                        newQuadCurve.setStartX(currentPoint.getX());
-                        newQuadCurve.setStartY(currentPoint.getY());
+                        newQuadCurve.setStartX(lastX);
+                        newQuadCurve.setStartY(lastY);
                         newQuadCurve.setControlX(pathData[0]);
                         newQuadCurve.setControlY(pathData[1]);
                         newQuadCurve.setEndX(pathData[2]);
                         newQuadCurve.setEndY(pathData[3]);
                         List<GCodeEventNode> quadCurveParts = renderCurveToGCodeNode(newQuadCurve, shapeToWorldTransformer);
                         gcodeEvents.addAll(quadCurveParts);
+                        lastX = pathData[2];
+                        lastY = pathData[3];
                         break;
                     case PathIterator.SEG_CUBICTO:
+                        steno.info("Got a SEG_CUBICTO");
                         CubicCurve newCubicCurve = new CubicCurve();
-                        newCubicCurve.setStartX(currentPoint.getX());
-                        newCubicCurve.setStartY(currentPoint.getY());
+                        newCubicCurve.setStartX(lastX);
+                        newCubicCurve.setStartY(lastY);
                         newCubicCurve.setControlX1(pathData[0]);
                         newCubicCurve.setControlY1(pathData[1]);
                         newCubicCurve.setControlX2(pathData[2]);
@@ -160,6 +170,8 @@ public class PrintableShapesToGCode
                         newCubicCurve.setEndY(pathData[5]);
                         List<GCodeEventNode> cubicCurveParts = renderCurveToGCodeNode(newCubicCurve, shapeToWorldTransformer);
                         gcodeEvents.addAll(cubicCurveParts);
+                        lastX = pathData[4];
+                        lastY = pathData[5];
                         break;
                     case PathIterator.SEG_CLOSE:
                         steno.info("Got a SEG_CLOSE");
@@ -168,8 +180,8 @@ public class PrintableShapesToGCode
                 pathIterator.next();
             }
 
-            List<GCodeEventNode> pathParts = renderCurveToGCodeNode(shapeToProcess, shapeToWorldTransformer, numberOfCommands * 50);
-            gcodeEvents.addAll(pathParts);
+//            List<GCodeEventNode> pathParts = renderCurveToGCodeNode(shapeToProcess, shapeToWorldTransformer, numberOfCommands * 50);
+//            gcodeEvents.addAll(pathParts);
         } else if (shapeToProcess instanceof Rectangle)
         {
             Bounds bounds = shapeToProcess.getBoundsInLocal();
