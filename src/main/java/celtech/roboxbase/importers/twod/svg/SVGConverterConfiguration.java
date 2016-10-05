@@ -10,7 +10,9 @@ public class SVGConverterConfiguration
     private static SVGConverterConfiguration instance = null;
 
     private int travelFeedrate = 4000;
-    private int cuttingFeedrate = 2000;
+    private int cuttingFeedrate = 1000;
+    private int travelHeight = 2;
+    private int contactHeight = 0;
     private int plungeFeedrate = 200;
     private int plungeDepth = 0;
     private int liftDepth = 10;
@@ -59,6 +61,26 @@ public class SVGConverterConfiguration
     public int getPlungeDepth()
     {
         return plungeDepth;
+    }
+
+    public int getContactHeight()
+    {
+        return contactHeight;
+    }
+
+    public void setContactHeight(int contactHeight)
+    {
+        this.contactHeight = contactHeight;
+    }
+
+    public int getTravelHeight()
+    {
+        return travelHeight;
+    }
+
+    public void setTravelHeight(int travelHeight)
+    {
+        this.travelHeight = travelHeight;
     }
 
     public void setLiftDepth(int liftDepth)

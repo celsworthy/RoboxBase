@@ -14,7 +14,7 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
  *
  * @author Ian
  */
-public class TravelNode extends GCodeEventNode implements MovementProvider, FeedrateProvider, SupportsPrintTimeCalculation, Renderable, MergeableWithToolchange
+public class StylusScribeNode extends GCodeEventNode implements MovementProvider, FeedrateProvider, SupportsPrintTimeCalculation, Renderable, MergeableWithToolchange
 {
     private Optional<Movement> previousMovement = Optional.empty();
     private Movement movement = new Movement();
@@ -96,9 +96,9 @@ public class TravelNode extends GCodeEventNode implements MovementProvider, Feed
     }
 
     @Override
-    public TravelNode clone()
+    public StylusScribeNode clone()
     {
-        TravelNode returnedNode = new TravelNode();
+        StylusScribeNode returnedNode = new StylusScribeNode();
         returnedNode.movement = movement.clone();
         returnedNode.feedrate = feedrate.clone();
         returnedNode.setCommentText(getCommentText());

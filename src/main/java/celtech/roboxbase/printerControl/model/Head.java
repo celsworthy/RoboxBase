@@ -39,6 +39,7 @@ public class Head implements Cloneable, RepairableComponent
     public enum HeadType
     {
 
+        STYLUS_HEAD("stylusHead"),
         SINGLE_MATERIAL_HEAD("singleMaterialHead"),
         DUAL_MATERIAL_HEAD("dualMaterialHead");
 

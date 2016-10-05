@@ -1,17 +1,25 @@
 package celtech.roboxbase.postprocessor.stylus;
 
-import celtech.roboxbase.importers.twod.svg.PathParserThing;
 import celtech.roboxbase.importers.twod.svg.SVGConverterConfiguration;
-import celtech.roboxbase.importers.twod.svg.metadata.SVGMetaPart;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.PathHelper;
+import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.StylusScribeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
+import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
+import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
+import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import celtech.roboxbase.utils.models.PrintableShapes;
 import celtech.roboxbase.utils.models.ShapeForProcessing;
 import celtech.roboxbase.utils.twod.ShapeToWorldTransformer;
 import com.sun.javafx.geom.Path2D;
 import com.sun.javafx.geom.PathIterator;
 import com.sun.javafx.geom.transform.BaseTransform;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.geometry.Bounds;
@@ -20,13 +28,11 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.QuadCurve;
-import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.Shape;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
-import org.apache.batik.parser.PathParser;
 
 /**
  *
@@ -35,60 +41,20 @@ import org.apache.batik.parser.PathParser;
 public class PrintableShapesToGCode
 {
 
+    private static boolean isInContact = false;
+    private static MovementProvider lastTravelNode = null;
+
     private static final Stenographer steno = StenographerFactory.getStenographer(PrintableShapesToGCode.class.getName());
 
     public static List<GCodeEventNode> parsePrintableShapes(PrintableShapes shapes)
     {
-        List<SVGMetaPart> metaparts = new ArrayList<>();
+        isInContact = false;
+        lastTravelNode = null;
 
-        PathParserThing parserThing = new PathParserThing(metaparts);
-
-        PathParser pathParser = new PathParser();
-        pathParser.setPathHandler(parserThing);
-
-//        for (ShapeForProcessing shapeForProcessing : shapes.getShapesForProcessing())
-//        {
-//            Shape shape = shapeForProcessing.getShape();
-//            
-//            if (shape instanceof SVGPath)
-//            {
-//                pathParser.parse(((SVGPath) shape).getContent());
-//            } else if (shape instanceof Rectangle)
-//            {
-//                
-//            } else
-//            {
-//                steno.warning("Unable to handle shape of type " + shape.getClass().getName());
-//            }
-//        }
-//
-//        List<StylusMetaPart> stylusMetaParts = SVGToStylusMetaEngine.convertToStylusMetaParts(metaparts);
-//
-//        StylusMetaToGCodeEngine stylusToGCode = new StylusMetaToGCodeEngine(BaseConfiguration.getPrintSpoolDirectory() + "stylusTest.gcode", stylusMetaParts);
-//        return stylusToGCode.generateGCode();
         List<GCodeEventNode> gcodeEventNodes = new ArrayList<>();
 
         for (ShapeForProcessing shapeForProcessing : shapes.getShapesForProcessing())
         {
-//            if (shapeForProcessing.getShape() instanceof SVGPath)
-//            {
-//                SVGPath pathToProcess = (SVGPath) shapeForProcessing.getShape();
-//                final Path2D path2D = new Path2D(pathToProcess.impl_configShape());
-////                final BaseTransform tx = pathToProcess.impl_getLeafTransform();
-////                PathHelper pathHelper = new PathHelper(path2D, tx, 1.0);
-////
-////                PathIterator pathIterator = path2D.getPathIterator(tx);
-//                int numberOfCommands = path2D.getNumCommands();
-////
-////                float[] points = new float[6];
-////
-////                while (!pathIterator.isDone())
-////                {
-////                    int elementType = pathIterator.currentSegment(points);
-////                    
-////                }
-//
-//            }
             gcodeEventNodes.addAll(renderShapeToGCode(shapeForProcessing));
         }
 
@@ -106,7 +72,6 @@ public class PrintableShapesToGCode
         {
             SVGPath pathToProcess = (SVGPath) shapeForProcessing.getShape();
             final Path2D path2D = new Path2D(pathToProcess.impl_configShape());
-            int numberOfCommands = path2D.getNumCommands();
             final BaseTransform tx = pathToProcess.impl_getLeafTransform();
 
             PathIterator pathIterator = path2D.getPathIterator(tx, 0.01f);
@@ -121,25 +86,22 @@ public class PrintableShapesToGCode
                 {
                     case PathIterator.SEG_MOVETO:
                         steno.info("Got a SEG_MOVETO");
-                        TravelNode travelToStart = new TravelNode();
-                        travelToStart.setCommentText("Travel to start of path segment");
-                        travelToStart.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getTravelFeedrate());
+
                         Point2D currentPoint_moveto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
-                        travelToStart.getMovement().setX(currentPoint_moveto.getX());
-                        travelToStart.getMovement().setY(currentPoint_moveto.getY());
-                        gcodeEvents.add(travelToStart);
+                        gcodeEvents.add(createTravelNode("Travel to start of path segment",
+                                SVGConverterConfiguration.getInstance().getTravelFeedrate(),
+                                currentPoint_moveto.getX(),
+                                currentPoint_moveto.getX()));
                         lastX = pathData[0];
                         lastY = pathData[1];
                         break;
                     case PathIterator.SEG_LINETO:
                         steno.info("Got a SEG_LINETO");
-                        TravelNode straightCut = new TravelNode();
-                        straightCut.setCommentText("Straight cut");
-                        straightCut.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
                         Point2D currentPoint_lineto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
-                        straightCut.getMovement().setX(currentPoint_lineto.getX());
-                        straightCut.getMovement().setY(currentPoint_lineto.getY());
-                        gcodeEvents.add(straightCut);
+                        gcodeEvents.add(createStylusScribeNode("Straight cut",
+                                SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                                currentPoint_lineto.getX(),
+                                currentPoint_lineto.getX()));
                         lastX = pathData[0];
                         lastY = pathData[1];
                         break;
@@ -180,49 +142,41 @@ public class PrintableShapesToGCode
                 pathIterator.next();
             }
 
-//            List<GCodeEventNode> pathParts = renderCurveToGCodeNode(shapeToProcess, shapeToWorldTransformer, numberOfCommands * 50);
-//            gcodeEvents.addAll(pathParts);
         } else if (shapeToProcess instanceof Rectangle)
         {
             Bounds bounds = shapeToProcess.getBoundsInLocal();
             Point2D bottomLeft = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMinX(), (float) bounds.getMinY());
             Point2D topRight = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMaxX(), (float) bounds.getMaxY());
 
-            TravelNode travelToStart = new TravelNode();
-            travelToStart.setCommentText("Travel to start of Rectangle");
-            travelToStart.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getTravelFeedrate());
-            travelToStart.getMovement().setX(bottomLeft.getX());
-            travelToStart.getMovement().setY(bottomLeft.getY());
+            gcodeEvents.add(createTravelNode("Travel to start of Rectangle",
+                    SVGConverterConfiguration.getInstance().getTravelFeedrate(),
+                    bottomLeft.getX(),
+                    bottomLeft.getY()
+            ));
 
-            TravelNode cut1 = new TravelNode();
-            cut1.setCommentText("Cut 1");
-            cut1.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-            cut1.getMovement().setX(bottomLeft.getX());
-            cut1.getMovement().setY(topRight.getY());
+            gcodeEvents.add(createStylusScribeNode("Cut 1",
+                    SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                    bottomLeft.getX(),
+                    topRight.getY()
+            ));
 
-            TravelNode cut2 = new TravelNode();
-            cut2.setCommentText("Cut 2");
-            cut2.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-            cut2.getMovement().setX(topRight.getX());
-            cut2.getMovement().setY(topRight.getY());
+            gcodeEvents.add(createStylusScribeNode("Cut 2",
+                    SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                    topRight.getX(),
+                    topRight.getY()
+            ));
 
-            TravelNode cut3 = new TravelNode();
-            cut3.setCommentText("Cut 3");
-            cut3.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-            cut3.getMovement().setX(topRight.getX());
-            cut3.getMovement().setY(bottomLeft.getY());
+            gcodeEvents.add(createStylusScribeNode("Cut 3",
+                    SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                    topRight.getX(),
+                    bottomLeft.getY()
+            ));
 
-            TravelNode cut4 = new TravelNode();
-            cut4.setCommentText("Cut 4");
-            cut4.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-            cut4.getMovement().setX(bottomLeft.getX());
-            cut4.getMovement().setY(bottomLeft.getY());
-
-            gcodeEvents.add(travelToStart);
-            gcodeEvents.add(cut1);
-            gcodeEvents.add(cut2);
-            gcodeEvents.add(cut3);
-            gcodeEvents.add(cut4);
+            gcodeEvents.add(createStylusScribeNode("Cut 4",
+                    SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                    bottomLeft.getX(),
+                    bottomLeft.getY()
+            ));
         } else if (shapeToProcess instanceof Circle
                 || shapeToProcess instanceof Arc)
         {
@@ -258,20 +212,113 @@ public class PrintableShapesToGCode
             System.out.println("Input " + fraction + " X:" + position.getX() + " Y:" + position.getY());
             System.out.println("Transformed X:" + transformedPosition.getX() + " Y:" + transformedPosition.getY());
 
-            TravelNode newTravel = new TravelNode();
+            String comment;
             if (stepNum == 0)
             {
-                newTravel.setCommentText("Move to start of curve");
+                comment = "Move to start of curve";
+                gcodeNodes.add(createTravelNode(comment,
+                        SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                        transformedPosition.getX(),
+                        transformedPosition.getY()));
             } else
             {
-                newTravel.setCommentText("Curve cut");
+                comment = "Curve cut";
+                gcodeNodes.add(createStylusScribeNode(comment,
+                        SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
+                        transformedPosition.getX(),
+                        transformedPosition.getY()));
             }
-            newTravel.getMovement().setX(transformedPosition.getX());
-            newTravel.getMovement().setY(transformedPosition.getY());
-            newTravel.getFeedrate().setFeedRate_mmPerMin(SVGConverterConfiguration.getInstance().getCuttingFeedrate());
-            gcodeNodes.add(newTravel);
         }
 
         return gcodeNodes;
+    }
+
+    public static void writeGCodeToFile(String outputFilename, List<GCodeEventNode> gcodeNodes)
+    {
+        PrintWriter out = null;
+        try
+        {
+            out = new PrintWriter(new BufferedWriter(new FileWriter(outputFilename)));
+
+            //Add a macro header
+            try
+            {
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_start", null, false, false, false);
+                for (String macroLine : startMacro)
+                {
+                    out.println(macroLine);
+                }
+            } catch (MacroLoadException ex)
+            {
+                steno.exception("Unable to load stylus cut start macro.", ex);
+            }
+
+            for (GCodeEventNode gcodeEventNode : gcodeNodes)
+            {
+                if (gcodeEventNode instanceof Renderable)
+                {
+                    out.println(((Renderable) gcodeEventNode).renderForOutput());
+                }
+            }
+
+            //Add a macro footer
+            try
+            {
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_end", null, false, false, false);
+                for (String macroLine : startMacro)
+                {
+                    out.println(macroLine);
+                }
+            } catch (MacroLoadException ex)
+            {
+                steno.exception("Unable to load stylus cut start macro.", ex);
+            }
+        } catch (IOException ex)
+        {
+            steno.error("Unable to output SVG GCode to " + outputFilename);
+        } finally
+        {
+            if (out != null)
+            {
+                out.flush();
+                out.close();
+            }
+        }
+    }
+
+    private static TravelNode createTravelNode(String comment, int travelFeedrate_mmPerMin, double x, double y)
+    {
+        TravelNode travel = new TravelNode();
+        travel.setCommentText(comment);
+        travel.getFeedrate().setFeedRate_mmPerMin(travelFeedrate_mmPerMin);
+        travel.getMovement().setX(x);
+        travel.getMovement().setY(y);
+        if (lastTravelNode != null)
+        {
+            travel.setPreviousMovement(lastTravelNode.getMovement());
+        } else
+        {
+            travel.setPreviousMovement(new TravelNode().getMovement());
+        }
+        lastTravelNode = travel;
+        return travel;
+    }
+
+    private static StylusScribeNode createStylusScribeNode(String comment, int travelFeedrate_mmPerMin, double x, double y)
+    {
+        StylusScribeNode travel = new StylusScribeNode();
+        travel.setCommentText(comment);
+        travel.getFeedrate().setFeedRate_mmPerMin(travelFeedrate_mmPerMin);
+        travel.getMovement().setX(x);
+        travel.getMovement().setY(y);
+        if (lastTravelNode != null)
+        {
+            travel.setPreviousMovement(lastTravelNode.getMovement());
+        } else
+        {
+            travel.setPreviousMovement(new TravelNode().getMovement());
+        }
+        lastTravelNode = travel;
+        return travel;
     }
 }
