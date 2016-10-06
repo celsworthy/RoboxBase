@@ -17,8 +17,6 @@ public class PostProcessorService extends Service<GCodePostProcessingResult> imp
     private String printJobUUID;
     private PrintableMeshes printableMeshes;
     private Printer printerToUse;
-    private boolean insertCameraControl;
-    private CameraTriggerData cameraTriggerData;
 
     public void setPrintJobUUID(String printJobUUID)
     {
@@ -35,25 +33,13 @@ public class PostProcessorService extends Service<GCodePostProcessingResult> imp
         this.printerToUse = printerToUse;
     }
 
-    public void setInsertCameraControl(boolean insertCameraControl)
-    {
-        this.insertCameraControl = insertCameraControl;
-    }
-
-    public void setCameraTriggerData(CameraTriggerData cameraTriggerData)
-    {
-        this.cameraTriggerData = cameraTriggerData;
-    }
-
     @Override
     protected Task<GCodePostProcessingResult> createTask()
     {
         return new PostProcessorTask(
                 printJobUUID,
                 printableMeshes,
-                printerToUse,
-                insertCameraControl,
-                cameraTriggerData);
+                printerToUse);
     }
 
     @Override

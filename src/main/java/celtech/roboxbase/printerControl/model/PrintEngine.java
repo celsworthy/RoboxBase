@@ -22,6 +22,7 @@ import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import celtech.roboxbase.printerControl.comms.commands.MacroPrintException;
+import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.services.ControllableService;
 import celtech.roboxbase.services.postProcessor.GCodePostProcessingResult;
@@ -149,6 +150,7 @@ public class PrintEngine implements ControllableService
     private boolean canDisconnectDuringPrint = true;
 
     private CameraTriggerManager cameraTriggerManager;
+    private CameraTriggerData cameraTriggerData;
     private boolean cameraIsEnabled = false;
 
     private BooleanProperty highIntensityCommsInProgress = new SimpleBooleanProperty(false);
@@ -543,6 +545,7 @@ public class PrintEngine implements ControllableService
         if (cameraIsEnabled)
         {
             cameraTriggerManager.setTriggerData(printableMeshes.getCameraTriggerData());
+            cameraTriggerData = printableMeshes.getCameraTriggerData();
         }
 
         if (associatedPrinter.printerStatusProperty().get() == PrinterStatus.IDLE)

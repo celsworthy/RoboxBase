@@ -25,8 +25,6 @@ public class DragKnifeCompensator
 
     public List<GCodeEventNode> doCompensation(List<GCodeEventNode> uncompensatedParts, double forwards_value)
     {
-        boolean toolDown = false;
-
         List<GCodeEventNode> compensatedParts = new ArrayList();
 
         GCodeEventNode lastPartUnderExamination = null;
@@ -37,12 +35,6 @@ public class DragKnifeCompensator
 
             if (uncompensatedPart instanceof TravelNode)
             {
-                if (toolDown)
-                {
-                    compensatedParts.add(new StylusLiftNode(SVGConverterConfiguration.getInstance().getTravelHeight()));
-                    toolDown = false;
-                }
-
                 // Leave the travel alone
                 compensatedPart = uncompensatedPart;
 
@@ -137,31 +129,6 @@ public class DragKnifeCompensator
                     }
                 }
 
-                if (!toolDown)
-                {
-                    compensatedParts.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
-
-                    double fromXTravel = 0;
-                    double fromYTravel = 0;
-                    if (lastPartUnderExamination != null)
-                    {
-                        fromXTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getX();
-                        fromYTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getY();
-                    }
-
-                    TravelNode travelToStart = new TravelNode();
-                    travelToStart.getMovement().setX(((MovementProvider) compensatedPart).getMovement().getX());
-                    travelToStart.getMovement().setY(((MovementProvider) compensatedPart).getMovement().getY());
-                    Movement travelToStartPriorMovement = new Movement();
-                    travelToStartPriorMovement.setX(fromXTravel);
-                    travelToStartPriorMovement.setY(fromYTravel);
-                    travelToStart.setPreviousMovement(travelToStartPriorMovement);
-                    travelToStart.setCommentText("Travel to start of cut");
-                    compensatedParts.add(travelToStart);
-
-                    toolDown = true;
-                }
-
                 if (compensatedPart != null)
                 {
                     compensatedParts.add(compensatedPart);
@@ -169,11 +136,6 @@ public class DragKnifeCompensator
 
                 lastPartUnderExamination = uncompensatedStylusScribeNode;
             }
-        }
-
-        if (toolDown)
-        {
-            compensatedParts.add(new StylusLiftNode(SVGConverterConfiguration.getInstance().getTravelHeight()));
         }
 
 //        List<DragKnifeMetaPart> finalPartsList = new ArrayList();
@@ -212,5 +174,36 @@ public class DragKnifeCompensator
 //            lastPartUnderExamination = partUnderExamination;
 //        }
         return compensatedParts;
+    }
+
+    private List<GCodeEventNode> addZMoves(List<GCodeEventNode> parts)
+    {
+        List<GCodeEventNode> outputBuffer = null;
+//        if (!toolDown)
+//        {
+//            compensatedParts.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
+//
+//            double fromXTravel = 0;
+//            double fromYTravel = 0;
+//            if (lastPartUnderExamination != null)
+//            {
+//                fromXTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getX();
+//                fromYTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getY();
+//            }
+//
+//            TravelNode travelToStart = new TravelNode();
+//            travelToStart.getMovement().setX(((MovementProvider) compensatedPart).getMovement().getX());
+//            travelToStart.getMovement().setY(((MovementProvider) compensatedPart).getMovement().getY());
+//            Movement travelToStartPriorMovement = new Movement();
+//            travelToStartPriorMovement.setX(fromXTravel);
+//            travelToStartPriorMovement.setY(fromYTravel);
+//            travelToStart.setPreviousMovement(travelToStartPriorMovement);
+//            travelToStart.setCommentText("Travel to start of cut");
+//            compensatedParts.add(travelToStart);
+//
+//                    toolDown = true;
+//                }
+
+        return outputBuffer;
     }
 }

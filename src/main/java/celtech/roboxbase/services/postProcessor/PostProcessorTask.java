@@ -39,22 +39,16 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
     private final String printJobDirectory;
     private final Printer printerToUse;
     private final DoubleProperty taskProgress = new SimpleDoubleProperty(0);
-    private final boolean insertCameraControl;
-    private final CameraTriggerData cameraTriggerData;
 
     public PostProcessorTask(
             String printJobUUID,
             PrintableMeshes printableMeshes,
-            Printer printerToUse,
-            boolean insertCameraControl,
-            CameraTriggerData cameraTriggerData)
+            Printer printerToUse)
     {
         this.printJobUUID = printJobUUID;
         this.printableMeshes = printableMeshes;
         this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID + File.separator;
         this.printerToUse = printerToUse;
-        this.insertCameraControl = insertCameraControl;
-        this.cameraTriggerData = cameraTriggerData;
         updateTitle("Post Processor");
         updateProgress(0.0, 100.0);
     }
@@ -78,9 +72,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                     printableMeshes,
                     printJobDirectory,
                     printerToUse,
-                    taskProgress,
-                    insertCameraControl,
-                    cameraTriggerData);
+                    taskProgress);
         } catch (Exception ex)
         {
             ex.printStackTrace();
@@ -94,9 +86,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             PrintableMeshes printableMeshes,
             String printJobDirectory,
             Printer printer,
-            DoubleProperty taskProgress,
-            boolean insertCameraControl,
-            CameraTriggerData cameraTriggerData) throws IOException
+            DoubleProperty taskProgress) throws IOException
     {
         SlicerType selectedSlicer = null;
         String headType;
@@ -145,7 +135,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             }
         }
 
-        if (insertCameraControl)
+        if (printableMeshes.isCameraEnabled())
         {
             ppFeatures.enableFeature(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS);
         }
@@ -180,7 +170,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 headType,
                 taskProgress,
                 objectToNozzleNumberMap,
-                cameraTriggerData,
+                printableMeshes.getCameraTriggerData(),
                 printableMeshes.isSafetyFeaturesRequired());
 
         RoboxiserResult roboxiserResult = postProcessor.processInput();

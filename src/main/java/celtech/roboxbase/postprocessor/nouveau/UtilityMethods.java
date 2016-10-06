@@ -1,5 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
@@ -46,6 +47,7 @@ public class UtilityMethods
     private final CloseLogic closeLogic;
     private final SlicerParametersFile settings;
     private final CameraTriggerManager cameraTriggerManager;
+    private final CameraTriggerData cameraTriggerData;
 
     public UtilityMethods(final PostProcessorFeatureSet ppFeatureSet,
             SlicerParametersFile settings,
@@ -58,6 +60,7 @@ public class UtilityMethods
         this.nodeManagementUtilities = nodeManagementUtilities;
         this.closeLogic = new CloseLogic(settings, ppFeatureSet, headType, nodeManagementUtilities);
         this.cameraTriggerManager = new CameraTriggerManager(null);
+        this.cameraTriggerData = cameraTriggerData;
         cameraTriggerManager.setTriggerData(cameraTriggerData);
     }
 
@@ -65,7 +68,8 @@ public class UtilityMethods
             LayerPostProcessResult lastLayerPostProcessResult,
             List<NozzleProxy> nozzleProxies)
     {
-        if (ppFeatureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
+        if (ppFeatureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS)
+                && cameraTriggerData.isMoveBeforeCapture())
         {
             IteratorWithStartPoint<GCodeEventNode> layerForwards = layerNode.treeSpanningIterator(null);
             while (layerForwards.hasNext())

@@ -86,7 +86,6 @@ public class PrintableShapesToGCode
                 {
                     case PathIterator.SEG_MOVETO:
                         steno.info("Got a SEG_MOVETO");
-
                         Point2D currentPoint_moveto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
                         gcodeEvents.add(createTravelNode("Travel to start of path segment",
                                 SVGConverterConfiguration.getInstance().getTravelFeedrate(),
