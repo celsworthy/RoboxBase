@@ -1,12 +1,11 @@
 package celtech.roboxbase.importers.twod.svg;
 
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.DragKnifeMetaLift;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.StylusLiftNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.StylusPlungeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.StylusScribeNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.StylusSwivelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Movement;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +46,7 @@ public class DragKnifeCompensator
 
                 //Shift along vector
                 Vector2D vectorForThisSegment = uncompensatedStylusScribeNode.getMovement().toVector2D().subtract(((MovementProvider) lastUncompensatedPart).getMovement().toVector2D());
+                double vectorMagnitude = Math.sqrt(Math.pow(vectorForThisSegment.getX(), 2.0) + Math.pow(vectorForThisSegment.getY(), 2.0));
                 Vector2D resultant_norm = vectorForThisSegment.normalize();
                 Vector2D shiftVector = resultant_norm.scalarMultiply(forwards_value);
 
@@ -62,8 +62,7 @@ public class DragKnifeCompensator
 
                     if (lastUncompensatedPart instanceof StylusScribeNode)
                     {
-                        double angleBetweenSegments = Vector2D.angle(vectorForThisSegment, lastVector);
-                        if (angleBetweenSegments > 0.5)
+                        if (vectorMagnitude > forwards_value)
                         {
                             // We need to make an arc from the end of the last line to the start of this one
                             // The radius will be the offset and the arc centre will be the start of the uncompensated line
@@ -74,33 +73,17 @@ public class DragKnifeCompensator
 
                             Vector2D arcCentre = ((MovementProvider) lastUncompensatedPart).getMovement().toVector2D();
 
-                            double targetAngle = thisSegmentAngle;
-                            double currentAngle = lastSegmentAngle;
+                            ShortestArc shortestArc = new ShortestArc(lastSegmentAngle, thisSegmentAngle);
 
-                            steno.info("Current angle: " + currentAngle + " target angle:" + targetAngle);
-                            if (currentAngle >= Math.PI && targetAngle < 0)
+                            if (Math.abs(shortestArc.getAngularDifference()) > 0.3)
                             {
-                                currentAngle = -currentAngle;
-                            } else if (targetAngle >= Math.PI && currentAngle < 0)
-                            {
-                                targetAngle = -targetAngle;
-                            }
-
-                            if (Math.abs(currentAngle - targetAngle) > 0.3)
-                            {
-                                double stepValue = Math.PI / 18;
-
-                                if (currentAngle > targetAngle)
+                                double arcPointAngle = shortestArc.getCurrentAngle();
+                                while (Math.abs(arcPointAngle - shortestArc.getTargetAngle()) >= Math.abs(shortestArc.getStepValue()))
                                 {
-                                    stepValue = -stepValue;
-                                }
-
-                                while (Math.abs(currentAngle - targetAngle) >= Math.abs(stepValue))
-                                {
-                                    currentAngle += stepValue;
-                                    double newX = arcCentre.getX() + Math.cos(currentAngle) * forwards_value;
-                                    double newY = arcCentre.getY() + Math.sin(currentAngle) * forwards_value;
-                                    StylusScribeNode swivelCut = new StylusScribeNode();
+                                    arcPointAngle += shortestArc.getStepValue();
+                                    double newX = arcCentre.getX() + Math.cos(arcPointAngle) * forwards_value;
+                                    double newY = arcCentre.getY() + Math.sin(arcPointAngle) * forwards_value;
+                                    StylusSwivelNode swivelCut = new StylusSwivelNode();
                                     swivelCut.setCommentText("Swivel");
                                     swivelCut.getMovement().setX(newX);
                                     swivelCut.getMovement().setY(newY);
@@ -121,7 +104,7 @@ public class DragKnifeCompensator
                         Vector2D newPosition = ((MovementProvider) lastCompensatedPart).getMovement().toVector2D().add(shiftVector);
                         ((MovementProvider) lastCompensatedPart).getMovement().setX(newPosition.getX());
                         ((MovementProvider) lastCompensatedPart).getMovement().setY(newPosition.getY());
-                        lastCompensatedPart.appendCommentText(" - shifted");
+                        lastCompensatedPart.appendCommentText(" - moved last segment");
                     }
                 }
                 lastVector = vectorForThisSegment;
@@ -139,26 +122,55 @@ public class DragKnifeCompensator
         return addZMoves(compensatedParts);
     }
 
+    enum StylusPosition
+    {
+
+        UNKNOWN,
+        TRAVEL,
+        CUT,
+        SWIVEL
+    }
+
     private List<GCodeEventNode> addZMoves(List<GCodeEventNode> parts)
     {
-        boolean toolDown = false;
+        StylusPosition position = StylusPosition.UNKNOWN;
+
         List<GCodeEventNode> partsWithZMoves = new ArrayList<>();
 
         for (GCodeEventNode part : parts)
         {
-            if (part instanceof StylusScribeNode && !toolDown)
-            {
-                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
-                toolDown = true;
-            } else if (part instanceof TravelNode && toolDown)
+            if (part instanceof TravelNode && position != StylusPosition.TRAVEL)
             {
                 partsWithZMoves.add(new StylusLiftNode(SVGConverterConfiguration.getInstance().getTravelHeight()));
-                toolDown = false;
+                position = StylusPosition.TRAVEL;
+            } else if (part instanceof StylusScribeNode && position != StylusPosition.CUT)
+            {
+                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
+                position = StylusPosition.CUT;
+            } else if (part instanceof StylusSwivelNode && position != StylusPosition.SWIVEL)
+            {
+                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getSwivelHeight()));
+                position = StylusPosition.SWIVEL;
             }
 
             partsWithZMoves.add(part);
         }
 
         return partsWithZMoves;
+    }
+
+    private double normaliseAngle(double angle)
+    {
+        double outputAngle = 0;
+        //Make a +/- pi angle into a 0-2pi (clockwise) angle
+        if (angle < 0)
+        {
+            outputAngle = angle + (Math.PI * 2);
+        } else
+        {
+            outputAngle = angle;
+        }
+
+        return outputAngle;
     }
 }

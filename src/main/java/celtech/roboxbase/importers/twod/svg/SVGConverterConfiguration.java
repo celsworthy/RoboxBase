@@ -12,6 +12,7 @@ public class SVGConverterConfiguration
     private int travelFeedrate = 4000;
     private int cuttingFeedrate = 1000;
     private int travelHeight = 2;
+    private float swivelHeight = 0.05f;
     private int contactHeight = 0;
     private int plungeFeedrate = 200;
     private int plungeDepth = 0;
@@ -68,6 +69,11 @@ public class SVGConverterConfiguration
         return contactHeight;
     }
 
+    public float getSwivelHeight()
+    {
+        return swivelHeight;
+    }
+    
     public void setContactHeight(int contactHeight)
     {
         this.contactHeight = contactHeight;
