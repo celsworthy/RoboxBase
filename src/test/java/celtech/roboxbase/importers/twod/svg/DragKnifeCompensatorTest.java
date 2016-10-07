@@ -58,31 +58,26 @@ public class DragKnifeCompensatorTest
         TravelNode travelToStart = new TravelNode();
         travelToStart.getMovement().setX(100);
         travelToStart.getMovement().setY(100);
-        travelToStart.setPreviousMovement(new Movement());
         uncompensatedParts.add(travelToStart);
 
         StylusScribeNode firstCut = new StylusScribeNode();
         firstCut.getMovement().setX(100);
         firstCut.getMovement().setY(110);
-        firstCut.setPreviousMovement(travelToStart.getMovement());
         uncompensatedParts.add(firstCut);
 
         StylusScribeNode secondCut = new StylusScribeNode();
         secondCut.getMovement().setX(110);
         secondCut.getMovement().setY(110);
-        secondCut.setPreviousMovement(firstCut.getMovement());
         uncompensatedParts.add(secondCut);
 
         StylusScribeNode thirdCut = new StylusScribeNode();
         thirdCut.getMovement().setX(110);
         thirdCut.getMovement().setY(100);
-        thirdCut.setPreviousMovement(secondCut.getMovement());
         uncompensatedParts.add(thirdCut);
 
         StylusScribeNode fourthCut = new StylusScribeNode();
         fourthCut.getMovement().setX(100);
         fourthCut.getMovement().setY(100);
-        fourthCut.setPreviousMovement(thirdCut.getMovement());
         uncompensatedParts.add(fourthCut);
 
         double forwards_value = 2.0;
@@ -103,12 +98,10 @@ public class DragKnifeCompensatorTest
 
                 if (travelNode.getMovement().isZSet())
                 {
-                    System.out.println(" From X" + travelNode.getPreviousMovement().get().getX() + " Y" + travelNode.getPreviousMovement().get().getY() + " Z" + travelNode.getPreviousMovement().get().getZ()
-                            + " To X" + travelNode.getMovement().getX() + " Y" + travelNode.getMovement().getY() + " Z" + travelNode.getMovement().getZ());
+                    System.out.println(" To X" + travelNode.getMovement().getX() + " Y" + travelNode.getMovement().getY() + " Z" + travelNode.getMovement().getZ());
                 } else
                 {
-                    System.out.println(" From X" + travelNode.getPreviousMovement().get().getX() + " Y" + travelNode.getPreviousMovement().get().getY()
-                            + " To X" + travelNode.getMovement().getX() + " Y" + travelNode.getMovement().getY());
+                    System.out.println(" To X" + travelNode.getMovement().getX() + " Y" + travelNode.getMovement().getY());
                 }
             }
         });

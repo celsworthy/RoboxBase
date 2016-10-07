@@ -16,7 +16,6 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
  */
 public class TravelNode extends GCodeEventNode implements MovementProvider, FeedrateProvider, SupportsPrintTimeCalculation, Renderable, MergeableWithToolchange
 {
-    private Optional<Movement> previousMovement = Optional.empty();
     private Movement movement = new Movement();
     private Feedrate feedrate = new Feedrate();
 
@@ -52,16 +51,6 @@ public class TravelNode extends GCodeEventNode implements MovementProvider, Feed
     public Movement getMovement()
     {
         return movement;
-    }
-    
-    public Optional<Movement> getPreviousMovement()
-    {
-        return previousMovement;
-    }
-    
-    public void setPreviousMovement(Movement previousMovement)
-    {
-        this.previousMovement = Optional.of(previousMovement);
     }
 
     @Override

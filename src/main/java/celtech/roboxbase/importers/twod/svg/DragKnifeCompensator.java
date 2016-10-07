@@ -17,6 +17,7 @@ import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 /**
  *
  * @author ianhudson
+ *
  */
 public class DragKnifeCompensator
 {
@@ -27,7 +28,9 @@ public class DragKnifeCompensator
     {
         List<GCodeEventNode> compensatedParts = new ArrayList();
 
-        GCodeEventNode lastPartUnderExamination = null;
+        GCodeEventNode lastUncompensatedPart = null;
+        GCodeEventNode lastCompensatedPart = null;
+        Vector2D lastVector = null;
 
         for (GCodeEventNode uncompensatedPart : uncompensatedParts)
         {
@@ -43,167 +46,119 @@ public class DragKnifeCompensator
                 StylusScribeNode uncompensatedStylusScribeNode = (StylusScribeNode) uncompensatedPart;
 
                 //Shift along vector
-                Vector2D vectorForThisSegment = uncompensatedStylusScribeNode.getMovement().toVector2D().subtract(uncompensatedStylusScribeNode.getPreviousMovement().get().toVector2D());
+                Vector2D vectorForThisSegment = uncompensatedStylusScribeNode.getMovement().toVector2D().subtract(((MovementProvider) lastUncompensatedPart).getMovement().toVector2D());
                 Vector2D resultant_norm = vectorForThisSegment.normalize();
                 Vector2D shiftVector = resultant_norm.scalarMultiply(forwards_value);
 
                 compensatedPart = new StylusScribeNode();
-//                    Vector2D newStart = uncompensatedTravelNode.getPreviousMovement().get().toVector2D().add(shiftVector);
-//                    Movement newMovement = new Movement();
-//                    newMovement.setX(newStart.getX());
-//                    newMovement.setY(newStart.getY());
-//                    compensatedPart.setPreviousMovement(uncompensatedTravelNode.getPreviousMovement().get());
                 Vector2D newEnd = uncompensatedStylusScribeNode.getMovement().toVector2D().add(shiftVector);
-                ((StylusScribeNode) compensatedPart).getMovement().setX(newEnd.getX());
-                ((StylusScribeNode) compensatedPart).getMovement().setX(newEnd.getY());
-                ((StylusScribeNode) compensatedPart).appendCommentText(" - shifted");
+                ((MovementProvider) compensatedPart).getMovement().setX(newEnd.getX());
+                ((MovementProvider) compensatedPart).getMovement().setY(newEnd.getY());
+                compensatedPart.appendCommentText(" - shifted");
 
-                if (lastPartUnderExamination != null
-                        && lastPartUnderExamination instanceof StylusScribeNode)
+                if (lastUncompensatedPart != null)
                 {
-                    //Chop the front of this segment off as there will be an arc towards it
-                    Vector2D doubleShiftVector = resultant_norm.scalarMultiply(forwards_value * 2);
-                    Vector2D modifiedStart = uncompensatedStylusScribeNode.getPreviousMovement().get().toVector2D().add(doubleShiftVector);
-                    ((StylusScribeNode) lastPartUnderExamination).getMovement().setX(modifiedStart.getX());
-                    ((StylusScribeNode) lastPartUnderExamination).getMovement().setY(modifiedStart.getY());
-                    Movement compensatedPartMovement = new Movement();
-                    compensatedPartMovement.setX(modifiedStart.getX());
-                    compensatedPartMovement.setY(modifiedStart.getY());
-                    ((StylusScribeNode) compensatedPart).setPreviousMovement(compensatedPartMovement);
+                    boolean shiftLastSegment = false;
 
-                    // We need to make an arc from the end of the last line to the start of this one
-                    // The radius will be the offset and the arc centre will be the start of the uncompensated line
-                    Vector2D vectorForLastSegment = ((StylusScribeNode) lastPartUnderExamination).getMovement().toVector2D().subtract(((StylusScribeNode) lastPartUnderExamination).getPreviousMovement().get().toVector2D());
-
-                    double thisSegmentAngle = Math.atan2(vectorForThisSegment.getY(), vectorForThisSegment.getX());
-                    double lastSegmentAngle = Math.atan2(vectorForLastSegment.getY(), vectorForLastSegment.getX());
-
-                    steno.info("This segment angle: " + thisSegmentAngle);
-                    compensatedPart.appendCommentText(" Angle:" + thisSegmentAngle);
-//                        steno.info("Last segment angle: " + lastSegmentAngle);
-
-                    Vector2D arcCentre = uncompensatedStylusScribeNode.getPreviousMovement().get().toVector2D();
-                    Vector2D arcStart = ((StylusScribeNode) compensatedPart).getPreviousMovement().get().toVector2D();
-
-                    double targetAngle = thisSegmentAngle;
-                    double currentAngle = lastSegmentAngle;
-                    if (lastSegmentAngle >= Math.PI && targetAngle < 0)
+                    if (lastUncompensatedPart instanceof StylusScribeNode)
                     {
-                        currentAngle = -lastSegmentAngle;
+                        double angleBetweenSegments = Vector2D.angle(vectorForThisSegment, lastVector);
+                        if (angleBetweenSegments > 0.5)
+                        {
+                            // We need to make an arc from the end of the last line to the start of this one
+                            // The radius will be the offset and the arc centre will be the start of the uncompensated line
+                            double thisSegmentAngle = Math.atan2(vectorForThisSegment.getY(), vectorForThisSegment.getX());
+                            double lastSegmentAngle = Math.atan2(lastVector.getY(), lastVector.getX());
+
+                            compensatedPart.appendCommentText(" Angle:" + thisSegmentAngle);
+
+                            Vector2D arcCentre = ((MovementProvider) lastUncompensatedPart).getMovement().toVector2D();
+
+                            double targetAngle = thisSegmentAngle;
+                            double currentAngle = lastSegmentAngle;
+
+                            steno.info("Current angle: " + currentAngle + " target angle:" + targetAngle);
+                            if (currentAngle >= Math.PI && targetAngle < 0)
+                            {
+                                currentAngle = -currentAngle;
+                            } else if (targetAngle >= Math.PI && currentAngle < 0)
+                            {
+                                targetAngle = -targetAngle;
+                            }
+
+                            if (Math.abs(currentAngle - targetAngle) > 0.3)
+                            {
+                                double stepValue = Math.PI / 18;
+
+                                if (currentAngle > targetAngle)
+                                {
+                                    stepValue = -stepValue;
+                                }
+
+                                while (Math.abs(currentAngle - targetAngle) >= Math.abs(stepValue))
+                                {
+                                    currentAngle += stepValue;
+                                    double newX = arcCentre.getX() + Math.cos(currentAngle) * forwards_value;
+                                    double newY = arcCentre.getY() + Math.sin(currentAngle) * forwards_value;
+                                    StylusScribeNode swivelCut = new StylusScribeNode();
+                                    swivelCut.setCommentText("Swivel");
+                                    swivelCut.getMovement().setX(newX);
+                                    swivelCut.getMovement().setY(newY);
+                                    compensatedParts.add(swivelCut);
+                                }
+                            }
+                        } else
+                        {
+                            shiftLastSegment = true;
+                        }
+                    } else
+                    {
+                        shiftLastSegment = true;
                     }
 
-                    StylusScribeNode lastPartToModify = (StylusScribeNode) lastPartUnderExamination;
-
-                    if (Math.abs(currentAngle - targetAngle) > 0.3)
+                    if (shiftLastSegment)
                     {
-                        double stepValue = Math.PI / 18;
-
-                        if (currentAngle > targetAngle)
-                        {
-                            stepValue = -stepValue;
-                        }
-
-                        double fromX = arcStart.getX();
-                        double fromY = arcStart.getY();
-
-                        while (Math.abs(currentAngle - targetAngle) >= Math.abs(stepValue))
-                        {
-                            currentAngle += stepValue;
-                            double newX = arcCentre.getX() + Math.cos(currentAngle) * forwards_value;
-                            double newY = arcCentre.getY() + Math.sin(currentAngle) * forwards_value;
-                            StylusScribeNode newTravel = new StylusScribeNode();
-                            newTravel.setCommentText("Swivel");
-                            Movement startMovement = new Movement();
-                            startMovement.setX(fromX);
-                            startMovement.setY(fromY);
-                            lastPartToModify.getMovement().setX(fromX);
-                            lastPartToModify.getMovement().setY(fromY);
-                            newTravel.setPreviousMovement(startMovement);
-                            newTravel.getMovement().setX(newX);
-                            newTravel.getMovement().setY(newY);
-                            compensatedParts.add(newTravel);
-                            fromX = newX;
-                            fromY = newY;
-                            lastPartToModify = newTravel;
-                        }
+                        Vector2D newPosition = ((MovementProvider) lastCompensatedPart).getMovement().toVector2D().add(shiftVector);
+                        ((MovementProvider) lastCompensatedPart).getMovement().setX(newPosition.getX());
+                        ((MovementProvider) lastCompensatedPart).getMovement().setY(newPosition.getY());
+                        lastCompensatedPart.appendCommentText(" - shifted");
                     }
                 }
-
-                if (compensatedPart != null)
-                {
-                    compensatedParts.add(compensatedPart);
-                }
-
-                lastPartUnderExamination = uncompensatedStylusScribeNode;
+                lastVector = vectorForThisSegment;
             }
+
+            if (compensatedPart != null)
+            {
+                compensatedParts.add(compensatedPart);
+            }
+
+            lastCompensatedPart = compensatedPart;
+            lastUncompensatedPart = uncompensatedPart;
         }
 
-//        List<DragKnifeMetaPart> finalPartsList = new ArrayList();
-//
-//        Vector2D lastSegment = null;
-//        StylusMetaPart lastPartUnderExamination = null;
-//
-//        for (StylusMetaPart partUnderExamination : compensatedParts)
-//        {
-//            Vector2D thisSegment = partUnderExamination.getEnd().subtract(partUnderExamination.getStart());
-//
-//            if (lastPartUnderExamination != null)
-//            {
-//                double angle = Vector2D.angle(lastSegment, thisSegment);
-//                System.out.println("Got angle of " + angle);
-//                if (Math.abs(angle) > 0.5)
-//                {
-//                    //Continue the last segment by the offset
-//                    try
-//                    {
-//                        StylusMetaPart moveContinuation = lastPartUnderExamination.getClass().newInstance();
-//                        moveContinuation.setStart(lastPartUnderExamination.getEnd());
-//                        moveContinuation.setEnd(lastPartUnderExamination.getEnd().add(forwards_value, thisSegment.normalize()));
-//                        moveContinuation.setComment("Added continuation");
-//                        finalPartsList.add(moveContinuation);
-//                    } catch (InstantiationException | IllegalAccessException ex)
-//                    {
-//                        steno.exception("Failed to create continuation part", ex);
-//                    }
-//                }
-//            }
-//
-//            finalPartsList.add(partUnderExamination);
-//
-//            lastSegment = thisSegment;
-//            lastPartUnderExamination = partUnderExamination;
-//        }
-        return compensatedParts;
+        return addZMoves(compensatedParts);
     }
 
     private List<GCodeEventNode> addZMoves(List<GCodeEventNode> parts)
     {
-        List<GCodeEventNode> outputBuffer = null;
-//        if (!toolDown)
-//        {
-//            compensatedParts.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
-//
-//            double fromXTravel = 0;
-//            double fromYTravel = 0;
-//            if (lastPartUnderExamination != null)
-//            {
-//                fromXTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getX();
-//                fromYTravel = ((MovementProvider) lastPartUnderExamination).getMovement().getY();
-//            }
-//
-//            TravelNode travelToStart = new TravelNode();
-//            travelToStart.getMovement().setX(((MovementProvider) compensatedPart).getMovement().getX());
-//            travelToStart.getMovement().setY(((MovementProvider) compensatedPart).getMovement().getY());
-//            Movement travelToStartPriorMovement = new Movement();
-//            travelToStartPriorMovement.setX(fromXTravel);
-//            travelToStartPriorMovement.setY(fromYTravel);
-//            travelToStart.setPreviousMovement(travelToStartPriorMovement);
-//            travelToStart.setCommentText("Travel to start of cut");
-//            compensatedParts.add(travelToStart);
-//
-//                    toolDown = true;
-//                }
+        boolean toolDown = false;
+        List<GCodeEventNode> partsWithZMoves = new ArrayList<>();
 
-        return outputBuffer;
+        for (GCodeEventNode part : parts)
+        {
+            if (part instanceof StylusScribeNode && !toolDown)
+            {
+                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
+                toolDown = true;
+            } else if (part instanceof TravelNode && toolDown)
+            {
+                partsWithZMoves.add(new StylusLiftNode(SVGConverterConfiguration.getInstance().getTravelHeight()));
+                toolDown = false;
+            }
+
+            partsWithZMoves.add(part);
+        }
+
+        return partsWithZMoves;
     }
 }

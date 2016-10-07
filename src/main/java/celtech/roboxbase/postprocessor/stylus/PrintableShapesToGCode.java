@@ -42,14 +42,12 @@ public class PrintableShapesToGCode
 {
 
     private static boolean isInContact = false;
-    private static MovementProvider lastTravelNode = null;
 
     private static final Stenographer steno = StenographerFactory.getStenographer(PrintableShapesToGCode.class.getName());
 
     public static List<GCodeEventNode> parsePrintableShapes(PrintableShapes shapes)
     {
         isInContact = false;
-        lastTravelNode = null;
 
         List<GCodeEventNode> gcodeEventNodes = new ArrayList<>();
 
@@ -90,7 +88,7 @@ public class PrintableShapesToGCode
                         gcodeEvents.add(createTravelNode("Travel to start of path segment",
                                 SVGConverterConfiguration.getInstance().getTravelFeedrate(),
                                 currentPoint_moveto.getX(),
-                                currentPoint_moveto.getX()));
+                                currentPoint_moveto.getY()));
                         lastX = pathData[0];
                         lastY = pathData[1];
                         break;
@@ -100,7 +98,7 @@ public class PrintableShapesToGCode
                         gcodeEvents.add(createStylusScribeNode("Straight cut",
                                 SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
                                 currentPoint_lineto.getX(),
-                                currentPoint_lineto.getX()));
+                                currentPoint_lineto.getY()));
                         lastX = pathData[0];
                         lastY = pathData[1];
                         break;
@@ -292,14 +290,6 @@ public class PrintableShapesToGCode
         travel.getFeedrate().setFeedRate_mmPerMin(travelFeedrate_mmPerMin);
         travel.getMovement().setX(x);
         travel.getMovement().setY(y);
-        if (lastTravelNode != null)
-        {
-            travel.setPreviousMovement(lastTravelNode.getMovement());
-        } else
-        {
-            travel.setPreviousMovement(new TravelNode().getMovement());
-        }
-        lastTravelNode = travel;
         return travel;
     }
 
@@ -310,14 +300,6 @@ public class PrintableShapesToGCode
         travel.getFeedrate().setFeedRate_mmPerMin(travelFeedrate_mmPerMin);
         travel.getMovement().setX(x);
         travel.getMovement().setY(y);
-        if (lastTravelNode != null)
-        {
-            travel.setPreviousMovement(lastTravelNode.getMovement());
-        } else
-        {
-            travel.setPreviousMovement(new TravelNode().getMovement());
-        }
-        lastTravelNode = travel;
         return travel;
     }
 }
