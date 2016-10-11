@@ -90,7 +90,7 @@ public class HardwareCommandInterface extends CommandInterface
                                 + " and got "
                                 + packetType);
                     }
-                    steno.trace("Got a response packet back of type: " + packetType.toString());
+//                    steno.trace("Got a response packet back of type: " + packetType.toString());
                     RoboxRxPacket rxPacketTemplate = RoboxRxPacketFactory.createPacket(packetType);
                     int packetLength = rxPacketTemplate.packetLength(firmwareVersionInUse);
                     
@@ -133,7 +133,7 @@ public class HardwareCommandInterface extends CommandInterface
                     try
                     {
                         receivedPacket = RoboxRxPacketFactory.createPacket(inputBuffer, firmwareVersionInUse);
-                        steno.trace("Got packet of type " + receivedPacket.getPacketType().name());
+//                        steno.trace("Got packet of type " + receivedPacket.getPacketType().name());
 
                         if (!dontPublishResult)
                         {

@@ -28,7 +28,7 @@ class SlicerOutputGobbler extends Thread
         this.is = is;
         this.type = type;
         this.slicerType = slicerType;
-        this.setName("SlicerOutputGobbler-" + type);
+        this.setName("SlicerOutputGobbler");
     }
 
     @Override
@@ -46,7 +46,7 @@ class SlicerOutputGobbler extends Thread
             String line = null;
             while ((line = br.readLine()) != null)
             {
-                steno.debug(type + ">" + line);
+                steno.debug(">" + line);
                 if (slicerType == SlicerType.Slic3r)
                 {
                     if (line.contains("Processing triangulated mesh"))

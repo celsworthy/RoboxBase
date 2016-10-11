@@ -10,7 +10,7 @@ public class SVGConverterConfiguration
     private static SVGConverterConfiguration instance = null;
 
     private int travelFeedrate = 4000;
-    private int cuttingFeedrate = 1000;
+    private int cuttingFeedrate = 700;
     private int travelHeight = 2;
     private float swivelHeight = 0.05f;
     private int contactHeight = 0;

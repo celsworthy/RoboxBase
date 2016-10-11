@@ -80,16 +80,19 @@ public class AckResponse extends RoboxRxPacket
     {
         StringBuilder outputString = new StringBuilder();
 
-        outputString.append("Error Report\n");
-        outputString.append("Packet type:");
-        outputString.append(getPacketType().name());
-        outputString.append("\n");
-        for (FirmwareError error : firmwareErrors)
+        outputString.append("Report from printer - ");
+        if (firmwareErrors.size() == 0)
         {
-            outputString.append(error.getErrorTitleKey());
-            outputString.append("\n");
+            outputString.append("No errors detected by printer");
+        } else
+        {
+            for (FirmwareError error : firmwareErrors)
+            {
+                outputString.append(error.getErrorTitleKey());
+                outputString.append("\n");
+            }
+            outputString.append(">>>>>>>>>>");
         }
-        outputString.append(">>>>>>>>>>\n");
 
         return outputString.toString();
     }
