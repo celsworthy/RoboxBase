@@ -3,6 +3,8 @@
  */
 package celtech.roboxbase.printerControl.model.statetransitions.purge;
 
+import celtech.roboxbase.BaseLookup;
+
 /**
  *
  * @author tony
@@ -34,7 +36,7 @@ public enum PurgeState
     {
         if (stepTitleResource != null)
         {
-            return stepTitleResource;
+            return BaseLookup.i18n(stepTitleResource);
         } else
         {
             return "";
