@@ -53,8 +53,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.doNotCheckForPresenceOfHead = doNotCheckForPresenceOfHead;
         this.detectLoadedFilament = detectLoadedFilament;
-//        this.searchForRemotePrinters = searchForRemotePrinters;
-        this.searchForRemotePrinters = false;
+        this.searchForRemotePrinters = searchForRemotePrinters;
 
         usbSerialDeviceDetector = new SerialDeviceDetector(pathToBinaries, roboxVendorID, roboxProductID, printerToSearchFor, this);
         remotePrinterDetector = new RemotePrinterDetector(this);
@@ -200,22 +199,22 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     {
         BaseLookup.getTaskExecutor().runOnBackgroundThread(() ->
         {
-//            List<DetectedServer> rootsToInhibit = new ArrayList<>();
-//            CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
-//            {
-//                if (!server.whoAmI())
-//                {
-//                    rootsToInhibit.add(server);
-//                } else
-//                {
-//                    server.connect();
-//                }
-//            });
-//
-//            rootsToInhibit.forEach(server ->
-//            {
-//                CoreMemory.getInstance().deactivateRoboxRoot(server);
-//            });
+            List<DetectedServer> rootsToInhibit = new ArrayList<>();
+            CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
+            {
+                if (!server.whoAmI())
+                {
+                    rootsToInhibit.add(server);
+                } else
+                {
+                    server.connect();
+                }
+            });
+
+            rootsToInhibit.forEach(server ->
+            {
+                CoreMemory.getInstance().deactivateRoboxRoot(server);
+            });
             
             if (!remotePrinterDetector.isAlive() && searchForRemotePrinters)
             {
