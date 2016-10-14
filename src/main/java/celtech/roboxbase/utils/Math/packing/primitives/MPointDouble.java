@@ -1,4 +1,4 @@
-package celtech.roboxbase.utils.Math.newPacking.primitives;
+package celtech.roboxbase.utils.Math.packing.primitives;
 
 import java.awt.geom.Point2D;
 

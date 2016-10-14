@@ -1,9 +1,9 @@
-package celtech.roboxbase.utils.Math.newPacking.core;
+package celtech.roboxbase.utils.Math.packing.core;
 
-import celtech.roboxbase.utils.Math.newPacking.primitives.MArea;
-import celtech.roboxbase.utils.Math.newPacking.primitives.MPointDouble;
-import celtech.roboxbase.utils.Math.newPacking.primitives.MVector;
-import celtech.roboxbase.utils.Math.newPacking.utils.Utils;
+import celtech.roboxbase.utils.Math.packing.primitives.MArea;
+import celtech.roboxbase.utils.Math.packing.primitives.MPointDouble;
+import celtech.roboxbase.utils.Math.packing.primitives.MVector;
+import celtech.roboxbase.utils.Math.packing.utils.Utils;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;

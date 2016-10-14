@@ -1,6 +1,6 @@
-package celtech.roboxbase.utils.Math.newPacking.core;
+package celtech.roboxbase.utils.Math.packing.core;
 
-import celtech.roboxbase.utils.Math.newPacking.primitives.MArea;
+import celtech.roboxbase.utils.Math.packing.primitives.MArea;
 import java.awt.*;
 import java.util.ArrayList;
 

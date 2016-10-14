@@ -1,4 +1,4 @@
-package celtech.roboxbase.utils.Math.newPacking.core;
+package celtech.roboxbase.utils.Math.packing.core;
 
 /**
  * Constants variables used along the application.

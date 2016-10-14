@@ -1,4 +1,4 @@
-package celtech.roboxbase.utils.Math.newPacking.primitives;
+package celtech.roboxbase.utils.Math.packing.primitives;
 
 /**
  * A class that represents a geometric vector v=(x,y) in double precision.

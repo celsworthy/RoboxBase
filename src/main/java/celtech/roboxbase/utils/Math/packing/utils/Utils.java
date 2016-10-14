@@ -1,8 +1,8 @@
-package celtech.roboxbase.utils.Math.newPacking.utils;
+package celtech.roboxbase.utils.Math.packing.utils;
 
 
-import celtech.roboxbase.utils.Math.newPacking.primitives.MArea;
-import celtech.roboxbase.utils.Math.newPacking.primitives.MPointDouble;
+import celtech.roboxbase.utils.Math.packing.primitives.MArea;
+import celtech.roboxbase.utils.Math.packing.primitives.MPointDouble;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;

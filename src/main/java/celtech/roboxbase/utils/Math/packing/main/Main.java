@@ -1,9 +1,9 @@
-package celtech.roboxbase.utils.Math.newPacking.main;
+package celtech.roboxbase.utils.Math.packing.main;
 
-import celtech.roboxbase.utils.Math.newPacking.core.Bin;
-import celtech.roboxbase.utils.Math.newPacking.core.BinPacking;
-import celtech.roboxbase.utils.Math.newPacking.primitives.MArea;
-import celtech.roboxbase.utils.Math.newPacking.utils.Utils;
+import celtech.roboxbase.utils.Math.packing.core.Bin;
+import celtech.roboxbase.utils.Math.packing.core.BinPacking;
+import celtech.roboxbase.utils.Math.packing.primitives.MArea;
+import celtech.roboxbase.utils.Math.packing.utils.Utils;
 import java.awt.*;
 import java.io.IOException;
 import java.io.PrintWriter;

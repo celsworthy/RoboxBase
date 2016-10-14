@@ -1,6 +1,6 @@
-package celtech.roboxbase.utils.Math.newPacking.primitives;
+package celtech.roboxbase.utils.Math.packing.primitives;
 
-import celtech.roboxbase.utils.Math.newPacking.utils.Utils;
+import celtech.roboxbase.utils.Math.packing.utils.Utils;
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.ArrayList;
