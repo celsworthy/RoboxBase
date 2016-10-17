@@ -215,7 +215,7 @@ public class PostProcessor
             OpenResult lastOpenResult = null;
 
             List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
-            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1);
+            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
 
             for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
             {
@@ -477,8 +477,7 @@ public class PostProcessor
         // Parse the last layer if it exists...
         if (layerBuffer.length() > 0)
         {
-            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
-            );
+            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
             gcodeParser.setPrintVolumeBounds(printer.printerConfigurationProperty().get().getPrintVolumeWidth(),
                     printer.printerConfigurationProperty().get().getPrintVolumeDepth(),
                     printer.printerConfigurationProperty().get().getPrintVolumeHeight());
@@ -486,6 +485,7 @@ public class PostProcessor
             if (lastLayerParseResult
                     != null)
             {
+                gcodeParser.setStartingLineNumber(lastLayerParseResult.getLastLineNumber());
                 gcodeParser.setFeedrateInForce(lastLayerParseResult.getLastFeedrateInForce());
             }
 
@@ -504,8 +504,10 @@ public class PostProcessor
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
                 int lastFeedrate = gcodeParser.getFeedrateInForce();
+                int lastLineNumber = gcodeParser.getCurrentLineNumber();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
+                parseResultAtEndOfThisLayer.setLastLineNumber(lastLineNumber);
             }
         } else
         {
@@ -623,7 +625,7 @@ public class PostProcessor
         }
 
         return new LayerPostProcessResult(layerNode, -1,
-                lastSectionNode, lastToolSelectNode, firstToolSelectNodeWithSameNumber, lastFeedrate);
+                lastSectionNode, lastToolSelectNode, firstToolSelectNodeWithSameNumber, lastFeedrate, 0);
     }
 
     private void outputPostProcessingTimerReport()
