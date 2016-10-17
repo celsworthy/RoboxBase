@@ -50,6 +50,10 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     private double printVolumeWidth = 0;
     private double printVolumeDepth = 0;
     private double printVolumeHeight = 0;
+    //This constant was introduced to allow the slicer to generate output that marginally exceeds 100mm
+    //Firmware v753 onwards supports a 100.2mm max Z
+    //See ARR-26 and ARR-21
+    private final double printVolumeHeightTolerance = 0.2;
 
     public int getStartingLineNumber()
     {
@@ -103,7 +107,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     //Inbound Z translates to -Y
     private void validateZPosition(double value)
     {
-        if (value > printVolumeHeight
+        if (value > (printVolumeHeight + printVolumeHeightTolerance)
                 || value < 0)
         {
             throw new ParserInputException("Z value outside bed: " + value);
