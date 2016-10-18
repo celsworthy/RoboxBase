@@ -43,7 +43,7 @@ public class CoreMemory
 
             } catch (IOException ex)
             {
-                steno.exception("Error loading core memory file " + coreMemoryFile.getAbsolutePath() + " - writing new memory", ex);
+                steno.error("Error loading core memory file " + coreMemoryFile.getAbsolutePath() + " - writing new memory");
                 writeNewCoreMemory(coreMemoryFile);
             }
         }
