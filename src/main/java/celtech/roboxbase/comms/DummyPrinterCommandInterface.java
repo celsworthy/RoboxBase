@@ -38,6 +38,7 @@ import celtech.roboxbase.comms.tx.SendResetErrors;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.WriteHeadEEPROM;
 import celtech.roboxbase.comms.remote.types.SerializableColour;
+import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Reel;
 import javafx.scene.paint.Color;
@@ -96,6 +97,8 @@ public class DummyPrinterCommandInterface extends CommandInterface
     protected int currentBedTemperature = ROOM_TEMPERATURE;
     protected int bedTargetTemperature = 30;
 
+    private FilamentContainer filamentContainer;
+
     public DummyPrinterCommandInterface(PrinterStatusConsumer controlInterface,
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks, String printerName)
@@ -103,6 +106,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
         super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
         this.setName(printerName);
         this.printerName = printerName;
+        filamentContainer = new FilamentContainer();
 
         currentStatus.setsdCardPresent(true);
     }
@@ -113,6 +117,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
     {
         this(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks,
                 "Dummy Printer");
+        filamentContainer = new FilamentContainer();
     }
 
     @Override
@@ -479,7 +484,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 {
                     filamentName = attachReelElements[0];
                     int reelNumber = Integer.valueOf(attachReelElements[1]);
-//                    attachSuccess = attachReel(filamentName, reelNumber);
+                    attachSuccess = attachReel(filamentContainer.getFilamentByID(filamentName), reelNumber);
                 }
 
                 if (attachSuccess)
@@ -558,12 +563,20 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 currentStatus.setsdCardPresent(false);
             } else if (messageData.startsWith("M104 S"))
             {
-                nozzleTargetTemperatureS = Integer.parseInt(messageData.substring(6));
-                steno.debug("set S temp to " + nozzleTargetTemperatureS);
-                if (nozzleTargetTemperatureS == 0)
+                if (messageData.substring(6).length() > 0)
                 {
-                    nozzleHeaterModeS = HeaterMode.OFF;
-                    steno.debug("set heater mode off for S");
+                    nozzleTargetTemperatureS = Integer.parseInt(messageData.substring(6));
+                    steno.debug("set S temp to " + nozzleTargetTemperatureS);
+
+                    if (nozzleTargetTemperatureS == 0)
+                    {
+                        nozzleHeaterModeS = HeaterMode.OFF;
+                        steno.debug("set heater mode off for S");
+                    }
+                } else
+                {
+                    nozzleHeaterModeS = HeaterMode.NORMAL;
+                    steno.debug("set heater mode S to normal");
                 }
             } else if (messageData.startsWith("M104 T"))
             {
@@ -571,6 +584,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 {
                     nozzleTargetTemperatureT = Integer.parseInt(messageData.substring(6));
                     steno.debug("set T temp to " + nozzleTargetTemperatureT);
+
                     if (nozzleTargetTemperatureT == 0)
                     {
                         nozzleHeaterModeT = HeaterMode.OFF;
