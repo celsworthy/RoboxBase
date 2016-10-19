@@ -91,7 +91,7 @@ public class OutputUtilities
         }
     }
 
-    protected void outputTemperatureCommands(GCodeOutputWriter writer,
+    protected void outputSingleMaterialNozzleTemperatureCommands(GCodeOutputWriter writer,
             boolean useNozzle0Heater, boolean useNozzle1Heater,
             boolean useEExtruder, boolean useDExtruder)
     {
@@ -110,12 +110,6 @@ public class OutputUtilities
 
             nozzleTemp.setCommentText(" Go to nozzle temperature from loaded reel - don't wait");
             writer.writeOutput(nozzleTemp.renderForOutput());
-            writer.newLine();
-
-            MCodeNode bedTemp = new MCodeNode(140);
-
-            bedTemp.setCommentText(" Go to bed temperature from loaded reel - don't wait");
-            writer.writeOutput(bedTemp.renderForOutput());
             writer.newLine();
         } catch (IOException ex)
         {
