@@ -682,7 +682,7 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
                 nmu,
                 null
         );
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1, 0);
 
         OutputUtilities opUtils = new OutputUtilities();
 

@@ -82,4 +82,10 @@ public class RemotePrinterDetector extends DeviceDetector
             }
         }
     }
+
+    @Override
+    public void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle)
+    {
+        currentPrinters.remove(printerHandle);
+    }
 }

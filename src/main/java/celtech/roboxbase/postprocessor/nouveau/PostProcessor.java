@@ -13,6 +13,7 @@ import celtech.roboxbase.postprocessor.RoboxiserResult;
 import celtech.roboxbase.postprocessor.nouveau.filamentSaver.FilamentSaver;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.FeedrateProvider;
@@ -215,7 +216,7 @@ public class PostProcessor
             OpenResult lastOpenResult = null;
 
             List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
-            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1);
+            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
 
             for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
             {
@@ -316,10 +317,18 @@ public class PostProcessor
             for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
             {
                 timeUtils.timerStart(this, writeOutputTimerName);
-                if (resultToBeProcessed.getLayerData().getLayerNumber() == 1
-                        && headFile.getType() == HeadType.SINGLE_MATERIAL_HEAD)
+                if (resultToBeProcessed.getLayerData().getLayerNumber() == 1)
                 {
-                    outputUtilities.outputTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
+                    if (headFile.getType() == HeadType.SINGLE_MATERIAL_HEAD)
+                    {
+                        outputUtilities.outputSingleMaterialNozzleTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
+                    }
+                    
+                    //Always output the bed temperature command at layer 1
+                    MCodeNode bedTemp = new MCodeNode(140);
+                    bedTemp.setCommentText("Go to bed temperature from loaded reel - don't wait");
+                    writer.writeOutput(bedTemp.renderForOutput());
+                    writer.newLine();
                 }
                 outputUtilities.writeLayerToFile(resultToBeProcessed.getLayerData(), writer);
                 timeUtils.timerStop(this, writeOutputTimerName);
@@ -477,8 +486,7 @@ public class PostProcessor
         // Parse the last layer if it exists...
         if (layerBuffer.length() > 0)
         {
-            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class
-            );
+            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
             gcodeParser.setPrintVolumeBounds(printer.printerConfigurationProperty().get().getPrintVolumeWidth(),
                     printer.printerConfigurationProperty().get().getPrintVolumeDepth(),
                     printer.printerConfigurationProperty().get().getPrintVolumeHeight());
@@ -486,6 +494,7 @@ public class PostProcessor
             if (lastLayerParseResult
                     != null)
             {
+                gcodeParser.setStartingLineNumber(lastLayerParseResult.getLastLineNumber());
                 gcodeParser.setFeedrateInForce(lastLayerParseResult.getLastFeedrateInForce());
             }
 
@@ -504,8 +513,10 @@ public class PostProcessor
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
                 int lastFeedrate = gcodeParser.getFeedrateInForce();
+                int lastLineNumber = gcodeParser.getCurrentLineNumber();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
+                parseResultAtEndOfThisLayer.setLastLineNumber(lastLineNumber);
             }
         } else
         {
@@ -623,7 +634,7 @@ public class PostProcessor
         }
 
         return new LayerPostProcessResult(layerNode, -1,
-                lastSectionNode, lastToolSelectNode, firstToolSelectNodeWithSameNumber, lastFeedrate);
+                lastSectionNode, lastToolSelectNode, firstToolSelectNodeWithSameNumber, lastFeedrate, 0);
     }
 
     private void outputPostProcessingTimerReport()

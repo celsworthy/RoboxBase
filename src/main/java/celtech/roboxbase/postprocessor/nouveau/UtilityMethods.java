@@ -320,9 +320,9 @@ public class UtilityMethods
                 if (replenishDToUse == 0 && replenishEToUse == 0)
                 {
                     String outputString = "No replenish on open in layer " + layerNode.getLayerNumber() + " before partial open " + ((NozzleValvePositionNode) layerEvent).renderForOutput();
-                    if (layerNode.getGCodeLineNumber().isPresent())
+                    if (layerEvent.getGCodeLineNumber().isPresent())
                     {
-                        outputString += " on line " + layerNode.getGCodeLineNumber().get();
+                        outputString += " on line " + layerEvent.getGCodeLineNumber().get();
                     }
                     steno.warning(outputString);
                 }
@@ -432,9 +432,9 @@ public class UtilityMethods
                 if (replenishDToUse == 0 && replenishEToUse == 0)
                 {
                     String outputString = "No replenish on open in layer " + layerNode.getLayerNumber() + " before extrusion " + ((ExtrusionNode) layerEvent).renderForOutput();
-                    if (layerNode.getGCodeLineNumber().isPresent())
+                    if (layerEvent.getGCodeLineNumber().isPresent())
                     {
-                        outputString += " on line " + layerNode.getGCodeLineNumber().get();
+                        outputString += " on line " + layerEvent.getGCodeLineNumber().get();
                     }
                     steno.warning(outputString);
                 }

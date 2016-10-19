@@ -30,7 +30,7 @@ public class SerialDeviceDetector extends DeviceDetector
 
     // This list is used to ensure that we don't fall foul of windows very slow usb disconnection and attempt reconnects
     // when the device has just been removed...
-    private static final int suppressPrinterForCycles = 5;
+    private static final int suppressPrinterForCycles = 4;
     private Map<DetectedDevice, Integer> printersToSuppress = new HashMap<>();
 
     public SerialDeviceDetector(String pathToBinaries,
@@ -185,5 +185,12 @@ public class SerialDeviceDetector extends DeviceDetector
                 steno.warning("Interrupted within remote host discovery loop");
             }
         }
+    }
+    
+    @Override
+    public void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle)
+    {
+        currentPrinters.remove(printerHandle);
+        printersToSuppress.remove(printerHandle);
     }
 }

@@ -43,22 +43,26 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     private final Stenographer steno = StenographerFactory.getStenographer(CuraGCodeParser.class.getName());
     private LayerNode thisLayer = new LayerNode();
     private int feedrateInForce = -1;
-    private int startingLineNumber = 0;
+    private int currentLineNumber = 0;
     private double currentLayerHeight = 0;
     protected Var<Integer> currentObject = new Var<>(-1);
     private Printer activePrinter = null;
     private double printVolumeWidth = 0;
     private double printVolumeDepth = 0;
     private double printVolumeHeight = 0;
+    //This constant was introduced to allow the slicer to generate output that marginally exceeds 100mm
+    //Firmware v753 onwards supports a 100.2mm max Z
+    //See ARR-26 and ARR-21
+    private final double printVolumeHeightTolerance = 0.2;
 
-    public int getStartingLineNumber()
+    public int getCurrentLineNumber()
     {
-        return startingLineNumber;
+        return currentLineNumber;
     }
 
     public void setStartingLineNumber(int startingLineNumber)
     {
-        this.startingLineNumber = startingLineNumber;
+        this.currentLineNumber = startingLineNumber;
     }
 
     public void setFeedrateInForce(int feedrate)
@@ -103,7 +107,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     //Inbound Z translates to -Y
     private void validateZPosition(double value)
     {
-        if (value > printVolumeHeight
+        if (value > (printVolumeHeight + printVolumeHeightTolerance)
                 || value < 0)
         {
             throw new ParserInputException("Z value outside bed: " + value);
@@ -112,16 +116,15 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
 
     public Rule Layer()
     {
-        return Sequence(
-                Sequence(";LAYER:", IntegerNumber(),
-                        (Action) (Context context1) ->
-                        {
-                            thisLayer.setLayerNumber(Integer.valueOf(context1.getMatch()));
-                            thisLayer.setGCodeLineNumber(startingLineNumber);
-                            return true;
-                        },
-                        Newline()
-                ),
+        return Sequence(Sequence(";LAYER:", IntegerNumber(),
+                (Action) (Context context1) ->
+                {
+                    thisLayer.setLayerNumber(Integer.valueOf(context1.getMatch()));
+                    thisLayer.setGCodeLineNumber(++currentLineNumber);
+                    return true;
+                },
+                Newline()
+        ),
                 ZeroOrMore(
                         FirstOf(
                                 ObjectSection(),
@@ -215,6 +218,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     {
                         ObjectDelineationNode node = objectSectionAction.getNode();
                         node.setObjectNumber(objectNumber.get());
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -256,6 +260,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     {
                         OrphanObjectDelineationNode node = orphanObjectSectionAction.getNode();
                         node.setPotentialObjectNumber(currentObject.get());
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -280,6 +285,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -305,6 +311,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -330,6 +337,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -354,6 +362,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -378,6 +387,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -402,6 +412,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -427,6 +438,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -448,6 +460,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         InnerPerimeterSectionNode node = new InnerPerimeterSectionNode();
+                        node.setGCodeLineNumber(++currentLineNumber);
                         while (context.getValueStack().iterator().hasNext())
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
@@ -536,6 +549,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         CommentNode node = new CommentNode(commentValue.get());
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -552,11 +566,10 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         Var<Boolean> tPresent = new Var<>();
         Var<Integer> tValue = new Var<>();
 
-        return Sequence(
-                Sequence('M', OneToThreeDigits(),
-                        mValue.set(Integer.valueOf(match())),
-                        Optional(' ')
-                ),
+        return Sequence(Sequence('M', OneToThreeDigits(),
+                mValue.set(Integer.valueOf(match())),
+                Optional(' ')
+        ),
                 Optional(
                         Sequence(
                                 'S',
@@ -604,7 +617,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                             node.setTNumber(tValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -628,7 +641,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     {
                         GCodeDirectiveNode node = new GCodeDirectiveNode();
                         node.setGValue(gcodeValue.get());
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -677,7 +690,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -728,7 +741,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -785,7 +798,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                             node.getMovement().setY(yValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -875,7 +888,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                             node.getExtrusion().setE(eValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack()
                         .push(node);
@@ -948,7 +961,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                             currentLayerHeight = zValue.get();
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -1091,7 +1104,9 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         String line = context.getMatch();
-                        context.getValueStack().push(new UnrecognisedLineNode(line));
+                        UnrecognisedLineNode newNode = new UnrecognisedLineNode(line);
+                        newNode.setGCodeLineNumber(++currentLineNumber);
+                        context.getValueStack().push(newNode);
                         return true;
                     }
                 },
@@ -1102,14 +1117,12 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     @SuppressSubnodes
     Rule Newline()
     {
-        return Sequence(
-                Ch('\n'),
+        return Sequence(Ch('\n'),
                 new Action()
                 {
                     @Override
                     public boolean run(Context context)
                     {
-                        startingLineNumber++;
                         return true;
                     }
                 });

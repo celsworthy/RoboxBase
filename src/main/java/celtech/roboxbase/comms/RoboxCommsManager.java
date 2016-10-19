@@ -292,6 +292,8 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
             printerToRemove.shutdown(false);
         }
         activePrinters.remove(printerHandle);
+        
+        usbSerialDeviceDetector.notifyOfFailedCommsForPrinter(printerHandle);
 
         BaseLookup.printerDisconnected(printerToRemove);
     }

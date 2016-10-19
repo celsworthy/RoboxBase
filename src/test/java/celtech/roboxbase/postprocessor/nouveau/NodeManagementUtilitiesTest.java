@@ -117,7 +117,7 @@ public class NodeManagementUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NodeManagementUtilities nodeManagementUtilities = new NodeManagementUtilities(ppFeatures, nozzleProxies);
 
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1, 0);
 
         assertEquals(2, testLayer.getChildren().size());
         assertSame(outer, orphan1.getChildren().get(0));
@@ -188,7 +188,7 @@ public class NodeManagementUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NodeManagementUtilities nodeManagementUtilities = new NodeManagementUtilities(ppFeatures, nozzleProxies);
 
-        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1);
+        LayerPostProcessResult lastLayerParseResult = new LayerPostProcessResult(testLayer, 0, null, null, null, -1, 0);
 
         assertEquals(2, testLayer.getChildren().size());
         assertSame(outer, orphan1.getChildren().get(0));

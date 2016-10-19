@@ -73,7 +73,7 @@ public class TimeAndVolumeCalcTest
         ts0.addChildAtEnd(en1);
         ln0.getChildren().add(ts0);
         
-        LayerPostProcessResult ppr1 = new LayerPostProcessResult(ln0, 0, null, null, null, 200);
+        LayerPostProcessResult ppr1 = new LayerPostProcessResult(ln0, 0, null, null, null, 200, 0);
         allLayerPostProcessResults.add(ppr1);
 
         TimeAndVolumeCalc timeAndVolumeCalc = new TimeAndVolumeCalc(Head.HeadType.DUAL_MATERIAL_HEAD);
