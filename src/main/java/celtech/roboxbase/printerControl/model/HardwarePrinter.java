@@ -3478,65 +3478,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         steno.error("Failed to pause print after filament slip detected " + error.name());
                     }
                     break;
-
-//                    if (!filamentSlipActionInProgress)
-//                    {
-//                        filamentSlipActionInProgress = true;
-//                        new Thread(() ->
-//                        {
-//                            boolean showStandardError = false;
-//
-//                            if (pauseStatus.get() == PauseStatus.PAUSED)
-//                            {
-//                                switch (error)
-//                                {
-//                                    case E_FILAMENT_SLIP:
-//                                        BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(
-//                                                FirmwareError.PSEUDO_E_FILAMENT_SLIP_WHILST_PAUSED,
-//                                                this);
-//                                        break;
-//
-//                                    case D_FILAMENT_SLIP:
-//                                        BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(
-//                                                FirmwareError.PSEUDO_D_FILAMENT_SLIP_WHILST_PAUSED,
-//                                                this);
-//                                        break;
-//                                }
-//                            } else
-//                            {
-//                                switch (printerStatus.get())
-//                                {
-//                                    case PRINTING_PROJECT:
-//                                        boolean limitOnSlipActionsReached = doFilamentSlipActionWhilePrinting(error);
-//                                        if (limitOnSlipActionsReached)
-//                                        {
-//                                            try
-//                                            {
-//                                                pause();
-//                                            } catch (PrinterException ex)
-//                                            {
-//                                                steno.error("Unable to pause during filament slip handling");
-//                                            }
-//                                            showStandardError = true;
-//                                        }
-//                                        break;
-//                                    case IDLE:
-//                                        showStandardError = true;
-//                                        break;
-//                                }
-//
-//                                if (showStandardError)
-//                                {
-//                                    BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(
-//                                            error,
-//                                            this);
-//                                }
-//                            }
-//                            filamentSlipActionInProgress = false;
-//                        }, "Executing filament slip action").
-//                                start();
-//                    }
-//                    break;
+                case ERROR_D_NO_FILAMENT:
+                case ERROR_E_NO_FILAMENT:
+                    BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(
+                            error, this);
+                    break;
                 default:
                     // Back stop
                     switch (printerStatus.get())
@@ -3750,7 +3696,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     .forEach(foundError ->
                                             {
                                                 errorWasConsumed = false;
-                                                
+
                                                 if (foundError == FirmwareError.Z_TOP_SWITCH)
                                                 {
                                                     if (head.get() != null)
