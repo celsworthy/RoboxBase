@@ -27,4 +27,6 @@ public abstract class DeviceDetector extends Thread
         SERIAL,
         ROBOX_REMOTE
     }
+    
+    public abstract void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle);
 }
