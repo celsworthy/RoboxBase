@@ -77,6 +77,13 @@ public class MArea extends Area {
 		this.ID = ID;
 		rotation = 0;
 	}
+        
+        public MArea(Rectangle2D.Double rectangle, int ID, double rotation) {
+		super(rectangle);
+		this.area = rectangle.getWidth() * rectangle.getHeight();
+		this.ID = ID;
+		this.rotation = rotation;
+	}
 
 	/**
 	 * Creates an empty MArea with an ID.
