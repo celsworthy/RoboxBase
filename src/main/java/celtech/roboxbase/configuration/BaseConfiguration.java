@@ -593,15 +593,31 @@ public class BaseConfiguration
 
         if (configuration != null && applicationStorageDirectory == null)
         {
-            try
+            if (getMachineType() == MachineType.WINDOWS)
             {
-                applicationStorageDirectory = configuration.getFilenameString(
-                        applicationConfigComponent, applicationStorageDirectoryComponent, null);
-                steno.debug("Application storage directory = " + applicationStorageDirectory);
-            } catch (ConfigNotLoadedException ex)
+                String registryValue = WindowsRegistry.currentUser("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "AppData");
+
+                if (registryValue != null)
+                {
+                    Path regPath = Paths.get(registryValue);
+                    if (Files.exists(regPath, LinkOption.NOFOLLOW_LINKS))
+                    {
+                        applicationStorageDirectory = registryValue + "\\"
+                                + getApplicationName() + File.separator;
+                    }
+                }
+            } else
             {
-                steno.error(
-                        "Couldn't determine application storage location - the application will not run correctly");
+                try
+                {
+                    applicationStorageDirectory = configuration.getFilenameString(
+                            applicationConfigComponent, applicationStorageDirectoryComponent, null);
+                    steno.debug("Application storage directory = " + applicationStorageDirectory);
+                } catch (ConfigNotLoadedException ex)
+                {
+                    steno.error(
+                            "Couldn't determine application storage location - the application will not run correctly");
+                }
             }
         }
         return applicationStorageDirectory;
