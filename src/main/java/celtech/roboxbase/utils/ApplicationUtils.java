@@ -23,6 +23,10 @@ public class ApplicationUtils
         steno.info("Version: " + BaseConfiguration.getApplicationVersion());
         steno.info("Installation directory: " + BaseConfiguration.
                 getApplicationInstallDirectory(parentClass));
+        steno.info("Application Storage directory: " + BaseConfiguration.
+                getApplicationStorageDirectory());
+        steno.info("User Storage directory: " + BaseConfiguration.
+                getUserStorageDirectory());
         steno.info("Machine type: " + BaseConfiguration.getMachineType());
         steno.info("**********************************************************************");
     }
