@@ -143,7 +143,9 @@ public class PrintableShapesToGCode
         {
             Bounds bounds = shapeToProcess.getBoundsInLocal();
             Point2D bottomLeft = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMinX(), (float) bounds.getMinY());
+            Point2D topLeft = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMinX(), (float) bounds.getMaxY());
             Point2D topRight = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMaxX(), (float) bounds.getMaxY());
+            Point2D bottomRight = shapeToWorldTransformer.transformShapeToRealWorldCoordinates((float) bounds.getMaxX(), (float) bounds.getMinY());
 
             gcodeEvents.add(createTravelNode("Travel to start of Rectangle",
                     SVGConverterConfiguration.getInstance().getTravelFeedrate(),
@@ -153,8 +155,8 @@ public class PrintableShapesToGCode
 
             gcodeEvents.add(createStylusScribeNode("Cut 1",
                     SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
-                    bottomLeft.getX(),
-                    topRight.getY()
+                    topLeft.getX(),
+                    topLeft.getY()
             ));
 
             gcodeEvents.add(createStylusScribeNode("Cut 2",
@@ -165,8 +167,8 @@ public class PrintableShapesToGCode
 
             gcodeEvents.add(createStylusScribeNode("Cut 3",
                     SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
-                    topRight.getX(),
-                    bottomLeft.getY()
+                    bottomRight.getX(),
+                    bottomRight.getY()
             ));
 
             gcodeEvents.add(createStylusScribeNode("Cut 4",
