@@ -1780,7 +1780,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         ListFiles listFiles = (ListFiles) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.LIST_FILES);
-        return (ListFilesResponse) commandInterface.writeToPrinter(listFiles);
+        
+        //We don't want the result of this to be published
+        return (ListFilesResponse) commandInterface.writeToPrinter(listFiles, true);
     }
 
     @Override
