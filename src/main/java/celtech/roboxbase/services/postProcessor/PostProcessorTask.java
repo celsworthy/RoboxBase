@@ -4,17 +4,23 @@ import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
+import celtech.roboxbase.importers.twod.svg.DragKnifeCompensator;
 import celtech.roboxbase.postprocessor.RoboxiserResult;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessor;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeature;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
+import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.stylus.PrintableShapesToGCode;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.CameraTriggerData;
+import celtech.roboxbase.utils.models.PrintableEntity;
+import celtech.roboxbase.utils.models.PrintableShapes;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
@@ -35,18 +41,18 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             PostProcessorTask.class.getName());
 
     private final String printJobUUID;
-    private final PrintableMeshes printableMeshes;
+    private final PrintableEntity printableEntity;
     private final String printJobDirectory;
     private final Printer printerToUse;
     private final DoubleProperty taskProgress = new SimpleDoubleProperty(0);
 
     public PostProcessorTask(
             String printJobUUID,
-            PrintableMeshes printableMeshes,
+            PrintableEntity printableEntity,
             Printer printerToUse)
     {
         this.printJobUUID = printJobUUID;
-        this.printableMeshes = printableMeshes;
+        this.printableEntity = printableEntity;
         this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID + File.separator;
         this.printerToUse = printerToUse;
         updateTitle("Post Processor");
@@ -67,12 +73,23 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                     {
                         updateProgress(newValue.doubleValue(), 100.0);
                     });
-            postProcessingResult = doPostProcessing(
-                    printJobUUID,
-                    printableMeshes,
-                    printJobDirectory,
-                    printerToUse,
-                    taskProgress);
+            if (printableEntity instanceof PrintableMeshes)
+            {
+                postProcessingResult = doPostProcessing(
+                        printJobUUID,
+                        (PrintableMeshes) printableEntity,
+                        printJobDirectory,
+                        printerToUse,
+                        taskProgress);
+            } else if (printableEntity instanceof PrintableShapes)
+            {
+                postProcessingResult = doPostProcessing(
+                        printJobUUID,
+                        (PrintableShapes) printableEntity,
+                        printJobDirectory,
+                        printerToUse,
+                        taskProgress);
+            }
         } catch (Exception ex)
         {
             ex.printStackTrace();
@@ -118,10 +135,10 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 || printer.headProperty().get() == null)
         {
             headFileToUse = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
-                ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
-                ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
-                ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
-                ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
+            ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
+            ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+            ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
+            ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
         } else
         {
             headFileToUse = HeadContainer.getHeadByID(printer.headProperty().get().typeCodeProperty().get());
@@ -146,15 +163,15 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
         headFileToUse.getNozzles().get(0).getAssociatedExtruder();
         for (int extruderForModel : printableMeshes.getExtruderForModel())
         {
-                Optional<Integer> nozzleForExtruder = headFileToUse.getNozzleNumberForExtruderNumber(extruderForModel);
-                if (nozzleForExtruder.isPresent())
-                {
-                    objectToNozzleNumberMap.put(objectIndex, nozzleForExtruder.get());
-                } else
-                {
-                    steno.warning("Couldn't get extruder number for object " + objectIndex);
-                }
-                objectIndex++;
+            Optional<Integer> nozzleForExtruder = headFileToUse.getNozzleNumberForExtruderNumber(extruderForModel);
+            if (nozzleForExtruder.isPresent())
+            {
+                objectToNozzleNumberMap.put(objectIndex, nozzleForExtruder.get());
+            } else
+            {
+                steno.warning("Couldn't get extruder number for object " + objectIndex);
+            }
+            objectIndex++;
         }
         PostProcessor postProcessor = new PostProcessor(
                 printJobUUID,
@@ -179,6 +196,30 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             roboxiserResult.getPrintJobStatistics().writeToFile(printJob.getStatisticsFileLocation());
             postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printer, roboxiserResult);
         }
+
+        return postProcessingResult;
+    }
+
+    public static GCodePostProcessingResult doPostProcessing(
+            String printJobUUID,
+            PrintableShapes printableShapes,
+            String printJobDirectory,
+            Printer printer,
+            DoubleProperty taskProgress) throws IOException
+    {
+        PrintJob printJob = PrintJob.readJobFromDirectory(printJobUUID, printJobDirectory);
+        String gcodeOutputFile = printJob.getRoboxisedFileLocation();
+        RoboxiserResult roboxiserResult = new RoboxiserResult();
+        roboxiserResult.setSuccess(true);
+        GCodePostProcessingResult postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printer, roboxiserResult);
+
+        List<GCodeEventNode> gcodeData = PrintableShapesToGCode.parsePrintableShapes(printableShapes);
+        DragKnifeCompensator dnc = new DragKnifeCompensator();
+        List<GCodeEventNode> dragKnifeCompensatedGCodeNodes = dnc.doCompensation(gcodeData,
+                printableShapes.getStylusSettings().getBladeOffset(),
+                printableShapes.getStylusSettings().getCuttingPasses(),
+                printableShapes.getStylusSettings().getMaterialThickness());
+        PrintableShapesToGCode.writeGCodeToFile(gcodeOutputFile, dragKnifeCompensatedGCodeNodes);
 
         return postProcessingResult;
     }

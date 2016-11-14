@@ -12,22 +12,17 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  *
  * @author ianhudson
  */
-public class PrintableMeshes
+public class PrintableMeshes extends PrintableEntity
 {
 
     private final List<MeshForProcessing> meshesForProcessing;
     private final List<Boolean> usedExtruders;
     private final List<Integer> extruderForModel;
-    private final String projectName;
-    private final String requiredPrintJobID;
     private final SlicerParametersFile settings;
     private final PrinterSettingsOverrides printOverrides;
     private final PrintQualityEnumeration printQuality;
     private final SlicerType defaultSlicerType;
     private final Vector3D centreOfPrintedObject;
-    private final boolean safetyFeaturesRequired;
-    private final boolean cameraEnabled;
-    private final CameraTriggerData cameraTriggerData;
 
     public PrintableMeshes(List<MeshForProcessing> meshesForProcessing,
             List<Boolean> usedExtruders,
@@ -43,19 +38,15 @@ public class PrintableMeshes
             boolean cameraEnabled,
             CameraTriggerData cameraTriggerData)
     {
+        super(projectName, requiredPrintJobID, safetyFeaturesRequired, cameraEnabled, cameraTriggerData);
         this.meshesForProcessing = meshesForProcessing;
         this.usedExtruders = usedExtruders;
         this.extruderForModel = extruderForModel;
-        this.projectName = projectName;
-        this.requiredPrintJobID = requiredPrintJobID;
         this.settings = settings;
         this.printOverrides = printOverrides;
         this.printQuality = printQuality;
         this.defaultSlicerType = defaultSlicerType;
         this.centreOfPrintedObject = centreOfPrintedObject;
-        this.safetyFeaturesRequired = safetyFeaturesRequired;
-        this.cameraEnabled = cameraEnabled;
-        this.cameraTriggerData = cameraTriggerData;
     }
 
     public List<MeshForProcessing> getMeshesForProcessing()
@@ -71,16 +62,6 @@ public class PrintableMeshes
     public List<Integer> getExtruderForModel()
     {
         return extruderForModel;
-    }
-
-    public String getProjectName()
-    {
-        return projectName;
-    }
-
-    public String getRequiredPrintJobID()
-    {
-        return requiredPrintJobID;
     }
 
     public SlicerParametersFile getSettings()
@@ -106,20 +87,5 @@ public class PrintableMeshes
     public Vector3D getCentreOfPrintedObject()
     {
         return centreOfPrintedObject;
-    }
-
-    public boolean isSafetyFeaturesRequired()
-    {
-        return safetyFeaturesRequired;
-    }
-
-    public boolean isCameraEnabled()
-    {
-        return cameraEnabled;
-    }
-
-    public CameraTriggerData getCameraTriggerData()
-    {
-        return cameraTriggerData;
     }
 }

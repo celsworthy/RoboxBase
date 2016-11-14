@@ -83,7 +83,7 @@ public class DragKnifeCompensatorTest
         double forwards_value = 2.0;
         List<GCodeEventNode> expResult = null;
         DragKnifeCompensator dnc = new DragKnifeCompensator();
-        List<GCodeEventNode> result = dnc.doCompensation(uncompensatedParts, forwards_value);
+        List<GCodeEventNode> result = dnc.doCompensation(uncompensatedParts, forwards_value, 1, 1);
 
         result.forEach(node ->
         {

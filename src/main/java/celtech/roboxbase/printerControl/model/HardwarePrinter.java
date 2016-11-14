@@ -89,6 +89,7 @@ import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.models.PrintableShapes;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
@@ -1906,6 +1907,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 outputBuffer.delete(0, bufferSize);
             }
         }
+    }
+    
+    @Override
+    public void printShapes(PrintableShapes printableShapes)
+    {
+        printEngine.printProject(printableShapes);
     }
 
     /**

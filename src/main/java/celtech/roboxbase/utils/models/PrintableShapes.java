@@ -1,24 +1,28 @@
+
 package celtech.roboxbase.utils.models;
 
+import celtech.roboxbase.configuration.fileRepresentation.StylusSettings;
 import java.util.List;
 
 /**
  *
  * @author Ian
  */
-public class PrintableShapes
+public class PrintableShapes extends PrintableEntity
 {
+
     private final List<ShapeForProcessing> shapesForProcessing;
-    private final String projectName;
-    private final String requiredPrintJobID;
+    private final StylusSettings stylusSettings;
 
     public PrintableShapes(List<ShapeForProcessing> shapesForProcessing,
             String projectName,
-            String requiredPrintJobID)
+            String requiredPrintJobID,
+            boolean safetyFeaturesRequired,
+            StylusSettings stylusSettings)
     {
+        super(projectName, requiredPrintJobID, safetyFeaturesRequired, false, null);
         this.shapesForProcessing = shapesForProcessing;
-        this.projectName = projectName;
-        this.requiredPrintJobID = requiredPrintJobID;
+        this.stylusSettings = stylusSettings;
     }
 
     public List<ShapeForProcessing> getShapesForProcessing()
@@ -26,13 +30,8 @@ public class PrintableShapes
         return shapesForProcessing;
     }
 
-    public String getProjectName()
+    public StylusSettings getStylusSettings()
     {
-        return projectName;
-    }
-
-    public String getRequiredPrintJobID()
-    {
-        return requiredPrintJobID;
+        return stylusSettings;
     }
 }

@@ -34,6 +34,8 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.models.PrintableEntity;
+import celtech.roboxbase.utils.models.PrintableShapes;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -202,7 +204,7 @@ public class PrintEngine implements ControllableService
                         result.getPrintJobUUID());
                 postProcessorService.setPrinterToUse(
                         result.getPrinterToUse());
-                postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
+                postProcessorService.setPrintableEntity(result.getPrintableMeshes());
                 postProcessorService.start();
 
                 if (raiseProgressNotifications)
@@ -266,11 +268,14 @@ public class PrintEngine implements ControllableService
                 PrintJobStatistics printJobStatistics = result.getRoboxiserResult().
                         getPrintJobStatistics();
 
-                makeETCCalculator(printJobStatistics, associatedPrinter);
-
-                if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+                if (printJobStatistics != null)
                 {
-                    ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
+                    makeETCCalculator(printJobStatistics, associatedPrinter);
+
+                    if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+                    {
+                        ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
+                    }
                 }
 
                 transferGCodeToPrinterService.reset();
@@ -534,28 +539,28 @@ public class PrintEngine implements ControllableService
         stopAllServices();
     }
 
-    public synchronized boolean printProject(PrintableMeshes printableMeshes)
+    public synchronized boolean printProject(PrintableEntity printableEntity)
     {
         boolean acceptedPrintRequest = false;
         canDisconnectDuringPrint = true;
         etcAvailable.set(false);
 
-        cameraIsEnabled = printableMeshes.isCameraEnabled();
+        cameraIsEnabled = printableEntity.isCameraEnabled();
 
         if (cameraIsEnabled)
         {
-            cameraTriggerManager.setTriggerData(printableMeshes.getCameraTriggerData());
-            cameraTriggerData = printableMeshes.getCameraTriggerData();
+            cameraTriggerManager.setTriggerData(printableEntity.getCameraTriggerData());
+            cameraTriggerData = printableEntity.getCameraTriggerData();
         }
 
         if (associatedPrinter.printerStatusProperty().get() == PrinterStatus.IDLE)
         {
             boolean printFromScratchRequired = false;
 
-            if (printableMeshes.getRequiredPrintJobID() != null
-                    && !printableMeshes.getRequiredPrintJobID().equals(""))
+            if (printableEntity.getRequiredPrintJobID() != null
+                    && !printableEntity.getRequiredPrintJobID().equals(""))
             {
-                String jobUUID = printableMeshes.getRequiredPrintJobID();
+                String jobUUID = printableEntity.getRequiredPrintJobID();
                 PrintJob printJob = PrintJob.readJobFromDirectory(jobUUID);
 
                 //Reprint the last job
@@ -604,17 +609,15 @@ public class PrintEngine implements ControllableService
 
             if (printFromScratchRequired)
             {
-                acceptedPrintRequest = printFromScratch(acceptedPrintRequest, printableMeshes);
+                acceptedPrintRequest = printFromScratch(acceptedPrintRequest, printableEntity);
             }
         }
 
         return acceptedPrintRequest;
     }
 
-    private boolean printFromScratch(boolean acceptedPrintRequest, PrintableMeshes printableMeshes)
+    private boolean printFromScratch(boolean acceptedPrintRequest, PrintableEntity printableEntity)
     {
-        SlicerParametersFile settingsToUse = printableMeshes.getSettings().clone();
-
         //Create the print job directory
         String printUUID = SystemUtils.generate16DigitID();
         String printJobDirectoryName = BaseConfiguration.
@@ -637,6 +640,31 @@ public class PrintEngine implements ControllableService
             }
         }
 
+        if (printableEntity instanceof PrintableMeshes)
+        {
+            PrintableMeshes actualMeshesToPrint = generateSlicerConfiguration((PrintableMeshes) printableEntity, printJobDirectoryName, printUUID);
+            slicerService.reset();
+            slicerService.setPrintJobUUID(printUUID);
+            slicerService.setPrinterToUse(associatedPrinter);
+            slicerService.setPrintableMeshes(actualMeshesToPrint);
+            slicerService.start();
+        } else if (printableEntity instanceof PrintableShapes)
+        {
+            postProcessorService.reset();
+            postProcessorService.setPrintJobUUID(printUUID);
+            postProcessorService.setPrinterToUse(associatedPrinter);
+            postProcessorService.setPrintableEntity(printableEntity);
+            postProcessorService.start();
+        }
+
+        acceptedPrintRequest = true;
+
+        return acceptedPrintRequest;
+    }
+
+    private PrintableMeshes generateSlicerConfiguration(PrintableMeshes printableMeshes, String printJobDirectoryName, String printUUID)
+    {
+        SlicerParametersFile settingsToUse = printableMeshes.getSettings().clone();
         //Write out the slicer config
         SlicerType slicerTypeToUse = null;
         if (settingsToUse.getSlicerOverride() != null)
@@ -646,10 +674,8 @@ public class PrintEngine implements ControllableService
         {
             slicerTypeToUse = printableMeshes.getDefaultSlicerType();
         }
-
         SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
                 slicerTypeToUse);
-
         //TODO material-dependent profiles
         // This is a hack to force the fan speed to 100% when using PLA
         if (associatedPrinter.reelsProperty().containsKey(0))
@@ -663,7 +689,6 @@ public class PrintEngine implements ControllableService
                 settingsToUse.setMaxFanSpeed_percent(100);
             }
         }
-
         if (associatedPrinter.reelsProperty().containsKey(1))
         {
             if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA
@@ -676,7 +701,6 @@ public class PrintEngine implements ControllableService
             }
         }
         // End of hack
-
         // Hack to change raft related settings for Draft ABS prints
         if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.DRAFT
                 && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
@@ -688,7 +712,6 @@ public class PrintEngine implements ControllableService
             settingsToUse.setRaftAirGapLayer0_mm(0.285f);
             settingsToUse.setInterfaceLayers(1);
         }
-
         if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.NORMAL
                 && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
                 && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
@@ -698,7 +721,6 @@ public class PrintEngine implements ControllableService
             settingsToUse.setRaftAirGapLayer0_mm(0.4f);
         }
         // End of hack
-
         // Overwrite the settings 
         PrintableMeshes actualMeshesToPrint = new PrintableMeshes(
                 printableMeshes.getMeshesForProcessing(),
@@ -714,7 +736,6 @@ public class PrintEngine implements ControllableService
                 printableMeshes.isSafetyFeaturesRequired(),
                 printableMeshes.isCameraEnabled(),
                 printableMeshes.getCameraTriggerData());
-
         configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
                 (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
         configWriter.generateConfigForSlicer(settingsToUse,
@@ -722,17 +743,7 @@ public class PrintEngine implements ControllableService
                 + File.separator
                 + printUUID
                 + BaseConfiguration.printProfileFileExtension);
-
-        slicerService.reset();
-        slicerService.setPrintJobUUID(printUUID);
-        slicerService.setPrinterToUse(associatedPrinter);
-        slicerService.setPrintableMeshes(actualMeshesToPrint);
-        slicerService.start();
-
-        // Do we need to slice?
-        acceptedPrintRequest = true;
-
-        return acceptedPrintRequest;
+        return actualMeshesToPrint;
     }
 
     private boolean reprintFileFromDisk(PrintJob printJob, int startFromLineNumber)

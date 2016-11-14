@@ -656,6 +656,21 @@ public class DummyPrinterCommandInterface extends CommandInterface
             HeadEEPROMDataResponse headResponse = (HeadEEPROMDataResponse) RoboxRxPacketFactory.
                     createPacket(RxPacketTypeEnum.HEAD_EEPROM_DATA);
 
+            float maxTemp = 0;
+            float beta = 0;
+            float tcal = 0;
+            float lastFilamentTemp = 0;
+            String filamentID = "";
+
+            if (attachedHead.getNozzleHeaters().size() > 0)
+            {
+                maxTemp = attachedHead.getNozzleHeaters().get(0).maximumTemperatureProperty().get();
+                beta = attachedHead.getNozzleHeaters().get(0).betaProperty().get();
+                tcal = attachedHead.getNozzleHeaters().get(0).tCalProperty().get();
+                lastFilamentTemp = attachedHead.getNozzleHeaters().get(0).lastFilamentTemperatureProperty().get();
+                filamentID = attachedHead.getNozzleHeaters().get(0).filamentIDProperty().get();
+            }
+            
             String filamentID1 = "";
             float lastFilamentTemp1 = 0;
 
@@ -663,6 +678,19 @@ public class DummyPrinterCommandInterface extends CommandInterface
             {
                 filamentID1 = attachedHead.getNozzleHeaters().get(1).filamentIDProperty().get();
                 lastFilamentTemp1 = attachedHead.getNozzleHeaters().get(1).lastFilamentTemperatureProperty().get();
+            }
+
+            float nozzle0XOffset = 0;
+            float nozzle0YOffset = 0;
+            float nozzle0ZOffset = 0;
+            float nozzle0BOffset = 0;
+
+            if (attachedHead.getNozzles().size() > 0)
+            {
+                nozzle0XOffset = attachedHead.getNozzles().get(0).xOffsetProperty().get();
+                nozzle0YOffset = attachedHead.getNozzles().get(0).yOffsetProperty().get();
+                nozzle0ZOffset = attachedHead.getNozzles().get(0).zOffsetProperty().get();
+                nozzle0BOffset = attachedHead.getNozzles().get(0).bOffsetProperty().get();
             }
 
             float nozzle1XOffset = 0;
@@ -681,19 +709,19 @@ public class DummyPrinterCommandInterface extends CommandInterface
             headResponse.updateContents(attachedHead.typeCodeProperty().get(),
                     attachedHead.uniqueIDProperty().get(),
                     attachedHead.getNozzleHeaters().size(),
-                    attachedHead.getNozzleHeaters().get(0).maximumTemperatureProperty().get(),
-                    attachedHead.getNozzleHeaters().get(0).betaProperty().get(),
-                    attachedHead.getNozzleHeaters().get(0).tCalProperty().get(),
-                    attachedHead.getNozzleHeaters().get(0).lastFilamentTemperatureProperty().get(),
-                    attachedHead.getNozzleHeaters().get(0).filamentIDProperty().get(),
+                    maxTemp,
+                    beta,
+                    tcal,
+                    lastFilamentTemp,
+                    filamentID,
                     lastFilamentTemp1,
                     filamentID1,
                     attachedHead.headHoursProperty().get(),
                     attachedHead.getNozzles().size(),
-                    attachedHead.getNozzles().get(0).xOffsetProperty().get(),
-                    attachedHead.getNozzles().get(0).yOffsetProperty().get(),
-                    attachedHead.getNozzles().get(0).zOffsetProperty().get(),
-                    attachedHead.getNozzles().get(0).bOffsetProperty().get(),
+                    nozzle0XOffset,
+                    nozzle0YOffset,
+                    nozzle0ZOffset,
+                    nozzle0BOffset,
                     nozzle1XOffset,
                     nozzle1YOffset,
                     nozzle1ZOffset,

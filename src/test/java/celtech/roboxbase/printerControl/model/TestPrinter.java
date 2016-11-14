@@ -34,6 +34,7 @@ import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
 import celtech.roboxbase.utils.RectangularBounds;
+import celtech.roboxbase.utils.models.PrintableShapes;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
 import java.util.List;
@@ -1161,6 +1162,12 @@ public class TestPrinter implements Printer
 
     @Override
     public void clearAllErrors()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void printShapes(PrintableShapes printableShapes)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

@@ -23,7 +23,7 @@ public class DragKnifeCompensator
 
     private final Stenographer steno = StenographerFactory.getStenographer(DragKnifeCompensator.class.getName());
 
-    public List<GCodeEventNode> doCompensation(List<GCodeEventNode> uncompensatedParts, double forwards_value)
+    public List<GCodeEventNode> doCompensation(List<GCodeEventNode> uncompensatedParts, double forwards_value, int passes, float materialThickness)
     {
         List<GCodeEventNode> compensatedParts = new ArrayList();
 
@@ -89,7 +89,7 @@ public class DragKnifeCompensator
                             //Move the travel to the new start
                             //Inject a 180 degree arc towards the start point
                             Vector2D originalStartOfCut = ((MovementProvider) lastUncompensatedPart).getMovement().toVector2D();
-                            
+
                             Vector2D newStartOfCut = ((MovementProvider) lastCompensatedPart).getMovement().toVector2D().subtract(shiftVector);
                             ((MovementProvider) lastCompensatedPart).getMovement().setX(newStartOfCut.getX());
                             ((MovementProvider) lastCompensatedPart).getMovement().setY(newStartOfCut.getY());
@@ -110,7 +110,20 @@ public class DragKnifeCompensator
             }
         }
 
-        return addZMoves(compensatedParts);
+        List<GCodeEventNode> allParts = new ArrayList<>();
+        for (int passNumber = 1; passNumber <= passes; passNumber++)
+        {
+            float cutDepth = materialThickness - ((materialThickness / passes) * passNumber);
+            List<GCodeEventNode> passPartsWithZ = addZMoves(compensatedParts, cutDepth);
+            allParts.addAll(passPartsWithZ);
+            if (passNumber != passes)
+            {
+                allParts.add(new StylusLiftNode(SVGConverterConfiguration.getInstance().getTravelHeight()));
+                allParts.add(compensatedParts.get(0));
+            }
+        }
+
+        return allParts;
     }
 
     enum StylusPosition
@@ -122,9 +135,10 @@ public class DragKnifeCompensator
         SWIVEL
     }
 
-    private List<GCodeEventNode> addZMoves(List<GCodeEventNode> parts)
+    private List<GCodeEventNode> addZMoves(List<GCodeEventNode> parts, float cutDepth)
     {
         StylusPosition position = StylusPosition.UNKNOWN;
+        float swivelHeight = SVGConverterConfiguration.getInstance().getSwivelHeight() + cutDepth;
 
         List<GCodeEventNode> partsWithZMoves = new ArrayList<>();
 
@@ -136,11 +150,11 @@ public class DragKnifeCompensator
                 position = StylusPosition.TRAVEL;
             } else if (part instanceof StylusScribeNode && position != StylusPosition.CUT)
             {
-                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getContactHeight()));
+                partsWithZMoves.add(new StylusPlungeNode(cutDepth));
                 position = StylusPosition.CUT;
             } else if (part instanceof StylusSwivelNode && position != StylusPosition.SWIVEL)
             {
-                partsWithZMoves.add(new StylusPlungeNode(SVGConverterConfiguration.getInstance().getSwivelHeight()));
+                partsWithZMoves.add(new StylusPlungeNode(swivelHeight));
                 position = StylusPosition.SWIVEL;
             }
 
