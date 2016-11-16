@@ -13,10 +13,10 @@ public class StylusSettings
     }
     
     private StylusType stylusType = null;
-    private float penThickness = 0;
-    private float materialThickness = 0;
-    private float bladeOffset = 0;
-    private int cuttingPasses = 0;
+    private float penThickness = 0.2f;
+    private float materialThickness = 0.1f;
+    private float bladeOffset = 0.2f;
+    private int cuttingPasses = 1;
 
     public StylusType getStylusType()
     {
