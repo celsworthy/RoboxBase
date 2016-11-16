@@ -1781,7 +1781,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         ListFiles listFiles = (ListFiles) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.LIST_FILES);
-        
+
         //We don't want the result of this to be published
         return (ListFilesResponse) commandInterface.writeToPrinter(listFiles, true);
     }
@@ -2935,6 +2935,21 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         WriteHeadEEPROM writeHeadEEPROM = (WriteHeadEEPROM) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.WRITE_HEAD_EEPROM);
 
+        String filamentID0 = "";
+        float lastFilamentTemp0 = 0;
+        float beta = 0;
+        float tcal = 0;
+        float maxHeadTemp = 0;
+
+        if (headToWrite.getNozzleHeaters().size() > 0)
+        {
+            filamentID0 = headToWrite.getNozzleHeaters().get(0).filamentIDProperty().get();
+            lastFilamentTemp0 = headToWrite.getNozzleHeaters().get(0).lastFilamentTemperatureProperty().get();
+            beta = headToWrite.getNozzleHeaters().get(0).betaProperty().get();
+            tcal = headToWrite.getNozzleHeaters().get(0).tCalProperty().get();
+            maxHeadTemp = headToWrite.getNozzleHeaters().get(0).maximumTemperatureProperty().get();
+        }
+
         String filamentID1 = "";
         float lastFilamentTemp1 = 0;
 
@@ -2942,6 +2957,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         {
             filamentID1 = headToWrite.getNozzleHeaters().get(1).filamentIDProperty().get();
             lastFilamentTemp1 = headToWrite.getNozzleHeaters().get(1).lastFilamentTemperatureProperty().get();
+        }
+
+        float nozzle0XOffset = 0;
+        float nozzle0YOffset = 0;
+        float nozzle0ZOffset = 0;
+        float nozzle0BOffset = 0;
+
+        if (headToWrite.getNozzles().size() > 0)
+        {
+            nozzle0XOffset = headToWrite.getNozzles().get(0).xOffsetProperty().get();
+            nozzle0YOffset = headToWrite.getNozzles().get(0).yOffsetProperty().get();
+            nozzle0ZOffset = headToWrite.getNozzles().get(0).zOffsetProperty().get();
+            nozzle0BOffset = headToWrite.getNozzles().get(0).bOffsetProperty().get();
         }
 
         float nozzle1XOffset = 0;
@@ -2960,19 +2988,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         writeHeadEEPROM.populateEEPROM(headToWrite.typeCodeProperty().get(),
                 headToWrite.uniqueIDProperty().get(),
                 headToWrite.getNozzleHeaters().size(),
-                headToWrite.getNozzleHeaters().get(0).maximumTemperatureProperty().get(),
-                headToWrite.getNozzleHeaters().get(0).betaProperty().get(),
-                headToWrite.getNozzleHeaters().get(0).tCalProperty().get(),
-                headToWrite.getNozzleHeaters().get(0).lastFilamentTemperatureProperty().get(),
-                headToWrite.getNozzleHeaters().get(0).filamentIDProperty().get(),
+                maxHeadTemp,
+                beta,
+                tcal,
+                lastFilamentTemp0,
+                filamentID0,
                 lastFilamentTemp1,
                 filamentID1,
                 headToWrite.headHoursProperty().get(),
                 headToWrite.getNozzles().size(),
-                headToWrite.getNozzles().get(0).xOffsetProperty().get(),
-                headToWrite.getNozzles().get(0).yOffsetProperty().get(),
-                headToWrite.getNozzles().get(0).zOffsetProperty().get(),
-                headToWrite.getNozzles().get(0).bOffsetProperty().get(),
+                nozzle0XOffset,
+                nozzle0YOffset,
+                nozzle0ZOffset,
+                nozzle0BOffset,
                 nozzle1XOffset,
                 nozzle1YOffset,
                 nozzle1ZOffset,
