@@ -186,7 +186,7 @@ public class PostProcessor
         OutputUtilities outputUtilities = new OutputUtilities();
 
         timeUtils.timerStart(this, "PostProcessor");
-        steno.info("Beginning post-processing operation");
+        steno.debug("Beginning post-processing operation");
 
         //Cura has line delineators like this ';LAYER:1'
         try
@@ -412,7 +412,7 @@ public class PostProcessor
             outputPostProcessingTimerReport();
 
             timeUtils.timerStop(this, "PostProcessor");
-            steno.info("Post-processing took " + timeUtils.timeTimeSoFar_ms(this, "PostProcessor") + "ms");
+            steno.debug("Post-processing took " + timeUtils.timeTimeSoFar_ms(this, "PostProcessor") + "ms");
 
             if (verificationResults.size() > 0)
             {
@@ -473,7 +473,7 @@ public class PostProcessor
                 }
             }
         }
-        steno.info("About to exit post processor with result " + result.isSuccess());
+        steno.debug("About to exit post processor with result " + result.isSuccess());
 
         return result;
     }
@@ -658,9 +658,9 @@ public class PostProcessor
         steno.debug(assignExtrusionTimerName + " " + timeUtils.timeTimeSoFar_ms(this, assignExtrusionTimerName));
         steno.debug(layerResultTimerName + " " + timeUtils.timeTimeSoFar_ms(this, layerResultTimerName));
         steno.debug(parseLayerTimerName + " " + timeUtils.timeTimeSoFar_ms(this, parseLayerTimerName));
-        steno.info(timeAndVolumeCalcTimerName + " " + timeUtils.timeTimeSoFar_ms(this, timeAndVolumeCalcTimerName));
-        steno.info(heaterSaverTimerName + " " + timeUtils.timeTimeSoFar_ms(this, heaterSaverTimerName));
-        steno.info(outputVerifierTimerName + " " + timeUtils.timeTimeSoFar_ms(this, outputVerifierTimerName));
+        steno.debug(timeAndVolumeCalcTimerName + " " + timeUtils.timeTimeSoFar_ms(this, timeAndVolumeCalcTimerName));
+        steno.debug(heaterSaverTimerName + " " + timeUtils.timeTimeSoFar_ms(this, heaterSaverTimerName));
+        steno.debug(outputVerifierTimerName + " " + timeUtils.timeTimeSoFar_ms(this, outputVerifierTimerName));
         steno.debug(writeOutputTimerName + " " + timeUtils.timeTimeSoFar_ms(this, writeOutputTimerName));
         steno.debug("============");
     }
