@@ -183,7 +183,7 @@ public class WriteHeadEEPROM extends RoboxTxPacket
                     nozzle1ZOffsetIn,
                     nozzle1BOffsetIn,
                     filamentIDA,
-                    null,
+                    filamentIDB,
                     0,
                     0,
                     0,
