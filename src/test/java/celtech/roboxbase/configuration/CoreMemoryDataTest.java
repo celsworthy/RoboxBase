@@ -17,8 +17,7 @@ import static org.junit.Assert.*;
 public class CoreMemoryDataTest
 {
     private static final ObjectMapper mapper = new ObjectMapper();
-//    private static final String jsonifiedClass = "{\"lastPrinterSerial\":\"ABC\",\"lastPrinterFirmwareVersion\":5.0,\"activeRoboxRoots\":[{\"address\":\"localhost\",\"name\":\"test\",\"version\":\"ABC\",\"pin\":\"1111\"}]}"; 
-    private static final String jsonifiedClass = "{\"lastPrinterSerial\":\"ABC\",\"lastPrinterFirmwareVersion\":5.0,\"activeRoboxRoots\":[{\"address\":\"localhost\",\"pin\":\"1111\"}]}"; 
+    private static final String jsonifiedClass = "{\"lastPrinterSerial\":\"ABC\",\"lastPrinterFirmwareVersion\":5.0,\"activeRoboxRoots\":[{\"address\":\"localhost\",\"name\":\"test\",\"version\":\"ABC\",\"pin\":\"1111\"}]}";
 
     public CoreMemoryDataTest()
     {
@@ -68,7 +67,6 @@ public class CoreMemoryDataTest
             assertEquals(data.getActiveRoboxRoots().get(0).getVersion(), dataDeSerialised.getActiveRoboxRoots().get(0).getVersion());
         } catch (Exception e)
         {
-            System.out.println(e.getCause().getMessage());
             fail();
         }
     }

@@ -15,7 +15,10 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -34,10 +37,13 @@ public final class DetectedServer
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
 
-    private final InetAddress address;
-    private StringProperty name = new SimpleStringProperty("");
-    private StringProperty version = new SimpleStringProperty("");
-    private StringProperty pin = new SimpleStringProperty("1111");
+    private InetAddress address;
+    private final StringProperty name = new SimpleStringProperty("");
+    private final StringProperty version = new SimpleStringProperty("");
+    private final StringProperty pin = new SimpleStringProperty("1111");
+
+    @JsonIgnore
+    private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
 
     @JsonIgnore
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -46,7 +52,7 @@ public final class DetectedServer
     private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.UNKNOWN);
 
     @JsonIgnore
-    private static final String defaultUser = "root";
+    public static final String defaultUser = "root";
 
     @JsonIgnore
     private static final String contentPage = "/rootMenu.html";
@@ -63,9 +69,6 @@ public final class DetectedServer
 
     public DetectedServer()
     {
-        this.address = null;
-        this.name = null;
-        this.version = null;
     }
 
     public DetectedServer(InetAddress address)
@@ -85,7 +88,16 @@ public final class DetectedServer
 
     public void setName(String name)
     {
-        this.name.set(name);
+        if (!name.equals(this.name))
+        {
+            this.name.set(name);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public StringProperty nameProperty()
+    {
+        return name;
     }
 
     public String getVersion()
@@ -95,7 +107,16 @@ public final class DetectedServer
 
     public void setVersion(String version)
     {
-        this.version.set(version);
+        if (!version.equals(this.version))
+        {
+            this.version.set(version);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public StringProperty versionProperty()
+    {
+        return version;
     }
 
     public ServerStatus getServerStatus()
@@ -103,12 +124,20 @@ public final class DetectedServer
         return serverStatus.get();
     }
 
-    @JsonIgnore
-    public ObjectProperty<ServerStatus> getServerStatusProperty()
+    public void setServerStatus(ServerStatus status)
+    {
+        if (status != serverStatus.get())
+        {
+            this.serverStatus.set(status);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public ObjectProperty<ServerStatus> serverStatusProperty()
     {
         return serverStatus;
     }
-
+    
     public String getPin()
     {
         return pin.get();
@@ -116,7 +145,21 @@ public final class DetectedServer
 
     public void setPin(String pin)
     {
-        this.pin.set(pin);
+        if (!pin.equals(this.pin))
+        {
+            this.pin.set(pin);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+    
+    public StringProperty pinProperty()
+    {
+        return pin;
+    }
+
+    public ReadOnlyBooleanProperty dataChangedProperty()
+    {
+        return dataChanged;
     }
 
     public void connect()
@@ -129,25 +172,25 @@ public final class DetectedServer
                 if (response == 200)
                 {
                     CoreMemory.getInstance().activateRoboxRoot(this);
-                    serverStatus.set(ServerStatus.OK);
+                    setServerStatus(ServerStatus.OK);
                 } else
                 {
-                    serverStatus.set(ServerStatus.NOT_THERE);
+                    setServerStatus(ServerStatus.NOT_THERE);
                 }
             } catch (IOException ex)
             {
-                serverStatus.set(ServerStatus.NOT_THERE);
+                setServerStatus(ServerStatus.NOT_THERE);
             }
         } else
         {
-            serverStatus.set(ServerStatus.WRONG_VERSION);
+            setServerStatus(ServerStatus.WRONG_VERSION);
         }
     }
 
     public void disconnect()
     {
         CoreMemory.getInstance().deactivateRoboxRoot(this);
-        serverStatus.set(ServerStatus.UNKNOWN);
+        setServerStatus(ServerStatus.UNKNOWN);
     }
 
     public boolean whoAmI()
@@ -186,13 +229,13 @@ public final class DetectedServer
                 }
             } else
             {
-                serverStatus.set(ServerStatus.NOT_THERE);
+                setServerStatus(ServerStatus.NOT_THERE);
                 steno.warning("No response from @ " + address.getHostAddress());
             }
         } catch (IOException ex)
         {
             steno.error("Error whilst asking who are you @ " + address.getHostAddress());
-            serverStatus.set(ServerStatus.NOT_THERE);
+            setServerStatus(ServerStatus.NOT_THERE);
         }
 
         return gotAResponse;
@@ -232,15 +275,15 @@ public final class DetectedServer
                     RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
                     detectedDevices.add(detectedPrinter);
                 });
-                serverStatus.set(ServerStatus.OK);
+                setServerStatus(ServerStatus.OK);
             } else
             {
-                serverStatus.set(ServerStatus.NOT_THERE);
+                setServerStatus(ServerStatus.NOT_THERE);
                 steno.warning("No response from @ " + address.getHostAddress());
             }
         } catch (IOException ex)
         {
-            serverStatus.set(ServerStatus.NOT_THERE);
+            setServerStatus(ServerStatus.NOT_THERE);
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);
         }
         return detectedDevices;
