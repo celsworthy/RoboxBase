@@ -30,103 +30,110 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public final class DetectedServer
 {
-    
+
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
-    
+
     private final InetAddress address;
     private StringProperty name = new SimpleStringProperty("");
     private StringProperty version = new SimpleStringProperty("");
     private StringProperty pin = new SimpleStringProperty("1111");
-    
+
     @JsonIgnore
     private static final ObjectMapper mapper = new ObjectMapper();
-    
+
     @JsonIgnore
     private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.UNKNOWN);
-    
+
     @JsonIgnore
     private static final String defaultUser = "root";
-    
+
     @JsonIgnore
     private static final String contentPage = "/rootMenu.html";
-    
+
     public enum ServerStatus
     {
-        
+
         UNKNOWN,
         FOUND,
         OK,
         NOT_THERE,
         WRONG_VERSION
     }
-    
+
     public DetectedServer()
     {
         this.address = null;
         this.name = null;
         this.version = null;
     }
-    
+
     public DetectedServer(InetAddress address)
     {
         this.address = address;
     }
-    
+
     public InetAddress getAddress()
     {
         return address;
     }
-    
+
     public String getName()
     {
         return name.get();
     }
-    
+
     public void setName(String name)
     {
         this.name.set(name);
     }
-    
+
     public String getVersion()
     {
         return version.get();
     }
-    
+
     public void setVersion(String version)
     {
         this.version.set(version);
     }
-    
+
     public ServerStatus getServerStatus()
     {
         return serverStatus.get();
     }
-    
+
     @JsonIgnore
     public ObjectProperty<ServerStatus> getServerStatusProperty()
     {
         return serverStatus;
     }
-    
+
     public String getPin()
     {
         return pin.get();
     }
-    
+
     public void setPin(String pin)
     {
         this.pin.set(pin);
     }
-    
+
     public void connect()
     {
         if (version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
         {
             try
             {
-                postData(contentPage);
-                CoreMemory.getInstance().activateRoboxRoot(this);
+                int response = postData(contentPage, null);
+                if (response == 200)
+                {
+                    CoreMemory.getInstance().activateRoboxRoot(this);
+                    serverStatus.set(ServerStatus.OK);
+                } else
+                {
+                    serverStatus.set(ServerStatus.NOT_THERE);
+                }
             } catch (IOException ex)
             {
                 serverStatus.set(ServerStatus.NOT_THERE);
@@ -136,20 +143,20 @@ public final class DetectedServer
             serverStatus.set(ServerStatus.WRONG_VERSION);
         }
     }
-    
+
     public void disconnect()
     {
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         serverStatus.set(ServerStatus.UNKNOWN);
     }
-    
+
     public boolean whoAmI()
     {
         boolean gotAResponse = false;
         WhoAreYouResponse response = null;
-        
+
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
-        
+
         try
         {
             URL obj = new URL(url);
@@ -160,17 +167,17 @@ public final class DetectedServer
 
             //add request header
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-            
+
             con.setConnectTimeout(5000);
             int responseCode = con.getResponseCode();
-            
+
             if (responseCode == 200)
             {
                 int availChars = con.getInputStream().available();
                 byte[] inputData = new byte[availChars];
                 con.getInputStream().read(inputData, 0, availChars);
                 response = mapper.readValue(inputData, WhoAreYouResponse.class);
-                
+
                 if (response != null)
                 {
                     gotAResponse = true;
@@ -187,16 +194,16 @@ public final class DetectedServer
             steno.error("Error whilst asking who are you @ " + address.getHostAddress());
             serverStatus.set(ServerStatus.NOT_THERE);
         }
-        
+
         return gotAResponse;
     }
-    
+
     public List<DetectedDevice> listAttachedPrinters()
     {
         List<DetectedDevice> detectedDevices = new ArrayList();
-        
+
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/listPrinters";
-        
+
         try
         {
             URL obj = new URL(url);
@@ -208,10 +215,10 @@ public final class DetectedServer
             //add request header
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-            
+
             con.setConnectTimeout(5000);
             int responseCode = con.getResponseCode();
-            
+
             if (responseCode == 200)
             {
                 int availChars = con.getInputStream().available();
@@ -238,25 +245,25 @@ public final class DetectedServer
         }
         return detectedDevices;
     }
-    
-    public void postData(String urlString) throws IOException
+
+    public void postRoboxPacket(String urlString) throws IOException
     {
-        postData(urlString, null, null);
+        postRoboxPacket(urlString, null, null);
     }
-    
-    public RoboxRxPacket postData(String urlString, String content, Class<?> expectedResponseClass) throws IOException
+
+    public RoboxRxPacket postRoboxPacket(String urlString, String content, Class<?> expectedResponseClass) throws IOException
     {
         Object returnvalue = null;
-        
+
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        
+
         con.setRequestMethod("POST");
 
         //add request header
         con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
         con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-        
+
         if (content != null)
         {
             con.setDoOutput(true);
@@ -264,10 +271,10 @@ public final class DetectedServer
             con.setRequestProperty("Content-Length", "" + content.length());
             con.getOutputStream().write(content.getBytes());
         }
-        
+
         con.setConnectTimeout(2000);
         int responseCode = con.getResponseCode();
-        
+
         if (responseCode == 200)
         {
             if (expectedResponseClass != null)
@@ -278,10 +285,36 @@ public final class DetectedServer
         {
             steno.warning("Got " + responseCode + " when trying " + urlString);
         }
-        
+
         return (RoboxRxPacket) returnvalue;
     }
-    
+
+    public int postData(String urlString, String content) throws IOException
+    {
+        Object returnvalue = null;
+
+        URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        con.setRequestMethod("POST");
+
+        //add request header
+        con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+        con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+        if (content != null)
+        {
+            con.setDoOutput(true);
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Content-Length", "" + content.length());
+            con.getOutputStream().write(content.getBytes());
+        }
+
+        con.setConnectTimeout(2000);
+
+        return con.getResponseCode();
+    }
+
     @Override
     public int hashCode()
     {
@@ -291,7 +324,7 @@ public final class DetectedServer
                 .append(version)
                 .toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj)
     {
@@ -303,7 +336,7 @@ public final class DetectedServer
         {
             return true;
         }
-        
+
         DetectedServer rhs = (DetectedServer) obj;
         return new EqualsBuilder()
                 .append(address, rhs.address)
@@ -311,7 +344,7 @@ public final class DetectedServer
                 .append(version, rhs.version)
                 .isEquals();
     }
-    
+
     @Override
     public String toString()
     {

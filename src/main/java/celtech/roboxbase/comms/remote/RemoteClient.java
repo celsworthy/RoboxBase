@@ -43,7 +43,7 @@ public class RemoteClient implements LowLevelInterface
         boolean success = false;
         try
         {
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(connectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(connectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to connect to remote printer " + remotePrinterHandle);
@@ -57,7 +57,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(disconnectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(disconnectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to disconnect from remote printer " + remotePrinterHandle);
@@ -73,7 +73,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
-            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postData(writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);
@@ -88,7 +88,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(statistics);
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(associateStatisticsUrlString, dataToOutput, RoboxRxPacket.class);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(associateStatisticsUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to associate statistics on remote printer for job (" + statistics.getPrintJobID() + ") " + remotePrinterHandle);
