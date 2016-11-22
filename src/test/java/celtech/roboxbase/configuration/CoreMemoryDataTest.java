@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 public class CoreMemoryDataTest
 {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String jsonifiedClass = "{\"lastPrinterSerial\":\"ABC\",\"lastPrinterFirmwareVersion\":5.0,\"activeRoboxRoots\":[{\"address\":\"localhost\",\"name\":\"test\",\"version\":\"ABC\"}]}";
+    private static final String jsonifiedClass = "{\"lastPrinterSerial\":\"ABC\",\"lastPrinterFirmwareVersion\":5.0,\"activeRoboxRoots\":[{\"address\":\"localhost\",\"name\":\"test\",\"version\":\"ABC\",\"pin\":\"1111\"}]}"; 
 
     public CoreMemoryDataTest()
     {

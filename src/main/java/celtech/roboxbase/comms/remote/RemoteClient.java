@@ -30,11 +30,11 @@ public class RemoteClient implements LowLevelInterface
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
     {
         this.remotePrinterHandle = remotePrinterHandle;
-        baseUrlString = "http://" + remotePrinterHandle.getServerPrinterIsAttachedTo().getAddress().getHostAddress() + ":" + Configuration.remotePort + "/api";
-        connectUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.connectService;
-        disconnectUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.disconnectService;
-        writeToPrinterUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.writeDataService;
-        associateStatisticsUrlString = baseUrlString + "/" + remotePrinterHandle.getConnectionHandle() + Configuration.lowLevelAPIService + Configuration.associateStatisticsService;
+        baseUrlString = "/api";
+        connectUrlString = Configuration.lowLevelAPIService + Configuration.connectService;
+        disconnectUrlString = Configuration.lowLevelAPIService + Configuration.disconnectService;
+        writeToPrinterUrlString = Configuration.lowLevelAPIService + Configuration.writeDataService;
+        associateStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.associateStatisticsService;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RemoteClient implements LowLevelInterface
         boolean success = false;
         try
         {
-            RemoteWebHelper.postData(connectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(connectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to connect to remote printer " + remotePrinterHandle);
@@ -57,7 +57,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            RemoteWebHelper.postData(disconnectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(disconnectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to disconnect from remote printer " + remotePrinterHandle);
@@ -73,7 +73,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
-            returnedPacket = RemoteWebHelper.postData(writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postData(writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);
@@ -88,7 +88,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(statistics);
-            RemoteWebHelper.postData(associateStatisticsUrlString, dataToOutput, RoboxRxPacket.class);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postData(associateStatisticsUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to associate statistics on remote printer for job (" + statistics.getPrintJobID() + ") " + remotePrinterHandle);
