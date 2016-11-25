@@ -95,8 +95,11 @@ public class CoreMemory
 
     public void activateRoboxRoot(DetectedServer server)
     {
-        coreMemoryData.getActiveRoboxRoots().add(server);
-        writeCoreMemory();
+        if (!coreMemoryData.getActiveRoboxRoots().contains(server))
+        {
+            coreMemoryData.getActiveRoboxRoots().add(server);
+            writeCoreMemory();
+        }
     }
 
     public void deactivateRoboxRoot(DetectedServer server)

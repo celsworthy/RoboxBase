@@ -198,24 +198,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     public void start()
     {
         BaseLookup.getTaskExecutor().runOnBackgroundThread(() ->
-        {
-            List<DetectedServer> rootsToInhibit = new ArrayList<>();
-            CoreMemory.getInstance().getActiveRoboxRoots().stream().forEach((server) ->
-            {
-                if (!server.whoAmI())
-                {
-                    rootsToInhibit.add(server);
-                } else
-                {
-                    server.connect();
-                }
-            });
-
-            rootsToInhibit.forEach(server ->
-            {
-                CoreMemory.getInstance().deactivateRoboxRoot(server);
-            });
-            
+        {   
             if (!remotePrinterDetector.isAlive() && searchForRemotePrinters)
             {
                 remotePrinterDetector.start();

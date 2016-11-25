@@ -20,7 +20,7 @@ public class RemoteClient implements LowLevelInterface
     private final Stenographer steno = StenographerFactory.getStenographer(RemoteClient.class.getName());
     private final RemoteDetectedPrinter remotePrinterHandle;
 
-    private final String baseUrlString;
+    private final String baseAPIString;
     private final String connectUrlString;
     private final String disconnectUrlString;
     private final String writeToPrinterUrlString;
@@ -30,11 +30,11 @@ public class RemoteClient implements LowLevelInterface
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
     {
         this.remotePrinterHandle = remotePrinterHandle;
-        baseUrlString = "/api";
+        baseAPIString = "/api";
         connectUrlString = Configuration.lowLevelAPIService + Configuration.connectService;
         disconnectUrlString = Configuration.lowLevelAPIService + Configuration.disconnectService;
         writeToPrinterUrlString = Configuration.lowLevelAPIService + Configuration.writeDataService;
-        associateStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.associateStatisticsService;
+        associateStatisticsUrlString = baseAPIString + Configuration.lowLevelAPIService + Configuration.associateStatisticsService;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RemoteClient implements LowLevelInterface
         boolean success = false;
         try
         {
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(connectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + connectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to connect to remote printer " + remotePrinterHandle);
@@ -57,7 +57,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(disconnectUrlString);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + disconnectUrlString);
         } catch (IOException ex)
         {
             steno.error("Failed to disconnect from remote printer " + remotePrinterHandle);
@@ -73,7 +73,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
-            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);

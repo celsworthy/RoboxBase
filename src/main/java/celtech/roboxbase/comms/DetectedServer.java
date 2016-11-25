@@ -49,22 +49,27 @@ public final class DetectedServer
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @JsonIgnore
-    private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.UNKNOWN);
+    private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.NOT_CONNECTED);
 
     @JsonIgnore
     public static final String defaultUser = "root";
 
     @JsonIgnore
     private static final String contentPage = "/rootMenu.html";
+    private static final String listPrintersCommand = "/api/discovery/listPrinters";
 
     public enum ServerStatus
     {
 
-        UNKNOWN,
-        FOUND,
-        OK,
-        NOT_THERE,
-        WRONG_VERSION
+        NOT_CONNECTED,
+        CONNECTED,
+        WRONG_VERSION,
+        WRONG_PIN;
+
+        private String getI18NString()
+        {
+            return "root." + name();
+        }
     }
 
     public DetectedServer()
@@ -126,8 +131,18 @@ public final class DetectedServer
 
     public void setServerStatus(ServerStatus status)
     {
+        steno.info("Updating status of server " + getName() + " to " + status.name());
         if (status != serverStatus.get())
         {
+            switch (status)
+            {
+                case CONNECTED:
+                    CoreMemory.getInstance().activateRoboxRoot(this);
+                    break;
+                default:
+                    CoreMemory.getInstance().deactivateRoboxRoot(this);
+                    break;
+            }
             this.serverStatus.set(status);
             dataChanged.set(!dataChanged.get());
         }
@@ -137,7 +152,7 @@ public final class DetectedServer
     {
         return serverStatus;
     }
-    
+
     public String getPin()
     {
         return pin.get();
@@ -151,7 +166,7 @@ public final class DetectedServer
             dataChanged.set(!dataChanged.get());
         }
     }
-    
+
     public StringProperty pinProperty()
     {
         return pin;
@@ -164,22 +179,25 @@ public final class DetectedServer
 
     public void connect()
     {
-        if (version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+        if (serverStatus.get() != ServerStatus.CONNECTED
+                && version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
         {
             try
             {
-                int response = postData(contentPage, null);
+                int response = getData(listPrintersCommand);
                 if (response == 200)
                 {
-                    CoreMemory.getInstance().activateRoboxRoot(this);
-                    setServerStatus(ServerStatus.OK);
+                    setServerStatus(ServerStatus.CONNECTED);
+                } else if (response == 401)
+                {
+                    setServerStatus(ServerStatus.WRONG_PIN);
                 } else
                 {
-                    setServerStatus(ServerStatus.NOT_THERE);
+                    setServerStatus(ServerStatus.NOT_CONNECTED);
                 }
             } catch (IOException ex)
             {
-                setServerStatus(ServerStatus.NOT_THERE);
+                setServerStatus(ServerStatus.NOT_CONNECTED);
             }
         } else
         {
@@ -189,8 +207,7 @@ public final class DetectedServer
 
     public void disconnect()
     {
-        CoreMemory.getInstance().deactivateRoboxRoot(this);
-        setServerStatus(ServerStatus.UNKNOWN);
+        setServerStatus(ServerStatus.NOT_CONNECTED);
     }
 
     public boolean whoAmI()
@@ -229,13 +246,13 @@ public final class DetectedServer
                 }
             } else
             {
-                setServerStatus(ServerStatus.NOT_THERE);
+                disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
             }
         } catch (IOException ex)
         {
             steno.error("Error whilst asking who are you @ " + address.getHostAddress());
-            setServerStatus(ServerStatus.NOT_THERE);
+            disconnect();
         }
 
         return gotAResponse;
@@ -245,7 +262,7 @@ public final class DetectedServer
     {
         List<DetectedDevice> detectedDevices = new ArrayList();
 
-        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/listPrinters";
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + listPrintersCommand;
 
         try
         {
@@ -275,15 +292,14 @@ public final class DetectedServer
                     RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
                     detectedDevices.add(detectedPrinter);
                 });
-                setServerStatus(ServerStatus.OK);
             } else
             {
-                setServerStatus(ServerStatus.NOT_THERE);
+                disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
             }
         } catch (IOException ex)
         {
-            setServerStatus(ServerStatus.NOT_THERE);
+            disconnect();
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);
         }
         return detectedDevices;
@@ -326,7 +342,8 @@ public final class DetectedServer
             }
         } else
         {
-            steno.warning("Got " + responseCode + " when trying " + urlString);
+            steno.error("Got " + responseCode + " when trying " + urlString);
+            disconnect();
         }
 
         return (RoboxRxPacket) returnvalue;
@@ -358,6 +375,24 @@ public final class DetectedServer
         return con.getResponseCode();
     }
 
+    public int getData(String urlString) throws IOException
+    {
+        Object returnvalue = null;
+
+        URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        con.setRequestMethod("GET");
+
+        //add request header
+        con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+        con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+        con.setConnectTimeout(2000);
+
+        return con.getResponseCode();
+    }
+
     @Override
     public int hashCode()
     {
@@ -383,8 +418,8 @@ public final class DetectedServer
         DetectedServer rhs = (DetectedServer) obj;
         return new EqualsBuilder()
                 .append(address, rhs.address)
-                .append(name, rhs.name)
-                .append(version, rhs.version)
+                .append(name.get(), rhs.name.get())
+                .append(version.get(), rhs.version.get())
                 .isEquals();
     }
 

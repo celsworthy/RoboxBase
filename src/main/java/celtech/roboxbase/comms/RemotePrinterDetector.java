@@ -14,6 +14,7 @@ public class RemotePrinterDetector extends DeviceDetector
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer("RemotePrinterDetector");
+    private final List<DetectedServer> currentServers = new ArrayList<>();
     private final List<DetectedDevice> currentPrinters = new ArrayList<>();
 
     public RemotePrinterDetector(DeviceDetectionListener listener)
@@ -32,8 +33,8 @@ public class RemotePrinterDetector extends DeviceDetector
             // Search the roots that have been registered in core memory
             for (DetectedServer server : CoreMemory.getInstance().getActiveRoboxRoots())
             {
-                if (server.getServerStatus() == DetectedServer.ServerStatus.UNKNOWN
-                        || server.getServerStatus() == DetectedServer.ServerStatus.OK)
+                if (server.getServerStatus() == DetectedServer.ServerStatus.NOT_CONNECTED
+                        || server.getServerStatus() == DetectedServer.ServerStatus.CONNECTED)
                 {
                     newlyDetectedPrinters.addAll(server.listAttachedPrinters());
                 }

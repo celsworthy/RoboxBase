@@ -38,14 +38,14 @@ public class RemoteServerDetector
             steno.error("Unable to set up remote discovery client");
         }
     }
-    
+
     public static RemoteServerDetector getInstance()
     {
         if (instance == null)
         {
             instance = new RemoteServerDetector();
         }
-        
+
         return instance;
     }
 
@@ -75,8 +75,7 @@ public class RemoteServerDetector
                     if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                     {
                         DetectedServer newServer = new DetectedServer(recv.getAddress());
-                        newServer.whoAmI();
-                        if (newServer.getServerStatus() != DetectedServer.ServerStatus.NOT_THERE)
+                        if (newServer.whoAmI())
                         {
                             newlyDiscoveredServers.add(newServer);
                         }
