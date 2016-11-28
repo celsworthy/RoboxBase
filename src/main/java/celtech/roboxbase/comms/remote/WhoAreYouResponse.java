@@ -8,7 +8,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class WhoAreYouResponse
 {
-private String name;
+
+    private String name;
     private String serverVersion;
 
     public WhoAreYouResponse()
@@ -34,7 +35,7 @@ private String name;
     {
         this.name = name;
     }
-    
+
     @JsonProperty
     public String getServerVersion()
     {
