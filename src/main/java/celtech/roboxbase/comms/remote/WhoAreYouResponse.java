@@ -11,6 +11,7 @@ public class WhoAreYouResponse
 
     private String name;
     private String serverVersion;
+    private String serverIP;
 
     public WhoAreYouResponse()
     {
@@ -18,10 +19,12 @@ public class WhoAreYouResponse
     }
 
     public WhoAreYouResponse(String name,
-            String serverVersion)
+            String serverVersion,
+            String serverIP)
     {
         this.name = name;
         this.serverVersion = serverVersion;
+        this.serverIP = serverIP;
     }
 
     @JsonProperty
@@ -46,5 +49,17 @@ public class WhoAreYouResponse
     public void setServerVersion(String serverVersion)
     {
         this.serverVersion = serverVersion;
+    }
+
+    @JsonProperty
+    public String getServerIP()
+    {
+        return serverIP;
+    }
+
+    @JsonProperty
+    public void setServerIP(String serverIP)
+    {
+        this.serverIP = serverIP;
     }
 }

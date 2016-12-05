@@ -158,7 +158,7 @@ public class FilamentContainer
 
         for (File filamentFile : filamentFiles)
         {
-            steno.info("Ingesting file " + filamentFile.getAbsolutePath());
+            steno.debug("Ingesting file " + filamentFile.getAbsolutePath());
             try
             {
                 Properties filamentProperties = new Properties();

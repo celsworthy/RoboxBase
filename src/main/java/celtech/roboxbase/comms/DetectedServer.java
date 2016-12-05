@@ -39,6 +39,7 @@ public final class DetectedServer
 
     private InetAddress address;
     private final StringProperty name = new SimpleStringProperty("");
+    private final StringProperty serverIP = new SimpleStringProperty("");
     private final StringProperty version = new SimpleStringProperty("");
     private final StringProperty pin = new SimpleStringProperty("1111");
 
@@ -103,6 +104,25 @@ public final class DetectedServer
     public StringProperty nameProperty()
     {
         return name;
+    }
+
+    public String getServerIP()
+    {
+        return serverIP.get();
+    }
+
+    public void setServerIP(String serverIP)
+    {
+        if (!serverIP.equals(this.serverIP))
+        {
+            this.serverIP.set(serverIP);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public StringProperty serverIPProperty()
+    {
+        return serverIP;
     }
 
     public String getVersion()
@@ -210,7 +230,7 @@ public final class DetectedServer
         setServerStatus(ServerStatus.NOT_CONNECTED);
     }
 
-    public boolean whoAmI()
+    public boolean whoAreYou()
     {
         boolean gotAResponse = false;
         WhoAreYouResponse response = null;
@@ -243,6 +263,7 @@ public final class DetectedServer
                     gotAResponse = true;
                     name.set(response.getName());
                     version.set(response.getServerVersion());
+                    serverIP.set(response.getServerIP());
                 }
             } else
             {

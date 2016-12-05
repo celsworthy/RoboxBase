@@ -75,7 +75,7 @@ public class RemoteServerDetector
                     if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                     {
                         DetectedServer newServer = new DetectedServer(recv.getAddress());
-                        if (newServer.whoAmI())
+                        if (newServer.whoAreYou())
                         {
                             newlyDiscoveredServers.add(newServer);
                         }
