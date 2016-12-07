@@ -181,15 +181,15 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             }
             addBundleData(specifiedResourcePath, baseName);
             
-            addAvailableLocales(commonResourcePath);
+            addAvailableLocales(specifiedResourcePath);
         }
     }
     
-    private void addAvailableLocales(String commonResourcePath)
+    private void addAvailableLocales(String resourcePath)
     {
-        steno.info("Loading locales from " + commonResourcePath);
+        steno.info("Loading locales from " + resourcePath);
         
-        File commonDir = new File(commonResourcePath);
+        File commonDir = new File(resourcePath);
         
         availableLocales.add(Locale.ENGLISH);
         
