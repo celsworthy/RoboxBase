@@ -137,7 +137,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private final Stenographer steno = StenographerFactory.getStenographer(
             HardwarePrinter.class.getName());
-    private final FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+    private final FilamentContainer filamentContainer = FilamentContainer.getInstance();
 
     protected final ObjectProperty<PrinterStatus> printerStatus = new SimpleObjectProperty(
             PrinterStatus.IDLE);

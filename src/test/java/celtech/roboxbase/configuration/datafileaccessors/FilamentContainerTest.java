@@ -41,7 +41,7 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
     public void testCreateNewFilament()
     {
         String NEW_ID = "U1234568";
-        FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+        FilamentContainer filamentContainer = FilamentContainer.getInstance();
         ObservableList<Filament> userFilaments = filamentContainer.getUserFilamentList();
         ObservableList<Filament> completeFilaments = filamentContainer.getCompleteFilamentList();
         int numFilaments = completeFilaments.size();
@@ -60,7 +60,8 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
     public void testCreateNewFilamentAndDelete()
     {
         String NEW_ID = "U1234567";
-        FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+        FilamentContainer filamentContainer = FilamentContainer.getInstance();
+        filamentContainer.reload();
         ObservableList<Filament> userFilaments = filamentContainer.getUserFilamentList();
         ObservableList<Filament> completeFilaments = filamentContainer.getCompleteFilamentList();
         int numFilaments = completeFilaments.size();
@@ -85,7 +86,8 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
     public void testCreateNewFilamentAndChangeAndSave()
     {
         String NEW_ID = "U1234568";
-        FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+        FilamentContainer filamentContainer = FilamentContainer.getInstance();
+        filamentContainer.reload();
         ObservableList<Filament> userFilaments = filamentContainer.getUserFilamentList();
         ObservableList<Filament> completeFilaments = filamentContainer.getCompleteFilamentList();
         int numFilaments = completeFilaments.size();
@@ -113,7 +115,8 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
     public void testCreateNewFilamentAndChangeNameAndSave()
     {
         String NEW_ID = "U1234569";
-        FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+        FilamentContainer filamentContainer = FilamentContainer.getInstance();
+        filamentContainer.reload();
         ObservableList<Filament> userFilaments = filamentContainer.getUserFilamentList();
         ObservableList<Filament> completeFilaments = filamentContainer.getCompleteFilamentList();
         int numFilaments = completeFilaments.size();

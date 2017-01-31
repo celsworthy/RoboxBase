@@ -1,6 +1,5 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
-import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Filament;
@@ -30,7 +29,7 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class FilamentContainer
 {
-
+    private static FilamentContainer instance = null; 
     private static final Stenographer steno = StenographerFactory.getStenographer(
             FilamentContainer.class.getName());
     private final ObservableList<Filament> appFilamentList = FXCollections.observableArrayList();
@@ -39,11 +38,12 @@ public class FilamentContainer
     private final ObservableMap<String, Filament> completeFilamentMapByID = FXCollections.observableHashMap();
     private final ObservableMap<String, String> completeFilamentNameByID = FXCollections.observableHashMap();
 
-    public final Filament createNewFilament = new Filament(null, null, null,
+    public final Filament createNewFilament = new Filament(null, null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
             0, 0, false);
     public static final Filament UNKNOWN_FILAMENT = new Filament("Unknown",
             null,
+            "",
             "",
             1.75f,
             1,
@@ -61,6 +61,7 @@ public class FilamentContainer
     private static final String nameProperty = "name";
     private static final String materialProperty = "material";
     private static final String filamentIDProperty = "reelID";
+    private static final String categoryProperty = "category";
     private static final String diameterProperty = "diameter_mm";
     private static final String costGBPPerKGProperty = "cost_gbp_per_kg";
     private static final String filamentMultiplierProperty = "filament_multiplier";
@@ -81,9 +82,18 @@ public class FilamentContainer
 
     private final List<FilamentDatabaseChangesListener> filamentDatabaseChangesListeners = new ArrayList<>();
 
-    public FilamentContainer()
+    private FilamentContainer()
     {
         loadFilamentData();
+    }
+    
+    public static FilamentContainer getInstance()
+    {
+        if (instance == null)
+        {
+            instance = new FilamentContainer();
+        }
+        return instance;
     }
 
     public void addFilamentDatabaseChangesListener(FilamentDatabaseChangesListener listener)
@@ -121,8 +131,6 @@ public class FilamentContainer
 
         ArrayList<Filament> filaments = null;
 
-        steno.info("Base dir is " + BaseConfiguration.getCommonApplicationDirectory());
-        steno.info("Filament dir is " + BaseConfiguration.getApplicationFilamentDirectory());
         File applicationFilamentDirHandle = new File(
                 BaseConfiguration.getApplicationFilamentDirectory());
         File[] applicationfilaments = applicationFilamentDirHandle.listFiles(
@@ -158,7 +166,6 @@ public class FilamentContainer
 
         for (File filamentFile : filamentFiles)
         {
-            steno.info("Ingesting file " + filamentFile.getAbsolutePath());
             try
             {
                 Properties filamentProperties = new Properties();
@@ -168,6 +175,14 @@ public class FilamentContainer
 
                     String name = filamentProperties.getProperty(nameProperty).trim();
                     String filamentID = filamentProperties.getProperty(filamentIDProperty).trim();
+                    String category = filamentProperties.getProperty(categoryProperty);
+                    if (category != null)
+                    {
+                        category = category.trim();
+                    } else
+                    {
+                        category = "";
+                    }
                     String material = filamentProperties.getProperty(materialProperty).trim();
                     String diameterString = filamentProperties.getProperty(diameterProperty).trim();
                     String filamentMultiplierString = filamentProperties.getProperty(
@@ -235,6 +250,7 @@ public class FilamentContainer
                                     name,
                                     selectedMaterial,
                                     filamentID,
+                                    category,
                                     diameter,
                                     filamentMultiplier,
                                     feedRateMultiplier,
@@ -258,7 +274,6 @@ public class FilamentContainer
                             steno.error("Failed to parse filament file "
                                     + filamentFile.getAbsolutePath());
                         }
-
                     }
                 }
             } catch (Exception ex)
@@ -332,6 +347,7 @@ public class FilamentContainer
             filamentProperties.setProperty(nameProperty, filament.getFriendlyFilamentName());
             filamentProperties.setProperty(materialProperty, filament.getMaterial().name());
             filamentProperties.setProperty(filamentIDProperty, filament.getFilamentID());
+            filamentProperties.setProperty(categoryProperty, filament.getCategory());
             filamentProperties.setProperty(costGBPPerKGProperty, floatConverter.format(
                     filament.getCostGBPPerKG()));
             filamentProperties.setProperty(diameterProperty, floatConverter.format(
