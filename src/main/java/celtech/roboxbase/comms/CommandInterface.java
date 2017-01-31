@@ -2,6 +2,8 @@ package celtech.roboxbase.comms;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.comms.async.AsyncWriteThread;
+import celtech.roboxbase.comms.async.CommandPacket;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -67,6 +69,8 @@ public abstract class CommandInterface extends Thread
 
     private boolean isConnected = false;
 
+    private final AsyncWriteThread asyncWriteThread;
+
     /**
      *
      * @param controlInterface
@@ -78,6 +82,9 @@ public abstract class CommandInterface extends Thread
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
     {
+        asyncWriteThread = new AsyncWriteThread(this);
+        asyncWriteThread.start();
+
         this.controlInterface = controlInterface;
         this.printerHandle = printerHandle;
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
@@ -139,6 +146,7 @@ public abstract class CommandInterface extends Thread
                         steno.error("Failed to connect to Robox on " + printerHandle);
                         controlInterface.failedToConnect(printerHandle);
                         keepRunning = false;
+                        asyncWriteThread.shutdown();
                     }
                     break;
 
@@ -188,6 +196,7 @@ public abstract class CommandInterface extends Thread
                                             BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
                                             disconnectPrinter();
                                             keepRunning = false;
+                                            asyncWriteThread.shutdown();
                                             break;
                                         } else
                                         {
@@ -389,6 +398,7 @@ public abstract class CommandInterface extends Thread
         disconnectPrinter();
         steno.info("Shutdown command interface complete");
         keepRunning = false;
+        asyncWriteThread.shutdown();
     }
 
     /**
@@ -403,7 +413,7 @@ public abstract class CommandInterface extends Thread
      * @return
      * @throws RoboxCommsException
      */
-    public final synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite) throws RoboxCommsException
+    public final RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite) throws RoboxCommsException
     {
         if (isConnected)
         {
@@ -421,11 +431,11 @@ public abstract class CommandInterface extends Thread
      * @return
      * @throws RoboxCommsException
      */
-    public final synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
+    public final RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
     {
         if (isConnected)
         {
-            return writeToPrinterImpl(messageToWrite, dontPublishResult);
+            return asyncWriteThread.sendCommand(new CommandPacket(messageToWrite, dontPublishResult));
         } else
         {
             return null;

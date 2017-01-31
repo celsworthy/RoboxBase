@@ -3,13 +3,11 @@ package celtech.roboxbase.comms;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
-import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import javafx.application.Platform;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
