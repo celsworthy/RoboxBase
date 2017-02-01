@@ -3,6 +3,7 @@ package celtech.roboxbase.utils;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.NozzleHeaterData;
 import celtech.roboxbase.printerControl.model.Head;
@@ -47,7 +48,7 @@ public class PrinterUtilsTest extends BaseEnvironmentConfiguredTest
     public void testRequiresPurgeForNozzleHeater0()
     {
         int NOZZLE_TEMP = 120;
-        Filament filament = BaseLookup.getFilamentContainer().getFilamentByID("RBX-ABS-PP156");
+        Filament filament = FilamentContainer.getInstance().getFilamentByID("RBX-ABS-PP156");
         filament.getNozzleTemperatureProperty().set(NOZZLE_TEMP);
 
         TestPrinter printer = new TestPrinter(1);
@@ -80,9 +81,9 @@ public class PrinterUtilsTest extends BaseEnvironmentConfiguredTest
     {
         int NOZZLE_TEMP_0 = 120;
         int NOZZLE_TEMP_1 = 220;
-        Filament filament0 = BaseLookup.getFilamentContainer().getFilamentByID("RBX-ABS-PP156");
+        Filament filament0 = FilamentContainer.getInstance().getFilamentByID("RBX-ABS-PP156");
         filament0.getNozzleTemperatureProperty().set(NOZZLE_TEMP_1);
-        Filament filament1 = BaseLookup.getFilamentContainer().getFilamentByID("RBX-ABS-GR499");
+        Filament filament1 = FilamentContainer.getInstance().getFilamentByID("RBX-ABS-GR499");
         filament1.getNozzleTemperatureProperty().set(NOZZLE_TEMP_0);
 
         TestPrinter printer = new TestPrinter(2);

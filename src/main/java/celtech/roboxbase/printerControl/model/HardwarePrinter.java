@@ -137,7 +137,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private final Stenographer steno = StenographerFactory.getStenographer(
             HardwarePrinter.class.getName());
-    private final FilamentContainer filamentContainer = BaseLookup.getFilamentContainer();
+    private final FilamentContainer filamentContainer = FilamentContainer.getInstance();
 
     protected final ObjectProperty<PrinterStatus> printerStatus = new SimpleObjectProperty(
             PrinterStatus.IDLE);
@@ -3251,17 +3251,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void shutdown(boolean shutdownCommandInterface)
+    public void shutdown()
     {
         filamentContainer.removeFilamentDatabaseChangesListener(filamentDatabaseChangesListener);
         steno.debug("Shutdown print engine...");
         printEngine.shutdown();
-
-        if (shutdownCommandInterface)
-        {
-            steno.debug("Shutdown command interface...");
-            commandInterface.shutdown();
-        }
     }
 
     @Override
@@ -4243,7 +4237,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     case PROGRAMMED:
                         try
                         {
-                            steno.info("About to read head EEPROM");
+                            steno.debug("About to read head EEPROM");
                             readHeadEEPROM(false);
                         } catch (RoboxCommsException ex)
                         {

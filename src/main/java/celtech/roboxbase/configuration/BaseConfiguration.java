@@ -684,32 +684,32 @@ public class BaseConfiguration
         if (applicationMemoryProperties == null)
         {
             applicationMemoryProperties = new Properties();
+        }
+        
+        try
+        {
+            File inputFile = new File(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
+                    + ".properties");
+            if (inputFile.exists())
+            {
+                input = new FileInputStream(inputFile);
 
-            try
+                // load a properties file
+                applicationMemoryProperties.load(input);
+            }
+        } catch (IOException ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            if (input != null)
             {
-                File inputFile = new File(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
-                        + ".properties");
-                if (inputFile.exists())
+                try
                 {
-                    input = new FileInputStream(inputFile);
-
-                    // load a properties file
-                    applicationMemoryProperties.load(input);
-                }
-            } catch (IOException ex)
-            {
-                ex.printStackTrace();
-            } finally
-            {
-                if (input != null)
+                    input.close();
+                } catch (IOException e)
                 {
-                    try
-                    {
-                        input.close();
-                    } catch (IOException e)
-                    {
-                        e.printStackTrace();
-                    }
+                    e.printStackTrace();
                 }
             }
         }

@@ -3,6 +3,7 @@ package celtech.roboxbase.comms;
 import celtech.roboxbase.comms.exceptions.ConnectionLostException;
 import celtech.roboxbase.comms.exceptions.InvalidCommandByteException;
 import celtech.roboxbase.comms.exceptions.InvalidResponseFromPrinterException;
+import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.exceptions.UnableToGenerateRoboxPacketException;
 import celtech.roboxbase.comms.exceptions.UnknownPacketTypeException;
@@ -33,7 +34,7 @@ public class HardwareCommandInterface extends CommandInterface
     }
 
     @Override
-    protected boolean connectToPrinterImpl()
+    protected boolean connectToPrinterImpl() throws PortNotFoundException
     {
         return serialPortManager.connect(115200);
     }
@@ -55,9 +56,6 @@ public class HardwareCommandInterface extends CommandInterface
                 }
             }
         }
-
-        controlInterface.disconnected(printerHandle);
-        keepRunning = false;
     }
 
     @Override
@@ -93,7 +91,7 @@ public class HardwareCommandInterface extends CommandInterface
 //                    steno.trace("Got a response packet back of type: " + packetType.toString());
                     RoboxRxPacket rxPacketTemplate = RoboxRxPacketFactory.createPacket(packetType);
                     int packetLength = rxPacketTemplate.packetLength(firmwareVersionInUse);
-                    
+
                     byte[] inputBuffer = null;
                     if (packetType.containsLengthField())
                     {
@@ -174,7 +172,6 @@ public class HardwareCommandInterface extends CommandInterface
                 }
             } catch (LowLevelInterfaceException ex)
             {
-                steno.exception("Serial port exception", ex);
                 actionOnCommsFailure();
             }
         } else
@@ -189,8 +186,7 @@ public class HardwareCommandInterface extends CommandInterface
     {
         //If we get an exception then abort and treat
         steno.debug("Error during write to printer");
-        disconnectPrinter();
-        keepRunning = false;
+        shutdown();
         throw new ConnectionLostException();
     }
 

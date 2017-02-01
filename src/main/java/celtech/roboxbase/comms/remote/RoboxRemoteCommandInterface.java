@@ -54,8 +54,6 @@ public class RoboxRemoteCommandInterface extends CommandInterface
         {
             steno.error("Failed to disconnect from printer");
         }
-        controlInterface.disconnected(printerHandle);
-        keepRunning = false;
     }
 
     @Override
@@ -82,8 +80,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     {
         //If we get an exception then abort and treat
         steno.debug("Error during write to printer");
-        disconnectPrinter();
-        keepRunning = false;
+        shutdown();
         throw new ConnectionLostException();
     }
 

@@ -106,7 +106,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
         super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
         this.setName(printerName);
         this.printerName = printerName;
-        filamentContainer = new FilamentContainer();
+        filamentContainer = FilamentContainer.getInstance();
 
         currentStatus.setsdCardPresent(true);
     }
@@ -117,7 +117,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
     {
         this(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks,
                 "Dummy Printer");
-        filamentContainer = new FilamentContainer();
+        filamentContainer = FilamentContainer.getInstance();
     }
 
     @Override

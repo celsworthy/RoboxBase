@@ -451,7 +451,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void shutdown(boolean shutdownCommandInterface)
+    public void shutdown()
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

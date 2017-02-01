@@ -2,6 +2,9 @@ package celtech.roboxbase.comms;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.comms.async.AsyncWriteThread;
+import celtech.roboxbase.comms.async.CommandPacket;
+import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -67,6 +70,8 @@ public abstract class CommandInterface extends Thread
 
     private boolean isConnected = false;
 
+    private final AsyncWriteThread asyncWriteThread;
+
     /**
      *
      * @param controlInterface
@@ -82,6 +87,12 @@ public abstract class CommandInterface extends Thread
         this.printerHandle = printerHandle;
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.sleepBetweenStatusChecks = sleepBetweenStatusChecks;
+
+        this.setDaemon(true);
+        this.setName("CommandInterface|" + printerHandle.toString());
+
+        asyncWriteThread = new AsyncWriteThread(this, printerHandle.toString());
+        asyncWriteThread.start();
 
         try
         {
@@ -105,14 +116,14 @@ public abstract class CommandInterface extends Thread
         {
             FirmwareLoadResult result = (FirmwareLoadResult) t.getSource().getValue();
             BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
-            disconnectPrinter();
+            shutdown();
         });
 
         firmwareLoadService.setOnFailed((WorkerStateEvent t) ->
         {
             FirmwareLoadResult result = (FirmwareLoadResult) t.getSource().getValue();
             BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
-            disconnectPrinter();
+            shutdown();
         });
 
         BaseLookup.getSystemNotificationHandler().configureFirmwareProgressDialog(firmwareLoadService);
@@ -129,16 +140,21 @@ public abstract class CommandInterface extends Thread
                 case FOUND:
                     steno.debug("Trying to connect to printer in " + printerHandle);
 
-                    boolean printerCommsOpen = connectToPrinter();
-                    if (printerCommsOpen)
+                    try
                     {
-                        steno.debug("Connected to Robox on " + printerHandle);
-                        commsState = RoboxCommsState.CHECKING_FIRMWARE;
-                    } else
+                        boolean printerCommsOpen = connectToPrinter();
+                        if (printerCommsOpen)
+                        {
+                            steno.debug("Connected to Robox on " + printerHandle);
+                            commsState = RoboxCommsState.CHECKING_FIRMWARE;
+                        } else
+                        {
+                            steno.error("Failed to connect to Robox on " + printerHandle);
+                            shutdown();
+                        }
+                    } catch (PortNotFoundException ex)
                     {
-                        steno.error("Failed to connect to Robox on " + printerHandle);
-                        controlInterface.failedToConnect(printerHandle);
-                        keepRunning = false;
+                        shutdown();
                     }
                     break;
 
@@ -186,8 +202,7 @@ public abstract class CommandInterface extends Thread
                                         {
                                             steno.warning("SD Card not present");
                                             BaseLookup.getSystemNotificationHandler().processErrorPacketFromPrinter(FirmwareError.SD_CARD, printerToUse);
-                                            disconnectPrinter();
-                                            keepRunning = false;
+                                            shutdown();
                                             break;
                                         } else
                                         {
@@ -218,8 +233,8 @@ public abstract class CommandInterface extends Thread
                         }
                     } catch (PrinterException ex)
                     {
-                        steno.error("Exception whilst checking firmware version: " + ex);
-                        disconnectPrinter();
+                        steno.debug("Exception whilst checking firmware version: " + ex);
+                        shutdown();
                     }
                     break;
 
@@ -309,7 +324,7 @@ public abstract class CommandInterface extends Thread
                         {
                             steno.error("Failed to determine printer status on unknown printer");
                         }
-                        disconnectPrinter();
+                        shutdown();
                     }
 
                     break;
@@ -320,7 +335,7 @@ public abstract class CommandInterface extends Thread
                     {
                         this.sleep(sleepBetweenStatusChecks);
 
-                        if (!suppressComms && isConnected)
+                        if (!suppressComms && isConnected && commsState == RoboxCommsState.CONNECTED)
                         {
                             try
                             {
@@ -333,8 +348,8 @@ public abstract class CommandInterface extends Thread
                             {
                                 if (isConnected)
                                 {
-                                    steno.exception("Failure during printer status request.", ex);
-                                    disconnectPrinter();
+                                    steno.debug("Failure during printer status request: " + ex);
+                                    shutdown();
                                 }
                             }
                         }
@@ -347,10 +362,12 @@ public abstract class CommandInterface extends Thread
                 case DISCONNECTED:
                     steno.debug("state is disconnected");
                     break;
+                default:
+                    break;
             }
         }
-        steno.info(
-                "Handler for " + printerHandle + " exiting");
+        finalShutdown();
+        steno.debug("Handler for " + printerHandle + " exiting");
     }
 
     private void moveOnFromFirmwareCheck(FirmwareResponse firmwareResponse)
@@ -377,18 +394,27 @@ public abstract class CommandInterface extends Thread
 
     public void shutdown()
     {
-        steno.info("Shutdown command interface...");
+        keepRunning = false;
+        commsState = RoboxCommsState.SHUTTING_DOWN;
+    }
+
+    private void finalShutdown()
+    {
+        steno.debug("Shutdown command interface...");
+        keepRunning = false;
+        disconnectPrinterImpl();
         suppressComms = true;
         if (firmwareLoadService.isRunning())
         {
-            steno.info("Shutdown command interface firmware service...");
+            steno.debug("Shutdown command interface firmware service...");
             firmwareLoadService.cancel();
         }
         steno.debug("set state to disconnected");
         commsState = RoboxCommsState.DISCONNECTED;
-        disconnectPrinter();
-        steno.info("Shutdown command interface complete");
-        keepRunning = false;
+        isConnected = false;
+        asyncWriteThread.shutdown();
+        steno.debug("Shutdown command interface for " + printerHandle + " complete");
+        controlInterface.disconnected(printerHandle);
     }
 
     /**
@@ -403,7 +429,7 @@ public abstract class CommandInterface extends Thread
      * @return
      * @throws RoboxCommsException
      */
-    public final synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite) throws RoboxCommsException
+    public final RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite) throws RoboxCommsException
     {
         if (isConnected)
         {
@@ -421,11 +447,11 @@ public abstract class CommandInterface extends Thread
      * @return
      * @throws RoboxCommsException
      */
-    public final synchronized RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
+    public final RoboxRxPacket writeToPrinter(RoboxTxPacket messageToWrite, boolean dontPublishResult) throws RoboxCommsException
     {
         if (isConnected)
         {
-            return writeToPrinterImpl(messageToWrite, dontPublishResult);
+            return asyncWriteThread.sendCommand(new CommandPacket(messageToWrite, dontPublishResult));
         } else
         {
             return null;
@@ -448,7 +474,7 @@ public abstract class CommandInterface extends Thread
      *
      * @return
      */
-    public final boolean connectToPrinter()
+    public final boolean connectToPrinter() throws PortNotFoundException
     {
         isConnected = connectToPrinterImpl();
         return isConnected;
@@ -456,18 +482,9 @@ public abstract class CommandInterface extends Thread
 
     /**
      *
-     * @return
+     * @return @throws celtech.roboxbase.comms.exceptions.PortNotFoundException
      */
-    protected abstract boolean connectToPrinterImpl();
-
-    /**
-     *
-     */
-    protected final void disconnectPrinter()
-    {
-        isConnected = false;
-        disconnectPrinterImpl();
-    }
+    protected abstract boolean connectToPrinterImpl() throws PortNotFoundException;
 
     /**
      *

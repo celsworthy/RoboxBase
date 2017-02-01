@@ -25,6 +25,7 @@ import celtech.roboxbase.comms.tx.SendGCodeRequest;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.WriteHeadEEPROM;
 import celtech.roboxbase.comms.tx.WritePrinterID;
+import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Reel;
 import javafx.scene.paint.Color;
@@ -151,7 +152,7 @@ public class TestCommandInterface extends CommandInterface
             } else if (request.getMessagePayload().startsWith(attachReelCommand))
             {
                 String filamentName = request.getMessagePayload().replaceAll(attachReelCommand, "");
-                Filament filament = BaseLookup.getFilamentContainer().getFilamentByID(filamentName);
+                Filament filament = FilamentContainer.getInstance().getFilamentByID(filamentName);
                 if (filament != null)
                 {
                     currentStatus.setReel0EEPROMState(EEPROMState.PROGRAMMED);

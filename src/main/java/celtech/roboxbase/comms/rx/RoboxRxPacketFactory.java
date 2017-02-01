@@ -20,6 +20,11 @@ public class RoboxRxPacketFactory
     private RoboxRxPacketFactory()
     {
     }
+    
+    public static RoboxRxPacket createNullPacket()
+    {
+        return new NullPacket();
+    }
 
     /**
      *

@@ -4,6 +4,7 @@ import celtech.roboxbase.comms.DetectedDevice;
 import celtech.roboxbase.comms.DeviceDetector;
 import celtech.roboxbase.comms.DummyPrinterCommandInterface;
 import celtech.roboxbase.comms.PrinterStatusConsumer;
+import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.HeadEEPROMDataResponse;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
@@ -31,11 +32,6 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
             }
 
             @Override
-            public void failedToConnect(DetectedDevice printerHandle)
-            {
-            }
-
-            @Override
             public void disconnected(DetectedDevice printerHandle)
             {
             }
@@ -43,7 +39,13 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
 
         DummyPrinterCommandInterface commandInterface
                 = new DummyPrinterCommandInterface(printerStatusConsumer, printerHandle, false, 500);
-        commandInterface.connectToPrinter();
+
+        try
+        {
+            commandInterface.connectToPrinter();
+        } catch (PortNotFoundException ex)
+        {
+        }
 
         Printer printer = new HardwarePrinter(null, commandInterface);
 

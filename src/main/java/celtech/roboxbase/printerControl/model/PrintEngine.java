@@ -1063,20 +1063,20 @@ public class PrintEngine implements ControllableService
             @Override
             public Boolean call() throws Exception
             {
-                steno.info("Shutdown print services...");
+                steno.debug("Shutdown print services...");
                 if (slicerService.isRunning())
                 {
-                    steno.info("Shutdown slicer service...");
+                    steno.debug("Shutdown slicer service...");
                     slicerService.cancelRun();
                 }
                 if (postProcessorService.isRunning())
                 {
-                    steno.info("Shutdown PP...");
+                    steno.debug("Shutdown PP...");
                     postProcessorService.cancelRun();
                 }
                 if (transferGCodeToPrinterService.isRunning())
                 {
-                    steno.info("Shutdown print service...");
+                    steno.debug("Shutdown print service...");
                     transferGCodeToPrinterService.cancelRun();
                 }
 //                if (movieMakerTask.isRunning())
@@ -1084,7 +1084,7 @@ public class PrintEngine implements ControllableService
 //                    steno.info("Shutdown move maker");
 //                    movieMakerTask.shutdown();
 //                }
-                steno.info("Shutdown print services complete");
+                steno.debug("Shutdown print services complete");
                 return true;
             }
         };

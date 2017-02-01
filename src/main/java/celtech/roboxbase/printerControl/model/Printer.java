@@ -371,7 +371,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void setReelLEDColour(Color colour) throws PrinterException;
 
-    public void shutdown(boolean shutdownCommandInterface);
+    public void shutdown();
 
     public void switchAllNozzleHeatersOff();
 

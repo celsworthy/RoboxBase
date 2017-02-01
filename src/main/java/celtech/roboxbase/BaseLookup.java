@@ -180,16 +180,6 @@ public class BaseLookup
         return connectedPrintersUnmodifiable;
     }
 
-    public static void setFilamentContainer(FilamentContainer filamentContainer)
-    {
-        BaseLookup.filamentContainer = filamentContainer;
-    }
-
-    public static FilamentContainer getFilamentContainer()
-    {
-        return filamentContainer;
-    }
-
     public static void setupDefaultValues()
     {
         setupDefaultValues(LogLevel.INFO, Locale.ENGLISH, new ConsoleSystemNotificationManager());
@@ -228,10 +218,6 @@ public class BaseLookup
         steno.info("Using locale - " + appLocale.toLanguageTag());
 
         printerListChangesNotifier = new PrinterListChangesNotifier(BaseLookup.getConnectedPrinters());
-
-        FilamentContainer filContainer = new FilamentContainer();
-
-        BaseLookup.setFilamentContainer(filContainer);
 
         setSystemNotificationHandler(notificationManager);
 
