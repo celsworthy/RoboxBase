@@ -68,7 +68,7 @@ public class RemotePrinterDetector extends DeviceDetector
 
             for (DetectedDevice printerToConnect : printersToConnect)
             {
-                steno.info("We have found a new printer " + printerToConnect);
+                steno.debug("We have found a new printer " + printerToConnect);
                 currentPrinters.add(printerToConnect);
                 deviceDetectionListener.deviceDetected(printerToConnect);
             }

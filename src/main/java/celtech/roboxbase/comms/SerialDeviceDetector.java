@@ -25,13 +25,8 @@ public class SerialDeviceDetector extends DeviceDetector
     private final String deviceDetectorStringMac;
     private final String deviceDetectorStringWindows;
     private final String deviceDetectorStringLinux;
-    private final String deviceDetectionCommand;
     private final String notConnectedString = "NOT_CONNECTED";
-
-    // This list is used to ensure that we don't fall foul of windows very slow usb disconnection and attempt reconnects
-    // when the device has just been removed...
-    private static final int suppressPrinterForCycles = 4;
-    private Map<DetectedDevice, Integer> printersToSuppress = new HashMap<>();
+    private List<String> command = new ArrayList<>();
 
     public SerialDeviceDetector(String pathToBinaries,
             String vendorID,
@@ -52,34 +47,37 @@ public class SerialDeviceDetector extends DeviceDetector
         switch (machineType)
         {
             case WINDOWS:
-                deviceDetectionCommand = deviceDetectorStringWindows + " " + vendorID + " "
-                        + productID;
+                command.add(deviceDetectorStringWindows);
+                command.add(vendorID);
+                command.add(productID);
                 break;
             case MAC:
-                deviceDetectionCommand = deviceDetectorStringMac + " " + deviceNameToSearchFor;
+                command.add(deviceDetectorStringMac);
+                command.add(deviceNameToSearchFor);
                 break;
             case LINUX_X86:
             case LINUX_X64:
-                deviceDetectionCommand = deviceDetectorStringLinux + " " + deviceNameToSearchFor
-                        + " "
-                        + vendorID;
+                command.add(deviceDetectorStringLinux);
+                command.add(deviceNameToSearchFor);
+                command.add(vendorID);
                 break;
             default:
-                deviceDetectionCommand = null;
                 steno.error("Unsupported OS - cannot establish comms.");
                 break;
         }
-        steno.trace("Device detector command: " + deviceDetectionCommand);
+
+        StringBuilder completeCommand = new StringBuilder();
+        command.forEach((subcommand) ->
+        {
+            completeCommand.append(subcommand);
+            completeCommand.append(" ");
+        });
+        steno.trace("Device detector command: " + completeCommand.toString());
     }
 
     private List<DetectedDevice> searchForDevices()
     {
         StringBuilder outputBuffer = new StringBuilder();
-        List<String> command = new ArrayList<>();
-        for (String subcommand : deviceDetectionCommand.split(" "))
-        {
-            command.add(subcommand);
-        }
 
         ProcessBuilder builder = new ProcessBuilder(command);
         Map<String, String> environ = builder.environment();
@@ -132,7 +130,6 @@ public class SerialDeviceDetector extends DeviceDetector
                 if (!newlyDetectedPrinters.contains(existingPrinter))
                 {
                     printersToDisconnect.add(existingPrinter);
-                    printersToSuppress.put(existingPrinter, suppressPrinterForCycles);
                 }
             });
 
@@ -149,33 +146,16 @@ public class SerialDeviceDetector extends DeviceDetector
             {
                 if (!currentPrinters.contains(newPrinter))
                 {
-                    if (!printersToSuppress.containsKey(newPrinter))
-                    {
-                        printersToConnect.add(newPrinter);
-                    } else
-                    {
-                        steno.info("Suppressed printer: " + newPrinter);
-                    }
+                    printersToConnect.add(newPrinter);
                 }
             });
 
             for (DetectedDevice printerToConnect : printersToConnect)
             {
-                steno.info("We have found a new printer " + printerToConnect);
+                steno.debug("We have found a new printer " + printerToConnect);
                 currentPrinters.add(printerToConnect);
                 deviceDetectionListener.deviceDetected(printerToConnect);
             }
-            
-            // Process the suppression counter
-            HashMap<DetectedDevice, Integer> newSuppressedPrinters = new HashMap<>();
-            for (Map.Entry<DetectedDevice, Integer> suppressedPrinterEntry : printersToSuppress.entrySet())
-            {
-                if (suppressedPrinterEntry.getValue() > 0)
-                {
-                    newSuppressedPrinters.put(suppressedPrinterEntry.getKey(), suppressedPrinterEntry.getValue() - 1);
-                }
-            }
-            printersToSuppress = newSuppressedPrinters;
 
             try
             {
@@ -186,11 +166,10 @@ public class SerialDeviceDetector extends DeviceDetector
             }
         }
     }
-    
+
     @Override
     public void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle)
     {
         currentPrinters.remove(printerHandle);
-        printersToSuppress.remove(printerHandle);
     }
 }

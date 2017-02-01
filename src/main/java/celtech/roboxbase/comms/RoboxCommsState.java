@@ -32,6 +32,8 @@ public enum RoboxCommsState
      */
     CONNECTED,
     
-    DISCONNECTED
+    DISCONNECTED,
+    
+    SHUTTING_DOWN
 
 }

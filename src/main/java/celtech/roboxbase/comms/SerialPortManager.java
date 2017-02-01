@@ -1,5 +1,6 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.remote.LowLevelInterfaceException;
 import java.io.UnsupportedEncodingException;
 import jssc.SerialPort;
@@ -30,11 +31,11 @@ public class SerialPortManager implements SerialPortEventListener
         this.serialPortToConnectTo = portToConnectTo;
     }
 
-    public boolean connect(int baudrate)
+    public boolean connect(int baudrate) throws PortNotFoundException
     {
         boolean portSetupOK = false;
 
-        steno.info("About to open serial port " + serialPortToConnectTo);
+        steno.debug("About to open serial port " + serialPortToConnectTo);
         serialPort = new SerialPort(serialPortToConnectTo);
 
         try
@@ -44,10 +45,16 @@ public class SerialPortManager implements SerialPortEventListener
                     SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
             serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
             portSetupOK = true;
-            steno.info("Finished opening serial port " + serialPortToConnectTo);
+            steno.debug("Finished opening serial port " + serialPortToConnectTo);
         } catch (SerialPortException ex)
         {
-            steno.error("Error setting up serial port " + ex.getMessage());
+            if (ex.getExceptionType().equalsIgnoreCase("Port not found"))
+            {
+                throw new PortNotFoundException("Port not found - windows issue?");
+            } else
+            {
+                steno.error("Error setting up serial port " + ex.getMessage());
+            }
         }
 
         return portSetupOK;
@@ -55,7 +62,7 @@ public class SerialPortManager implements SerialPortEventListener
 
     public void disconnect() throws LowLevelInterfaceException
     {
-        steno.info("Disconnecting port " + serialPortToConnectTo);
+        steno.debug("Disconnecting port " + serialPortToConnectTo);
 
         checkSerialPortOK();
 
@@ -64,7 +71,7 @@ public class SerialPortManager implements SerialPortEventListener
             try
             {
                 serialPort.closePort();
-                steno.info("Port " + serialPortToConnectTo + " disconnected");
+                steno.debug("Port " + serialPortToConnectTo + " disconnected");
             } catch (SerialPortException ex)
             {
                 steno.error("Error closing serial port");

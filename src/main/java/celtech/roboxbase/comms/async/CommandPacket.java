@@ -28,4 +28,10 @@ public class CommandPacket
         return dontPublish;
     }
 
+    @Override
+    public String toString()
+    {
+        return command.getPacketType().name();
+    }
+
 }

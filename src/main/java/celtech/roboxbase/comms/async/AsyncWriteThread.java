@@ -3,8 +3,11 @@ package celtech.roboxbase.comms.async;
 import celtech.roboxbase.comms.CommandInterface;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
+import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
+import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -21,26 +24,31 @@ public class AsyncWriteThread extends Thread
     private final CommandInterface commandInterface;
     private boolean keepRunning = true;
 
-    public AsyncWriteThread(CommandInterface commandInterface)
+    public AsyncWriteThread(CommandInterface commandInterface, String ciReference)
     {
         this.commandInterface = commandInterface;
         this.setDaemon(true);
-        this.setName("AsyncCommandProcessor");
+        this.setName("AsyncCommandProcessor|" + ciReference);
     }
 
-    public RoboxRxPacket sendCommand(CommandPacket command)
+    public RoboxRxPacket sendCommand(CommandPacket command) throws RoboxCommsException
     {
         RoboxRxPacket response = null;
 
         inboundQueue.add(command);
         try
         {
-            response = outboundQueue.take();
+            response = outboundQueue.poll(750, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ex)
         {
-            steno.error("Interrupted outbound async processor");
+            throw new RoboxCommsException("Interrupted waiting for response");
         }
 
+        if (response == null
+                || response.getPacketType() == RxPacketTypeEnum.NULL_PACKET)
+        {
+            throw new RoboxCommsException("No response to message from command " + command);
+        }
         return response;
     }
 
@@ -49,28 +57,30 @@ public class AsyncWriteThread extends Thread
     {
         while (keepRunning)
         {
+            boolean createNullPacket = true;
             try
             {
                 RoboxRxPacket response = processCommand(inboundQueue.take());
-                outboundQueue.add(response);
-            } catch (InterruptedException ex)
+                if (response != null)
+                {
+                    createNullPacket = false;
+                    outboundQueue.add(response);
+                }
+            } catch (RoboxCommsException | InterruptedException ex)
             {
-                steno.error("Interrupted async command sender");
+            } finally
+            {
+                if (createNullPacket)
+                {
+                    outboundQueue.add(RoboxRxPacketFactory.createNullPacket());
+                }
             }
         }
     }
 
-    private RoboxRxPacket processCommand(CommandPacket command)
+    private RoboxRxPacket processCommand(CommandPacket command) throws RoboxCommsException
     {
-        RoboxRxPacket response = null;
-
-        try
-        {
-            response = commandInterface.writeToPrinterImpl(command.getCommand(), command.getDontPublish());
-        } catch (RoboxCommsException ex)
-        {
-            steno.error("Error processing async command");
-        }
+        RoboxRxPacket response = commandInterface.writeToPrinterImpl(command.getCommand(), command.getDontPublish());
         return response;
     }
 

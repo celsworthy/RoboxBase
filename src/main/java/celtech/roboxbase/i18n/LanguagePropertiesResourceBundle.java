@@ -89,7 +89,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
             String baseName)
     {
         //Make sure we're dealing with slashes and not backslashes
-        steno.info("Language base is " + baseDirectory);
+        steno.debug("Language base is " + baseDirectory);
         String baseToWorkOn = baseDirectory.replaceAll("\\\\", "/");
         baseToWorkOn = baseToWorkOn.replaceFirst("\\/$", "");
         int lastSlash = baseToWorkOn.lastIndexOf("/");
@@ -129,7 +129,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     
     private void addBundleData(String resourcePath, String resourceName)
     {
-        steno.info("Adding language resources from " + resourcePath + " with resource name " + resourceName);
+        steno.debug("Adding language resources from " + resourcePath + " with resource name " + resourceName);
         
         ResourceBundle bundle = null;
         try
@@ -187,7 +187,7 @@ public abstract class LanguagePropertiesResourceBundle extends ResourceBundle
     
     private void addAvailableLocales(String resourcePath)
     {
-        steno.info("Loading locales from " + resourcePath);
+        steno.debug("Loading locales from " + resourcePath);
         
         File commonDir = new File(resourcePath);
         

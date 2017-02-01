@@ -83,11 +83,6 @@ public class DummyPrinterCommandInterfaceTest extends BaseEnvironmentConfiguredT
         }
 
         @Override
-        public void failedToConnect(DetectedDevice printerHandle)
-        {
-        }
-
-        @Override
         public void disconnected(DetectedDevice printerHandle)
         {
         }

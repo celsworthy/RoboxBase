@@ -16,11 +16,5 @@ public interface PrinterStatusConsumer
      *
      * @param printerHandle
      */
-    public void failedToConnect(DetectedDevice printerHandle);
-
-    /**
-     *
-     * @param printerHandle
-     */
     public void disconnected(DetectedDevice printerHandle);  
 }

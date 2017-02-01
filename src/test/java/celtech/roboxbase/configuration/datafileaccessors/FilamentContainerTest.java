@@ -42,6 +42,7 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
     {
         String NEW_ID = "U1234568";
         FilamentContainer filamentContainer = FilamentContainer.getInstance();
+        filamentContainer.reload();
         ObservableList<Filament> userFilaments = filamentContainer.getUserFilamentList();
         ObservableList<Filament> completeFilaments = filamentContainer.getCompleteFilamentList();
         int numFilaments = completeFilaments.size();
