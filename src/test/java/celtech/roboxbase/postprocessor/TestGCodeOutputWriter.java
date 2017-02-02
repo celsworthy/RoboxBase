@@ -1,6 +1,8 @@
 package celtech.roboxbase.postprocessor;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -9,6 +11,7 @@ import java.io.IOException;
 public class TestGCodeOutputWriter implements GCodeOutputWriter
 {
     private int numberOfLinesOutput = 0;
+    List<String> writtenLines = new ArrayList<>();
 
     public TestGCodeOutputWriter(String filename) throws IOException
     {
@@ -38,11 +41,7 @@ public class TestGCodeOutputWriter implements GCodeOutputWriter
     @Override
     public void writeOutput(String outputLine) throws IOException
     {
-        // if it's not a comment or blank line
-        if (!outputLine.trim().startsWith(";") && !"".equals(
-            outputLine.trim()))
-        {
+            writtenLines.add(outputLine);
             numberOfLinesOutput++;
-        }
     }
 }

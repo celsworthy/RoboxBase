@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javafx.beans.property.DoubleProperty;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -364,6 +363,10 @@ public class PostProcessor
             }
 
             PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
+                    headFile.getTypeCode(),
+                    headFile.getType().name(),
+                    eRequired,
+                    dRequired,
                     printJobUUID,
                     nameOfPrint,
                     statsProfileName,
@@ -382,6 +385,8 @@ public class PostProcessor
             );
 
             result.setRoboxisedStatistics(roboxisedStatistics);
+            
+            roboxisedStatistics.writeStatisticsToFile(writer);
 
             timeUtils.timerStart(this, outputVerifierTimerName);
             List<VerifierResult> verificationResults = outputVerifier.verifyAllLayers(postProcessResults, headFile.getType());
