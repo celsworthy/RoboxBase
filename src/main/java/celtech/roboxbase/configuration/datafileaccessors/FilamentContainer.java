@@ -29,7 +29,8 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class FilamentContainer
 {
-    private static FilamentContainer instance = null; 
+
+    private static FilamentContainer instance = null;
     private static final Stenographer steno = StenographerFactory.getStenographer(
             FilamentContainer.class.getName());
     private final ObservableList<Filament> appFilamentList = FXCollections.observableArrayList();
@@ -74,6 +75,8 @@ public class FilamentContainer
     private static final String displayColourProperty = "display_colour";
     private static final String defaultLengthProperty = "default_length_m";
 
+    private final List<String> allTheFilamentNamesIHaveEverLoaded = new ArrayList<>();
+
     public interface FilamentDatabaseChangesListener
     {
 
@@ -86,7 +89,7 @@ public class FilamentContainer
     {
         loadFilamentData();
     }
-    
+
     public static FilamentContainer getInstance()
     {
         if (instance == null)
@@ -123,6 +126,7 @@ public class FilamentContainer
 
     private void loadFilamentData()
     {
+        allTheFilamentNamesIHaveEverLoaded.clear();
         completeFilamentMapByID.clear();
         completeFilamentNameByID.clear();
         completeFilamentList.clear();
@@ -174,105 +178,120 @@ public class FilamentContainer
                     filamentProperties.load(fileInputStream);
 
                     String name = filamentProperties.getProperty(nameProperty).trim();
-                    String filamentID = filamentProperties.getProperty(filamentIDProperty).trim();
-                    String category = filamentProperties.getProperty(categoryProperty);
-                    if (category != null)
-                    {
-                        category = category.trim();
-                    } else
-                    {
-                        category = "";
-                    }
-                    String material = filamentProperties.getProperty(materialProperty).trim();
-                    String diameterString = filamentProperties.getProperty(diameterProperty).trim();
-                    String filamentMultiplierString = filamentProperties.getProperty(
-                            filamentMultiplierProperty).trim();
-                    String feedRateMultiplierString = filamentProperties.getProperty(
-                            feedRateMultiplierProperty).trim();
-                    String ambientTempString = filamentProperties.getProperty(ambientTempProperty).trim();
-                    String firstLayerBedTempString = filamentProperties.getProperty(
-                            firstLayerBedTempProperty).trim();
-                    String bedTempString = filamentProperties.getProperty(bedTempProperty).trim();
-                    String firstLayerNozzleTempString = filamentProperties.getProperty(
-                            firstLayerNozzleTempProperty).trim();
-                    String nozzleTempString = filamentProperties.getProperty(nozzleTempProperty).trim();
-                    String displayColourString = filamentProperties.getProperty(
-                            displayColourProperty).trim();
-                    // introduced in 1.01.05
-                    String costGBPPerKGString = "40";
-                    try
-                    {
-                        costGBPPerKGString = filamentProperties.getProperty(costGBPPerKGProperty).trim();
-                    } catch (Exception ex)
-                    {
-                        steno.warning("No cost per GBP found in filament file");
-                    }
-
-                    // introduced in 2.01.03
-                    String default_length_mString = "240";
-                    try
-                    {
-                        default_length_mString = filamentProperties.getProperty(defaultLengthProperty).trim();
-                    } catch (Exception ex)
-                    {
-                        steno.warning("No default length found in filament file");
-                    }
 
                     if (name != null
-                            && material != null
-                            && filamentID != null
-                            && diameterString != null
-                            && feedRateMultiplierString != null
-                            && filamentMultiplierString != null
-                            && ambientTempString != null
-                            && firstLayerBedTempString != null
-                            && bedTempString != null
-                            && firstLayerNozzleTempString != null
-                            && nozzleTempString != null
-                            && displayColourString != null)
+                            && !allTheFilamentNamesIHaveEverLoaded.contains(name))
                     {
+                        allTheFilamentNamesIHaveEverLoaded.add(name);
+                        String filamentID = filamentProperties.getProperty(filamentIDProperty).trim();
+                        String category = filamentProperties.getProperty(categoryProperty);
+                        if (category != null)
+                        {
+                            category = category.trim();
+                        } else
+                        {
+                            category = "";
+                        }
+                        String material = filamentProperties.getProperty(materialProperty).trim();
+                        String diameterString = filamentProperties.getProperty(diameterProperty).trim();
+                        String filamentMultiplierString = filamentProperties.getProperty(
+                                filamentMultiplierProperty).trim();
+                        String feedRateMultiplierString = filamentProperties.getProperty(
+                                feedRateMultiplierProperty).trim();
+                        String ambientTempString = filamentProperties.getProperty(ambientTempProperty).trim();
+                        String firstLayerBedTempString = filamentProperties.getProperty(
+                                firstLayerBedTempProperty).trim();
+                        String bedTempString = filamentProperties.getProperty(bedTempProperty).trim();
+                        String firstLayerNozzleTempString = filamentProperties.getProperty(
+                                firstLayerNozzleTempProperty).trim();
+                        String nozzleTempString = filamentProperties.getProperty(nozzleTempProperty).trim();
+                        String displayColourString = filamentProperties.getProperty(
+                                displayColourProperty).trim();
+                        // introduced in 1.01.05
+                        String costGBPPerKGString = "40";
                         try
                         {
-                            float diameter = Float.valueOf(diameterString);
-                            float filamentMultiplier = Float.valueOf(filamentMultiplierString);
-                            float feedRateMultiplier = Float.valueOf(feedRateMultiplierString);
-                            int ambientTemp = Integer.valueOf(ambientTempString);
-                            int firstLayerBedTemp = Integer.valueOf(firstLayerBedTempString);
-                            int bedTemp = Integer.valueOf(bedTempString);
-                            int firstLayerNozzleTemp = Integer.valueOf(firstLayerNozzleTempString);
-                            int nozzleTemp = Integer.valueOf(nozzleTempString);
-                            Color colour = Color.web(displayColourString);
-                            float costGBPPerKG = Float.valueOf(costGBPPerKGString);
-                            int defaultLength_m = Integer.valueOf(default_length_mString);
-                            MaterialType selectedMaterial = MaterialType.valueOf(material);
-
-                            Filament newFilament = new Filament(
-                                    name,
-                                    selectedMaterial,
-                                    filamentID,
-                                    category,
-                                    diameter,
-                                    filamentMultiplier,
-                                    feedRateMultiplier,
-                                    ambientTemp,
-                                    firstLayerBedTemp,
-                                    bedTemp,
-                                    firstLayerNozzleTemp,
-                                    nozzleTemp,
-                                    colour,
-                                    costGBPPerKG,
-                                    defaultLength_m,
-                                    filamentsAreMutable);
-
-                            filamentList.add(newFilament);
-
-                            completeFilamentMapByID.put(filamentID, newFilament);
-                            completeFilamentNameByID.put(filamentID, name);
-
-                        } catch (IllegalArgumentException ex)
+                            costGBPPerKGString = filamentProperties.getProperty(costGBPPerKGProperty).trim();
+                        } catch (Exception ex)
                         {
-                            steno.error("Failed to parse filament file "
-                                    + filamentFile.getAbsolutePath());
+                            steno.warning("No cost per GBP found in filament file");
+                        }
+
+                        // introduced in 2.01.03
+                        String default_length_mString = "240";
+                        try
+                        {
+                            default_length_mString = filamentProperties.getProperty(defaultLengthProperty).trim();
+                        } catch (Exception ex)
+                        {
+                            steno.warning("No default length found in filament file");
+                        }
+
+                        if (name != null
+                                && material != null
+                                && filamentID != null
+                                && diameterString != null
+                                && feedRateMultiplierString != null
+                                && filamentMultiplierString != null
+                                && ambientTempString != null
+                                && firstLayerBedTempString != null
+                                && bedTempString != null
+                                && firstLayerNozzleTempString != null
+                                && nozzleTempString != null
+                                && displayColourString != null)
+                        {
+                            try
+                            {
+                                float diameter = Float.valueOf(diameterString);
+                                float filamentMultiplier = Float.valueOf(filamentMultiplierString);
+                                float feedRateMultiplier = Float.valueOf(feedRateMultiplierString);
+                                int ambientTemp = Integer.valueOf(ambientTempString);
+                                int firstLayerBedTemp = Integer.valueOf(firstLayerBedTempString);
+                                int bedTemp = Integer.valueOf(bedTempString);
+                                int firstLayerNozzleTemp = Integer.valueOf(firstLayerNozzleTempString);
+                                int nozzleTemp = Integer.valueOf(nozzleTempString);
+                                Color colour = Color.web(displayColourString);
+                                float costGBPPerKG = Float.valueOf(costGBPPerKGString);
+                                int defaultLength_m = Integer.valueOf(default_length_mString);
+                                MaterialType selectedMaterial = MaterialType.valueOf(material);
+
+                                Filament newFilament = new Filament(
+                                        name,
+                                        selectedMaterial,
+                                        filamentID,
+                                        category,
+                                        diameter,
+                                        filamentMultiplier,
+                                        feedRateMultiplier,
+                                        ambientTemp,
+                                        firstLayerBedTemp,
+                                        bedTemp,
+                                        firstLayerNozzleTemp,
+                                        nozzleTemp,
+                                        colour,
+                                        costGBPPerKG,
+                                        defaultLength_m,
+                                        filamentsAreMutable);
+
+                                filamentList.add(newFilament);
+
+                                completeFilamentMapByID.put(filamentID, newFilament);
+                                completeFilamentNameByID.put(filamentID, name);
+
+                            } catch (IllegalArgumentException ex)
+                            {
+                                steno.error("Failed to parse filament file "
+                                        + filamentFile.getAbsolutePath());
+                            }
+                        }
+                    } else
+                    {
+                        if (name != null)
+                        {
+                            steno.debug("Discarding duplicate filament - " + name);
+                        } else
+                        {
+                            steno.warning("Discarding filament without valid name in file - " + filamentFile.getAbsolutePath());
                         }
                     }
                 }
