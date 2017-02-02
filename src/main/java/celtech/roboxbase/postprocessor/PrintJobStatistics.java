@@ -3,12 +3,19 @@
  */
 package celtech.roboxbase.postprocessor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
@@ -16,6 +23,14 @@ import java.util.Map;
  */
 public class PrintJobStatistics
 {
+
+    @JsonIgnore
+    private final Stenographer steno = StenographerFactory.getStenographer(PrintJobStatistics.class.getName());
+
+    private String printedWithHeadID;
+    private String printedWithHeadType;
+    private boolean requiresMaterial1;
+    private boolean requiresMaterial2;
     private String printJobID;
     private String projectName;
     private String profileName;
@@ -30,8 +45,17 @@ public class PrintJobStatistics
     private double predictedDuration;
     private int lineNumberOfFirstExtrusion;
 
+    @JsonIgnore
+    private static final String DATA_PREFIX_IN_FILE = ";#Statistics:";
+    @JsonIgnore
+    private static final String DATA_SEPARATOR = "|->";
+
     public PrintJobStatistics()
     {
+        printedWithHeadID = "";
+        printedWithHeadType = "";
+        requiresMaterial1 = false;
+        requiresMaterial2 = false;
         printJobID = "";
         projectName = "";
         profileName = "";
@@ -41,13 +65,14 @@ public class PrintJobStatistics
         dVolumeUsed = 0;
         lineNumberOfFirstExtrusion = 0;
         layerNumberToLineNumber = null;
-        layerNumberToPredictedDuration_E_FeedrateDependent = null;
-        layerNumberToPredictedDuration_D_FeedrateDependent = null;
-        layerNumberToPredictedDuration_FeedrateIndependent = null;
         predictedDuration = 0;
     }
 
     public PrintJobStatistics(
+            String printedWithHeadID,
+            String printedWithHeadType,
+            boolean requiresMaterial1,
+            boolean requiresMaterial2,
             String printJobID,
             String projectName,
             String profileName,
@@ -63,6 +88,10 @@ public class PrintJobStatistics
             double predictedDuration
     )
     {
+        this.printedWithHeadID = printedWithHeadID;
+        this.printedWithHeadType = printedWithHeadType;
+        this.requiresMaterial1 = requiresMaterial1;
+        this.requiresMaterial2 = requiresMaterial2;
         this.printJobID = printJobID;
         this.projectName = projectName;
         this.profileName = profileName;
@@ -78,11 +107,44 @@ public class PrintJobStatistics
         this.predictedDuration = predictedDuration;
     }
 
-    public void writeToFile(String statisticsFileLocation) throws IOException
+    public String getPrintedWithHeadID()
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.writeValue(new File(statisticsFileLocation), this);
+        return printedWithHeadID;
+    }
+
+    public void setPrintedWithHeadID(String printedWithHeadID)
+    {
+        this.printedWithHeadID = printedWithHeadID;
+    }
+
+    public String getPrintedWithHeadType()
+    {
+        return printedWithHeadType;
+    }
+
+    public void setPrintedWithHeadType(String printedWithHeadType)
+    {
+        this.printedWithHeadType = printedWithHeadType;
+    }
+
+    public boolean getRequiresMaterial1()
+    {
+        return requiresMaterial1;
+    }
+
+    public void setRequiresMaterial1(boolean requiresMaterial1)
+    {
+        this.requiresMaterial1 = requiresMaterial1;
+    }
+
+    public boolean getRequiresMaterial2()
+    {
+        return requiresMaterial2;
+    }
+
+    public void setRequiresMaterial2(boolean requiresMaterial2)
+    {
+        this.requiresMaterial2 = requiresMaterial2;
     }
 
     public String getPrintJobID()
@@ -233,19 +295,80 @@ public class PrintJobStatistics
         this.lineNumberOfFirstExtrusion = lineNumberOfFirstExtrusion;
     }
 
-    /**
-     * Create a PrintJobStatistics and populate it from a saved file
-     *
-     * @param absolutePath the path of the file to load
-     * @return
-     * @throws IOException
-     */
-    public static PrintJobStatistics readFromFile(String absolutePath) throws IOException
+    protected void updateValueFromStatsString(String statsString)
     {
         ObjectMapper mapper = new ObjectMapper();
-        PrintJobStatistics printJobStatistics = mapper.readValue(new File(
-                absolutePath), PrintJobStatistics.class);
-        return printJobStatistics;
+
+        if (statsString.startsWith(DATA_PREFIX_IN_FILE)
+                && statsString.contains(DATA_SEPARATOR))
+        {
+            String fieldName = statsString.substring(DATA_PREFIX_IN_FILE.length(), statsString.indexOf(DATA_SEPARATOR));
+            String jsonData = statsString.substring(statsString.indexOf(DATA_SEPARATOR) + DATA_SEPARATOR.length());
+            try
+            {
+                Field fieldToUpdate = PrintJobStatistics.class.getDeclaredField(fieldName);
+                //TODO THIS IS SO HORRIBLE IT IS BEYOND BELIEF!!
+                //Jackson doesn't know what type the key is so we have to force the type
+                if (fieldName.startsWith("layerNumberToPredictedDuration"))
+                {
+                    fieldToUpdate.set(this, mapper.readValue(jsonData,  new TypeReference<Map<Integer, Double>>(){}));
+                } else
+                {
+                    fieldToUpdate.set(this, mapper.readValue(jsonData, fieldToUpdate.getType()));
+                }
+            } catch (NoSuchFieldException | IllegalAccessException | IOException ex)
+            {
+                steno.error("Couldn't update field " + fieldName);
+            }
+        }
     }
 
+    public void writeStatisticsToFile(GCodeOutputWriter writer)
+    {
+        try
+        {
+            writer.writeOutput(";#########################################################\n");
+            writer.writeOutput(";                     Statistics\n");
+            writer.writeOutput(";                     ==========\n");
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            for (Field field : this.getClass().getDeclaredFields())
+            {
+                if (!(field.getDeclaredAnnotations().length == 1
+                        && field.getDeclaredAnnotations()[0] instanceof JsonIgnore))
+                {
+                    try
+                    {
+                        String jsonifiedData = mapper.writeValueAsString(field.get(this));
+                        String outputString = DATA_PREFIX_IN_FILE + field.getName() + DATA_SEPARATOR + jsonifiedData;
+                        writer.writeOutput(outputString + "\n");
+                    } catch (JsonProcessingException | IllegalAccessException ex)
+                    {
+                        steno.exception("Exception processing " + field.getName(), ex);
+                    }
+                }
+            }
+            writer.writeOutput(";#########################################################\n");
+        } catch (IOException ex)
+        {
+            steno.exception("Unable to write statistics", ex);
+        }
+    }
+
+    public static PrintJobStatistics importStatisticsFromGCodeFile(String roboxisedFileLocation) throws FileNotFoundException, IOException
+    {
+        PrintJobStatistics result = new PrintJobStatistics();
+
+        BufferedReader fileReader = new BufferedReader(new FileReader(roboxisedFileLocation));
+
+        String line;
+
+        while ((line = fileReader.readLine()) != null)
+        {
+            result.updateValueFromStatsString(line);
+        }
+
+        return result;
+    }
 }

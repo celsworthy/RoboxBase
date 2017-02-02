@@ -16,6 +16,7 @@ public class PrintJob
 
     private String jobUUID = null;
     private String printJobDirectory = null;
+    private PrintJobStatistics statistics = null;
 
     private PrintJob(String jobUUID)
     {
@@ -98,21 +99,13 @@ public class PrintJob
             + BaseConfiguration.gcodeTempFileExtension;
     }
 
-    /**
-     * Get the location of the statistics file
-     *
-     * @return
-     */
-    public String getStatisticsFileLocation()
-    {
-        return printJobDirectory
-            + jobUUID
-            + BaseConfiguration.statisticsFileExtension;
-    }
-
     public PrintJobStatistics getStatistics() throws IOException
     {
-        return PrintJobStatistics.readFromFile(getStatisticsFileLocation());
+        if (statistics == null)
+        {
+            statistics = PrintJobStatistics.importStatisticsFromGCodeFile(getRoboxisedFileLocation());
+        }
+        return statistics;
     }
 
 }
