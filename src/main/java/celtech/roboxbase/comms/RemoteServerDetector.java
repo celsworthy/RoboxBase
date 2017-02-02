@@ -49,45 +49,38 @@ public class RemoteServerDetector
         return instance;
     }
 
-    public List<DetectedServer> searchForServers()
+    public List<DetectedServer> searchForServers() throws IOException
     {
         List<DetectedServer> newlyDiscoveredServers = new ArrayList<>();
 
+        DatagramPacket hi = new DatagramPacket(RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII"),
+                RemoteDiscovery.discoverHostsMessage.length(),
+                group, RemoteDiscovery.remoteSocket);
+
+        s.send(hi);
+
+        s.setSoTimeout(2000);
+
         try
         {
-            DatagramPacket hi = new DatagramPacket(RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII"),
-                    RemoteDiscovery.discoverHostsMessage.length(),
-                    group, RemoteDiscovery.remoteSocket);
-
-            s.send(hi);
-
-            s.setSoTimeout(2000);
-
-            try
+            while (true)
             {
-                while (true)
-                {
-                    byte[] buf = new byte[100];
-                    DatagramPacket recv = new DatagramPacket(buf, buf.length);
-                    s.receive(recv);
+                byte[] buf = new byte[100];
+                DatagramPacket recv = new DatagramPacket(buf, buf.length);
+                s.receive(recv);
 
-                    String receivedData = new String(Arrays.copyOf(buf, recv.getLength()), "US-ASCII");
-                    if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
+                String receivedData = new String(Arrays.copyOf(buf, recv.getLength()), "US-ASCII");
+                if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
+                {
+                    DetectedServer newServer = new DetectedServer(recv.getAddress());
+                    if (newServer.whoAreYou())
                     {
-                        DetectedServer newServer = new DetectedServer(recv.getAddress());
-                        if (newServer.whoAreYou())
-                        {
-                            newlyDiscoveredServers.add(newServer);
-                        }
+                        newlyDiscoveredServers.add(newServer);
                     }
                 }
-            } catch (SocketTimeoutException ex)
-            {
-
             }
-        } catch (IOException ex)
+        } catch (SocketTimeoutException ex)
         {
-            steno.exception("Exception during root scan", ex);
         }
 
         return newlyDiscoveredServers;
