@@ -22,5 +22,4 @@ public class Configuration
     public static final String connectService = "/connect";
     public static final String disconnectService = "/disconnect";
     public static final String writeDataService = "/writeData";
-    public static final String associateStatisticsService = "/associateStatistics";
 }

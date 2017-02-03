@@ -268,11 +268,6 @@ public class PrintEngine implements ControllableService
 
                 makeETCCalculator(printJobStatistics, associatedPrinter);
 
-                if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-                {
-                    ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
-                }
-
                 transferGCodeToPrinterService.reset();
                 transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
                 transferGCodeToPrinterService.setStartFromSequenceNumber(0);
@@ -746,10 +741,6 @@ public class PrintEngine implements ControllableService
         {
             PrintJobStatistics printJobStatistics = printJob.getStatistics();
             linesInPrintingFile.set(printJobStatistics.getNumberOfLines());
-            if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-            {
-                ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).associateStatisticsWithPrintJob(printJobStatistics);
-            }
         } catch (IOException ex)
         {
             steno.error("Couldn't get job statistics for job " + jobUUID);

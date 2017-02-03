@@ -24,7 +24,6 @@ public class RemoteClient implements LowLevelInterface
     private final String connectUrlString;
     private final String disconnectUrlString;
     private final String writeToPrinterUrlString;
-    private final String associateStatisticsUrlString;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
@@ -34,7 +33,6 @@ public class RemoteClient implements LowLevelInterface
         connectUrlString = Configuration.lowLevelAPIService + Configuration.connectService;
         disconnectUrlString = Configuration.lowLevelAPIService + Configuration.disconnectService;
         writeToPrinterUrlString = Configuration.lowLevelAPIService + Configuration.writeDataService;
-        associateStatisticsUrlString = baseAPIString + Configuration.lowLevelAPIService + Configuration.associateStatisticsService;
     }
 
     @Override
@@ -81,18 +79,5 @@ public class RemoteClient implements LowLevelInterface
         }
 
         return returnedPacket;
-    }
-
-    public void associateStatisticsWithPrintJobID(PrintJobStatistics statistics) throws RoboxCommsException
-    {
-        try
-        {
-            String dataToOutput = mapper.writeValueAsString(statistics);
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(associateStatisticsUrlString, dataToOutput, RoboxRxPacket.class);
-        } catch (IOException ex)
-        {
-            steno.error("Failed to associate statistics on remote printer for job (" + statistics.getPrintJobID() + ") " + remotePrinterHandle);
-            throw new RoboxCommsException("Failed to associate statistics on remote printer for job (" + statistics.getPrintJobID() + ") " + remotePrinterHandle);
-        }
     }
 }

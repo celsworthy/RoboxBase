@@ -98,14 +98,4 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     {
         sleepBetweenStatusChecks = sleepMillis;
     }
-
-    public void associateStatisticsWithPrintJob(PrintJobStatistics statistics)
-    {
-        try
-        {
-            remoteClient.associateStatisticsWithPrintJobID(statistics);
-        } catch (RoboxCommsException ex)
-        {
-        }
-    }
 }
