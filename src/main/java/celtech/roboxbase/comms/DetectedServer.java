@@ -151,7 +151,7 @@ public final class DetectedServer
 
     public void setServerStatus(ServerStatus status)
     {
-        steno.info("Updating status of server " + getName() + " to " + status.name());
+//        steno.info("Updating status of server " + getName() + " to " + status.name());
         if (status != serverStatus.get())
         {
             switch (status)
@@ -199,8 +199,8 @@ public final class DetectedServer
 
     public void connect()
     {
-        if (serverStatus.get() != ServerStatus.CONNECTED
-                && version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+        if (serverStatus.get() != ServerStatus.WRONG_VERSION
+                && serverStatus.get() != ServerStatus.CONNECTED)
         {
             try
             {
@@ -219,9 +219,6 @@ public final class DetectedServer
             {
                 setServerStatus(ServerStatus.NOT_CONNECTED);
             }
-        } else
-        {
-            setServerStatus(ServerStatus.WRONG_VERSION);
         }
     }
 
@@ -264,6 +261,10 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
+                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+                    {
+                        setServerStatus(ServerStatus.WRONG_VERSION);
+                    }
                 }
             } else
             {
