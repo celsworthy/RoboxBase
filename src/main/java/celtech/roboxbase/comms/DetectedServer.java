@@ -234,6 +234,8 @@ public final class DetectedServer
 
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
 
+        steno.trace("Trying who are you with URL:" + url);
+        
         try
         {
             URL obj = new URL(url);
@@ -265,6 +267,10 @@ public final class DetectedServer
                     {
                         setServerStatus(ServerStatus.WRONG_VERSION);
                     }
+                }
+                else
+                {
+                    steno.warning("Got an indecipherable response from " + address.getHostAddress());
                 }
             } else
             {

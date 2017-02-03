@@ -78,6 +78,10 @@ public class RemoteServerDetector
                         newlyDiscoveredServers.add(newServer);
                     }
                 }
+                else
+                {
+                    steno.info("Didn't understand the response. I saw: " + receivedData);
+                }
             }
         } catch (SocketTimeoutException ex)
         {
