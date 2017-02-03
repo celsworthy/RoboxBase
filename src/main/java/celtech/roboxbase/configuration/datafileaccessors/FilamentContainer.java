@@ -154,6 +154,10 @@ public class FilamentContainer
         {
             filaments = ingestFilaments(userfilaments, true);
             filaments.sort(Filament.BY_MATERIAL.thenComparing(Filament::compareByFilamentID));
+            for (Filament filament : filaments)
+            {
+                filament.setCategory("Custom");
+            }
             completeFilamentList.addAll(filaments);
             userFilamentList.addAll(filaments);
         } else
