@@ -29,12 +29,14 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class FilamentContainer
 {
-    private static FilamentContainer instance = null; 
+
+    private static FilamentContainer instance = null;
     private static final Stenographer steno = StenographerFactory.getStenographer(
             FilamentContainer.class.getName());
     private final ObservableList<Filament> appFilamentList = FXCollections.observableArrayList();
     private final ObservableList<Filament> userFilamentList = FXCollections.observableArrayList();
     private final ObservableList<Filament> completeFilamentList = FXCollections.observableArrayList();
+    private final ObservableList<Filament> completeFilamentListNoDuplicates = FXCollections.observableArrayList();
     private final ObservableMap<String, Filament> completeFilamentMapByID = FXCollections.observableHashMap();
     private final ObservableMap<String, String> completeFilamentNameByID = FXCollections.observableHashMap();
 
@@ -86,7 +88,7 @@ public class FilamentContainer
     {
         loadFilamentData();
     }
-    
+
     public static FilamentContainer getInstance()
     {
         if (instance == null)
@@ -175,6 +177,7 @@ public class FilamentContainer
                     filamentProperties.load(fileInputStream);
 
                     String name = filamentProperties.getProperty(nameProperty).trim();
+
                     String filamentID = filamentProperties.getProperty(filamentIDProperty).trim();
                     String category = filamentProperties.getProperty(categoryProperty);
                     if (category != null)

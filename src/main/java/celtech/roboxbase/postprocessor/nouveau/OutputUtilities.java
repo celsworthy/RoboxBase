@@ -29,6 +29,7 @@ public class OutputUtilities
         SimpleDateFormat formatter = new SimpleDateFormat("EEE d MMM y HH:mm:ss", Locale.UK);
         try
         {
+            writer.writeOutput(";###############################################################################\n");
             writer.writeOutput("; File post-processed by the CEL Tech Roboxiser on "
                     + formatter.format(new Date()) + "\n");
             writer.writeOutput("; " + BaseConfiguration.getTitleAndVersion() + "\n");
@@ -68,19 +69,19 @@ public class OutputUtilities
             writer.writeOutput("; Extruder E\n");
             writer.writeOutput("; ----------\n");
             writer.writeOutput("; Volume of material - " + timeAndVolumeCalcResult.getExtruderEStats().getVolume() + "\n");
-            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int) timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()) + "\n");
             writer.writeOutput("; ==========\n");
             writer.writeOutput("; Extruder D\n");
             writer.writeOutput("; ----------\n");
             writer.writeOutput("; Volume of material - " + timeAndVolumeCalcResult.getExtruderDStats().getVolume() + "\n");
-            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("; Feedrate dependent time - " + TimeUtils.convertToHoursMinutesSeconds((int) timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()) + "\n");
             writer.writeOutput("; ==========\n");
             writer.writeOutput("; ----------------------------------\n");
-            writer.writeOutput("; Feedrate independent time - " + TimeUtils.convertToHoursMinutesSeconds((int)timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()) + "\n");
+            writer.writeOutput("; Feedrate independent time - " + TimeUtils.convertToHoursMinutesSeconds((int) timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()) + "\n");
             writer.writeOutput("==================================================================\n");
             writer.writeOutput("; Total print time estimate - "
                     + TimeUtils.convertToHoursMinutesSeconds((int) (timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
-                    + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
+                            + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
                             + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()))
                     + "\n");
             writer.writeOutput("===================================================================\n");
