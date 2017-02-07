@@ -1,9 +1,9 @@
 package celtech.roboxbase.comms;
 
 import celtech.roboxbase.comms.remote.Configuration;
-import celtech.roboxbase.comms.remote.ListPrintersResponse;
+import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
-import celtech.roboxbase.comms.remote.WhoAreYouResponse;
+import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
@@ -57,6 +57,7 @@ public final class DetectedServer
 
     @JsonIgnore
     private static final String contentPage = "/rootMenu.html";
+    @JsonIgnore
     private static final String listPrintersCommand = "/api/discovery/listPrinters";
 
     public enum ServerStatus
@@ -87,6 +88,11 @@ public final class DetectedServer
         return address;
     }
 
+    public void setAddress(InetAddress address)
+    {
+        this.address = address;
+    }
+    
     public String getName()
     {
         return name.get();
@@ -234,8 +240,6 @@ public final class DetectedServer
 
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
 
-        steno.trace("Trying who are you with URL:" + url);
-        
         try
         {
             URL obj = new URL(url);
@@ -314,7 +318,6 @@ public final class DetectedServer
                 con.getInputStream().read(inputData, 0, availChars);
                 ListPrintersResponse listPrintersResponse = mapper.readValue(inputData, ListPrintersResponse.class);
 
-//                steno.info("Got a response from server " + this.getName() + " " + listPrintersResponse.getPrinterIDs().size() + " printers attached");
                 listPrintersResponse.getPrinterIDs().forEach((printerID) ->
                 {
                     RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);

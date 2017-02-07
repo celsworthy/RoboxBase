@@ -1,14 +1,15 @@
 package celtech.roboxbase.comms.remote.rx;
 
-import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.HeadEEPROMDataResponse;
+import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *

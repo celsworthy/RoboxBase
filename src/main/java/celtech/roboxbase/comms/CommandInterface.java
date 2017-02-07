@@ -89,7 +89,7 @@ public abstract class CommandInterface extends Thread
         this.sleepBetweenStatusChecks = sleepBetweenStatusChecks;
 
         this.setDaemon(true);
-        this.setName("CommandInterface|" + printerHandle.toString());
+        this.setName("CommandInterface|" + printerHandle.getConnectionHandle());
 
         asyncWriteThread = new AsyncWriteThread(this, printerHandle.toString());
         asyncWriteThread.start();

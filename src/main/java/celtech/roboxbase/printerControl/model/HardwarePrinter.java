@@ -3018,7 +3018,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         ReadHeadEEPROM readHead = (ReadHeadEEPROM) RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.READ_HEAD_EEPROM);
-        return (HeadEEPROMDataResponse) commandInterface.writeToPrinter(readHead, dontPublishResponseEvent);
+        HeadEEPROMDataResponse headEEPROMData = (HeadEEPROMDataResponse) commandInterface.writeToPrinter(readHead, dontPublishResponseEvent);
+        return headEEPROMData;
     }
 
     @Override
@@ -3975,13 +3976,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printerserialNumber.set(idResponse.getSerialNumber());
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
-                    printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColourWebString()));
+                    printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
 
-                    if (idResponse.getPrinterColourWebString() != null)
+                    if (idResponse.getPrinterColour() != null)
                     {
                         try
                         {
-                            setAmbientLEDColour(Color.web(idResponse.getPrinterColourWebString()));
+                            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
 
                         } catch (PrinterException ex)
                         {

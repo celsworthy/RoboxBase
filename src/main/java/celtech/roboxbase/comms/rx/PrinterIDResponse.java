@@ -27,7 +27,8 @@ public class PrinterIDResponse extends RoboxRxPacket
     private String serialNumber;
     private String checkByte;
     private String printerFriendlyName;
-    private String printerColourWebString = "";
+    // This is the web string version of the printer display colour
+    private String printerColour = "";
 
     /**
      *
@@ -99,7 +100,7 @@ public class PrinterIDResponse extends RoboxRxPacket
                     PrinterIDDataStructure.colourBytes * 3, charsetToUse);
             byteOffset += PrinterIDDataStructure.colourBytes * 3;
 
-            printerColourWebString = stringToColor(colourDigits).toString();
+            printerColour = stringToColor(colourDigits).toString();
 
             success = true;
 
@@ -135,15 +136,15 @@ public class PrinterIDResponse extends RoboxRxPacket
      *
      * @return
      */
-    public String getPrinterColourWebString()
+    public String getPrinterColour()
     {
-        return printerColourWebString;
+        return printerColour;
     }
 
     @JsonIgnore
-    public Color getPrinterColor()
+    public Color getPrinterColourData()
     {
-        return Color.web(printerColourWebString);
+        return Color.web(printerColour);
     }
 
     /**
@@ -250,13 +251,13 @@ public class PrinterIDResponse extends RoboxRxPacket
 
     public void setPrinterColour(String printerColourString)
     {
-        printerColourWebString = printerColourString;
+        printerColour = printerColourString;
     }
 
     @JsonIgnore
     public void setPrinterColourFromColor(Color printerColour)
     {
-        this.printerColourWebString = printerColour.toString();
+        this.printerColour = printerColour.toString();
     }
 
     public void setPrinterFriendlyName(String printerFriendlyName)
@@ -282,7 +283,7 @@ public class PrinterIDResponse extends RoboxRxPacket
                 append(serialNumber).
                 append(checkByte).
                 append(printerFriendlyName).
-                append(printerColourWebString).
+                append(printerColour).
                 toHashCode();
     }
 
@@ -309,7 +310,7 @@ public class PrinterIDResponse extends RoboxRxPacket
                 append(serialNumber, rhs.serialNumber).
                 append(checkByte, rhs.checkByte).
                 append(printerFriendlyName, rhs.printerFriendlyName).
-                append(printerColourWebString, rhs.printerColourWebString).
+                append(printerColour, rhs.printerColour).
                 isEquals();
     }
 

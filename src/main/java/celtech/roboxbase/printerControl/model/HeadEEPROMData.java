@@ -8,7 +8,6 @@ import org.apache.commons.lang.builder.EqualsBuilder;
  */
 public class HeadEEPROMData
 {
-
     private String headTypeCode;
     private String uniqueID;
     private String weekNumber = "";
@@ -294,7 +293,7 @@ public class HeadEEPROMData
     {
         this.headHours = headHours;
     }
-    
+
     @Override
     public boolean equals(Object obj)
     {
@@ -335,4 +334,17 @@ public class HeadEEPROMData
                 append(headHours, rhs.headHours).
                 isEquals();
     }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder outputString = new StringBuilder();
+        outputString.append("HeadType: ");
+        outputString.append(headTypeCode);
+        outputString.append("ID:");
+        outputString.append(uniqueID);
+
+        return outputString.toString();
+    }
+
 }

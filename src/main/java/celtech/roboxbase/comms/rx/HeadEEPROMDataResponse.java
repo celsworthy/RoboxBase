@@ -45,12 +45,22 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
     private final int headTypeCodeBytes = 16;
     @JsonIgnore
     private final int uniqueIDBytes = 24;
-
-    private final HeadEEPROMData headEEPROMData = new HeadEEPROMData();
+    
+    private HeadEEPROMData headEEPROMData = new HeadEEPROMData();
 
     public HeadEEPROMDataResponse()
     {
         super(RxPacketTypeEnum.HEAD_EEPROM_DATA, false, false);
+    }
+
+    public HeadEEPROMData getHeadEEPROMData()
+    {
+        return headEEPROMData;
+    }
+
+    public void setHeadEEPROMData(HeadEEPROMData headEEPROMData)
+    {
+        this.headEEPROMData = headEEPROMData;
     }
 
     @Override
@@ -272,122 +282,122 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
         outputString.append("Packet type:");
         outputString.append(getPacketType().name());
         outputString.append("\n");
-//        outputString.append("ID: " + getPrinterID());
+        outputString.append(headEEPROMData.toString());
         outputString.append("\n");
         outputString.append(">>>>>>>>>>\n");
 
         return outputString.toString();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getMaximumTemperature()
     {
         return headEEPROMData.getMaximumTemperature();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle1XOffset()
     {
         return headEEPROMData.getNozzle1XOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle1YOffset()
     {
         return headEEPROMData.getNozzle1YOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle1ZOffset()
     {
         return headEEPROMData.getNozzle1ZOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle1BOffset()
     {
         return headEEPROMData.getNozzle1BOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle2XOffset()
     {
         return headEEPROMData.getNozzle2XOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle2YOffset()
     {
         return headEEPROMData.getNozzle2YOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle2ZOffset()
     {
         return headEEPROMData.getNozzle2ZOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getNozzle2BOffset()
     {
         return headEEPROMData.getNozzle2BOffset();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getHeadHours()
     {
         return headEEPROMData.getHeadHours();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getHeadTypeCode()
     {
         return headEEPROMData.getHeadTypeCode();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getUniqueID()
     {
         return headEEPROMData.getUniqueID();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getThermistorBeta()
     {
         return headEEPROMData.getThermistorBeta();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getThermistorTCal()
     {
         return headEEPROMData.getThermistorTCal();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public float getLastFilamentTemperature(int nozzleHeaterNumber)
     {
         return headEEPROMData.getLastFilamentTemperature(nozzleHeaterNumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getFilament0ID()
     {
         return headEEPROMData.getFilament0ID();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getFilament1ID()
     {
         return headEEPROMData.getFilament1ID();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getFilamentID(int nozzleHeaterNumber)
     {
         return headEEPROMData.getFilamentID(nozzleHeaterNumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void updateContents(String headTypeCodeIn,
             String uniqueIdIn,
             int numberOfHeaters,
@@ -445,169 +455,169 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
         }
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setHeadTypeCode(String headTypeCode)
     {
         headEEPROMData.setHeadTypeCode(headTypeCode);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setUniqueID(String uniqueID)
     {
         headEEPROMData.setUniqueID(uniqueID);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setMaximumTemperature(float maximumTemperature)
     {
         headEEPROMData.setMaximumTemperature(maximumTemperature);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setThermistorBeta(float thermistorBeta)
     {
         headEEPROMData.setThermistorBeta(thermistorBeta);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setThermistorTCal(float thermistorTCal)
     {
         headEEPROMData.setThermistorTCal(thermistorTCal);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle1XOffset(float nozzle1XOffset)
     {
         headEEPROMData.setNozzle1XOffset(nozzle1XOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle1YOffset(float nozzle1YOffset)
     {
         headEEPROMData.setNozzle1YOffset(nozzle1YOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle1ZOffset(float nozzle1ZOffset)
     {
         headEEPROMData.setNozzle1ZOffset(nozzle1ZOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle1BOffset(float nozzle1BOffset)
     {
         headEEPROMData.setNozzle1BOffset(nozzle1BOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle2XOffset(float nozzle2XOffset)
     {
         headEEPROMData.setNozzle2XOffset(nozzle2XOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle2YOffset(float nozzle2YOffset)
     {
         headEEPROMData.setNozzle2YOffset(nozzle2YOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle2ZOffset(float nozzle2ZOffset)
     {
         headEEPROMData.setNozzle2ZOffset(nozzle2ZOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setNozzle2BOffset(float nozzle2BOffset)
     {
         headEEPROMData.setNozzle2BOffset(nozzle2BOffset);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setLastFilamentTemperature0(float lastFilamentTemperature)
     {
         headEEPROMData.setLastFilamentTemperature0(lastFilamentTemperature);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setLastFilamentTemperature1(float lastFilamentTemperature)
     {
         headEEPROMData.setLastFilamentTemperature1(lastFilamentTemperature);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setFilament0ID(String filamentID)
     {
         headEEPROMData.setFilament0ID(filamentID);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setFilament1ID(String filamentID)
     {
         headEEPROMData.setFilament1ID(filamentID);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setHeadHours(float hoursUsed)
     {
         headEEPROMData.setHeadHours(hoursUsed);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getWeekNumber()
     {
         return headEEPROMData.getWeekNumber();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setWeekNumber(String weekNumber)
     {
         headEEPROMData.setWeekNumber(weekNumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getYearNumber()
     {
         return headEEPROMData.getYearNumber();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setYearNumber(String yearNumber)
     {
         headEEPROMData.setYearNumber(yearNumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getPONumber()
     {
         return headEEPROMData.getPONumber();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setPONumber(String PONumber)
     {
         headEEPROMData.setPONumber(PONumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getSerialNumber()
     {
         return headEEPROMData.getSerialNumber();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setSerialNumber(String serialNumber)
     {
         headEEPROMData.setSerialNumber(serialNumber);
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public String getChecksum()
     {
         return headEEPROMData.getChecksum();
     }
 
-        @JsonIgnore
+    @JsonIgnore
     public void setChecksum(String checksum)
     {
         headEEPROMData.setChecksum(checksum);
@@ -619,7 +629,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
      *
      * @param headWriteCommand
      */
-        @JsonIgnore
+    @JsonIgnore
     public void updateFromWrite(WriteHeadEEPROM headWriteCommand)
     {
         //TODO ensure this copes with all data
@@ -644,11 +654,6 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
         headEEPROMData.setNozzle2YOffset(headWriteCommand.getNozzle2YOffset());
         headEEPROMData.setNozzle2ZOffset(headWriteCommand.getNozzle2ZOffset());
         headEEPROMData.setNozzle2BOffset(headWriteCommand.getNozzle2BOffset());
-    }
-    
-    public HeadEEPROMData getHeadEEPROMData()
-    {
-        return headEEPROMData;
     }
 
     @Override

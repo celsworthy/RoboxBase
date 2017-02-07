@@ -8,7 +8,6 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.PrinterNotFound;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
-import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 
 /**
@@ -25,7 +24,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
     {
         super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
-        this.setName("RemoteCI:" + printerHandle + " " + this.toString());
+        this.setName("RemoteCI:" + printerHandle.getConnectionHandle() + " " + this.getName());
         remoteClient = new RemoteClient(printerHandle);
     }
 

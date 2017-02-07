@@ -1,4 +1,4 @@
-package celtech.roboxbase.comms.remote;
+package celtech.roboxbase.comms.remote.clear;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

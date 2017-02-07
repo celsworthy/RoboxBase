@@ -1,12 +1,13 @@
 package celtech.roboxbase.configuration;
 
 import celtech.roboxbase.comms.DetectedServer;
-import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -18,35 +19,18 @@ public class CoreMemory
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer(CoreMemory.class.getName());
+    private static final String ACTIVE_ROBOX_ROOT_KEY = "ActiveRoots";
+    private static final String LAST_PRINTER_SERIAL_KEY = "LastPrinterSerial";
+    private static final String LAST_PRINTER_FIRMWARE_VERSION_KEY = "LastPrinterFirmwareVersion";
+
+    private List<DetectedServer> cachedActiveRoboxRoots = null;
+
     private static CoreMemory instance = null;
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private final String filename;
-    public CoreMemoryData coreMemoryData = null;
-    private File coreMemoryFile = null;
+
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private CoreMemory()
     {
-        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-        filename = BaseConfiguration.getApplicationStorageDirectory() + ".CoreMemory.dat";
-        coreMemoryFile = new File(filename);
-
-        if (!coreMemoryFile.exists())
-        {
-            writeNewCoreMemory(coreMemoryFile);
-        } else
-        {
-            try
-            {
-                coreMemoryData = mapper.readValue(coreMemoryFile, CoreMemoryData.class);
-
-            } catch (IOException ex)
-            {
-                steno.error("Error loading core memory file " + coreMemoryFile.getAbsolutePath() + " - writing new memory");
-                writeNewCoreMemory(coreMemoryFile);
-            }
-        }
     }
 
     public static CoreMemory getInstance()
@@ -55,78 +39,107 @@ public class CoreMemory
         {
             instance = new CoreMemory();
         }
-
         return instance;
-    }
-
-    private void writeNewCoreMemory(File coreMemoryFile)
-    {
-        coreMemoryData = new CoreMemoryData();
-        try
-        {
-            mapper.writeValue(coreMemoryFile, coreMemoryData);
-        } catch (IOException ex)
-        {
-            steno.error("Error trying to write core memory file");
-        }
-    }
-
-    private void writeCoreMemory()
-    {
-        try
-        {
-            mapper.writeValue(coreMemoryFile, coreMemoryData);
-        } catch (IOException ex)
-        {
-            steno.error("Error trying to write core memory file");
-        }
     }
 
     public List<DetectedServer> getActiveRoboxRoots()
     {
-        return coreMemoryData.getActiveRoboxRoots();
+        if (cachedActiveRoboxRoots == null)
+        {
+            String activeRootsJSON = BaseConfiguration.getApplicationMemory(ACTIVE_ROBOX_ROOT_KEY);
+            if (activeRootsJSON != null)
+            {
+                try
+                {
+                    cachedActiveRoboxRoots = mapper.readValue(activeRootsJSON, new TypeReference<List<DetectedServer>>()
+                    {
+                    });
+                } catch (IOException ex)
+                {
+                    steno.warning("Unable to map data for active robox roots");
+                }
+            }
+            
+            if (cachedActiveRoboxRoots == null)
+            {
+                cachedActiveRoboxRoots = new ArrayList<>();
+            }
+        }
+        return cachedActiveRoboxRoots;
     }
 
     public void clearActiveRoboxRoots()
     {
-        coreMemoryData.getActiveRoboxRoots().clear();
-        writeCoreMemory();
+        cachedActiveRoboxRoots.clear();
+        BaseConfiguration.setApplicationMemory(ACTIVE_ROBOX_ROOT_KEY, "");
+    }
+
+    private void writeRoboxRootData()
+    {
+        try
+        {
+            BaseConfiguration.setApplicationMemory(ACTIVE_ROBOX_ROOT_KEY, mapper.writeValueAsString(cachedActiveRoboxRoots));
+        } catch (JsonProcessingException ex)
+        {
+            steno.warning("Unable to write active root data:" + ex.getMessage());
+        }
     }
 
     public void activateRoboxRoot(DetectedServer server)
     {
-        if (!coreMemoryData.getActiveRoboxRoots().contains(server))
+        if (!cachedActiveRoboxRoots.contains(server))
         {
-            coreMemoryData.getActiveRoboxRoots().add(server);
-            writeCoreMemory();
+            cachedActiveRoboxRoots.add(server);
+            writeRoboxRootData();
+        } else
+        {
+            steno.warning("Root " + server.getName() + " is already active");
         }
     }
 
     public void deactivateRoboxRoot(DetectedServer server)
     {
-        coreMemoryData.getActiveRoboxRoots().remove(server);
-        writeCoreMemory();
+        if (cachedActiveRoboxRoots.contains(server))
+        {
+            cachedActiveRoboxRoots.remove(server);
+            writeRoboxRootData();
+        } else
+        {
+            steno.warning("Root " + server.getName() + " is not active");
+        }
     }
 
     public float getLastPrinterFirmwareVersion()
     {
-        return coreMemoryData.getLastPrinterFirmwareVersion();
+        float firmwareVersionFloat = 0;
+
+        String firmwareString = BaseConfiguration.getApplicationMemory(LAST_PRINTER_FIRMWARE_VERSION_KEY);
+        if (firmwareString != null)
+        {
+            try
+            {
+                firmwareVersionFloat = Float.valueOf(firmwareString);
+            } catch (NumberFormatException ex)
+            {
+                steno.warning("Unable to read firmware version from application memory");
+            }
+        }
+
+        return firmwareVersionFloat;
     }
 
     public void setLastPrinterFirmwareVersion(float firmwareVersionInUse)
     {
-        coreMemoryData.setLastPrinterFirmwareVersion(firmwareVersionInUse);
-        writeCoreMemory();
+        BaseConfiguration.setApplicationMemory(LAST_PRINTER_FIRMWARE_VERSION_KEY, String.format(Locale.UK, "%f", firmwareVersionInUse));
     }
 
     public String getLastPrinterSerial()
     {
-        return coreMemoryData.getLastPrinterSerial();
+        return BaseConfiguration.getApplicationMemory(LAST_PRINTER_SERIAL_KEY);
     }
 
     public void setLastPrinterSerial(String printerIDToUse)
     {
-        coreMemoryData.setLastPrinterSerial(printerIDToUse);
-        writeCoreMemory();
+        BaseConfiguration.setApplicationMemory(LAST_PRINTER_SERIAL_KEY, printerIDToUse);
     }
 }

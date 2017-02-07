@@ -20,7 +20,7 @@ public class PrinterIDResponseTest
 {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.PrinterIDResponse\",\"packetType\":\"PRINTER_ID_RESPONSE\",\"messagePayload\":null,\"sequenceNumber\":44,\"includeSequenceNumber\":false,\"includeCharsOfDataInOutput\":false,\"model\":\"RBX01\",\"edition\":\"KS\",\"weekOfManufacture\":null,\"yearOfManufacture\":null,\"poNumber\":null,\"serialNumber\":null,\"checkByte\":null,\"printerFriendlyName\":null,\"printerColourWebString\":\"0xf0f8ffff\"}";
+    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.PrinterIDResponse\",\"packetType\":\"PRINTER_ID_RESPONSE\",\"messagePayload\":null,\"sequenceNumber\":44,\"includeSequenceNumber\":false,\"includeCharsOfDataInOutput\":false,\"model\":\"RBX01\",\"edition\":\"KS\",\"weekOfManufacture\":null,\"yearOfManufacture\":null,\"poNumber\":null,\"serialNumber\":null,\"checkByte\":null,\"printerFriendlyName\":null,\"printerColour\":\"0xf0f8ffff\"}";
     private static String testColourString = Color.ALICEBLUE.toString();
 
     public PrinterIDResponseTest()
