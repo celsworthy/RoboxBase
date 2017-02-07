@@ -5,6 +5,8 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
 import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -19,26 +21,82 @@ public class AsyncWriteThread extends Thread
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer(AsyncWriteThread.class.getName());
-    private final BlockingQueue<CommandPacket> inboundQueue = new ArrayBlockingQueue<>(10);
-    private final BlockingQueue<RoboxRxPacket> outboundQueue = new ArrayBlockingQueue<>(10);
+    private final int NUMBER_OF_SIMULTANEOUS_COMMANDS = 10;
+    private final BlockingQueue<CommandHolder> inboundQueue = new ArrayBlockingQueue<>(NUMBER_OF_SIMULTANEOUS_COMMANDS);
+    private final List<BlockingQueue<RoboxRxPacket>> outboundQueues;
     private final CommandInterface commandInterface;
     private boolean keepRunning = true;
+
+    private class CommandHolder
+    {
+
+        private final int queueIndex;
+        private final CommandPacket commandPacket;
+
+        public CommandHolder(int queueIndex, CommandPacket commandPacket)
+        {
+            this.queueIndex = queueIndex;
+            this.commandPacket = commandPacket;
+        }
+
+        public CommandPacket getCommandPacket()
+        {
+            return commandPacket;
+        }
+
+        public int getQueueIndex()
+        {
+            return queueIndex;
+        }
+    }
 
     public AsyncWriteThread(CommandInterface commandInterface, String ciReference)
     {
         this.commandInterface = commandInterface;
         this.setDaemon(true);
         this.setName("AsyncCommandProcessor|" + ciReference);
+
+        outboundQueues = new ArrayList<>();
+        for (int i = 0; i < NUMBER_OF_SIMULTANEOUS_COMMANDS; i++)
+        {
+            outboundQueues.add(new ArrayBlockingQueue<>(1));
+        }
     }
 
-    public RoboxRxPacket sendCommand(CommandPacket command) throws RoboxCommsException
+    private int addCommandToQueue(CommandPacket command) throws RoboxCommsException
+    {
+        int queueNumber = -1;
+
+        // Look for an empty outbound queue
+        for (int queueIndex = 0; queueIndex < outboundQueues.size(); queueIndex++)
+        {
+            if (outboundQueues.get(queueIndex).remainingCapacity() > 0)
+            {
+                CommandHolder commandHolder = new CommandHolder(queueIndex, command);
+                inboundQueue.add(commandHolder);
+                queueNumber = queueIndex;
+                break;
+            }
+        }
+        
+        if (queueNumber < 0)
+        {
+            throw new RoboxCommsException("Message queue full");
+        }
+        
+        return queueNumber;
+    }
+
+    public synchronized RoboxRxPacket sendCommand(CommandPacket command) throws RoboxCommsException
     {
         RoboxRxPacket response = null;
 
-        inboundQueue.add(command);
+//        steno.info("Adding command to queue:" + command.getCommand().getPacketType());
+        int queueNumber = addCommandToQueue(command);
         try
         {
-            response = outboundQueue.poll(750, TimeUnit.MILLISECONDS);
+            response = outboundQueues.get(queueNumber).poll(750, TimeUnit.MILLISECONDS);
+//            steno.info("Received response:" + response.getPacketType());
         } catch (InterruptedException ex)
         {
             throw new RoboxCommsException("Interrupted waiting for response");
@@ -58,13 +116,15 @@ public class AsyncWriteThread extends Thread
         while (keepRunning)
         {
             boolean createNullPacket = true;
+            CommandHolder commandHolder = null;
             try
             {
-                RoboxRxPacket response = processCommand(inboundQueue.take());
+                commandHolder = inboundQueue.take();
+                RoboxRxPacket response = processCommand(commandHolder.getCommandPacket());
                 if (response != null)
                 {
                     createNullPacket = false;
-                    outboundQueue.add(response);
+                    outboundQueues.get(commandHolder.getQueueIndex()).add(response);
                 }
             } catch (RoboxCommsException | InterruptedException ex)
             {
@@ -72,7 +132,7 @@ public class AsyncWriteThread extends Thread
             {
                 if (createNullPacket)
                 {
-                    outboundQueue.add(RoboxRxPacketFactory.createNullPacket());
+                    outboundQueues.get(commandHolder.getQueueIndex()).add(RoboxRxPacketFactory.createNullPacket());
                 }
             }
         }
