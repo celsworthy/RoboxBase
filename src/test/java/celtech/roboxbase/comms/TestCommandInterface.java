@@ -1,6 +1,5 @@
 package celtech.roboxbase.comms;
 
-import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.remote.EEPROMState;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;

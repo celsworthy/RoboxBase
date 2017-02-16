@@ -1392,28 +1392,23 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     /**
      *
      * @param firmwareID
-     * @return
      * @throws PrinterException
      */
     @Override
-    public boolean transmitUpdateFirmware(final String firmwareID) throws PrinterException
+    public void transmitUpdateFirmware(final String firmwareID) throws PrinterException
     {
         RoboxTxPacket gcodePacket = RoboxTxPacketFactory.createPacket(
                 TxPacketTypeEnum.UPDATE_FIRMWARE);
         gcodePacket.setMessagePayload(firmwareID);
 
-        AckResponse response = null;
-
         try
         {
-            response = (AckResponse) commandInterface.writeToPrinter(gcodePacket);
+            commandInterface.writeToPrinter(gcodePacket);
         } catch (RoboxCommsException ex)
         {
             //We expect to see an exception here as the printer disconnects after an update...
             steno.info("Post firmware update disconnect");
         }
-
-        return (response.isError());
     }
 
     private void transmitInitiatePrint(final String printJobUUID) throws RoboxCommsException

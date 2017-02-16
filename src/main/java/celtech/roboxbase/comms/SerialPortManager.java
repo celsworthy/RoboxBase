@@ -1,5 +1,6 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.comms.exceptions.CommsSuppressedException;
 import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.remote.LowLevelInterfaceException;
 import java.io.UnsupportedEncodingException;
@@ -17,7 +18,7 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class SerialPortManager implements SerialPortEventListener
 {
-
+    
     private String serialPortToConnectTo = null;
     protected SerialPort serialPort = null;
     private final Stenographer steno = StenographerFactory.getStenographer(SerialPortManager.class.
@@ -25,19 +26,20 @@ public class SerialPortManager implements SerialPortEventListener
     // timeout is required on the read particularly for when the firmware is out of date
     // and the returned status report is then too short see issue ROB-453
     private final static int READ_TIMEOUT = 5000;
-
+    private boolean suspendComms = false;
+    
     public SerialPortManager(String portToConnectTo)
     {
         this.serialPortToConnectTo = portToConnectTo;
     }
-
+    
     public boolean connect(int baudrate) throws PortNotFoundException
     {
         boolean portSetupOK = false;
-
+        
         steno.debug("About to open serial port " + serialPortToConnectTo);
         serialPort = new SerialPort(serialPortToConnectTo);
-
+        
         try
         {
             serialPort.openPort();
@@ -56,16 +58,16 @@ public class SerialPortManager implements SerialPortEventListener
                 steno.error("Error setting up serial port " + ex.getMessage());
             }
         }
-
+        
         return portSetupOK;
     }
-
+    
     public void disconnect() throws LowLevelInterfaceException
     {
         steno.debug("Disconnecting port " + serialPortToConnectTo);
-
+        
         checkSerialPortOK();
-
+        
         if (serialPort != null)
         {
             try
@@ -79,15 +81,15 @@ public class SerialPortManager implements SerialPortEventListener
         }
         serialPort = null;
     }
-
+    
     public boolean writeBytes(byte[] data) throws LowLevelInterfaceException
     {
         boolean wroteOK = false;
-
+        
         try
         {
             checkSerialPortOK();
-
+            
             wroteOK = serialPort.writeBytes(data);
         } catch (SerialPortException ex)
         {
@@ -95,7 +97,7 @@ public class SerialPortManager implements SerialPortEventListener
         }
         return wroteOK;
     }
-
+    
     public int getInputBufferBytesCount() throws LowLevelInterfaceException
     {
         checkSerialPortOK();
@@ -107,19 +109,19 @@ public class SerialPortManager implements SerialPortEventListener
             throw new LowLevelInterfaceException(ex.getMessage());
         }
     }
-
-    public void writeAndWaitForData(byte[] data) throws LowLevelInterfaceException
+    
+    public void writeAndWaitForData(byte[] data) throws LowLevelInterfaceException, CommsSuppressedException
     {
         checkSerialPortOK();
-
+        
         boolean wroteOK = writeBytes(data);
-
+        
         if (wroteOK)
         {
             int len = -1;
-
+            
             int waitCounter = 0;
-            while (getInputBufferBytesCount() <= 0)
+            while (getInputBufferBytesCount() <= 0 && !suspendComms)
             {
                 try
                 {
@@ -127,7 +129,7 @@ public class SerialPortManager implements SerialPortEventListener
                 } catch (InterruptedException ex)
                 {
                 }
-
+                
                 if (waitCounter >= 5000)
                 {
                     steno.error("No response from device - disconnecting");
@@ -136,17 +138,23 @@ public class SerialPortManager implements SerialPortEventListener
                 }
                 waitCounter++;
             }
+            
+            if (suspendComms)
+            {
+                throw new CommsSuppressedException(serialPort.getPortName()
+                    + " aborted due to comms suspension");
+            }
         } else
         {
             throw new LowLevelInterfaceException(serialPort.getPortName()
                     + " Failure during write");
         }
     }
-
+    
     public byte[] readSerialPort(int numBytes) throws LowLevelInterfaceException
     {
         checkSerialPortOK();
-
+        
         byte[] returnData = null;
         try
         {
@@ -158,7 +166,7 @@ public class SerialPortManager implements SerialPortEventListener
         }
         return returnData;
     }
-
+    
     public byte[] readAllDataOnBuffer() throws LowLevelInterfaceException
     {
         checkSerialPortOK();
@@ -170,11 +178,11 @@ public class SerialPortManager implements SerialPortEventListener
             throw new LowLevelInterfaceException(ex.getMessage());
         }
     }
-
+    
     public boolean writeASCIIString(String string) throws LowLevelInterfaceException
     {
         checkSerialPortOK();
-
+        
         try
         {
             return serialPort.writeString(string, "US-ASCII");
@@ -189,11 +197,11 @@ public class SerialPortManager implements SerialPortEventListener
             throw new LowLevelInterfaceException(ex.getMessage());
         }
     }
-
+    
     public String readString() throws LowLevelInterfaceException
     {
         checkSerialPortOK();
-
+        
         try
         {
             return serialPort.readString();
@@ -202,7 +210,7 @@ public class SerialPortManager implements SerialPortEventListener
             throw new LowLevelInterfaceException(ex.getMessage());
         }
     }
-
+    
     private void checkSerialPortOK() throws LowLevelInterfaceException
     {
         if (serialPort == null)
@@ -211,12 +219,12 @@ public class SerialPortManager implements SerialPortEventListener
                     + " Serial port not open");
         }
     }
-
+    
     public void callback() throws SerialPortException
     {
         serialPort.addEventListener(this, SerialPort.MASK_RXCHAR);
     }
-
+    
     @Override
     public void serialEvent(SerialPortEvent serialPortEvent)
     {
@@ -236,5 +244,10 @@ public class SerialPortManager implements SerialPortEventListener
             steno.info("Got serial event of type " + serialPortEvent.getEventType()
                     + " that I didn't understand");
         }
+    }
+    
+    public void suspendComms(boolean suspendComms)
+    {
+        this.suspendComms = suspendComms;
     }
 }

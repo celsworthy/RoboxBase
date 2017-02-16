@@ -172,6 +172,7 @@ public class HardwareCommandInterface extends CommandInterface
                 }
             } catch (LowLevelInterfaceException ex)
             {
+                steno.exception("Exception in HCI", ex);
                 actionOnCommsFailure();
             }
         } else

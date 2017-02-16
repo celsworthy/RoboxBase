@@ -26,6 +26,7 @@ import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
 import celtech.roboxbase.services.firmware.FirmwareLoadService;
 import celtech.roboxbase.utils.PrinterUtils;
+import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
 import libertysystems.configuration.ConfigItemIsAnArray;
 import libertysystems.configuration.ConfigNotLoadedException;
@@ -60,7 +61,7 @@ public abstract class CommandInterface extends Thread
     protected int sleepBetweenStatusChecks = 1000;
     private boolean loadingFirmware = false;
 
-    protected boolean suppressComms = false;
+    protected boolean suspendStatusChecks = false;
 
     private String printerName = null;
 
@@ -115,15 +116,30 @@ public abstract class CommandInterface extends Thread
         firmwareLoadService.setOnSucceeded((WorkerStateEvent t) ->
         {
             FirmwareLoadResult result = (FirmwareLoadResult) t.getSource().getValue();
-            BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
-            shutdown();
+            boolean firmwareUpdatedOK = false;
+            if (result.getStatus() == FirmwareLoadResult.SUCCESS)
+            {
+                BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
+//                try
+//                {
+//                    printerToUse.transmitUpdateFirmware(result.getFirmwareID());
+                    shutdown();
+                    firmwareUpdatedOK = true;
+//                } catch (PrinterException ex)
+//                {
+//                }
+            }
+
+            if (!firmwareUpdatedOK)
+            {
+                BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
+            }
         });
 
         firmwareLoadService.setOnFailed((WorkerStateEvent t) ->
         {
             FirmwareLoadResult result = (FirmwareLoadResult) t.getSource().getValue();
             BaseLookup.getSystemNotificationHandler().showFirmwareUpgradeStatusNotification(result);
-            shutdown();
         });
 
         BaseLookup.getSystemNotificationHandler().configureFirmwareProgressDialog(firmwareLoadService);
@@ -335,7 +351,7 @@ public abstract class CommandInterface extends Thread
                     {
                         this.sleep(sleepBetweenStatusChecks);
 
-                        if (!suppressComms && isConnected && commsState == RoboxCommsState.CONNECTED)
+                        if (!suspendStatusChecks && isConnected && commsState == RoboxCommsState.CONNECTED)
                         {
                             try
                             {
@@ -382,10 +398,16 @@ public abstract class CommandInterface extends Thread
         loadingFirmware = false;
     }
 
+    private void suspendStatusChecks(boolean suspendStatusChecks)
+    {
+        this.suspendStatusChecks = suspendStatusChecks;
+    }
+    
     public void loadFirmware(String firmwareFilePath)
     {
-        suppressComms = true;
-        this.interrupt();
+        steno.info("Being asked to load firmware - status is " + commsState + " thread " + this.getName());
+        suspendStatusChecks(true);
+//        this.interrupt();
         firmwareLoadService.reset();
         firmwareLoadService.setPrinterToUse(printerToUse);
         firmwareLoadService.setFirmwareFileToLoad(firmwareFilePath);
@@ -402,13 +424,16 @@ public abstract class CommandInterface extends Thread
     {
         steno.debug("Shutdown command interface...");
         keepRunning = false;
+        suspendStatusChecks(true);
         disconnectPrinterImpl();
-        suppressComms = true;
-        if (firmwareLoadService.isRunning())
+        Platform.runLater(() ->
         {
-            steno.debug("Shutdown command interface firmware service...");
-            firmwareLoadService.cancel();
-        }
+            if (firmwareLoadService.isRunning())
+            {
+                steno.info("Shutdown command interface firmware service...");
+                firmwareLoadService.cancel();
+            }
+        });
         steno.debug("set state to disconnected");
         commsState = RoboxCommsState.DISCONNECTED;
         isConnected = false;
@@ -511,7 +536,7 @@ public abstract class CommandInterface extends Thread
 
     public void operateRemotely(boolean enableRemoteOperation)
     {
-        suppressComms = enableRemoteOperation;
+        suspendStatusChecks(enableRemoteOperation);
     }
 
     public AckResponse getLastErrorResponse()

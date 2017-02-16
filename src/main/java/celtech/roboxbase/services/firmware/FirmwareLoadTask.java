@@ -26,6 +26,7 @@ public class FirmwareLoadTask extends Task<FirmwareLoadResult>
     private Printer printerToUpdate = null;
 
     /**
+     * Modified so that this does not trigger the actual update - this should now be fired once this task reports success
      *
      * @param firmwareFileToLoad
      * @param printerToUpdate
@@ -85,7 +86,7 @@ public class FirmwareLoadTask extends Task<FirmwareLoadResult>
             returnValue.setStatus(FirmwareLoadResult.SDCARD_ERROR);
         } catch (RoboxCommsException ex)
         {
-            steno.error("Other comms exception whilst updating firmware " + ex);
+            steno.exception("Other comms exception whilst updating firmware ", ex);
             returnValue.setStatus(FirmwareLoadResult.OTHER_ERROR);
         } catch (IOException ex)
         {

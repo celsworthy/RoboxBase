@@ -412,7 +412,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public StatusResponse transmitStatusRequest() throws RoboxCommsException;
 
-    public boolean transmitUpdateFirmware(final String firmwareID) throws PrinterException;
+    public void transmitUpdateFirmware(final String firmwareID) throws PrinterException;
 
     public AckResponse transmitWriteHeadEEPROM(String headTypeCode, String headUniqueID,
             float maximumTemperature, float thermistorBeta, float thermistorTCal, float nozzle1XOffset,

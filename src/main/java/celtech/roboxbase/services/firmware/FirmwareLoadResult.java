@@ -30,6 +30,7 @@ public class FirmwareLoadResult
     
     private int status = OTHER_ERROR;
     private FirmwareResponse response = null;
+    private String firmwareID;
 
     public int getStatus()
     {
@@ -49,5 +50,15 @@ public class FirmwareLoadResult
     public void setResponse(FirmwareResponse response)
     {
         this.response = response;
+    }
+
+    public String getFirmwareID()
+    {
+        return firmwareID;
+    }
+
+    public void setFirmwareID(String firmwareID)
+    {
+        this.firmwareID = firmwareID;
     }
 }

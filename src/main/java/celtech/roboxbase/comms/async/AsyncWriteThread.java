@@ -27,28 +27,7 @@ public class AsyncWriteThread extends Thread
     private final CommandInterface commandInterface;
     private boolean keepRunning = true;
 
-    private class CommandHolder
-    {
-
-        private final int queueIndex;
-        private final CommandPacket commandPacket;
-
-        public CommandHolder(int queueIndex, CommandPacket commandPacket)
-        {
-            this.queueIndex = queueIndex;
-            this.commandPacket = commandPacket;
-        }
-
-        public CommandPacket getCommandPacket()
-        {
-            return commandPacket;
-        }
-
-        public int getQueueIndex()
-        {
-            return queueIndex;
-        }
-    }
+    private static CommandHolder poisonedPill = new CommandHolder(-1, null);
 
     public AsyncWriteThread(CommandInterface commandInterface, String ciReference)
     {
@@ -78,12 +57,12 @@ public class AsyncWriteThread extends Thread
                 break;
             }
         }
-        
+
         if (queueNumber < 0)
         {
             throw new RoboxCommsException("Message queue full");
         }
-        
+
         return queueNumber;
     }
 
@@ -120,14 +99,23 @@ public class AsyncWriteThread extends Thread
             try
             {
                 commandHolder = inboundQueue.take();
-                RoboxRxPacket response = processCommand(commandHolder.getCommandPacket());
-                if (response != null)
+                if (commandHolder != poisonedPill)
                 {
+                    RoboxRxPacket response = processCommand(commandHolder.getCommandPacket());
+                    if (response != null)
+                    {
+                        createNullPacket = false;
+                        outboundQueues.get(commandHolder.getQueueIndex()).add(response);
+                    }
+                }
+                else
+                {
+                    //Just drop out - we got the poisoned pill
                     createNullPacket = false;
-                    outboundQueues.get(commandHolder.getQueueIndex()).add(response);
                 }
             } catch (RoboxCommsException | InterruptedException ex)
             {
+                steno.exception("Arrgh", ex);
             } finally
             {
                 if (createNullPacket)
@@ -147,5 +135,6 @@ public class AsyncWriteThread extends Thread
     public void shutdown()
     {
         keepRunning = false;
+        inboundQueue.add(poisonedPill);
     }
 }

@@ -4,14 +4,14 @@ package celtech.roboxbase.comms.exceptions;
  *
  * @author ianhudson
  */
-public class ConnectionLostException extends RoboxCommsException
+public class CommsSuppressedException extends RoboxCommsException
 {
 
     /**
      * Creates a new instance of
      * <code>BadCommandException</code> without detail message.
      */
-    public ConnectionLostException()
+    public CommsSuppressedException()
     {
     }
 
@@ -21,7 +21,7 @@ public class ConnectionLostException extends RoboxCommsException
      *
      * @param msg the detail message.
      */
-    public ConnectionLostException(String msg)
+    public CommsSuppressedException(String msg)
     {
         super(msg);
     }
