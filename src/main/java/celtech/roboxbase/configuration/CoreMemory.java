@@ -103,9 +103,6 @@ public class CoreMemory
         {
             cachedActiveRoboxRoots.remove(server);
             writeRoboxRootData();
-        } else
-        {
-            steno.warning("Root " + server.getName() + " is not active");
         }
     }
 
