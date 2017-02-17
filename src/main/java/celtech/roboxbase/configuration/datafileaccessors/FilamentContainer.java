@@ -39,12 +39,13 @@ public class FilamentContainer
     private final ObservableList<Filament> completeFilamentListNoDuplicates = FXCollections.observableArrayList();
     private final ObservableMap<String, Filament> completeFilamentMapByID = FXCollections.observableHashMap();
     private final ObservableMap<String, String> completeFilamentNameByID = FXCollections.observableHashMap();
-
-    public final Filament createNewFilament = new Filament(null, null, null, null,
+    
+    public final Filament createNewFilament = new Filament(null, null, null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
             0, 0, false);
     public static final Filament UNKNOWN_FILAMENT = new Filament("Unknown",
             null,
+            "",
             "",
             "",
             1.75f,
@@ -63,6 +64,7 @@ public class FilamentContainer
     private static final String nameProperty = "name";
     private static final String materialProperty = "material";
     private static final String filamentIDProperty = "reelID";
+    private static final String brandProperty = "brand";
     private static final String categoryProperty = "category";
     private static final String diameterProperty = "diameter_mm";
     private static final String costGBPPerKGProperty = "cost_gbp_per_kg";
@@ -156,7 +158,8 @@ public class FilamentContainer
             filaments.sort(Filament.BY_MATERIAL.thenComparing(Filament::compareByFilamentID));
             for (Filament filament : filaments)
             {
-                filament.setCategory("Custom");
+                filament.setBrand("Custom");
+                filament.setCategory("");
             }
             completeFilamentList.addAll(filaments);
             userFilamentList.addAll(filaments);
@@ -183,6 +186,14 @@ public class FilamentContainer
                     String name = filamentProperties.getProperty(nameProperty).trim();
 
                     String filamentID = filamentProperties.getProperty(filamentIDProperty).trim();
+                    String brand = filamentProperties.getProperty(brandProperty);
+                    if (brand != null)
+                    {
+                        brand = brand.trim();
+                    } else
+                    {
+                        brand = "";
+                    }
                     String category = filamentProperties.getProperty(categoryProperty);
                     if (category != null)
                     {
@@ -258,6 +269,7 @@ public class FilamentContainer
                                     name,
                                     selectedMaterial,
                                     filamentID,
+                                    brand,
                                     category,
                                     diameter,
                                     filamentMultiplier,
@@ -355,6 +367,7 @@ public class FilamentContainer
             filamentProperties.setProperty(nameProperty, filament.getFriendlyFilamentName());
             filamentProperties.setProperty(materialProperty, filament.getMaterial().name());
             filamentProperties.setProperty(filamentIDProperty, filament.getFilamentID());
+            filamentProperties.setProperty(brandProperty, filament.getBrand());
             filamentProperties.setProperty(categoryProperty, filament.getCategory());
             filamentProperties.setProperty(costGBPPerKGProperty, floatConverter.format(
                     filament.getCostGBPPerKG()));

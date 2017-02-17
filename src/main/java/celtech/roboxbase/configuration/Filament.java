@@ -36,6 +36,7 @@ public class Filament implements Serializable, Cloneable
     private final StringProperty friendlyFilamentName = new SimpleStringProperty("");
     private final ObjectProperty<MaterialType> material = new SimpleObjectProperty();
     private final StringProperty filamentID = new SimpleStringProperty();
+    private final StringProperty brand = new SimpleStringProperty();
     private final StringProperty category = new SimpleStringProperty();
 
     private final FloatProperty diameter = new SimpleFloatProperty(0);
@@ -102,6 +103,7 @@ public class Filament implements Serializable, Cloneable
             String friendlyFilamentName,
             MaterialType material,
             String reelID,
+            String brand,
             String category,
             float diameter,
             float filamentMultiplier,
@@ -119,6 +121,7 @@ public class Filament implements Serializable, Cloneable
         this.friendlyFilamentName.set(friendlyFilamentName);
         this.material.set(material);
         this.filamentID.set(reelID);
+        this.brand.set(brand);
         this.category.set(category);
         this.diameter.set(diameter);
         this.filamentMultiplier.set(filamentMultiplier);
@@ -245,6 +248,16 @@ public class Filament implements Serializable, Cloneable
     public StringProperty getFilamentIDProperty()
     {
         return filamentID;
+    }
+
+    public String getBrand()
+    {
+        return brand.get();
+    }
+
+    public StringProperty getBrandProperty()
+    {
+        return brand;
     }
 
     public String getCategory()
@@ -378,6 +391,11 @@ public class Filament implements Serializable, Cloneable
         detectAndSetMutable();
     }
 
+    public void setBrand(String value)
+    {
+        this.brand.set(value);
+    }
+    
     public void setCategory(String value)
     {
         this.category.set(value);
@@ -538,6 +556,7 @@ public class Filament implements Serializable, Cloneable
         Filament clone = new Filament(this.getFriendlyFilamentName(),
                 this.getMaterial(),
                 this.getFilamentID(),
+                this.getBrand(),
                 this.getCategory(),
                 this.getDiameter(),
                 this.getFilamentMultiplier(),
