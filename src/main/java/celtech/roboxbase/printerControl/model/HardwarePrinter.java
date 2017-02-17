@@ -275,15 +275,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         // The default FilamentLoadedGetter just checks the data in the statusResponse
         this(printerStatusConsumer, commandInterface,
                 (StatusResponse statusResponse, int extruderNumber) ->
-                {
-                    if (extruderNumber == 1)
-                    {
-                        return statusResponse.isFilament1SwitchStatus();
-                    } else
-                    {
-                        return statusResponse.isFilament2SwitchStatus();
-                    }
-                },
+        {
+            if (extruderNumber == 1)
+            {
+                return statusResponse.isFilament1SwitchStatus();
+            } else
+            {
+                return statusResponse.isFilament2SwitchStatus();
+            }
+        },
                 false);
     }
 
@@ -380,14 +380,14 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canCancel.bind(
                 (pauseStatus.isEqualTo(PauseStatus.PAUSED)
-                .or(printEngine.postProcessorService.runningProperty())
-                .or(printEngine.slicerService.runningProperty())
-                .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
-                .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
-                .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_HEIGHT))
-                .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_OPENING)))
-                .and((printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
-                        .and(printEngine.macroBeingRun.isEqualTo(Macro.CANCEL_PRINT))).not()));
+                        .or(printEngine.postProcessorService.runningProperty())
+                        .or(printEngine.slicerService.runningProperty())
+                        .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
+                        .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
+                        .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_HEIGHT))
+                        .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_OPENING)))
+                        .and((printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
+                                .and(printEngine.macroBeingRun.isEqualTo(Macro.CANCEL_PRINT))).not()));
 
         canRunMacro.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))
@@ -413,7 +413,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canPurgeHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY))
                 .and(extruders.get(firstExtruderNumber).filamentLoaded.or(extruders.get(
-                                        secondExtruderNumber).filamentLoaded)));
+                        secondExtruderNumber).filamentLoaded)));
 
         canOpenDoor.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
@@ -426,28 +426,28 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     FilamentContainer.FilamentDatabaseChangesListener filamentDatabaseChangesListener
             = (String filamentId) ->
+    {
+        for (Map.Entry<Integer, Reel> posReel : reels.entrySet())
+        {
+            if (posReel.getValue().filamentIDProperty().get().equals(filamentId))
             {
-                for (Map.Entry<Integer, Reel> posReel : reels.entrySet())
+                try
                 {
-                    if (posReel.getValue().filamentIDProperty().get().equals(filamentId))
+                    Filament changedFilament = filamentContainer.getFilamentByID(
+                            filamentId);
+                    if (changedFilament != null)
                     {
-                        try
-                        {
-                            Filament changedFilament = filamentContainer.getFilamentByID(
-                                    filamentId);
-                            if (changedFilament != null)
-                            {
-                                steno.debug("Update reel with updated filament data");
-                                transmitWriteReelEEPROM(posReel.getKey(), changedFilament);
-                            }
-                        } catch (RoboxCommsException ex)
-                        {
-                            steno.error("Unable to program reel with update filament of id: "
-                                    + filamentId);
-                        }
+                        steno.debug("Update reel with updated filament data");
+                        transmitWriteReelEEPROM(posReel.getKey(), changedFilament);
                     }
+                } catch (RoboxCommsException ex)
+                {
+                    steno.error("Unable to program reel with update filament of id: "
+                            + filamentId);
                 }
-            };
+            }
+        }
+    };
 
     /**
      * If the filament details change for a filament currently on a reel, then
@@ -463,22 +463,22 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         BaseLookup.getTaskExecutor().
                 runOnGUIThread(() ->
-                        {
-                            boolean okToChangeState = true;
-                            steno.debug("Status was " + this.printerStatus.get().name()
-                                    + " and is going to "
-                                    + printerStatus);
-                            switch (printerStatus)
-                            {
-                                case IDLE:
-                                    break;
-                            }
+                {
+                    boolean okToChangeState = true;
+                    steno.debug("Status was " + this.printerStatus.get().name()
+                            + " and is going to "
+                            + printerStatus);
+                    switch (printerStatus)
+                    {
+                        case IDLE:
+                            break;
+                    }
 
-                            if (okToChangeState)
-                            {
-                                this.printerStatus.set(printerStatus);
-                            }
-                            steno.debug("Setting printer status to " + printerStatus);
+                    if (okToChangeState)
+                    {
+                        this.printerStatus.set(printerStatus);
+                    }
+                    steno.debug("Setting printer status to " + printerStatus);
                 });
     }
 
@@ -674,10 +674,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         return success;
     }
+
     /*
      * Purge head
      */
-
     @Override
     public final ReadOnlyBooleanProperty canPurgeHeadProperty()
     {
@@ -1272,10 +1272,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         }, "Waiting until not busy").start();
     }
+
     /*
      * Data transmission commands
      */
-
     /**
      *
      * @param gcodeToSend
@@ -1600,10 +1600,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         createPacket(TxPacketTypeEnum.WRITE_REEL_0_EEPROM);
                 ((WriteReel0EEPROM) writePacket).populateEEPROM(filament.getFilamentID(),
                         filament.
-                        getFirstLayerNozzleTemperature(),
+                                getFirstLayerNozzleTemperature(),
                         filament.getNozzleTemperature(),
                         filament.
-                        getFirstLayerBedTemperature(),
+                                getFirstLayerBedTemperature(),
                         filament.getBedTemperature(),
                         filament.getAmbientTemperature(),
                         filament.getDiameter(),
@@ -1620,10 +1620,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         createPacket(TxPacketTypeEnum.WRITE_REEL_1_EEPROM);
                 ((WriteReel1EEPROM) writePacket).populateEEPROM(filament.getFilamentID(),
                         filament.
-                        getFirstLayerNozzleTemperature(),
+                                getFirstLayerNozzleTemperature(),
                         filament.getNozzleTemperature(),
                         filament.
-                        getFirstLayerBedTemperature(),
+                                getFirstLayerBedTemperature(),
                         filament.getBedTemperature(),
                         filament.getAmbientTemperature(),
                         filament.getDiameter(),
@@ -3667,6 +3667,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         private Printer printer;
         private RoboxRxPacket rxPacket;
         private boolean errorWasConsumed;
+        private int[] reelEEPROMCheckCounter = new int[maxNumberOfReels];
+        private final int REEL_EEPROM_COUNTS_BEFORE_CHECK = 400;
 
         public RoboxEventProcessor(Printer printer, RoboxRxPacket rxPacket)
         {
@@ -3714,67 +3716,67 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                             errorsFound.stream()
                                     .forEach(foundError ->
+                                    {
+                                        errorWasConsumed = false;
+
+                                        if (foundError == FirmwareError.Z_TOP_SWITCH)
+                                        {
+                                            if (head.get() != null)
                                             {
-                                                errorWasConsumed = false;
+                                                steno.error("Z+ switch error occurred at " + head.get().headZPosition.get() + "mm");
+                                            } else
+                                            {
+                                                steno.error("Z+ switch occurred - no head so height could not be determined");
+                                            }
+                                        }
 
-                                                if (foundError == FirmwareError.Z_TOP_SWITCH)
-                                                {
-                                                    if (head.get() != null)
-                                                    {
-                                                        steno.error("Z+ switch error occurred at " + head.get().headZPosition.get() + "mm");
-                                                    } else
-                                                    {
-                                                        steno.error("Z+ switch occurred - no head so height could not be determined");
-                                                    }
-                                                }
-
-                                                if (foundError.isRequireUserToClear()
+                                        if (foundError.isRequireUserToClear()
                                                 && !activeErrors.contains(foundError))
-                                                {
-                                                    activeErrors.add(foundError);
-                                                }
+                                        {
+                                            activeErrors.add(foundError);
+                                        }
 
-                                                if (suppressedFirmwareErrors.contains(foundError)
+                                        if (suppressedFirmwareErrors.contains(foundError)
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
                                                 && doNotCheckForPresenceOfHead)
                                                 || ((foundError == FirmwareError.D_FILAMENT_SLIP
                                                 || foundError == FirmwareError.E_FILAMENT_SLIP)
                                                 && printerStatus.get() == PrinterStatus.IDLE
                                                 && !inCommissioningMode))
+                                        {
+                                            steno.debug("Error:" + foundError.
+                                                    name() + " suppressed");
+                                        } else
+                                        {
+                                            errorsToIterateThrough.forEach((consumer, errorList) ->
+                                            {
+                                                if (errorList.contains(foundError)
+                                                        || errorList.contains(FirmwareError.ALL_ERRORS))
                                                 {
-                                                    steno.debug("Error:" + foundError.
-                                                            name() + " suppressed");
-                                                } else
-                                                {
-                                                    errorsToIterateThrough.forEach((consumer, errorList) ->
-                                                            {
-                                                                if (errorList.contains(foundError)
-                                                                || errorList.contains(FirmwareError.ALL_ERRORS))
-                                                                {
-                                                                    steno.debug("Error:" + foundError.name()
-                                                                            + " passed to " + consumer.toString());
-                                                                    consumer.consumeError(foundError);
-                                                                    errorWasConsumed = true;
-                                                                }
-                                                    });
-                                                    if (!errorWasConsumed)
-                                                    {
-                                                        steno.info("Default action for error:" + foundError.
-                                                                name());
-                                                        systemNotificationManager.
+                                                    steno.debug("Error:" + foundError.name()
+                                                            + " passed to " + consumer.toString());
+                                                    consumer.consumeError(foundError);
+                                                    errorWasConsumed = true;
+                                                }
+                                            });
+                                            if (!errorWasConsumed)
+                                            {
+                                                steno.info("Default action for error:" + foundError.
+                                                        name());
+                                                systemNotificationManager.
                                                         processErrorPacketFromPrinter(
                                                                 foundError, printer);
-                                                    }
-                                                }
+                                            }
+                                        }
                                     });
                             steno.trace(ackResponse.toString());
                         } else
                         {
                             errorsFound.stream()
                                     .forEach(foundError ->
-                                            {
-                                                steno.info("No action for error:" + foundError.
-                                                        name());
+                                    {
+                                        steno.info("No action for error:" + foundError.
+                                                name());
                                     });
                         }
                     }
@@ -3922,7 +3924,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             head.get().nozzles
                                     .stream()
                                     .forEach(nozzle -> nozzle.BPosition.set(
-                                                    statusResponse.getBPosition()));
+                                    statusResponse.getBPosition()));
                         }
 
                         head.get().BPosition.set(statusResponse.getBPosition());
@@ -4101,7 +4103,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             {
                                                 steno.error("Error updating head after repair "
                                                         + ex.
-                                                        getMessage());
+                                                                getMessage());
                                             }
                                             break;
                                         case REPAIRED_WRITE_AND_RECALIBRATE:
@@ -4116,7 +4118,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             {
                                                 steno.error("Error updating head after repair "
                                                         + ex.
-                                                        getMessage());
+                                                                getMessage());
                                             }
                                             break;
                                     }
@@ -4136,36 +4138,36 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                 // Either not set or type code doesn't match Robox head type code
                                 BaseLookup.getSystemNotificationHandler().showProgramInvalidHeadDialog(
                                         (TaskResponse<HeadFile> taskResponse) ->
-                                        {
-                                            HeadFile chosenHeadFile = taskResponse.getReturnedObject();
+                                {
+                                    HeadFile chosenHeadFile = taskResponse.getReturnedObject();
 
-                                            if (chosenHeadFile != null)
-                                            {
-                                                Head chosenHead = new Head(chosenHeadFile);
-                                                chosenHead.allocateRandomID();
-                                                head.set(chosenHead);
-                                                steno.info("Reprogrammed head as " + chosenHeadFile.
-                                                        getTypeCode()
-                                                        + " with ID " + head.get().uniqueID.get());
-                                                try
-                                                {
-                                                    writeHeadEEPROM(head.get());
-                                                    BaseLookup.getSystemNotificationHandler().
+                                    if (chosenHeadFile != null)
+                                    {
+                                        Head chosenHead = new Head(chosenHeadFile);
+                                        chosenHead.allocateRandomID();
+                                        head.set(chosenHead);
+                                        steno.info("Reprogrammed head as " + chosenHeadFile.
+                                                getTypeCode()
+                                                + " with ID " + head.get().uniqueID.get());
+                                        try
+                                        {
+                                            writeHeadEEPROM(head.get());
+                                            BaseLookup.getSystemNotificationHandler().
                                                     showCalibrationDialogue();
-                                                    steno.info(
-                                                            "Automatically updated head data - calibration suggested");
-                                                } catch (RoboxCommsException ex)
-                                                {
-                                                    steno.error("Error updating head after repair "
-                                                            + ex.
+                                            steno.info(
+                                                    "Automatically updated head data - calibration suggested");
+                                        } catch (RoboxCommsException ex)
+                                        {
+                                            steno.error("Error updating head after repair "
+                                                    + ex.
                                                             getMessage());
-                                                }
-                                            } else
-                                            {
-                                                //Force the head prompt - we must have been cancelled
-                                                lastHeadEEPROMState.set(EEPROMState.NOT_PRESENT);
-                                            }
-                                        });
+                                        }
+                                    } else
+                                    {
+                                        //Force the head prompt - we must have been cancelled
+                                        lastHeadEEPROMState.set(EEPROMState.NOT_PRESENT);
+                                    }
+                                });
                             }
                         }
                     } else
@@ -4248,9 +4250,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         {
             for (int reelNumber = 0; reelNumber < maxNumberOfReels; reelNumber++)
             {
-                if (lastReelEEPROMState.get(reelNumber) != statusResponse.getReelEEPROMState(
-                        reelNumber))
+                if ((lastReelEEPROMState.get(reelNumber)
+                        != statusResponse.getReelEEPROMState(reelNumber))
+                        || reelEEPROMCheckCounter[reelNumber] >= REEL_EEPROM_COUNTS_BEFORE_CHECK)
                 {
+                    reelEEPROMCheckCounter[reelNumber] = 0;
                     lastReelEEPROMState.set(reelNumber, statusResponse.getReelEEPROMState(
                             reelNumber));
                     switch (statusResponse.getReelEEPROMState(reelNumber))
@@ -4283,6 +4287,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             break;
                     }
                 }
+                reelEEPROMCheckCounter[reelNumber]++;
             }
         }
 
