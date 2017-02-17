@@ -55,7 +55,7 @@ public class NozzleAssignmentUtilities
         nozzleControlUtilities = new NozzleManagementUtilities(nozzleProxies,
                 slicerParametersFile,
                 headFile);
-            }
+    }
 
     public class ExtrusionAssignmentResult
     {
@@ -109,17 +109,28 @@ public class NozzleAssignmentUtilities
                         ExtrusionProvider extrusionNode = (ExtrusionProvider) potentialExtrusionProvider;
 
                         // Don't change anything if we're in task-based selection as this always uses extruder E
-                        if (postProcessingMode != PostProcessingMode.TASK_BASED_NOZZLE_SELECTION)
+                        switch (postProcessingMode)
                         {
-                            switch (toolSelectNode.getToolNumber())
-                            {
-                                case 1:
-                                    extrusionNode.getExtrusion().extrudeUsingEOnly();
-                                    break;
-                                case 0:
-                                    extrusionNode.getExtrusion().extrudeUsingDOnly();
-                                    break;
-                            }
+                            case SUPPORT_IN_FIRST_MATERIAL:
+                            case SUPPORT_IN_SECOND_MATERIAL:
+                                switch (toolSelectNode.getToolNumber())
+                                {
+                                    case 1:
+                                        extrusionNode.getExtrusion().extrudeUsingEOnly();
+                                        break;
+                                    case 0:
+                                        extrusionNode.getExtrusion().extrudeUsingDOnly();
+                                        break;
+                                }
+                                break;
+                            case FORCED_USE_OF_E_EXTRUDER:
+                                extrusionNode.getExtrusion().extrudeUsingEOnly();
+                                break;
+                            case FORCED_USE_OF_D_EXTRUDER:
+                                extrusionNode.getExtrusion().extrudeUsingDOnly();
+                                break;
+                            default:
+                                break;
                         }
 
                         eUsed += (extrusionNode.getExtrusion().isEInUse()) ? extrusionNode.getExtrusion().getE() : 0;

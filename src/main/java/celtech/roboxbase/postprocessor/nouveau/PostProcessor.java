@@ -134,7 +134,7 @@ public class PostProcessor
 
         for (int nozzleIndex = 0;
                 nozzleIndex < slicerParametersFile.getNozzleParameters()
-                .size(); nozzleIndex++)
+                        .size(); nozzleIndex++)
         {
             NozzleProxy proxy = new NozzleProxy(slicerParametersFile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
@@ -143,14 +143,30 @@ public class PostProcessor
 
         if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
         {
-            switch (printerOverrides.getPrintSupportTypeOverride())
+            // If we have a dual extruder head but a single extruder machine force use of the available extruder
+            if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
             {
-                case MATERIAL_1:
-                    postProcessingMode = PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL;
-                    break;
-                case MATERIAL_2:
-                    postProcessingMode = PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
-                    break;
+                postProcessingMode = PostProcessingMode.NO_AVAILABLE_EXTRUDERS;
+                steno.error("Attempt to postprocess with a DM head and no extruders fitted / available.");
+            } else if (!printer.extrudersProperty().get(0).isFittedProperty().get())
+            {
+                postProcessingMode = PostProcessingMode.FORCED_USE_OF_D_EXTRUDER;
+                steno.warning("Attempt to postprocess with a DM head and only the D extruder.");
+            } else if (!printer.extrudersProperty().get(1).isFittedProperty().get())
+            {
+                postProcessingMode = PostProcessingMode.FORCED_USE_OF_E_EXTRUDER;
+                steno.warning("Attempt to postprocess with a DM head and only the E extruder.");
+            } else
+            {
+                switch (printerOverrides.getPrintSupportTypeOverride())
+                {
+                    case MATERIAL_1:
+                        postProcessingMode = PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL;
+                        break;
+                    case MATERIAL_2:
+                        postProcessingMode = PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
+                        break;
+                }
             }
         } else
         {
@@ -174,311 +190,322 @@ public class PostProcessor
     public RoboxiserResult processInput()
     {
         RoboxiserResult result = new RoboxiserResult();
+        result.setSuccess(false);
 
-        BufferedReader fileReader = null;
-        GCodeOutputWriter writer = null;
-
-        layerNumberToLineNumber = new ArrayList<>();
-
-        int layerCounter = -1;
-
-        OutputUtilities outputUtilities = new OutputUtilities();
-
-        timeUtils.timerStart(this, "PostProcessor");
-        steno.debug("Beginning post-processing operation");
-
-        //Cura has line delineators like this ';LAYER:1'
-        try
+        //Do not pass go - do not collect 200 pounds - we shouldn't be here...
+        if (postProcessingMode != PostProcessingMode.NO_AVAILABLE_EXTRUDERS)
         {
-            File inputFile = new File(gcodeFileToProcess);
-            timeUtils.timerStart(this, countLinesTimerName);
-            int linesInGCodeFile = SystemUtils.countLinesInFile(inputFile);
-            timeUtils.timerStop(this, countLinesTimerName);
+            BufferedReader fileReader = null;
+            GCodeOutputWriter writer = null;
 
-            int linesRead = 0;
-            double lastPercentSoFar = 0;
+            layerNumberToLineNumber = new ArrayList<>();
 
-            fileReader = new BufferedReader(new FileReader(inputFile));
+            int layerCounter = -1;
 
-            writer = BaseLookup.getPostProcessorOutputWriterFactory().create(gcodeOutputFile);
+            OutputUtilities outputUtilities = new OutputUtilities();
 
-            boolean nozzle0HeatRequired = false;
-            boolean nozzle1HeatRequired = false;
+            timeUtils.timerStart(this, "PostProcessor");
+            steno.debug("Beginning post-processing operation");
 
-            boolean eRequired = false;
-            boolean dRequired = false;
-
-            int defaultObjectNumber = 0;
-
-            StringBuilder layerBuffer = new StringBuilder();
-
-            OpenResult lastOpenResult = null;
-
-            List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
-            LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
-
-            for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
+            //Cura has line delineators like this ';LAYER:1'
+            try
             {
-                linesRead++;
-                double percentSoFar = ((double) linesRead / (double) linesInGCodeFile) * 100;
-                if (percentSoFar - lastPercentSoFar >= 1)
+                File inputFile = new File(gcodeFileToProcess);
+                timeUtils.timerStart(this, countLinesTimerName);
+                int linesInGCodeFile = SystemUtils.countLinesInFile(inputFile);
+                timeUtils.timerStop(this, countLinesTimerName);
+
+                int linesRead = 0;
+                double lastPercentSoFar = 0;
+
+                fileReader = new BufferedReader(new FileReader(inputFile));
+
+                writer = BaseLookup.getPostProcessorOutputWriterFactory().create(gcodeOutputFile);
+
+                boolean nozzle0HeatRequired = false;
+                boolean nozzle1HeatRequired = false;
+
+                boolean eRequired = false;
+                boolean dRequired = false;
+
+                int defaultObjectNumber = 0;
+
+                StringBuilder layerBuffer = new StringBuilder();
+
+                OpenResult lastOpenResult = null;
+
+                List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
+                LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
+
+                for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
-                    if (taskProgress != null)
+                    linesRead++;
+                    double percentSoFar = ((double) linesRead / (double) linesInGCodeFile) * 100;
+                    if (percentSoFar - lastPercentSoFar >= 1)
                     {
-                        taskProgress.set(percentSoFar);
+                        if (taskProgress != null)
+                        {
+                            taskProgress.set(percentSoFar);
+                        }
+                        lastPercentSoFar = percentSoFar;
                     }
-                    lastPercentSoFar = percentSoFar;
-                }
 
-                lineRead = lineRead.trim();
-                if (lineRead.matches(";LAYER:[-]*[0-9]+"))
-                {
-                    if (layerCounter >= 0)
+                    lineRead = lineRead.trim();
+                    if (lineRead.matches(";LAYER:[-]*[0-9]+"))
                     {
-                        //Parse the layer!
-                        LayerPostProcessResult parseResult = parseLayer(layerBuffer, lastPostProcessResult);
-                        postProcessResults.add(parseResult);
-                        lastPostProcessResult = parseResult;
+                        if (layerCounter >= 0)
+                        {
+                            //Parse the layer!
+                            LayerPostProcessResult parseResult = parseLayer(layerBuffer, lastPostProcessResult);
+                            postProcessResults.add(parseResult);
+                            lastPostProcessResult = parseResult;
+                        }
+
+                        layerCounter++;
+                        layerBuffer = new StringBuilder();
+                        // Make sure this layer command is at the start
+                        layerBuffer.append(lineRead);
+                        layerBuffer.append('\n');
+                    } else if (!lineRead.equals(""))
+                    {
+                        //Ignore blank lines
+                        // stash it in the buffer
+                        layerBuffer.append(lineRead);
+                        layerBuffer.append('\n');
                     }
-
-                    layerCounter++;
-                    layerBuffer = new StringBuilder();
-                    // Make sure this layer command is at the start
-                    layerBuffer.append(lineRead);
-                    layerBuffer.append('\n');
-                } else if (!lineRead.equals(""))
-                {
-                    //Ignore blank lines
-                    // stash it in the buffer
-                    layerBuffer.append(lineRead);
-                    layerBuffer.append('\n');
                 }
-            }
 
-            //This catches the last layer - if we had no data it won't do anything
-            LayerPostProcessResult lastLayerParseResult = parseLayer(layerBuffer, lastPostProcessResult);
-            postProcessResults.add(lastLayerParseResult);
+                //This catches the last layer - if we had no data it won't do anything
+                LayerPostProcessResult lastLayerParseResult = parseLayer(layerBuffer, lastPostProcessResult);
+                postProcessResults.add(lastLayerParseResult);
 
-            if (printerOverrides.getSpiralPrintOverride())
-            {
-                //Run the Cura spiral print deshagger
-                CuraSpiralPrintFixer curaSpiralPrintFixer = new CuraSpiralPrintFixer();
-                curaSpiralPrintFixer.fixSpiralPrint(postProcessResults);
-            }
-
-            for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
-            {
-                timeUtils.timerStart(this, assignExtrusionTimerName);
-                NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
-                timeUtils.timerStop(this, assignExtrusionTimerName);
-
-                //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
-                //NOTE
-                //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
-                //NOTE
-                if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
+                if (printerOverrides.getSpiralPrintOverride())
                 {
-                    timeUtils.timerStart(this, openTimerName);
-                    lastOpenResult = postProcessorUtilityMethods.insertOpens(resultToBeProcessed.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
-                    timeUtils.timerStop(this, openTimerName);
+                    //Run the Cura spiral print deshagger
+                    CuraSpiralPrintFixer curaSpiralPrintFixer = new CuraSpiralPrintFixer();
+                    curaSpiralPrintFixer.fixSpiralPrint(postProcessResults);
                 }
-            }
 
-            TimeAndVolumeCalc timeAndVolumeCalc = new TimeAndVolumeCalc(headFile.getType());
+                for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
+                {
+                    timeUtils.timerStart(this, assignExtrusionTimerName);
+                    NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
+                    timeUtils.timerStop(this, assignExtrusionTimerName);
 
-            timeUtils.timerStart(this, timeAndVolumeCalcTimerName);
-            TimeAndVolumeCalcResult timeAndVolumeCalcResult = timeAndVolumeCalc.calculateVolumeAndTime(postProcessResults);
-            timeUtils.timerStop(this, timeAndVolumeCalcTimerName);
+                    //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
+                    //NOTE
+                    //Since we're using the open/close state here we need to make sure this is the last open/close thing we do...
+                    //NOTE
+                    if (featureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
+                    {
+                        timeUtils.timerStart(this, openTimerName);
+                        lastOpenResult = postProcessorUtilityMethods.insertOpens(resultToBeProcessed.getLayerData(), lastOpenResult, nozzleProxies, headFile.getTypeCode());
+                        timeUtils.timerStop(this, openTimerName);
+                    }
+                }
 
-            if (headFile.getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
-            {
-                eRequired = nozzle1HeatRequired = timeAndVolumeCalcResult.getExtruderEStats().getVolume() > 0;
-                dRequired = nozzle0HeatRequired = timeAndVolumeCalcResult.getExtruderDStats().getVolume() > 0;
-            } else
-            {
-                nozzle0HeatRequired = false;
-                nozzle1HeatRequired = false;
-                eRequired = true;
-            }
+                TimeAndVolumeCalc timeAndVolumeCalc = new TimeAndVolumeCalc(headFile.getType());
 
-            outputUtilities.prependPrePrintHeader(writer, headFile.getTypeCode(),
-                    nozzle0HeatRequired,
-                    nozzle1HeatRequired,
-                    safetyFeaturesRequired);
+                timeUtils.timerStart(this, timeAndVolumeCalcTimerName);
+                TimeAndVolumeCalcResult timeAndVolumeCalcResult = timeAndVolumeCalc.calculateVolumeAndTime(postProcessResults);
+                timeUtils.timerStop(this, timeAndVolumeCalcTimerName);
 
-            timeUtils.timerStart(this, heaterSaverTimerName);
-            if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
-            {
-                heaterSaver.saveHeaters(postProcessResults, nozzle0HeatRequired, nozzle1HeatRequired);
-            }
-            timeUtils.timerStop(this, heaterSaverTimerName);
+                if (headFile.getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
+                {
+                    eRequired = nozzle1HeatRequired = timeAndVolumeCalcResult.getExtruderEStats().getVolume() > 0;
+                    dRequired = nozzle0HeatRequired = timeAndVolumeCalcResult.getExtruderDStats().getVolume() > 0;
+                } else
+                {
+                    nozzle0HeatRequired = false;
+                    nozzle1HeatRequired = false;
+                    eRequired = true;
+                }
 
-            for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
-            {
+                outputUtilities.prependPrePrintHeader(writer, headFile.getTypeCode(),
+                        nozzle0HeatRequired,
+                        nozzle1HeatRequired,
+                        safetyFeaturesRequired);
+
+                timeUtils.timerStart(this, heaterSaverTimerName);
+                if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD
+                        && postProcessingMode != PostProcessingMode.FORCED_USE_OF_D_EXTRUDER
+                        && postProcessingMode != PostProcessingMode.FORCED_USE_OF_E_EXTRUDER)
+                {
+                    heaterSaver.saveHeaters(postProcessResults, nozzle0HeatRequired, nozzle1HeatRequired);
+                }
+                timeUtils.timerStop(this, heaterSaverTimerName);
+
+                for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
+                {
+                    timeUtils.timerStart(this, writeOutputTimerName);
+                    if (resultToBeProcessed.getLayerData().getLayerNumber() == 1)
+                    {
+                        if (headFile.getType() == HeadType.SINGLE_MATERIAL_HEAD
+                                || (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD
+                                && (postProcessingMode == PostProcessingMode.FORCED_USE_OF_D_EXTRUDER
+                                || postProcessingMode == PostProcessingMode.FORCED_USE_OF_E_EXTRUDER)))
+                        {
+                            outputUtilities.outputSingleMaterialNozzleTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
+                        }
+
+                        //Always output the bed temperature command at layer 1
+                        MCodeNode bedTemp = new MCodeNode(140);
+                        bedTemp.setCommentText("Go to bed temperature from loaded reel - don't wait");
+                        writer.writeOutput(bedTemp.renderForOutput());
+                        writer.newLine();
+                    }
+                    outputUtilities.writeLayerToFile(resultToBeProcessed.getLayerData(), writer);
+                    timeUtils.timerStop(this, writeOutputTimerName);
+                    postProcessorUtilityMethods.updateLayerToLineNumber(resultToBeProcessed, layerNumberToLineNumber, writer);
+                }
+
                 timeUtils.timerStart(this, writeOutputTimerName);
-                if (resultToBeProcessed.getLayerData().getLayerNumber() == 1)
-                {
-                    if (headFile.getType() == HeadType.SINGLE_MATERIAL_HEAD)
-                    {
-                        outputUtilities.outputSingleMaterialNozzleTemperatureCommands(writer, nozzle0HeatRequired, nozzle1HeatRequired, eRequired, dRequired);
-                    }
-                    
-                    //Always output the bed temperature command at layer 1
-                    MCodeNode bedTemp = new MCodeNode(140);
-                    bedTemp.setCommentText("Go to bed temperature from loaded reel - don't wait");
-                    writer.writeOutput(bedTemp.renderForOutput());
-                    writer.newLine();
-                }
-                outputUtilities.writeLayerToFile(resultToBeProcessed.getLayerData(), writer);
+                outputUtilities.appendPostPrintFooter(writer,
+                        timeAndVolumeCalcResult,
+                        headFile.getTypeCode(),
+                        nozzle0HeatRequired,
+                        nozzle1HeatRequired,
+                        safetyFeaturesRequired);
                 timeUtils.timerStop(this, writeOutputTimerName);
-                postProcessorUtilityMethods.updateLayerToLineNumber(resultToBeProcessed, layerNumberToLineNumber, writer);
-            }
 
-            timeUtils.timerStart(this, writeOutputTimerName);
-            outputUtilities.appendPostPrintFooter(writer,
-                    timeAndVolumeCalcResult,
-                    headFile.getTypeCode(),
-                    nozzle0HeatRequired,
-                    nozzle1HeatRequired,
-                    safetyFeaturesRequired);
-            timeUtils.timerStop(this, writeOutputTimerName);
+                /**
+                 * TODO: layerNumberToLineNumber uses lines numbers from the
+                 * GCode file so are a little less than the line numbers for
+                 * each layer after roboxisation. As a quick fix for now set the
+                 * line number of the last layer to the actual maximum line
+                 * number.
+                 */
+                layerNumberToLineNumber.set(layerNumberToLineNumber.size() - 1,
+                        writer.getNumberOfLinesOutput());
+                int numLines = writer.getNumberOfLinesOutput();
 
-            /**
-             * TODO: layerNumberToLineNumber uses lines numbers from the GCode
-             * file so are a little less than the line numbers for each layer
-             * after roboxisation. As a quick fix for now set the line number of
-             * the last layer to the actual maximum line number.
-             */
-            layerNumberToLineNumber.set(layerNumberToLineNumber.size() - 1,
-                    writer.getNumberOfLinesOutput());
-            int numLines = writer.getNumberOfLinesOutput();
+                String statsProfileName = "";
+                float statsLayerHeight = 0;
 
-            String statsProfileName = "";
-            float statsLayerHeight = 0;
-
-            if (slicerParametersFile != null)
-            {
-                statsProfileName = slicerParametersFile.getProfileName();
-                statsLayerHeight = slicerParametersFile.getLayerHeight_mm();
-            }
-
-            PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
-                    headFile.getTypeCode(),
-                    headFile.getType().name(),
-                    eRequired,
-                    dRequired,
-                    printJobUUID,
-                    nameOfPrint,
-                    statsProfileName,
-                    statsLayerHeight,
-                    numLines,
-                    timeAndVolumeCalcResult.getExtruderEStats().getVolume(),
-                    timeAndVolumeCalcResult.getExtruderDStats().getVolume(),
-                    0,
-                    layerNumberToLineNumber,
-                    timeAndVolumeCalcResult.getExtruderEStats().getDuration().getLayerNumberToPredictedDuration(),
-                    timeAndVolumeCalcResult.getExtruderDStats().getDuration().getLayerNumberToPredictedDuration(),
-                    timeAndVolumeCalcResult.getFeedrateIndependentDuration().getLayerNumberToPredictedDuration(),
-                    timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
-                    + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
-                    + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()
-            );
-
-            result.setRoboxisedStatistics(roboxisedStatistics);
-            
-            roboxisedStatistics.writeStatisticsToFile(writer);
-
-            timeUtils.timerStart(this, outputVerifierTimerName);
-            List<VerifierResult> verificationResults = outputVerifier.verifyAllLayers(postProcessResults, headFile.getType());
-            timeUtils.timerStop(this, outputVerifierTimerName);
-
-            if (verificationResults.size() > 0)
-            {
-                steno.error("Fatal errors found in post-processed file");
-                for (VerifierResult verifierResult : verificationResults)
+                if (slicerParametersFile != null)
                 {
-                    if (verifierResult.getNodeInError() instanceof Renderable)
+                    statsProfileName = slicerParametersFile.getProfileName();
+                    statsLayerHeight = slicerParametersFile.getLayerHeight_mm();
+                }
+
+                PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
+                        headFile.getTypeCode(),
+                        headFile.getType().name(),
+                        eRequired,
+                        dRequired,
+                        printJobUUID,
+                        nameOfPrint,
+                        statsProfileName,
+                        statsLayerHeight,
+                        numLines,
+                        timeAndVolumeCalcResult.getExtruderEStats().getVolume(),
+                        timeAndVolumeCalcResult.getExtruderDStats().getVolume(),
+                        0,
+                        layerNumberToLineNumber,
+                        timeAndVolumeCalcResult.getExtruderEStats().getDuration().getLayerNumberToPredictedDuration(),
+                        timeAndVolumeCalcResult.getExtruderDStats().getDuration().getLayerNumberToPredictedDuration(),
+                        timeAndVolumeCalcResult.getFeedrateIndependentDuration().getLayerNumberToPredictedDuration(),
+                        timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
+                        + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
+                        + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()
+                );
+
+                result.setRoboxisedStatistics(roboxisedStatistics);
+
+                roboxisedStatistics.writeStatisticsToFile(writer);
+
+                timeUtils.timerStart(this, outputVerifierTimerName);
+                List<VerifierResult> verificationResults = outputVerifier.verifyAllLayers(postProcessResults, headFile.getType());
+                timeUtils.timerStop(this, outputVerifierTimerName);
+
+                if (verificationResults.size() > 0)
+                {
+                    steno.error("Fatal errors found in post-processed file");
+                    for (VerifierResult verifierResult : verificationResults)
                     {
-                        steno.error(verifierResult.getResultType().getDescription()
-                                + " at Layer:" + verifierResult.getLayerNumber()
-                                + " Tool:" + verifierResult.getToolnumber()
-                                + " Node:" + ((Renderable) verifierResult.getNodeInError()).renderForOutput());
-                    } else
+                        if (verifierResult.getNodeInError() instanceof Renderable)
+                        {
+                            steno.error(verifierResult.getResultType().getDescription()
+                                    + " at Layer:" + verifierResult.getLayerNumber()
+                                    + " Tool:" + verifierResult.getToolnumber()
+                                    + " Node:" + ((Renderable) verifierResult.getNodeInError()).renderForOutput());
+                        } else
+                        {
+                            steno.error(verifierResult.getResultType().getDescription()
+                                    + " at Layer:" + verifierResult.getLayerNumber()
+                                    + " Tool:" + verifierResult.getToolnumber()
+                                    + " Node:" + verifierResult.getNodeInError().toString());
+                        }
+                    }
+                    steno.error("======================================");
+                }
+
+                outputPostProcessingTimerReport();
+
+                timeUtils.timerStop(this, "PostProcessor");
+                steno.debug("Post-processing took " + timeUtils.timeTimeSoFar_ms(this, "PostProcessor") + "ms");
+
+                if (verificationResults.size() > 0)
+                {
+                    result.setSuccess(false);
+                } else
+                {
+                    result.setSuccess(true);
+                }
+            } catch (IOException ex)
+            {
+                steno.error("Error reading post-processor input file: " + gcodeFileToProcess);
+            } catch (RuntimeException ex)
+            {
+                if (ex.getCause() instanceof ParserInputException)
+                {
+                    steno.error("Fatal postprocessing error on layer - out of bounds - " + layerCounter + " got exception: " + ex.getCause().getMessage());
+                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                            BaseLookup.i18n("notification.postProcessorFailure.modelOutOfBounds"),
+                            BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                            NotificationType.CAUTION);
+                } else if (ex.getCause() != null)
+                {
+                    steno.error("Fatal postprocessing error on layer " + layerCounter + " got exception: " + ex.getCause().getMessage());
+                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                            BaseLookup.i18n("notification.postProcessorFailure.unknown"),
+                            BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                            NotificationType.CAUTION);
+                } else
+                {
+                    steno.error("Fatal postprocessing error on layer " + layerCounter);
+                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                            BaseLookup.i18n("notification.postProcessorFailure.unknown"),
+                            BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                            NotificationType.CAUTION);
+                }
+                ex.printStackTrace();
+            } finally
+            {
+                if (fileReader != null)
+                {
+                    try
                     {
-                        steno.error(verifierResult.getResultType().getDescription()
-                                + " at Layer:" + verifierResult.getLayerNumber()
-                                + " Tool:" + verifierResult.getToolnumber()
-                                + " Node:" + verifierResult.getNodeInError().toString());
+                        fileReader.close();
+                    } catch (IOException ex)
+                    {
+                        steno.error("Failed to close post processor input file - " + gcodeFileToProcess);
                     }
                 }
-                steno.error("======================================");
-            }
 
-            outputPostProcessingTimerReport();
-
-            timeUtils.timerStop(this, "PostProcessor");
-            steno.debug("Post-processing took " + timeUtils.timeTimeSoFar_ms(this, "PostProcessor") + "ms");
-
-            if (verificationResults.size() > 0)
-            {
-                result.setSuccess(false);
-            } else
-            {
-                result.setSuccess(true);
-            }
-        } catch (IOException ex)
-        {
-            steno.error("Error reading post-processor input file: " + gcodeFileToProcess);
-        } catch (RuntimeException ex)
-        {
-            if (ex.getCause() instanceof ParserInputException)
-            {
-                steno.error("Fatal postprocessing error on layer - out of bounds - " + layerCounter + " got exception: " + ex.getCause().getMessage());
-                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
-                        BaseLookup.i18n("notification.postProcessorFailure.modelOutOfBounds"),
-                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationType.CAUTION);
-            } else if (ex.getCause() != null)
-            {
-                steno.error("Fatal postprocessing error on layer " + layerCounter + " got exception: " + ex.getCause().getMessage());
-                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
-                        BaseLookup.i18n("notification.postProcessorFailure.unknown"),
-                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationType.CAUTION);
-            } else
-            {
-                steno.error("Fatal postprocessing error on layer " + layerCounter);
-                BaseLookup.getSystemNotificationHandler().showDismissableNotification(
-                        BaseLookup.i18n("notification.postProcessorFailure.unknown"),
-                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
-                        NotificationType.CAUTION);
-            }
-            ex.printStackTrace();
-        } finally
-        {
-            if (fileReader != null)
-            {
-                try
+                if (writer != null)
                 {
-                    fileReader.close();
-                } catch (IOException ex)
-                {
-                    steno.error("Failed to close post processor input file - " + gcodeFileToProcess);
+                    try
+                    {
+                        writer.close();
+                    } catch (IOException ex)
+                    {
+                        steno.error("Failed to close post processor output file - " + gcodeOutputFile);
+                    }
                 }
             }
-
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                } catch (IOException ex)
-                {
-                    steno.error("Failed to close post processor output file - " + gcodeOutputFile);
-                }
-            }
+            steno.debug("About to exit post processor with result " + result.isSuccess());
         }
-        steno.debug("About to exit post processor with result " + result.isSuccess());
 
         return result;
     }
