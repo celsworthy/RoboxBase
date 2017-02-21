@@ -75,6 +75,7 @@ public class StatusResponse extends RoboxRxPacket
      total length = 221
      */
 
+    private boolean dataIsValid = false;
     /**
      * In v699 t and q are not present
      */
@@ -152,6 +153,16 @@ public class StatusResponse extends RoboxRxPacket
     private float feedRateDMultiplier = 0;
     private WhyAreWeWaitingState whyAreWeWaitingState = WhyAreWeWaitingState.NOT_WAITING;
     private boolean headPowerOn = false;
+
+    public boolean getDataIsValid()
+    {
+        return dataIsValid;
+    }
+
+    public void setDataIsValid(boolean dataIsValid)
+    {
+        this.dataIsValid = dataIsValid;
+    }
 
     /**
      *
@@ -1366,6 +1377,8 @@ public class StatusResponse extends RoboxRxPacket
             steno.error("Failed to convert byte array to Status Response");
         }
 
+        this.dataIsValid = success;
+        
         return success;
     }
 

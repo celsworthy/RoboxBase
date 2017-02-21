@@ -11,6 +11,8 @@ import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.FirmwareResponse;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
+import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
+import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacketFactory;
@@ -65,7 +67,7 @@ public abstract class CommandInterface extends Thread
 
     private String printerName = null;
 
-    private StatusResponse latestStatusResponse = null;
+    private StatusResponse latestStatusResponse = (StatusResponse)RoboxRxPacketFactory.createPacket(RxPacketTypeEnum.STATUS_RESPONSE);
     private AckResponse latestErrorResponse = null;
     private PrinterIDResponse lastPrinterIDResponse = null;
 
@@ -123,8 +125,8 @@ public abstract class CommandInterface extends Thread
 //                try
 //                {
 //                    printerToUse.transmitUpdateFirmware(result.getFirmwareID());
-                    shutdown();
-                    firmwareUpdatedOK = true;
+                shutdown();
+                firmwareUpdatedOK = true;
 //                } catch (PrinterException ex)
 //                {
 //                }
@@ -349,8 +351,6 @@ public abstract class CommandInterface extends Thread
 //                    steno.debug("CONNECTED " + portName);
                     try
                     {
-                        this.sleep(sleepBetweenStatusChecks);
-
                         if (!suspendStatusChecks && isConnected && commsState == RoboxCommsState.CONNECTED)
                         {
                             try
@@ -369,6 +369,8 @@ public abstract class CommandInterface extends Thread
                                 }
                             }
                         }
+
+                        this.sleep(sleepBetweenStatusChecks);
                     } catch (InterruptedException ex)
                     {
                         steno.info("Comms interrupted");
@@ -402,7 +404,7 @@ public abstract class CommandInterface extends Thread
     {
         this.suspendStatusChecks = suspendStatusChecks;
     }
-    
+
     public void loadFirmware(String firmwareFilePath)
     {
         steno.info("Being asked to load firmware - status is " + commsState + " thread " + this.getName());
