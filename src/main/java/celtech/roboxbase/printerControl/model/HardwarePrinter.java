@@ -4260,12 +4260,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     switch (statusResponse.getReelEEPROMState(reelNumber))
                     {
                         case NOT_PRESENT:
-                            reels.remove(reelNumber);
                             effectiveFilaments.put(reelNumber, FilamentContainer.UNKNOWN_FILAMENT);
+                            reels.remove(reelNumber);
                             break;
                         case NOT_PROGRAMMED:
-                            reels.remove(reelNumber);
                             effectiveFilaments.put(reelNumber, FilamentContainer.UNKNOWN_FILAMENT);
+                            reels.remove(reelNumber);
                             steno.error("Unformatted reel detected - no action taken");
 //                            try
 //                            {
