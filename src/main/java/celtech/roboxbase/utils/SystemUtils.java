@@ -6,9 +6,13 @@ import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.LineNumberReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import libertysystems.stenographer.Stenographer;
@@ -408,5 +412,52 @@ public class SystemUtils
     public static String cleanGCodeForTransmission(String gcode)
     {
         return gcode.trim().replaceFirst(";.*$", "").replaceFirst("\\s+$", "");
+    }
+
+    public static boolean downloadFromUrl(URL url, String localFilename, PercentProgressReceiver progressReceiver) throws IOException
+    {
+        boolean success = false;
+        InputStream is = null;
+        FileOutputStream fos = null;
+
+        try
+        {
+            URLConnection urlConn = url.openConnection();//connect
+
+            is = urlConn.getInputStream();               //get connection inputstream
+            fos = new FileOutputStream(localFilename);   //open outputstream to local file
+            int bytesToReceive = urlConn.getContentLength();
+
+            byte[] buffer = new byte[4096];              //declare 4KB buffer
+            int len;
+            int bytesRead = 0;
+
+            //while we have availble data, continue downloading and storing to local file
+            while ((len = is.read(buffer)) > 0)
+            {
+                bytesRead+=len;
+                double percentProgress = ((double)bytesRead / (double)bytesToReceive) * 100.0;
+                progressReceiver.updateProgressPercent(percentProgress);
+                fos.write(buffer, 0, len);
+            }
+            success = true;
+        } finally
+        {
+            try
+            {
+                if (is != null)
+                {
+                    is.close();
+                }
+            } finally
+            {
+                if (fos != null)
+                {
+                    fos.close();
+                }
+            }
+        }
+        
+        return success;
     }
 }

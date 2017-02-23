@@ -7,8 +7,11 @@ import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
+import celtech.roboxbase.utils.PercentProgressReceiver;
+import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -22,6 +25,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -59,6 +63,8 @@ public final class DetectedServer
     private static final String contentPage = "/rootMenu.html";
     @JsonIgnore
     private static final String listPrintersCommand = "/api/discovery/listPrinters";
+    @JsonIgnore
+    private static final String updateSystemCommand = "/api/admin/updateSystem";
 
     public enum ServerStatus
     {
@@ -92,7 +98,7 @@ public final class DetectedServer
     {
         this.address = address;
     }
-    
+
     public String getName()
     {
         return name.get();
@@ -271,8 +277,7 @@ public final class DetectedServer
                     {
                         setServerStatus(ServerStatus.WRONG_VERSION);
                     }
-                }
-                else
+                } else
                 {
                     steno.warning("Got an indecipherable response from " + address.getHostAddress());
                 }
@@ -452,6 +457,30 @@ public final class DetectedServer
                 .append(name.get(), rhs.name.get())
                 .append(version.get(), rhs.version.get())
                 .isEquals();
+    }
+
+    public boolean upgradeRootSoftware(String path, String filename, PercentProgressReceiver progressReceiver)
+    {
+        boolean success = false;
+        String charset = "UTF-8";
+        String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + updateSystemCommand;
+
+        try
+        {
+            MultipartUtility multipart = new MultipartUtility(requestURL, charset);
+
+            File rootSoftwareFile = new File(path + filename);
+
+            multipart.addFilePart("name", rootSoftwareFile, progressReceiver);
+
+            List<String> response = multipart.finish();
+            success = true;
+        } catch (IOException ex)
+        {
+            steno.error("Failure during write of root software: " + ex.getMessage());
+        }
+        
+        return success;
     }
 
     @Override
