@@ -354,7 +354,7 @@ public class PrintEngine implements ControllableService
                         BaseLookup.getSystemNotificationHandler().
                                 showPrintTransferSuccessfulNotification(
                                         associatedPrinter.getPrinterIdentity().printerFriendlyNameProperty().
-                                        get());
+                                                get());
                     }
                 }
             } else
@@ -511,10 +511,15 @@ public class PrintEngine implements ControllableService
 
     public void makeETCCalculatorForJobOfUUID(String printJobID)
     {
-        PrintJob localPrintJob = PrintJob.readJobFromDirectory(printJobID);
+        String gcodeFile = BaseConfiguration.getPrintSpoolDirectory() + printJobID
+                + File.separator + printJobID + BaseConfiguration.gcodePostProcessedFileHandle + BaseConfiguration.gcodeTempFileExtension;
         try
         {
-            makeETCCalculator(localPrintJob.getStatistics(), associatedPrinter);
+            PrintJobStatistics stats = PrintJobStatistics.importStatisticsFromGCodeFile(gcodeFile);
+            if (stats != null)
+            {
+                makeETCCalculator(stats, associatedPrinter);
+            }
         } catch (IOException ex)
         {
             etcAvailable.set(false);
@@ -1135,7 +1140,7 @@ public class PrintEngine implements ControllableService
                         {
                             if (reEstablishTransfer(sendFileData.getFileID(),
                                     sendFileData.
-                                    getExpectedSequenceNumber()))
+                                            getExpectedSequenceNumber()))
                             {
                                 steno.info("The printer is printing an incomplete job: File ID: "
                                         + sendFileData.getFileID()

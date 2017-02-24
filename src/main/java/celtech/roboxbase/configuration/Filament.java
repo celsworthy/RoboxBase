@@ -36,8 +36,8 @@ public class Filament implements Serializable, Cloneable
     private final StringProperty friendlyFilamentName = new SimpleStringProperty("");
     private final ObjectProperty<MaterialType> material = new SimpleObjectProperty();
     private final StringProperty filamentID = new SimpleStringProperty();
-    private final StringProperty brand = new SimpleStringProperty();
-    private final StringProperty category = new SimpleStringProperty();
+    private final StringProperty brand = new SimpleStringProperty("");
+    private final StringProperty category = new SimpleStringProperty("");
 
     private final FloatProperty diameter = new SimpleFloatProperty(0);
     private final FloatProperty filamentMultiplier = new SimpleFloatProperty(0);
