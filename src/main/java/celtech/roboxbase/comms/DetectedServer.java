@@ -171,6 +171,8 @@ public final class DetectedServer
                 case CONNECTED:
                     CoreMemory.getInstance().activateRoboxRoot(this);
                     break;
+                case WRONG_VERSION:
+                    break;
                 default:
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
                     break;
@@ -216,16 +218,23 @@ public final class DetectedServer
         {
             try
             {
-                int response = getData(listPrintersCommand);
-                if (response == 200)
+                if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
                 {
-                    setServerStatus(ServerStatus.CONNECTED);
-                } else if (response == 401)
-                {
-                    setServerStatus(ServerStatus.WRONG_PIN);
+                    setServerStatus(ServerStatus.WRONG_VERSION);
                 } else
                 {
-                    setServerStatus(ServerStatus.NOT_CONNECTED);
+
+                    int response = getData(listPrintersCommand);
+                    if (response == 200)
+                    {
+                        setServerStatus(ServerStatus.CONNECTED);
+                    } else if (response == 401)
+                    {
+                        setServerStatus(ServerStatus.WRONG_PIN);
+                    } else
+                    {
+                        setServerStatus(ServerStatus.NOT_CONNECTED);
+                    }
                 }
             } catch (IOException ex)
             {
@@ -273,10 +282,10 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
-                    {
-                        setServerStatus(ServerStatus.WRONG_VERSION);
-                    }
+//                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+//                    {
+//                        setServerStatus(ServerStatus.WRONG_VERSION);
+//                    }
                 } else
                 {
                     steno.warning("Got an indecipherable response from " + address.getHostAddress());
@@ -467,7 +476,7 @@ public final class DetectedServer
 
         try
         {
-            MultipartUtility multipart = new MultipartUtility(requestURL, charset);
+            MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
 
             File rootSoftwareFile = new File(path + filename);
 
@@ -479,7 +488,7 @@ public final class DetectedServer
         {
             steno.error("Failure during write of root software: " + ex.getMessage());
         }
-        
+
         return success;
     }
 

@@ -1,5 +1,6 @@
 package celtech.roboxbase.utils.net;
 
+import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import celtech.roboxbase.utils.PercentProgressReceiver;
 import java.io.BufferedReader;
 
@@ -41,10 +42,12 @@ public class MultipartUtility
      *
      * @param requestURL
      * @param charset
+     * @param authData
      * @throws IOException
      */
     public MultipartUtility(String requestURL,
-            String charset)
+            String charset,
+            String authData)
             throws IOException
     {
         this.charset = charset;
@@ -57,6 +60,11 @@ public class MultipartUtility
 //        httpConn.setUseCaches(false);
         httpConn.setDoOutput(true); // indicates POST method
         httpConn.setDoInput(true);
+        if (authData != null
+                && !authData.equals(""))
+        {
+            httpConn.setRequestProperty("Authorization", "Basic " + authData);
+        }
         httpConn.setRequestProperty("Expect", "100-continue");
         httpConn.setRequestProperty("Content-Type",
                 "multipart/form-data; boundary=" + boundary);
@@ -114,7 +122,7 @@ public class MultipartUtility
 
         long fileLength = uploadFile.length();
         double progress = 0;
-                
+
         FileInputStream inputStream = new FileInputStream(uploadFile);
         byte[] buffer = new byte[4096];
         int bytesRead = -1;
@@ -122,7 +130,7 @@ public class MultipartUtility
         while ((bytesRead = inputStream.read(buffer)) != -1)
         {
             totalBytesRead += bytesRead;
-            double percentComplete = ((double)totalBytesRead/fileLength) * 100.0;
+            double percentComplete = ((double) totalBytesRead / fileLength) * 100.0;
             progressReceiver.updateProgressPercent(percentComplete);
             outputStream.write(buffer, 0, bytesRead);
         }
