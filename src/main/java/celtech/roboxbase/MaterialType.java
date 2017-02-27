@@ -38,7 +38,11 @@ public enum MaterialType
     /**
      *
      */
-    PCP("PCP", 1.19);
+    PCP("PCP", 1.19),
+    /**
+     *
+     */
+    PTG("PETG", 1.27);
 
     private String friendlyName;
     /**
