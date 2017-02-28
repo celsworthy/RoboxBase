@@ -43,6 +43,9 @@ import celtech.roboxbase.postprocessor.nouveau.verifier.OutputVerifier;
 import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
 import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalc;
 import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalcResult;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -221,7 +224,7 @@ public class PostProcessor
                 fileReader = new BufferedReader(new FileReader(inputFile));
 
                 writer = BaseLookup.getPostProcessorOutputWriterFactory().create(gcodeOutputFile);
-
+                
                 boolean nozzle0HeatRequired = false;
                 boolean nozzle1HeatRequired = false;
 
@@ -411,8 +414,6 @@ public class PostProcessor
                 );
 
                 result.setRoboxisedStatistics(roboxisedStatistics);
-
-                roboxisedStatistics.writeStatisticsToFile(writer);
 
                 timeUtils.timerStart(this, outputVerifierTimerName);
                 List<VerifierResult> verificationResults = outputVerifier.verifyAllLayers(postProcessResults, headFile.getType());

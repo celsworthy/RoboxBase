@@ -24,6 +24,8 @@ public class RemoteClient implements LowLevelInterface
     private final String connectUrlString;
     private final String disconnectUrlString;
     private final String writeToPrinterUrlString;
+    private final String sendStatisticsUrlString;
+    private final String retrieveStatisticsUrlString;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
@@ -33,6 +35,8 @@ public class RemoteClient implements LowLevelInterface
         connectUrlString = Configuration.lowLevelAPIService + Configuration.connectService;
         disconnectUrlString = Configuration.lowLevelAPIService + Configuration.disconnectService;
         writeToPrinterUrlString = Configuration.lowLevelAPIService + Configuration.writeDataService;
+        sendStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.sendStatisticsService;
+        retrieveStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.retrieveStatisticsService;
     }
 
     @Override
@@ -71,7 +75,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
-            returnedPacket = remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            returnedPacket = (RoboxRxPacket)remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle);
@@ -79,5 +83,33 @@ public class RemoteClient implements LowLevelInterface
         }
 
         return returnedPacket;
+    }
+
+    public void sendStatistics(String printerID, PrintJobStatistics printJobStatistics) throws RoboxCommsException
+    {
+        try
+        {
+            String dataToOutput = mapper.writeValueAsString(printJobStatistics);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + sendStatisticsUrlString, dataToOutput, null);
+        } catch (IOException ex)
+        {
+            steno.error("Failed to send statistics to remote printer " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to send statistics to remote printer" + remotePrinterHandle);
+        }
+    }
+
+    public PrintJobStatistics retrieveStatistics(String printerID) throws RoboxCommsException
+    {
+        PrintJobStatistics statistics = null;
+        try
+        {
+            statistics = (PrintJobStatistics)remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + retrieveStatisticsUrlString, null, PrintJobStatistics.class);
+        } catch (IOException ex)
+        {
+            steno.error("Failed to send statistics to remote printer " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to send statistics to remote printer" + remotePrinterHandle);
+        }
+        
+        return statistics;
     }
 }

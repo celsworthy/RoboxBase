@@ -1,6 +1,8 @@
 package celtech.roboxbase.services.printing;
 
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
@@ -34,6 +36,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
     private boolean thisJobCanBeReprinted = false;
     private int lineCounter = 0;
     private int numberOfLines = 0;
+    private final PrintJobStatistics printJobStatistics;
 
     /**
      *
@@ -44,6 +47,8 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
      * @param printUsingSDCard
      * @param startFromSequenceNumber
      * @param thisJobCanBeReprinted
+     * @param dontInitiatePrint
+     * @param printJobStatistics
      */
     public TransferGCodeToPrinterTask(Printer printerToUse,
             String modelFileToPrint,
@@ -52,7 +57,8 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             boolean printUsingSDCard,
             int startFromSequenceNumber,
             boolean thisJobCanBeReprinted,
-            boolean dontInitiatePrint
+            boolean dontInitiatePrint,
+            PrintJobStatistics printJobStatistics
     )
     {
         this.printerToUse = printerToUse;
@@ -63,6 +69,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         this.startFromSequenceNumber = startFromSequenceNumber;
         this.thisJobCanBeReprinted = thisJobCanBeReprinted;
         this.dontInitiatePrint = dontInitiatePrint;
+        this.printJobStatistics = printJobStatistics;
         updateProgress(0.0, 100.0);
     }
 
@@ -85,7 +92,14 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
         steno.info("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
                 + startFromSequenceNumber);
-
+        
+        if (printerToUse.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+        {
+            //We're talking to a remote printer
+            //Send the statistics
+            ((RoboxRemoteCommandInterface)printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+        }
+        
         //Note that FileReader is used, not File, since File is not Closeable
         try
         {

@@ -176,6 +176,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
         RoboxiserResult roboxiserResult = postProcessor.processInput();
         if (roboxiserResult.isSuccess())
         {
+            roboxiserResult.getPrintJobStatistics().writeStatisticsToFile(printJob.getStatisticsFileLocation());
             postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printer, roboxiserResult);
         }
 

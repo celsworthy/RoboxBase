@@ -1,5 +1,6 @@
 package celtech.roboxbase.services.printing;
 
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.ControllableService;
 import javafx.beans.property.IntegerProperty;
@@ -28,6 +29,7 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
     private int startFromSequenceNumber = 0;
     private boolean canBeReprinted = true;
     private boolean dontInitiatePrint = false;
+    private PrintJobStatistics printJobStatistics = null;
 
     /**
      *
@@ -142,12 +144,18 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
         this.dontInitiatePrint = dontInitiatePrint;
     }
 
+    public void setPrintJobStatistics(PrintJobStatistics printJobStatistics)
+    {
+        this.printJobStatistics = printJobStatistics;
+    }
+
     @Override
     protected Task<GCodePrintResult> createTask()
     {
         return new TransferGCodeToPrinterTask(getPrinterToUse(), getModelFileToPrint(), getCurrentPrintJobID(),
                 linesInGCodeFileProperty(), printUsingSDCard,
-                startFromSequenceNumber, canBeReprinted, dontInitiatePrint);
+                startFromSequenceNumber, canBeReprinted, dontInitiatePrint,
+                printJobStatistics);
     }
 
     /**

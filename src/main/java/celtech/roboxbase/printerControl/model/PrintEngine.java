@@ -273,6 +273,7 @@ public class PrintEngine implements ControllableService
                 transferGCodeToPrinterService.setStartFromSequenceNumber(0);
                 transferGCodeToPrinterService.setModelFileToPrint(result.getOutputFilename());
                 transferGCodeToPrinterService.setPrinterToUse(result.getPrinterToUse());
+                transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
                 transferGCodeToPrinterService.start();
 
                 printJobStartTime.set(new Date());
@@ -511,16 +512,29 @@ public class PrintEngine implements ControllableService
 
     public void makeETCCalculatorForJobOfUUID(String printJobID)
     {
-        String gcodeFile = BaseConfiguration.getPrintSpoolDirectory() + printJobID
-                + File.separator + printJobID + BaseConfiguration.gcodePostProcessedFileHandle + BaseConfiguration.gcodeTempFileExtension;
+        PrintJob localPrintJob = PrintJob.readJobFromDirectory(printJobID);
+        PrintJobStatistics statistics = null;
         try
         {
-            PrintJobStatistics stats = PrintJobStatistics.importStatisticsFromGCodeFile(gcodeFile);
-            if (stats != null)
-            {
-                makeETCCalculator(stats, associatedPrinter);
-            }
+            statistics = localPrintJob.getStatistics();
+            makeETCCalculator(statistics, associatedPrinter);
         } catch (IOException ex)
+        {
+            if (associatedPrinter.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+            {
+                //OK - ask for the stats from the remote end
+                try
+                {
+                    statistics = ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).retrieveStatistics();
+                    makeETCCalculator(statistics, associatedPrinter);
+                } catch (RoboxCommsException rex)
+                {
+                    steno.error("Failed to get statistics from remote server");
+                }
+            }
+        }
+
+        if (statistics == null)
         {
             etcAvailable.set(false);
         }
@@ -739,25 +753,27 @@ public class PrintEngine implements ControllableService
     {
         String gCodeFileName = printJob.getRoboxisedFileLocation();
         String jobUUID = printJob.getJobUUID();
-        boolean acceptedPrintRequest;
+        boolean acceptedPrintRequest = false;
         canDisconnectDuringPrint = true;
 
         try
         {
             PrintJobStatistics printJobStatistics = printJob.getStatistics();
             linesInPrintingFile.set(printJobStatistics.getNumberOfLines());
+
+            steno.info("Respooling job " + jobUUID + " to printer from line " + startFromLineNumber);
+            transferGCodeToPrinterService.reset();
+            transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
+            transferGCodeToPrinterService.setStartFromSequenceNumber(startFromLineNumber);
+            transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
+            transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
+            transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+            transferGCodeToPrinterService.start();
+            acceptedPrintRequest = true;
         } catch (IOException ex)
         {
             steno.error("Couldn't get job statistics for job " + jobUUID);
         }
-        steno.info("Respooling job " + jobUUID + " to printer from line " + startFromLineNumber);
-        transferGCodeToPrinterService.reset();
-        transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
-        transferGCodeToPrinterService.setStartFromSequenceNumber(startFromLineNumber);
-        transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
-        transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
-        transferGCodeToPrinterService.start();
-        acceptedPrintRequest = true;
         return acceptedPrintRequest;
     }
 

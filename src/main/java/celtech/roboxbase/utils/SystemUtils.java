@@ -1,5 +1,6 @@
 package celtech.roboxbase.utils;
 
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -435,8 +436,8 @@ public class SystemUtils
             //while we have availble data, continue downloading and storing to local file
             while ((len = is.read(buffer)) > 0)
             {
-                bytesRead+=len;
-                double percentProgress = ((double)bytesRead / (double)bytesToReceive) * 100.0;
+                bytesRead += len;
+                double percentProgress = ((double) bytesRead / (double) bytesToReceive) * 100.0;
                 progressReceiver.updateProgressPercent(percentProgress);
                 fos.write(buffer, 0, len);
             }
@@ -457,7 +458,7 @@ public class SystemUtils
                 }
             }
         }
-        
+
         return success;
     }
 }

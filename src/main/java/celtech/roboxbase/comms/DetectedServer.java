@@ -355,7 +355,7 @@ public final class DetectedServer
         postRoboxPacket(urlString, null, null);
     }
 
-    public RoboxRxPacket postRoboxPacket(String urlString, String content, Class<?> expectedResponseClass) throws IOException
+    public Object postRoboxPacket(String urlString, String content, Class<?> expectedResponseClass) throws IOException
     {
         Object returnvalue = null;
 
@@ -391,7 +391,7 @@ public final class DetectedServer
             disconnect();
         }
 
-        return (RoboxRxPacket) returnvalue;
+        return returnvalue;
     }
 
     public int postData(String urlString, String content) throws IOException

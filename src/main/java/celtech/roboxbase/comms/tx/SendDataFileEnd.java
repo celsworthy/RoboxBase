@@ -1,11 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package celtech.roboxbase.comms.tx;
-
-import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
-import celtech.roboxbase.comms.tx.RoboxTxPacket;
 
 /**
  *

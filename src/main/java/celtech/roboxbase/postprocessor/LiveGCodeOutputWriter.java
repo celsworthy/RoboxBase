@@ -6,12 +6,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * OutputWriter is a wrapper to a file writer that allows us to count the number of non-comment and non-blank lines.
+ * OutputWriter is a wrapper to a file writer that allows us to count the number
+ * of non-comment and non-blank lines.
  *
  * @author Ian
  */
 public class LiveGCodeOutputWriter implements GCodeOutputWriter
 {
+
     private int numberOfLinesOutput = 0;
     private BufferedWriter fileWriter = null;
 
@@ -27,7 +29,7 @@ public class LiveGCodeOutputWriter implements GCodeOutputWriter
         fileWriter.write(outputLine);
         // if it's not a comment or blank line
         if (!outputLine.trim().startsWith(";") && !"".equals(
-            outputLine.trim()))
+                outputLine.trim()))
         {
             numberOfLinesOutput++;
         }
@@ -58,5 +60,11 @@ public class LiveGCodeOutputWriter implements GCodeOutputWriter
     public int getNumberOfLinesOutput()
     {
         return numberOfLinesOutput;
+    }
+
+    @Override
+    public void incrementLinesOfOutput(int numberToIncrementBy)
+    {
+        numberOfLinesOutput += numberToIncrementBy;
     }
 }

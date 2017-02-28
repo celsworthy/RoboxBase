@@ -8,13 +8,13 @@ import java.util.List;
  *
  * @author Ian
  */
-public class TestGCodeOutputWriter implements GCodeOutputWriter
+public class NullGCodeOutputWriter implements GCodeOutputWriter
 {
 
     private int numberOfLinesOutput = 0;
     List<String> writtenLines = new ArrayList<>();
 
-    public TestGCodeOutputWriter(String filename) throws IOException
+    public NullGCodeOutputWriter() throws IOException
     {
     }
 

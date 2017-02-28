@@ -3,16 +3,13 @@
  */
 package celtech.roboxbase.postprocessor;
 
-import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.hamcrest.collection.IsIterableContainingInOrder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Rule;
 import org.junit.Test;
@@ -117,22 +114,22 @@ public class PrintJobStatisticsTest
             fail(ex.getMessage());
         }
     }
-
-    @Test
-    public void testWriteStatistics()
-    {
-        try
-        {
-            TestGCodeOutputWriter testGCWriter = new TestGCodeOutputWriter(null);
-            PrintJobStatistics printJobStatistics = createTestPrintJobStatistics();
-            printJobStatistics.writeStatisticsToFile(testGCWriter);
-
-            assertThat(testGCWriter.writtenLines, IsIterableContainingInOrder.contains(standardStatistics));
-        } catch (IOException ex)
-        {
-            fail(ex.getMessage());
-        }
-    }
+//
+//    @Test
+//    public void testWriteStatistics()
+//    {
+//        try
+//        {
+//            TestGCodeOutputWriter testGCWriter = new TestGCodeOutputWriter(null);
+//            PrintJobStatistics printJobStatistics = createTestPrintJobStatistics();
+//            printJobStatistics.writeStatisticsToFile(testGCWriter);
+//
+//            assertThat(testGCWriter.writtenLines, IsIterableContainingInOrder.contains(standardStatistics));
+//        } catch (IOException ex)
+//        {
+//            fail(ex.getMessage());
+//        }
+//    }
 
     private PrintJobStatistics createTestPrintJobStatistics()
     {

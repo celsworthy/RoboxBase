@@ -21,5 +21,6 @@ public interface GCodeOutputWriter
     void newLine() throws IOException;
 
     void writeOutput(String outputLine) throws IOException;
-    
+
+    public void incrementLinesOfOutput(int numberToIncrementBy);
 }

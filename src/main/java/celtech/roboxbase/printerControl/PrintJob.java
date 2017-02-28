@@ -99,11 +99,23 @@ public class PrintJob
             + BaseConfiguration.gcodeTempFileExtension;
     }
 
+    /**
+     * Get the location of the statistics file
+     *
+     * @return
+     */
+    public String getStatisticsFileLocation()
+    {
+        return printJobDirectory
+            + jobUUID
+            + BaseConfiguration.statisticsFileExtension;
+    }
+
     public PrintJobStatistics getStatistics() throws IOException
     {
         if (statistics == null)
         {
-            statistics = PrintJobStatistics.importStatisticsFromGCodeFile(getRoboxisedFileLocation());
+            statistics = PrintJobStatistics.importStatisticsFromGCodeFile(getStatisticsFileLocation());
         }
         return statistics;
     }

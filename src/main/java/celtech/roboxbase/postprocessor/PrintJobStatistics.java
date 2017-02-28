@@ -3,19 +3,24 @@
  */
 package celtech.roboxbase.postprocessor;
 
+import celtech.roboxbase.BaseLookup;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+import org.parboiled.common.FileUtils;
 
 /**
  *
@@ -25,7 +30,7 @@ public class PrintJobStatistics
 {
 
     @JsonIgnore
-    private final Stenographer steno = StenographerFactory.getStenographer(PrintJobStatistics.class.getName());
+    private final static Stenographer steno = StenographerFactory.getStenographer(PrintJobStatistics.class.getName());
 
     private String printedWithHeadID;
     private String printedWithHeadType;
@@ -46,9 +51,9 @@ public class PrintJobStatistics
     private int lineNumberOfFirstExtrusion;
 
     @JsonIgnore
-    private static final String DATA_PREFIX_IN_FILE = ";#Statistics:";
+    public static final String DATA_PREFIX_IN_FILE = ";#Statistics:";
     @JsonIgnore
-    private static final String DATA_SEPARATOR = "|->";
+    public static final String DATA_SEPARATOR = "|->";
 
     public PrintJobStatistics()
     {
@@ -295,7 +300,7 @@ public class PrintJobStatistics
         this.lineNumberOfFirstExtrusion = lineNumberOfFirstExtrusion;
     }
 
-    protected void updateValueFromStatsString(String statsString)
+    public void updateValueFromStatsString(String statsString)
     {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -311,7 +316,9 @@ public class PrintJobStatistics
                 //Jackson doesn't know what type the key is so we have to force the type
                 if (fieldName.startsWith("layerNumberToPredictedDuration"))
                 {
-                    fieldToUpdate.set(this, mapper.readValue(jsonData,  new TypeReference<Map<Integer, Double>>(){}));
+                    fieldToUpdate.set(this, mapper.readValue(jsonData, new TypeReference<Map<Integer, Double>>()
+                    {
+                    }));
                 } else
                 {
                     fieldToUpdate.set(this, mapper.readValue(jsonData, fieldToUpdate.getType()));
@@ -323,13 +330,16 @@ public class PrintJobStatistics
         }
     }
 
-    public void writeStatisticsToFile(GCodeOutputWriter writer)
+    public void writeStatisticsToFile(String statisticsFileLocation) throws IOException
     {
+        FileUtils.ensureParentDir(new File(statisticsFileLocation));
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(statisticsFileLocation));
         try
         {
-            writer.writeOutput(";#########################################################\n");
-            writer.writeOutput(";                     Statistics\n");
-            writer.writeOutput(";                     ==========\n");
+            writer.write(";#########################################################\n");
+            writer.write(";                     Statistics\n");
+            writer.write(";                     ==========\n");
 
             ObjectMapper mapper = new ObjectMapper();
 
@@ -342,14 +352,16 @@ public class PrintJobStatistics
                     {
                         String jsonifiedData = mapper.writeValueAsString(field.get(this));
                         String outputString = DATA_PREFIX_IN_FILE + field.getName() + DATA_SEPARATOR + jsonifiedData;
-                        writer.writeOutput(outputString + "\n");
+                        writer.write(outputString + "\n");
                     } catch (JsonProcessingException | IllegalAccessException ex)
                     {
                         steno.exception("Exception processing " + field.getName(), ex);
                     }
                 }
             }
-            writer.writeOutput(";#########################################################\n");
+            writer.write(";#########################################################\n");
+            writer.flush();
+            writer.close();
         } catch (IOException ex)
         {
             steno.exception("Unable to write statistics", ex);
