@@ -526,7 +526,10 @@ public class PrintEngine implements ControllableService
                 try
                 {
                     statistics = ((RoboxRemoteCommandInterface) associatedPrinter.getCommandInterface()).retrieveStatistics();
-                    makeETCCalculator(statistics, associatedPrinter);
+                    if (statistics != null)
+                    {
+                        makeETCCalculator(statistics, associatedPrinter);
+                    }
                 } catch (RoboxCommsException rex)
                 {
                     steno.error("Failed to get statistics from remote server");
@@ -1152,7 +1155,8 @@ public class PrintEngine implements ControllableService
                     {
                         SendFile sendFileData = (SendFile) associatedPrinter.requestSendFileReport();
 
-                        if (sendFileData.getFileID() != null && !sendFileData.getFileID().equals(""))
+                        if (sendFileData != null
+                                && sendFileData.getFileID() != null && !sendFileData.getFileID().equals(""))
                         {
                             if (reEstablishTransfer(sendFileData.getFileID(),
                                     sendFileData.

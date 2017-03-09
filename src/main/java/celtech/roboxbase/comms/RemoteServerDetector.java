@@ -2,10 +2,14 @@ package celtech.roboxbase.comms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.MembershipKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,17 +26,25 @@ public class RemoteServerDetector
     private final Stenographer steno = StenographerFactory.getStenographer(RemoteServerDetector.class.getName());
 
     private static RemoteServerDetector instance = null;
-    private InetAddress group = null;
-    private DatagramSocket s = null;
+    private InetSocketAddress transmitGroup = null;
+    private DatagramChannel datagramChannel = null;
     private static final ObjectMapper mapper = new ObjectMapper();
+    private MembershipKey multicastKey;
+    private static final int MAX_WAIT_TIME_MS = 2000;
+    private static final int CYCLE_WAIT_TIME_MS = 200;
 
     private RemoteServerDetector()
     {
         try
         {
-            group = InetAddress.getByName(RemoteDiscovery.multicastAddress);
-            s = new DatagramSocket(RemoteDiscovery.clientSocket);
-            s.setSoTimeout(500);
+            transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
+            datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
+
+            NetworkInterface interf = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
+            datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, interf);
+            datagramChannel.configureBlocking(false);
         } catch (IOException ex)
         {
             steno.error("Unable to set up remote discovery client");
@@ -53,40 +65,46 @@ public class RemoteServerDetector
     {
         List<DetectedServer> newlyDiscoveredServers = new ArrayList<>();
 
-        DatagramPacket hi = new DatagramPacket(RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII"),
-                RemoteDiscovery.discoverHostsMessage.length(),
-                group, RemoteDiscovery.remoteSocket);
+        ByteBuffer sendBuffer = ByteBuffer.wrap(RemoteDiscovery.discoverHostsMessage.getBytes("US-ASCII"));
+        datagramChannel.send(sendBuffer, transmitGroup);
 
-        s.send(hi);
-
-        s.setSoTimeout(2000);
-
-        try
+        int waitTime = 0;
+        while (waitTime < MAX_WAIT_TIME_MS)
         {
-            while (true)
+            ByteBuffer inputBuffer = ByteBuffer.allocate(100);
+            InetSocketAddress inboundAddress = (InetSocketAddress) datagramChannel.receive(inputBuffer);
+            if (inboundAddress != null)
             {
-                byte[] buf = new byte[100];
-                DatagramPacket recv = new DatagramPacket(buf, buf.length);
-                s.receive(recv);
+                byte[] inputBytes = new byte[100];
+                int bytesRead = inputBuffer.position();
+                inputBuffer.rewind();
+                inputBuffer.get(inputBytes, 0, bytesRead);
+                String receivedData = new String(Arrays.copyOf(inputBytes, bytesRead), "US-ASCII");
 
-                String receivedData = new String(Arrays.copyOf(buf, recv.getLength()), "US-ASCII");
                 if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                 {
-                    DetectedServer newServer = new DetectedServer(recv.getAddress());
+                    DetectedServer newServer = new DetectedServer(inboundAddress.getAddress());
                     if (newServer.whoAreYou())
                     {
                         newlyDiscoveredServers.add(newServer);
                     }
-                }
-                else
+                } else
                 {
-                    steno.info("Didn't understand the response. I saw: " + receivedData);
+                    steno.warning("Didn't understand the response from a remote server. I saw: " + receivedData);
+                }
+            } else
+            {
+                try
+                {
+                    Thread.sleep(CYCLE_WAIT_TIME_MS);
+                    waitTime += CYCLE_WAIT_TIME_MS;
+                } catch (InterruptedException ex)
+                {
+
                 }
             }
-        } catch (SocketTimeoutException ex)
-        {
         }
-
+        
         return newlyDiscoveredServers;
     }
 }

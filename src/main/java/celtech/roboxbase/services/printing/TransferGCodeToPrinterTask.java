@@ -92,14 +92,17 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
         steno.info("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
                 + startFromSequenceNumber);
-        
+
         if (printerToUse.getCommandInterface() instanceof RoboxRemoteCommandInterface)
         {
             //We're talking to a remote printer
-            //Send the statistics
-            ((RoboxRemoteCommandInterface)printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+            //Send the statistics if they exist
+            if (printJobStatistics != null)
+            {
+                ((RoboxRemoteCommandInterface) printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+            }
         }
-        
+
         //Note that FileReader is used, not File, since File is not Closeable
         try
         {

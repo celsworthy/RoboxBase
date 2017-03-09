@@ -269,14 +269,14 @@ public abstract class CommandInterface extends Thread
                                 || (printerName.length() > 0
                                 && printerName.charAt(0) == '\0'))
                         {
-                            steno.info("Connected to unknown printer - setting to RBX01");
+                            steno.debug("Connected to unknown printer - setting to RBX01");
                             BaseLookup.getSystemNotificationHandler().
                                     showNoPrinterIDDialog(printerToUse);
                             lastPrinterIDResponse = printerToUse.readPrinterID();
                             printerName = PrinterContainer.defaultPrinterID;
                         } else
                         {
-                            steno.info("Connected to printer " + printerName);
+                            steno.debug("Connected to printer " + printerName);
                         }
 
                         PrinterDefinitionFile printerConfigFile = null;
@@ -373,7 +373,7 @@ public abstract class CommandInterface extends Thread
                         this.sleep(sleepBetweenStatusChecks);
                     } catch (InterruptedException ex)
                     {
-                        steno.info("Comms interrupted");
+                        steno.debug("Comms interrupted");
                     }
                     break;
 
@@ -407,7 +407,7 @@ public abstract class CommandInterface extends Thread
 
     public void loadFirmware(String firmwareFilePath)
     {
-        steno.info("Being asked to load firmware - status is " + commsState + " thread " + this.getName());
+        steno.debug("Being asked to load firmware - status is " + commsState + " thread " + this.getName());
         suspendStatusChecks(true);
 //        this.interrupt();
         firmwareLoadService.reset();
@@ -526,7 +526,7 @@ public abstract class CommandInterface extends Thread
             {
                 if (printerFriendlyName != null)
                 {
-                    steno.info(printerFriendlyName + " is printing");
+                    steno.debug(printerFriendlyName + " is printing");
                 } else
                 {
                     steno.error("Connected to an unknown printer that is printing");

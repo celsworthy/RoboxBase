@@ -4,7 +4,6 @@ import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
-import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.utils.PercentProgressReceiver;
@@ -25,7 +24,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -60,11 +58,9 @@ public final class DetectedServer
     public static final String defaultUser = "root";
 
     @JsonIgnore
-    private static final String contentPage = "/rootMenu.html";
+    private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
-    private static final String listPrintersCommand = "/api/discovery/listPrinters";
-    @JsonIgnore
-    private static final String updateSystemCommand = "/api/admin/updateSystem";
+    private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
 
     public enum ServerStatus
     {
@@ -224,7 +220,7 @@ public final class DetectedServer
                 } else
                 {
 
-                    int response = getData(listPrintersCommand);
+                    int response = getData(LIST_PRINTERS_COMMAND);
                     if (response == 200)
                     {
                         setServerStatus(ServerStatus.CONNECTED);
@@ -308,7 +304,7 @@ public final class DetectedServer
     {
         List<DetectedDevice> detectedDevices = new ArrayList();
 
-        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + listPrintersCommand;
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_PRINTERS_COMMAND;
 
         try
         {
@@ -379,7 +375,8 @@ public final class DetectedServer
         con.setConnectTimeout(2000);
         int responseCode = con.getResponseCode();
 
-        if (responseCode == 200)
+        if (responseCode >= 200
+                && responseCode < 300)
         {
             if (expectedResponseClass != null)
             {
@@ -472,7 +469,7 @@ public final class DetectedServer
     {
         boolean success = false;
         String charset = "UTF-8";
-        String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + updateSystemCommand;
+        String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + UPDATE_SYSTEM_COMMAND;
 
         try
         {

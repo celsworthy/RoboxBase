@@ -38,7 +38,8 @@ public class RemotePrinterDetector extends DeviceDetector
                 if (server.getServerStatus() == DetectedServer.ServerStatus.NOT_CONNECTED
                         || server.getServerStatus() == DetectedServer.ServerStatus.CONNECTED)
                 {
-                    newlyDetectedPrinters.addAll(server.listAttachedPrinters());
+                    List<DetectedDevice> attachedPrinters = server.listAttachedPrinters();
+                    newlyDetectedPrinters.addAll(attachedPrinters);
                 }
             }
 
@@ -48,6 +49,7 @@ public class RemotePrinterDetector extends DeviceDetector
             {
                 if (!newlyDetectedPrinters.contains(existingPrinter))
                 {
+                    steno.info("Disconnecting " + existingPrinter.getConnectionHandle());
                     printersToDisconnect.add(existingPrinter);
                 }
             });

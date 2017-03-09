@@ -106,8 +106,7 @@ public class RemoteClient implements LowLevelInterface
             statistics = (PrintJobStatistics)remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + retrieveStatisticsUrlString, null, PrintJobStatistics.class);
         } catch (IOException ex)
         {
-            steno.error("Failed to send statistics to remote printer " + remotePrinterHandle);
-            throw new RoboxCommsException("Failed to send statistics to remote printer" + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to retrieve statistics from remote printer" + remotePrinterHandle);
         }
         
         return statistics;
