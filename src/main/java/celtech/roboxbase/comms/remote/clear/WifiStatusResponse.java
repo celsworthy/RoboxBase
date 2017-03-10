@@ -1,6 +1,5 @@
 package celtech.roboxbase.comms.remote.clear;
 
-import celtech.roboxbase.comms.DetectedServer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
