@@ -3,7 +3,6 @@
  */
 package celtech.roboxbase.postprocessor;
 
-import celtech.roboxbase.BaseLookup;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

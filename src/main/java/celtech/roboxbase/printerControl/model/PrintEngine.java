@@ -529,10 +529,11 @@ public class PrintEngine implements ControllableService
                     if (statistics != null)
                     {
                         makeETCCalculator(statistics, associatedPrinter);
+                        statistics.writeStatisticsToFile(localPrintJob.getStatisticsFileLocation());
                     }
-                } catch (RoboxCommsException rex)
+                } catch (RoboxCommsException | IOException rex)
                 {
-                    steno.error("Failed to get statistics from remote server");
+                    steno.error("Failed to get statistics from remote server and persist");
                 }
             }
         }
