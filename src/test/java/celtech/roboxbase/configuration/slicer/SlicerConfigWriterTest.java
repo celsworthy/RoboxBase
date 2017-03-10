@@ -228,8 +228,8 @@ public class SlicerConfigWriterTest extends BaseEnvironmentConfiguredTest
         {
             System.out.println(outputData1);
         }
-        assertTrue(outputData.contains("raft_layers = 3"));
-        assertTrue(outputData.contains("support_material_interface_layers = 2"));
+        assertTrue(outputData.contains("raft_layers = 2"));
+        assertTrue(outputData.contains("support_material_interface_layers = 1"));
     }
 
     @Test

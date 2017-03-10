@@ -2,7 +2,9 @@ package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.appManager.NotificationType;
+import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import static celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType.*;
@@ -224,7 +226,7 @@ public class PostProcessor
                 fileReader = new BufferedReader(new FileReader(inputFile));
 
                 writer = BaseLookup.getPostProcessorOutputWriterFactory().create(gcodeOutputFile);
-                
+
                 boolean nozzle0HeatRequired = false;
                 boolean nozzle1HeatRequired = false;
 
@@ -520,9 +522,20 @@ public class PostProcessor
         if (layerBuffer.length() > 0)
         {
             CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
-            gcodeParser.setPrintVolumeBounds(printer.printerConfigurationProperty().get().getPrintVolumeWidth(),
-                    printer.printerConfigurationProperty().get().getPrintVolumeDepth(),
-                    printer.printerConfigurationProperty().get().getPrintVolumeHeight());
+
+            if (printer == null)
+            {
+                PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
+                gcodeParser.setPrintVolumeBounds(
+                        printerDef.getPrintVolumeWidth(),
+                        printerDef.getPrintVolumeDepth(),
+                        printerDef.getPrintVolumeHeight());
+            } else
+            {
+                gcodeParser.setPrintVolumeBounds(printer.printerConfigurationProperty().get().getPrintVolumeWidth(),
+                        printer.printerConfigurationProperty().get().getPrintVolumeDepth(),
+                        printer.printerConfigurationProperty().get().getPrintVolumeHeight());
+            }
 
             if (lastLayerParseResult
                     != null)

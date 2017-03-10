@@ -40,7 +40,7 @@ public class SlicerParametersContainerTest extends BaseEnvironmentConfiguredTest
     public void testLoadProfiles()
     {
         SlicerParametersContainer.getInstance();
-        assertEquals(6, SlicerParametersContainer.getApplicationProfileList().size());
+        assertEquals(15, SlicerParametersContainer.getApplicationProfileList().size());
         assertEquals(0, SlicerParametersContainer.getUserProfileList().size());
     }
 
@@ -59,7 +59,7 @@ public class SlicerParametersContainerTest extends BaseEnvironmentConfiguredTest
 
         SlicerParametersContainer.saveProfile(draftCopy);
         assertEquals(1, userProfiles.size());
-        assertEquals(7, completeProfiles.size());
+        assertEquals(16, completeProfiles.size());
 
         SlicerParametersFile retrievedProfile = SlicerParametersContainer.getSettings(NEW_NAME, "RBX01-SM");
         assertEquals(retrievedProfile, draftCopy);
@@ -83,7 +83,7 @@ public class SlicerParametersContainerTest extends BaseEnvironmentConfiguredTest
 
         SlicerParametersContainer.deleteUserProfile(NEW_NAME, "RBX01-SM");
         assertEquals(0, userProfiles.size());
-        assertEquals(6, completeProfiles.size());
+        assertEquals(15, completeProfiles.size());
         SlicerParametersFile retrievedProfile = SlicerParametersContainer.getSettings(
             NEW_NAME, "RBX01-SM");
         Assert.assertNull(retrievedProfile);
@@ -133,11 +133,11 @@ public class SlicerParametersContainerTest extends BaseEnvironmentConfiguredTest
         draftCopy.setProfileName(CHANGED_NAME);
         SlicerParametersContainer.saveProfile(draftCopy);
         assertEquals(1, userProfiles.size());
-        assertEquals(7, completeProfiles.size());
+        assertEquals(16, completeProfiles.size());
 
         SlicerParametersContainer.reload();
         assertEquals(1, userProfiles.size());
-        assertEquals(7, completeProfiles.size());        
+        assertEquals(16, completeProfiles.size());        
         SlicerParametersFile newEditedProfile = SlicerParametersContainer.getSettings(
             CHANGED_NAME, "RBX01-SM");
         assertEquals(5, newEditedProfile.getBrimWidth_mm());

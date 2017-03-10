@@ -64,9 +64,9 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             updateProgress(0.0, 100.0);
             taskProgress.addListener(
                     (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
-                    {
-                        updateProgress(newValue.doubleValue(), 100.0);
-                    });
+            {
+                updateProgress(newValue.doubleValue(), 100.0);
+            });
             postProcessingResult = doPostProcessing(
                     printJobUUID,
                     printableMeshes,
@@ -118,10 +118,10 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 || printer.headProperty().get() == null)
         {
             headFileToUse = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
-                ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
-                ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
-                ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
-                ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
+            ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
+            ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
+            ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
+            ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
         } else
         {
             headFileToUse = HeadContainer.getHeadByID(printer.headProperty().get().typeCodeProperty().get());
@@ -146,15 +146,15 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
         headFileToUse.getNozzles().get(0).getAssociatedExtruder();
         for (int extruderForModel : printableMeshes.getExtruderForModel())
         {
-                Optional<Integer> nozzleForExtruder = headFileToUse.getNozzleNumberForExtruderNumber(extruderForModel);
-                if (nozzleForExtruder.isPresent())
-                {
-                    objectToNozzleNumberMap.put(objectIndex, nozzleForExtruder.get());
-                } else
-                {
-                    steno.warning("Couldn't get extruder number for object " + objectIndex);
-                }
-                objectIndex++;
+            Optional<Integer> nozzleForExtruder = headFileToUse.getNozzleNumberForExtruderNumber(extruderForModel);
+            if (nozzleForExtruder.isPresent())
+            {
+                objectToNozzleNumberMap.put(objectIndex, nozzleForExtruder.get());
+            } else
+            {
+                steno.warning("Couldn't get extruder number for object " + objectIndex);
+            }
+            objectIndex++;
         }
         PostProcessor postProcessor = new PostProcessor(
                 printJobUUID,
