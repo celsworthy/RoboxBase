@@ -27,7 +27,7 @@ public class HeadContainer
     private static final ObservableList<HeadFile> completeHeadList = FXCollections.observableArrayList();
     private static final ObservableMap<String, HeadFile> completeHeadMap = FXCollections.observableHashMap();
     private static final ObjectMapper mapper = new ObjectMapper();
-    public static final String defaultHeadID = "RBX01-SM";
+    public static final String defaultHeadID = "RBX01-S2";
     public static final HeadType defaultHeadType = HeadType.SINGLE_MATERIAL_HEAD;
 
     private HeadContainer()
