@@ -42,7 +42,11 @@ public enum MaterialType
     /**
      *
      */
-    PTG("PETG", 1.27);
+    PTG("PETG", 1.27),
+    /**
+     *
+     */
+    TPC("TPC", 1.13);
 
     private String friendlyName;
     /**
