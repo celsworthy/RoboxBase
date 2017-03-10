@@ -49,16 +49,16 @@ public class RemotePrinterDetector extends DeviceDetector
             {
                 if (!newlyDetectedPrinters.contains(existingPrinter))
                 {
-                    steno.info("Disconnecting " + existingPrinter.getConnectionHandle());
+                    steno.info("Instructing disconnect as it wasn't in the returned list " + existingPrinter.getConnectionHandle());
                     printersToDisconnect.add(existingPrinter);
                 }
             });
 
             for (DetectedDevice printerToDisconnect : printersToDisconnect)
             {
-                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
+                steno.info("Performing disconnection from " + printerToDisconnect);
                 currentPrinters.remove(printerToDisconnect);
+                deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
             }
 
             //Now new connections
