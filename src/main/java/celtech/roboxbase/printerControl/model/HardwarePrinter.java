@@ -52,12 +52,16 @@ import celtech.roboxbase.comms.tx.WritePrinterID;
 import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
+import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintActionUnavailableException;
+import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.PrintJobRejectedException;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
@@ -93,6 +97,7 @@ import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
 import celtech.roboxbase.utils.tasks.TaskResponse;
+import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -4513,5 +4518,79 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public ObservableList<FirmwareError> getActiveErrors()
     {
         return activeErrors;
+    }
+
+    @Override
+    public List<SuitablePrintJob> listJobsReprintableByMe()
+    {
+        List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+
+        File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
+        for (File printJobDir : printSpoolDir.listFiles())
+        {
+            if (printJobDir.isDirectory())
+            {
+                PrintJob pj = PrintJob.readJobFromDirectory(printJobDir.getName());
+                File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
+                File statistics = new File(pj.getStatisticsFileLocation());
+
+                if (roboxisedGCode.exists() && statistics.exists())
+                {
+                    //Valid files - does it work for us?
+                    try
+                    {
+                        PrintJobStatistics stats = pj.getStatistics();
+
+                        HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
+                        if (headProperty().get() != null && headProperty().get().headTypeProperty().get() == printedWithHeadType)
+                        {
+                            //The head type matches
+                            boolean material1RequirementsMet = true;
+                            if (stats.getRequiresMaterial1())
+                            {
+                                if (!extruders.get(0).isFittedProperty().get() || !extruders.get(0).filamentLoadedProperty().get())
+                                {
+                                    material1RequirementsMet = false;
+                                }
+                            }
+
+                            boolean material2RequirementsMet = true;
+                            if (stats.getRequiresMaterial2())
+                            {
+                                if (!extruders.get(1).isFittedProperty().get() || !extruders.get(1).filamentLoadedProperty().get())
+                                {
+                                    material2RequirementsMet = false;
+                                }
+                            }
+
+                            if (material1RequirementsMet && material2RequirementsMet)
+                            {
+                                //Yay - this one is suitable
+                                SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
+                                suitablePrintJob.setPrintJobID(stats.getPrintJobID());
+                                suitablePrintJob.setPrintJobName(stats.getProjectName());
+                                suitablePrintJob.setPrintProfileName(stats.getProfileName());
+                                suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
+                                suitablePrintJob.seteVolume(stats.geteVolumeUsed());
+                                suitablePrintJob.setdVolume(stats.getdVolumeUsed());
+                                suitablePrintJobs.add(suitablePrintJob);
+                            }
+                        }
+                    } catch (IOException ex)
+                    {
+                        steno.exception("Failed to read in statistics for " + pj.getJobUUID(), ex);
+                    }
+                }
+            }
+        }
+
+        return suitablePrintJobs;
+    }
+
+    @Override
+    public boolean reprintJob(String printJobID)
+    {
+        PrintJob printJob = PrintJob.readJobFromDirectory(printJobID);
+        return getPrintEngine().reprintFileFromDisk(printJob);
     }
 }

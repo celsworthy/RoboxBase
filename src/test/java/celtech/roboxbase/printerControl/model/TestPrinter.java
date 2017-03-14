@@ -24,6 +24,7 @@ import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.utils.models.PrintableMeshes;
@@ -1161,6 +1162,18 @@ public class TestPrinter implements Printer
 
     @Override
     public void clearAllErrors()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public List<SuitablePrintJob> listJobsReprintableByMe()
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean reprintJob(String printJobID)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

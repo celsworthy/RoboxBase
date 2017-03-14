@@ -781,7 +781,7 @@ public class PrintEngine implements ControllableService
         return acceptedPrintRequest;
     }
 
-    private boolean reprintFileFromDisk(PrintJob printJob)
+    protected boolean reprintFileFromDisk(PrintJob printJob)
     {
         return reprintFileFromDisk(printJob, 0);
     }

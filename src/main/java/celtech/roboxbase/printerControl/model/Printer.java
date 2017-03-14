@@ -8,6 +8,7 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.BusyStatus;
 import celtech.roboxbase.comms.remote.EEPROMState;
 import celtech.roboxbase.comms.remote.PauseStatus;
+import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
 import celtech.roboxbase.comms.rx.*;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.Macro;
@@ -49,14 +50,16 @@ public interface Printer extends RoboxResponseConsumer
     }
 
     public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty();
+
     public void setPrinterConfiguration(PrinterDefinitionFile printerConfigurationFile);
-    
+
     public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty();
+
     public void setPrinterEdition(PrinterEdition printerEdition);
-    
+
     //Returns Width, Depth and Height centre point
     public Point3D getPrintVolumeCentre();
-    
+
     public boolean isBiggerThanPrintVolume(RectangularBounds bounds);
 
     public ReadOnlyObjectProperty<Head> headProperty();
@@ -129,7 +132,7 @@ public interface Printer extends RoboxResponseConsumer
     public ReadOnlyBooleanProperty canRemoveHeadProperty();
 
     public void forcedCancel(TaskResponder responder) throws PrinterException;
-    
+
     public void cancel(TaskResponder responder) throws PrinterException;
 
     public void gotoNozzlePosition(float position);
@@ -396,11 +399,11 @@ public interface Printer extends RoboxResponseConsumer
     public AckResponse transmitReportErrors() throws RoboxCommsException;
 
     public void transmitResetErrors() throws RoboxCommsException;
-    
+
     public void clearError(FirmwareError error);
-    
+
     public void clearAllErrors();
-    
+
     public ObservableList<FirmwareError> getActiveErrors();
 
     /*
@@ -556,4 +559,8 @@ public interface Printer extends RoboxResponseConsumer
      * @return
      */
     public CommandInterface getCommandInterface();
+
+    public List<SuitablePrintJob> listJobsReprintableByMe();
+
+    public boolean reprintJob(String printJobID);
 }
