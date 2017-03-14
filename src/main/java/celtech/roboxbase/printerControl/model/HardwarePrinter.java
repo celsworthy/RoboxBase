@@ -406,27 +406,33 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canPause.bind(pauseStatus.isNotEqualTo(PauseStatus.PAUSED)
                 .and(pauseStatus.isNotEqualTo(PauseStatus.PAUSE_PENDING))
+                .and(printEngine.highIntensityCommsInProgressProperty().not())
                 .and(printerStatus.isEqualTo(PrinterStatus.PRINTING_PROJECT)
                         .or(pauseStatus.isEqualTo(PauseStatus.RESUME_PENDING))));
 
         canCalibrateHead.bind(head.isNotNull()
-                .and(printerStatus.isEqualTo(PrinterStatus.IDLE)));
+                .and(printerStatus.isEqualTo(PrinterStatus.IDLE))
+                .and(printEngine.highIntensityCommsInProgressProperty().not()));
 
         canRemoveHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
-                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
+                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY))
+                .and(printEngine.highIntensityCommsInProgressProperty().not()));
 
         canPurgeHead.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY))
+                .and(printEngine.highIntensityCommsInProgressProperty().not())
                 .and(extruders.get(firstExtruderNumber).filamentLoaded.or(extruders.get(
                         secondExtruderNumber).filamentLoaded)));
 
         canOpenDoor.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                .and(printEngine.highIntensityCommsInProgressProperty().not())
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
 
         //TODO make this work with multiple extruders
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
-                .and(extruders.get(0).filamentLoaded));
+                .and(extruders.get(0).filamentLoaded)
+                .and(printEngine.highIntensityCommsInProgressProperty().not()));
     }
 
     FilamentContainer.FilamentDatabaseChangesListener filamentDatabaseChangesListener
