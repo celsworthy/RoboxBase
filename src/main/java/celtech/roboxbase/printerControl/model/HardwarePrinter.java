@@ -53,6 +53,8 @@ import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
 import celtech.roboxbase.comms.events.ErrorConsumer;
 import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
+import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
+import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.Macro;
@@ -255,6 +257,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * Keep an observable list... 
      */
     private final ObservableList<FirmwareError> activeErrors = FXCollections.observableArrayList();
+
+    private StatusResponse latestStatusResponse = null;
+    private AckResponse latestErrorResponse = null;
+    private PrinterIDResponse latestIdentityResponse = null;
 
     @Override
     public CommandInterface getCommandInterface()
@@ -3694,6 +3700,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             {
                 case ACK_WITH_ERRORS:
                     AckResponse ackResponse = (AckResponse) rxPacket;
+                    latestErrorResponse = ackResponse;
 
                     steno.trace(ackResponse.toString());
 
@@ -3799,6 +3806,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         initalStatusCount++;
                     }
                     StatusResponse statusResponse = (StatusResponse) rxPacket;
+                    latestStatusResponse = statusResponse;
                     steno.trace(statusResponse.toString());
 
                     /*
@@ -3974,6 +3982,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                 case PRINTER_ID_RESPONSE:
                     PrinterIDResponse idResponse = (PrinterIDResponse) rxPacket;
+                    latestIdentityResponse = idResponse;
                     printerIdentity.printermodel.set(idResponse.getModel());
                     printerIdentity.printeredition.set(idResponse.getEdition());
                     printerIdentity.printerweekOfManufacture.set(idResponse.
@@ -4599,4 +4608,17 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         PrintJob printJob = PrintJob.readJobFromDirectory(printJobID);
         return getPrintEngine().reprintFileFromDisk(printJob);
     }
+    
+        public AckResponse getLastErrorResponse()
+        {
+            return latestErrorResponse;
+        }
+    public StatusResponse getLastStatusResponse()
+    {
+        return latestStatusResponse;
+    }
+        public PrinterIDResponse getLastIdentityResponse()
+        {
+            return latestIdentityResponse;
+        }
 }

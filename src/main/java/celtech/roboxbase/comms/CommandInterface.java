@@ -67,8 +67,6 @@ public abstract class CommandInterface extends Thread
 
     private String printerName = null;
 
-    private StatusResponse latestStatusResponse = (StatusResponse)RoboxRxPacketFactory.createPacket(RxPacketTypeEnum.STATUS_RESPONSE);
-    private AckResponse latestErrorResponse = null;
     private PrinterIDResponse lastPrinterIDResponse = null;
 
     private boolean isConnected = false;
@@ -348,18 +346,15 @@ public abstract class CommandInterface extends Thread
                     break;
 
                 case CONNECTED:
-//                    steno.debug("CONNECTED " + portName);
                     try
                     {
                         if (!suspendStatusChecks && isConnected && commsState == RoboxCommsState.CONNECTED)
                         {
                             try
                             {
-//                        steno.debug("STATUS REQUEST: " + portName);
-                                latestStatusResponse = (StatusResponse) writeToPrinter(RoboxTxPacketFactory.createPacket(
-                                        TxPacketTypeEnum.STATUS_REQUEST));
+                                writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST));
 
-                                latestErrorResponse = (AckResponse) writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
+                                writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
                             } catch (RoboxCommsException ex)
                             {
                                 if (isConnected)
@@ -539,16 +534,6 @@ public abstract class CommandInterface extends Thread
     public void operateRemotely(boolean enableRemoteOperation)
     {
         suspendStatusChecks(enableRemoteOperation);
-    }
-
-    public AckResponse getLastErrorResponse()
-    {
-        return latestErrorResponse;
-    }
-
-    public StatusResponse getLastStatusResponse()
-    {
-        return latestStatusResponse;
     }
 
     public DetectedDevice getPrinterHandle()
