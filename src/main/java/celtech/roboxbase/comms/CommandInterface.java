@@ -92,7 +92,7 @@ public abstract class CommandInterface extends Thread
         this.setDaemon(true);
         this.setName("CommandInterface|" + printerHandle.getConnectionHandle());
 
-        asyncWriteThread = new AsyncWriteThread(this, printerHandle.toString());
+        asyncWriteThread = new AsyncWriteThread(this, printerHandle.getConnectionHandle());
         asyncWriteThread.start();
 
         try
