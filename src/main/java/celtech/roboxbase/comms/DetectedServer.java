@@ -363,6 +363,8 @@ public final class DetectedServer
         //add request header
         con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
         con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+        con.setConnectTimeout(2000);
+        con.setReadTimeout(2000);
 
         if (content != null)
         {
@@ -372,9 +374,7 @@ public final class DetectedServer
             con.getOutputStream().write(content.getBytes());
         }
 
-        con.setConnectTimeout(2000);
         int responseCode = con.getResponseCode();
-
         if (responseCode >= 200
                 && responseCode < 300)
         {
