@@ -8,6 +8,8 @@ import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -39,18 +41,18 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     private final RemotePrinterDetector remotePrinterDetector;
 
     private boolean doNotCheckForPresenceOfHead = false;
-    private boolean detectLoadedFilament = false;
+    private BooleanProperty detectLoadedFilamentOverride = new SimpleBooleanProperty(true);
     private boolean searchForRemotePrinters = false;
 
     private RoboxCommsManager(String pathToBinaries,
             boolean suppressPrinterIDChecks,
             boolean doNotCheckForPresenceOfHead,
-            boolean detectLoadedFilament,
+            BooleanProperty detectLoadedFilamentProperty,
             boolean searchForRemotePrinters)
     {
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.doNotCheckForPresenceOfHead = doNotCheckForPresenceOfHead;
-        this.detectLoadedFilament = detectLoadedFilament;
+        this.detectLoadedFilamentOverride = detectLoadedFilamentProperty;
         this.searchForRemotePrinters = searchForRemotePrinters;
 
         usbSerialDeviceDetector = new SerialDeviceDetector(pathToBinaries, roboxVendorID, roboxProductID, printerToSearchFor, this);
@@ -77,7 +79,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     {
         if (instance == null)
         {
-            instance = new RoboxCommsManager(pathToBinaries, false, false, true, true);
+            instance = new RoboxCommsManager(pathToBinaries, false, false, new SimpleBooleanProperty(true), true);
         }
 
         return instance;
@@ -101,7 +103,32 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
             instance = new RoboxCommsManager(pathToBinaries,
                     false,
                     doNotCheckForHeadPresence,
-                    detectLoadedFilament,
+                    new SimpleBooleanProperty(detectLoadedFilament),
+                    searchForRemotePrinters);
+        }
+
+        return instance;
+    }
+
+    /**
+     *
+     * @param pathToBinaries
+     * @param doNotCheckForHeadPresence
+     * @param detectLoadedFilamentProperty
+     * @param searchForRemotePrinters
+     * @return
+     */
+    public static RoboxCommsManager getInstance(String pathToBinaries,
+            boolean doNotCheckForHeadPresence,
+            BooleanProperty detectLoadedFilamentProperty,
+            boolean searchForRemotePrinters)
+    {
+        if (instance == null)
+        {
+            instance = new RoboxCommsManager(pathToBinaries,
+                    false,
+                    doNotCheckForHeadPresence,
+                    detectLoadedFilamentProperty,
                     searchForRemotePrinters);
         }
 
@@ -152,7 +179,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         HardwarePrinter.FilamentLoadedGetter filamentLoadedGetter
                 = (StatusResponse statusResponse, int extruderNumber) ->
         {
-            if (!detectLoadedFilament)
+            if (!detectLoadedFilamentOverride.get())
             {
                 // if this preference has been deselected then always say that the filament
                 // has been detected as loaded.
