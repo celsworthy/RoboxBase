@@ -4641,17 +4641,22 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         PrintJob printJob = PrintJob.readJobFromDirectory(printJobID);
         return getPrintEngine().reprintFileFromDisk(printJob);
     }
-    
-        public AckResponse getLastErrorResponse()
-        {
-            return latestErrorResponse;
-        }
+
+    @Override
+    public AckResponse getLastErrorResponse()
+    {
+        return latestErrorResponse;
+    }
+
+    @Override
     public StatusResponse getLastStatusResponse()
     {
         return latestStatusResponse;
     }
-        public PrinterIDResponse getLastIdentityResponse()
-        {
-            return latestIdentityResponse;
-        }
+
+    @Override
+    public PrinterIDResponse getLastIdentityResponse()
+    {
+        return latestIdentityResponse;
+    }
 }
