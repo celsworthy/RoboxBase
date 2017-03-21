@@ -2494,6 +2494,39 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         {
             steno.error("Comms exception whilst writing printer id checksum " + ex.
                     getMessage());
+            throw new PrinterException("Failed to write identity to printer");
+        }
+    }
+
+    @Override
+    public void updatePrinterIdentity(PrinterIdentity identity) throws PrinterException
+    {
+        WritePrinterID writeIDCmd
+                = (WritePrinterID) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.WRITE_PRINTER_ID);
+
+        PrinterIdentity newIdentity = identity.clone();
+        writeIDCmd.populatePacket(
+                newIdentity.printerUniqueID.get(),
+                newIdentity.printermodel.get(),
+                newIdentity.printeredition.get(),
+                newIdentity.printerweekOfManufacture.get(),
+                newIdentity.printeryearOfManufacture.get(),
+                newIdentity.printerpoNumber.get(),
+                newIdentity.printerserialNumber.get(),
+                newIdentity.printercheckByte.get(),
+                newIdentity.printerFriendlyName.get(),
+                ColourStringConverter.colourToString(newIdentity.printerColour.get()),
+                newIdentity.firmwareVersion.get());
+
+        try
+        {
+            AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeIDCmd);
+            PrinterIDResponse idResponse = (PrinterIDResponse) commandInterface.writeToPrinter(
+                    RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Comms exception whilst writing printer id checksum " + ex.
+                    getMessage());
             throw new PrinterException("Failed to write checksum to printer");
         }
     }

@@ -2,6 +2,8 @@ package celtech.roboxbase.comms.tx;
 
 import celtech.roboxbase.comms.remote.PrinterIDDataStructure;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
+import celtech.roboxbase.printerControl.model.PrinterIdentity;
+import celtech.roboxbase.utils.ColourStringConverter;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -129,6 +131,20 @@ public class WritePrinterID extends RoboxTxPacket
                 printercheckByteIn,
                 printerFriendlyNameIn,
                 printerColourWebString);
+    }
+    
+    public void populatePacket(
+            PrinterIdentity identity)
+    {
+        setIDAndColour(identity.printermodelProperty().get(),
+                identity.printereditionProperty().get(),
+                identity.printerweekOfManufactureProperty().get(),
+                identity.printeryearOfManufactureProperty().get(),
+                identity.printerpoNumberProperty().get(),
+                identity.printerserialNumberProperty().get(),
+                identity.printercheckByteProperty().get(),
+                identity.printerFriendlyNameProperty().get(),
+                ColourStringConverter.colourToString(identity.printerColourProperty().get()));
     }
 
     public String getModel()

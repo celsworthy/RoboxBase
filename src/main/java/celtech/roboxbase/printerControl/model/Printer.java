@@ -450,6 +450,8 @@ public interface Printer extends RoboxResponseConsumer
     public void updatePrinterSerialNumber(String serialIdentifier) throws PrinterException;
 
     public void updatePrinterIDChecksum(String checksum) throws PrinterException;
+    
+    public void updatePrinterIdentity(PrinterIdentity identity) throws PrinterException;
 
     public void writeHeadEEPROM(Head headToWrite, boolean readback) throws RoboxCommsException;
 

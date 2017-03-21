@@ -66,7 +66,7 @@ public class PrinterIdentity
 
     }
 
-    public ReadOnlyStringProperty printerUniqueIDProperty()
+    public StringProperty printerUniqueIDProperty()
     {
         return printerUniqueID;
     }
@@ -75,7 +75,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printermodelProperty()
+    public StringProperty printermodelProperty()
     {
         return printermodel;
     }
@@ -84,7 +84,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printereditionProperty()
+    public StringProperty printereditionProperty()
     {
         return printeredition;
     }
@@ -93,7 +93,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printerweekOfManufactureProperty()
+    public StringProperty printerweekOfManufactureProperty()
     {
         return printerweekOfManufacture;
     }
@@ -102,7 +102,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printeryearOfManufactureProperty()
+    public StringProperty printeryearOfManufactureProperty()
     {
         return printeryearOfManufacture;
     }
@@ -111,7 +111,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printerpoNumberProperty()
+    public StringProperty printerpoNumberProperty()
     {
         return printerpoNumber;
     }
@@ -120,7 +120,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printerserialNumberProperty()
+    public StringProperty printerserialNumberProperty()
     {
         return printerserialNumber;
     }
@@ -129,7 +129,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printercheckByteProperty()
+    public StringProperty printercheckByteProperty()
     {
         return printercheckByte;
     }
@@ -138,7 +138,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public ReadOnlyStringProperty printerFriendlyNameProperty()
+    public StringProperty printerFriendlyNameProperty()
     {
         return printerFriendlyName;
     }
@@ -147,7 +147,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public final ReadOnlyObjectProperty<Color> printerColourProperty()
+    public final ObjectProperty<Color> printerColourProperty()
     {
         return printerColour;
     }
@@ -156,7 +156,7 @@ public class PrinterIdentity
      *
      * @return
      */
-    public final ReadOnlyStringProperty firmwareVersionProperty()
+    public final StringProperty firmwareVersionProperty()
     {
         return firmwareVersion;
     }
