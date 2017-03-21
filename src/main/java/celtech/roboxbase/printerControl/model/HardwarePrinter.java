@@ -4596,7 +4596,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             boolean material1RequirementsMet = true;
                             if (stats.getRequiresMaterial1())
                             {
-                                if (!extruders.get(0).isFittedProperty().get() || !extruders.get(0).filamentLoadedProperty().get())
+                                if (!extruders.get(0).isFittedProperty().get()
+                                        || !extruders.get(0).filamentLoadedProperty().get()
+                                        || !reels.containsKey(0))
                                 {
                                     material1RequirementsMet = false;
                                 }
@@ -4605,7 +4607,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             boolean material2RequirementsMet = true;
                             if (stats.getRequiresMaterial2())
                             {
-                                if (!extruders.get(1).isFittedProperty().get() || !extruders.get(1).filamentLoadedProperty().get())
+                                if (!extruders.get(1).isFittedProperty().get()
+                                        || !extruders.get(1).filamentLoadedProperty().get()
+                                        || !reels.containsKey(1))
                                 {
                                     material2RequirementsMet = false;
                                 }
