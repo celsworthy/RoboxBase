@@ -5,6 +5,7 @@ import celtech.roboxbase.comms.remote.BusyStatus;
 import celtech.roboxbase.comms.remote.EEPROMState;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.MaterialType;
+import celtech.roboxbase.PrinterColourMap;
 import celtech.roboxbase.appManager.SystemNotificationManager;
 import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
@@ -2267,7 +2268,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 TxPacketTypeEnum.WRITE_PRINTER_ID);
 
         PrinterIdentity newIdentity = printerIdentity.clone();
-        newIdentity.printerColour.set(displayColour);
+        PrinterColourMap colourMap = PrinterColourMap.getInstance();
+        newIdentity.printerColour.set(colourMap.displayToPrinterColour(displayColour));
         writeIDCmd.populatePacket(
                 newIdentity.printerUniqueID.get(),
                 newIdentity.printermodel.get(),
