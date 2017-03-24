@@ -353,6 +353,8 @@ public interface Printer extends RoboxResponseConsumer
      * @throws PrinterException
      */
     public void executeGCodeFile(String fileName, boolean canDisconnectDuringPrint) throws PrinterException;
+    
+    public void executeGCodeFile(String printJobName, String fileName, boolean canDisconnectDuringPrint) throws PrinterException;
 
     public void callbackWhenNotBusy(TaskResponder responder);
 

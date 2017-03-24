@@ -15,6 +15,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import libertysystems.stenographer.Stenographer;
@@ -48,6 +54,9 @@ public class PrintJobStatistics
     private Map<Integer, Double> layerNumberToPredictedDuration_FeedrateIndependent;
     private double predictedDuration;
     private int lineNumberOfFirstExtrusion;
+
+    @JsonIgnore
+    private Date creationDate;
 
     @JsonIgnore
     public static final String DATA_PREFIX_IN_FILE = ";#Statistics:";
@@ -299,6 +308,18 @@ public class PrintJobStatistics
         this.lineNumberOfFirstExtrusion = lineNumberOfFirstExtrusion;
     }
 
+    @JsonIgnore
+    public Date getCreationDate()
+    {
+        return creationDate;
+    }
+
+    @JsonIgnore
+    public void setCreationDate(Date date)
+    {
+        this.creationDate = date;
+    }
+
     public void updateValueFromStatsString(String statsString)
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -332,6 +353,8 @@ public class PrintJobStatistics
     public void writeStatisticsToFile(String statisticsFileLocation) throws IOException
     {
         FileUtils.ensureParentDir(new File(statisticsFileLocation));
+
+        setCreationDate(new Date());
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(statisticsFileLocation));
         try
@@ -371,7 +394,8 @@ public class PrintJobStatistics
     {
         PrintJobStatistics result = new PrintJobStatistics();
 
-        BufferedReader fileReader = new BufferedReader(new FileReader(roboxisedFileLocation));
+        File roboxisedFile = new File(roboxisedFileLocation);
+        BufferedReader fileReader = new BufferedReader(new FileReader(roboxisedFile));
 
         String line;
 
@@ -380,6 +404,9 @@ public class PrintJobStatistics
             result.updateValueFromStatsString(line);
         }
 
+        Path roboxisedFilePath = Paths.get(roboxisedFile.toURI());
+        BasicFileAttributes attr = Files.readAttributes(roboxisedFilePath, BasicFileAttributes.class);
+        result.setCreationDate(new Date(attr.creationTime().toMillis()));
         return result;
     }
 }

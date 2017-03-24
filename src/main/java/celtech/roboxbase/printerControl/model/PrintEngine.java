@@ -445,7 +445,7 @@ public class PrintEngine implements ControllableService
                     {
                         cameraTriggerManager.listenForCameraTrigger();
                     }
-                    printJob.set(PrintJob.readJobFromDirectory(associatedPrinter.printJobIDProperty().get()));
+                    printJob.set(new PrintJob(associatedPrinter.printJobIDProperty().get()));
                 } else
                 {
                     if (macroBeingRun.get() == null)
@@ -484,8 +484,10 @@ public class PrintEngine implements ControllableService
                 layerNumberToPredictedDuration_D,
                 layerNumberToPredictedDuration_feedrateIndependent,
                 layerNumberToLineNumber);
-
-        progressNumLayers.set(layerNumberToLineNumber.size());
+        if (layerNumberToLineNumber != null)
+        {
+            progressNumLayers.set(layerNumberToLineNumber.size());
+        }
         primaryProgressPercent.unbind();
         primaryProgressPercent.set(0);
         progressETC.set(etcCalculator.getETCPredicted(0));
@@ -512,7 +514,7 @@ public class PrintEngine implements ControllableService
 
     public void makeETCCalculatorForJobOfUUID(String printJobID)
     {
-        PrintJob localPrintJob = PrintJob.readJobFromDirectory(printJobID);
+        PrintJob localPrintJob = new PrintJob(printJobID);
         PrintJobStatistics statistics = null;
         try
         {
@@ -574,7 +576,7 @@ public class PrintEngine implements ControllableService
                     && !printableMeshes.getRequiredPrintJobID().equals(""))
             {
                 String jobUUID = printableMeshes.getRequiredPrintJobID();
-                PrintJob printJob = PrintJob.readJobFromDirectory(jobUUID);
+                PrintJob printJob = new PrintJob(jobUUID);
 
                 //Reprint the last job
                 //Is it still on the printer?
@@ -855,12 +857,12 @@ public class PrintEngine implements ControllableService
         return linesInPrintingFile;
     }
 
-    protected boolean printGCodeFile(final String filename, final boolean useSDCard, final boolean canDisconnectDuringPrint) throws MacroPrintException
+    protected boolean printGCodeFile(final String printJobName, final String filename, final boolean useSDCard, final boolean canDisconnectDuringPrint) throws MacroPrintException
     {
-        return printGCodeFile(filename, useSDCard, false, canDisconnectDuringPrint);
+        return printGCodeFile(printJobName, filename, useSDCard, false, canDisconnectDuringPrint);
     }
 
-    protected boolean printGCodeFile(final String filename, final boolean useSDCard,
+    protected boolean printGCodeFile(final String printJobName, final String filename, final boolean useSDCard,
             final boolean dontInitiatePrint, final boolean canDisconnectDuringPrint) throws MacroPrintException
     {
         boolean acceptedPrintRequest = false;
@@ -875,6 +877,20 @@ public class PrintEngine implements ControllableService
         String printjobFilename = BaseConfiguration.getPrintSpoolDirectory()
                 + printUUID + File.separator + printUUID
                 + BaseConfiguration.gcodeTempFileExtension;
+
+        if (printJobName != null)
+        {
+            PrintJob printJob = new PrintJob(printUUID);
+            PrintJobStatistics printJobStatistics = new PrintJobStatistics();
+            printJobStatistics.setProjectName(printJobName);
+            try
+            {
+                printJobStatistics.writeStatisticsToFile(printJob.getStatisticsFileLocation());
+            } catch (IOException ex)
+            {
+                steno.exception("Failed to write statistics to file: " + printJob.getStatisticsFileLocation(), ex);
+            }
+        }
 
         File src = new File(filename);
         File dest = new File(printjobFilename);
@@ -1117,7 +1133,7 @@ public class PrintEngine implements ControllableService
 
     public boolean reEstablishTransfer(String printJobID, int expectedSequenceNumber)
     {
-        PrintJob printJob = PrintJob.readJobFromDirectory(printJobID);
+        PrintJob printJob = new PrintJob(printJobID);
         boolean acceptedPrintRequest = false;
 
         if (printJob.roboxisedFileExists())

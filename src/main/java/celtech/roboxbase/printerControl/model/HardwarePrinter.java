@@ -104,6 +104,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -380,7 +381,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         //TODO canPrint ought to take account of lid and filament
         canPrint.bind(head.isNotNull()
-                .and(printerStatus.isEqualTo(PrinterStatus.IDLE)));
+                .and(printerStatus.isEqualTo(PrinterStatus.IDLE))
+                .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
+
         canOpenCloseNozzle.bind(head.isNotNull()
                 .and(printerStatus.isEqualTo(PrinterStatus.IDLE)
                         .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))));
@@ -996,7 +999,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
             try
             {
-                printEngine.printGCodeFile(fileName, true, true, true);
+                printEngine.printGCodeFile(null, fileName, true, true, true);
                 PrinterUtils.waitOnMacroFinished(this, cancellable);
                 success = true;
             } catch (MacroPrintException ex)
@@ -1011,6 +1014,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     @Override
     public void executeGCodeFile(String fileName, boolean canDisconnectDuringPrint) throws PrinterException
+    {
+        executeGCodeFile(null, fileName, canDisconnectDuringPrint);
+    }
+
+    @Override
+    public void executeGCodeFile(String printJobName, String fileName, boolean canDisconnectDuringPrint) throws PrinterException
     {
         if (!canRunMacro.get())
         {
@@ -1028,7 +1037,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         try
         {
-            jobAccepted = printEngine.printGCodeFile(fileName, true, canDisconnectDuringPrint);
+            jobAccepted = printEngine.printGCodeFile(printJobName, fileName, true, canDisconnectDuringPrint);
         } catch (MacroPrintException ex)
         {
             steno.error("Failed to print GCode file " + fileName + " : " + ex.getMessage());
@@ -4573,14 +4582,17 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public List<SuitablePrintJob> listJobsReprintableByMe()
     {
+        List<PrintJobStatistics> orderedStats = new ArrayList<>();
         List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
 
         File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
         for (File printJobDir : printSpoolDir.listFiles())
         {
             if (printJobDir.isDirectory())
             {
-                PrintJob pj = PrintJob.readJobFromDirectory(printJobDir.getName());
+                PrintJob pj = new PrintJob(printJobDir.getName());
                 File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
                 File statistics = new File(pj.getStatisticsFileLocation());
 
@@ -4590,50 +4602,57 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     try
                     {
                         PrintJobStatistics stats = pj.getStatistics();
-
-                        HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
-                        if (headProperty().get() != null && headProperty().get().headTypeProperty().get() == printedWithHeadType)
-                        {
-                            //The head type matches
-                            boolean material1RequirementsMet = true;
-                            if (stats.getRequiresMaterial1())
-                            {
-                                if (!extruders.get(0).isFittedProperty().get()
-                                        || !extruders.get(0).filamentLoadedProperty().get()
-                                        || !reels.containsKey(0))
-                                {
-                                    material1RequirementsMet = false;
-                                }
-                            }
-
-                            boolean material2RequirementsMet = true;
-                            if (stats.getRequiresMaterial2())
-                            {
-                                if (!extruders.get(1).isFittedProperty().get()
-                                        || !extruders.get(1).filamentLoadedProperty().get()
-                                        || !reels.containsKey(1))
-                                {
-                                    material2RequirementsMet = false;
-                                }
-                            }
-
-                            if (material1RequirementsMet && material2RequirementsMet)
-                            {
-                                //Yay - this one is suitable
-                                SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
-                                suitablePrintJob.setPrintJobID(stats.getPrintJobID());
-                                suitablePrintJob.setPrintJobName(stats.getProjectName());
-                                suitablePrintJob.setPrintProfileName(stats.getProfileName());
-                                suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
-                                suitablePrintJob.seteVolume(stats.geteVolumeUsed());
-                                suitablePrintJob.setdVolume(stats.getdVolumeUsed());
-                                suitablePrintJobs.add(suitablePrintJob);
-                            }
-                        }
+                        orderedStats.add(stats);
                     } catch (IOException ex)
                     {
-                        steno.exception("Failed to read in statistics for " + pj.getJobUUID(), ex);
+                        steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
                     }
+                }
+            }
+        }
+
+        orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
+
+        for (PrintJobStatistics stats : orderedStats)
+        {
+            HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
+            if (headProperty().get() != null && headProperty().get().headTypeProperty().get() == printedWithHeadType)
+            {
+                //The head type matches
+                boolean material1RequirementsMet = true;
+                if (stats.getRequiresMaterial1())
+                {
+                    if (!extruders.get(0).isFittedProperty().get()
+                            || !extruders.get(0).filamentLoadedProperty().get()
+                            || !reels.containsKey(0))
+                    {
+                        material1RequirementsMet = false;
+                    }
+                }
+
+                boolean material2RequirementsMet = true;
+                if (stats.getRequiresMaterial2())
+                {
+                    if (!extruders.get(1).isFittedProperty().get()
+                            || !extruders.get(1).filamentLoadedProperty().get()
+                            || !reels.containsKey(1))
+                    {
+                        material2RequirementsMet = false;
+                    }
+                }
+
+                if (material1RequirementsMet && material2RequirementsMet)
+                {
+                    //Yay - this one is suitable
+                    SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
+                    suitablePrintJob.setPrintJobID(stats.getPrintJobID());
+                    suitablePrintJob.setPrintJobName(stats.getProjectName());
+                    suitablePrintJob.setPrintProfileName(stats.getProfileName());
+                    suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
+                    suitablePrintJob.seteVolume(stats.geteVolumeUsed());
+                    suitablePrintJob.setdVolume(stats.getdVolumeUsed());
+                    suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
+                    suitablePrintJobs.add(suitablePrintJob);
                 }
             }
         }
@@ -4644,7 +4663,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public boolean reprintJob(String printJobID)
     {
-        PrintJob printJob = PrintJob.readJobFromDirectory(printJobID);
+        PrintJob printJob = new PrintJob(printJobID);
         return getPrintEngine().reprintFileFromDisk(printJob);
     }
 

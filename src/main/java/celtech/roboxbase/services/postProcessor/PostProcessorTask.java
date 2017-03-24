@@ -105,7 +105,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             selectedSlicer = printableMeshes.getDefaultSlicerType();
         }
 
-        PrintJob printJob = PrintJob.readJobFromDirectory(printJobUUID, printJobDirectory);
+        PrintJob printJob = new PrintJob(printJobUUID, printJobDirectory);
         String gcodeFileToProcess = printJob.getGCodeFileLocation();
         String gcodeOutputFile = printJob.getRoboxisedFileLocation();
 

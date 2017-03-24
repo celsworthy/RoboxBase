@@ -12,6 +12,7 @@ public class SuitablePrintJob
     private double durationInSeconds;
     private double eVolume;
     private double dVolume;
+    private String creationDate;
 
     public double getDurationInSeconds()
     {
@@ -72,6 +73,14 @@ public class SuitablePrintJob
     {
         this.eVolume = eVolume;
     }
-    
-    
+
+    public String getCreationDate()
+    {
+        return creationDate;
+    }
+
+    public void setCreationDate(String creationDate)
+    {
+        this.creationDate = creationDate;
+    }
 }

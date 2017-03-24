@@ -18,40 +18,17 @@ public class PrintJob
     private String printJobDirectory = null;
     private PrintJobStatistics statistics = null;
 
-    private PrintJob(String jobUUID)
+    public PrintJob(String jobUUID)
     {
         this.jobUUID = jobUUID;
         this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + jobUUID
             + File.separator;
     }
 
-    private PrintJob(String jobUUID, String printJobDirectory)
+    public PrintJob(String jobUUID, String printJobDirectory)
     {
         this.jobUUID = jobUUID;
         this.printJobDirectory = printJobDirectory;
-    }
-
-    /**
-     * Instantiate a PrintJob from the data in the spool directory
-     *
-     * @param jobUUID
-     * @return
-     */
-    public static PrintJob readJobFromDirectory(String jobUUID)
-    {
-        return new PrintJob(jobUUID);
-    }
-
-    /**
-     * Instantiate a PrintJob from the data in the spool directory
-     *
-     * @param jobUUID
-     * @param printJobDirectory
-     * @return
-     */
-    public static PrintJob readJobFromDirectory(String jobUUID, String printJobDirectory)
-    {
-        return new PrintJob(jobUUID, printJobDirectory);
     }
 
     /**

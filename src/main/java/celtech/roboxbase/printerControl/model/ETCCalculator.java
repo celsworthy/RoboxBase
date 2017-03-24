@@ -90,12 +90,15 @@ public class ETCCalculator
         currentFeedrateMultiplierE = 1 / printer.getPrinterAncillarySystems().feedRateEMultiplier.doubleValue();
         currentFeedrateMultiplierD = 1 / printer.getPrinterAncillarySystems().feedRateDMultiplier.doubleValue();
 
-        for (int i = 0; i < layerNumberToPredictedDuration_E.size(); i++)
+        if (layerNumberToPredictedDuration_E != null && layerNumberToPredictedDuration_D != null)
         {
-            totalPredictedDuration += layerNumberToPredictedDuration_E.get(i) * currentFeedrateMultiplierE;
-            totalPredictedDuration += layerNumberToPredictedDuration_D.get(i) * currentFeedrateMultiplierD;
-            totalPredictedDuration += layerNumberToPredictedDuration_feedrateIndependent.get(i);
-            layerNumberToTotalPredictedDuration.add(i, totalPredictedDuration);
+            for (int i = 0; i < layerNumberToPredictedDuration_E.size(); i++)
+            {
+                totalPredictedDuration += layerNumberToPredictedDuration_E.get(i) * currentFeedrateMultiplierE;
+                totalPredictedDuration += layerNumberToPredictedDuration_D.get(i) * currentFeedrateMultiplierD;
+                totalPredictedDuration += layerNumberToPredictedDuration_feedrateIndependent.get(i);
+                layerNumberToTotalPredictedDuration.add(i, totalPredictedDuration);
+            }
         }
         totalPredictedDurationAllLayers = totalPredictedDuration;
     }
@@ -139,8 +142,12 @@ public class ETCCalculator
     private int getPredictedRemainingPrintTime(int lineNumber)
     {
         int layerNumber = getCurrentLayerNumberForLineNumber(lineNumber);
-        double totalPredictedDurationAtEndOfPreviousLayer = (layerNumber == 1)?0:layerNumberToTotalPredictedDuration.get(
-                layerNumber - 2);
+        double totalPredictedDurationAtEndOfPreviousLayer = 0;
+
+        if (layerNumberToTotalPredictedDuration.size() > 0 && layerNumber != 1)
+        {
+            totalPredictedDurationAtEndOfPreviousLayer = layerNumberToTotalPredictedDuration.get(layerNumber - 2);
+        }
         double elapsedTimeInThisLayer = getPartialDurationInLayer(
                 layerNumber, lineNumber);
         double totalDurationSoFar = totalPredictedDurationAtEndOfPreviousLayer
@@ -155,17 +162,21 @@ public class ETCCalculator
      */
     public int getCurrentLayerNumberForLineNumber(int lineNumber)
     {
-        for (int layerNumber = 0; layerNumber < layerNumberToLineNumber.size(); layerNumber++)
+        if (layerNumberToLineNumber != null)
         {
-            Integer lineNumberForLayer = layerNumberToLineNumber.get(layerNumber);
-            if (lineNumberForLayer >= lineNumber)
+            for (int layerNumber = 0; layerNumber < layerNumberToLineNumber.size(); layerNumber++)
             {
-                return layerNumber + 1;
+                Integer lineNumberForLayer = layerNumberToLineNumber.get(layerNumber);
+                if (lineNumberForLayer >= lineNumber)
+                {
+                    return layerNumber + 1;
+                }
             }
+            throw new RuntimeException(
+                    "Did not calculate layer number - line number greater"
+                    + " than total number of lines");
         }
-        throw new RuntimeException(
-                "Did not calculate layer number - line number greater"
-                + " than total number of lines");
+        return 0;
     }
 
     /**
@@ -185,15 +196,20 @@ public class ETCCalculator
         {
             return 0;
         }
-
-        double numLinesAtEndOfLayer = layerNumberToLineNumber.get(layerNumber - 1);
-        double durationInLayer = layerNumberToPredictedDuration_E.get(layerNumber - 1) * currentFeedrateMultiplierE;
-        durationInLayer += layerNumberToPredictedDuration_D.get(layerNumber - 1) * currentFeedrateMultiplierD;
-        durationInLayer += layerNumberToPredictedDuration_feedrateIndependent.get(layerNumber - 1);
-        double totalLinesInNextLayer = numLinesAtEndOfLayer
-                - numLinesAtStartOfLayer;
-        return (progressInThisLayer / totalLinesInNextLayer)
-                * durationInLayer;
+        if (layerNumberToLineNumber != null)
+        {
+            double numLinesAtEndOfLayer = layerNumberToLineNumber.get(layerNumber - 1);
+            double durationInLayer = layerNumberToPredictedDuration_E.get(layerNumber - 1) * currentFeedrateMultiplierE;
+            durationInLayer += layerNumberToPredictedDuration_D.get(layerNumber - 1) * currentFeedrateMultiplierD;
+            durationInLayer += layerNumberToPredictedDuration_feedrateIndependent.get(layerNumber - 1);
+            double totalLinesInNextLayer = numLinesAtEndOfLayer
+                    - numLinesAtStartOfLayer;
+            return (progressInThisLayer / totalLinesInNextLayer)
+                    * durationInLayer;
+        } else
+        {
+            return 0;
+        }
     }
 
     /**
