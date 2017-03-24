@@ -386,7 +386,7 @@ public class PrintEngine implements ControllableService
 
         scheduledPrintEventHandler = (WorkerStateEvent t) ->
         {
-            steno.info(t.getSource().getTitle() + " has been scheduled");
+            takingItThroughTheBackDoor(false);
             if (raiseProgressNotifications)
             {
                 BaseLookup.getSystemNotificationHandler().showPrintTransferInitiatedNotification();
