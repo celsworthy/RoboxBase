@@ -155,6 +155,8 @@ public class PrintEngine implements ControllableService
 
     private BooleanProperty highIntensityCommsInProgress = new SimpleBooleanProperty(false);
 
+    private boolean iAmTakingItThroughTheBackDoor = false;
+
     public PrintEngine(Printer associatedPrinter)
     {
         this.associatedPrinter = associatedPrinter;
@@ -1166,7 +1168,8 @@ public class PrintEngine implements ControllableService
 
             if (roboxIsPrinting)
             {
-                if (!transferGCodeToPrinterService.isRunning())
+                if (!iAmTakingItThroughTheBackDoor
+                        && !transferGCodeToPrinterService.isRunning())
                 {
                     try
                     {
@@ -1260,5 +1263,10 @@ public class PrintEngine implements ControllableService
     public ReadOnlyBooleanProperty highIntensityCommsInProgressProperty()
     {
         return highIntensityCommsInProgress;
+    }
+
+    public void takingItThroughTheBackDoor(boolean ohYesIAm)
+    {
+        iAmTakingItThroughTheBackDoor = ohYesIAm;
     }
 }
