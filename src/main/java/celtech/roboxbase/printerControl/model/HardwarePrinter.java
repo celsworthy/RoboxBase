@@ -4615,14 +4615,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
         //Make sure the newest are at the top
         Collections.reverse(orderedStats);
-        if (orderedStats.size() > 10)
-        {
-            int maxIndex = orderedStats.size() - 1;
-            for (int index = 10; index <= maxIndex; index++)
-            {
-                orderedStats.remove(index);
-            }
-        }
 
         for (PrintJobStatistics stats : orderedStats)
         {
@@ -4665,6 +4657,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
                     suitablePrintJobs.add(suitablePrintJob);
                 }
+            }
+        }
+
+        if (suitablePrintJobs.size() > 10)
+        {
+            int maxIndex = suitablePrintJobs.size() - 1;
+            for (int index = maxIndex; index >= 10; index--)
+            {
+                suitablePrintJobs.remove(index);
             }
         }
 
