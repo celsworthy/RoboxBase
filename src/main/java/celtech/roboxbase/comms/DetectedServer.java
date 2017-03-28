@@ -44,6 +44,7 @@ public final class DetectedServer
     private final StringProperty serverIP = new SimpleStringProperty("");
     private final StringProperty version = new SimpleStringProperty("");
     private final StringProperty pin = new SimpleStringProperty("1111");
+    private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
 
     @JsonIgnore
     private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
@@ -200,6 +201,21 @@ public final class DetectedServer
     public StringProperty pinProperty()
     {
         return pin;
+    }
+
+    public boolean getWasAutomaticallyAdded()
+    {
+        return wasAutomaticallyAdded.get();
+    }
+    
+    public BooleanProperty wasAutomaticallyAddedProperty()
+    {
+        return wasAutomaticallyAdded;
+    }
+    
+    public void setWasAutomaticallyAdded(boolean value)
+    {
+        wasAutomaticallyAdded.set(value);
     }
 
     public ReadOnlyBooleanProperty dataChangedProperty()
