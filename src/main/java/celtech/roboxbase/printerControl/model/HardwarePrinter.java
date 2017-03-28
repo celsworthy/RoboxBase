@@ -53,6 +53,7 @@ import celtech.roboxbase.comms.tx.WritePrinterID;
 import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
 import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
@@ -606,6 +607,17 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void overrideFilament(int reelNumber, Filament filament)
     {
         effectiveFilaments.put(reelNumber, filament);
+        if (getCommandInterface() instanceof RoboxRemoteCommandInterface)
+        {
+            //We need to propogate this to the Root that is managing the printer...
+            try
+            {
+                ((RoboxRemoteCommandInterface) getCommandInterface()).overrideFilament(reelNumber, filament);
+            } catch (RoboxCommsException ex)
+            {
+                steno.warning("Comms exception whilst attempting to override filament on remote printer");
+            }
+        }
     }
 
     @Override

@@ -8,6 +8,7 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.PrinterNotFound;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 
@@ -107,5 +108,10 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     public PrintJobStatistics retrieveStatistics() throws RoboxCommsException
     {
         return remoteClient.retrieveStatistics(printerHandle.getConnectionHandle());
+    }
+
+    public void overrideFilament(int reelNumber, Filament filament) throws RoboxCommsException
+    {
+        remoteClient.overrideFilament(printerHandle.getConnectionHandle(), reelNumber, filament);
     }
 }

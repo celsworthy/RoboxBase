@@ -24,4 +24,5 @@ public class Configuration
     public static final String writeDataService = "/writeData";
     public static final String sendStatisticsService = "/sendStatistics";
     public static final String retrieveStatisticsService = "/retrieveStatistics";
+    public static final String overrideFilamentService = "/overrideFilament";
 }

@@ -4,9 +4,12 @@ import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -26,6 +29,7 @@ public class RemoteClient implements LowLevelInterface
     private final String writeToPrinterUrlString;
     private final String sendStatisticsUrlString;
     private final String retrieveStatisticsUrlString;
+    private final String overrideFilamentUrlString;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
@@ -37,6 +41,7 @@ public class RemoteClient implements LowLevelInterface
         writeToPrinterUrlString = Configuration.lowLevelAPIService + Configuration.writeDataService;
         sendStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.sendStatisticsService;
         retrieveStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.retrieveStatisticsService;
+        overrideFilamentUrlString = Configuration.lowLevelAPIService + Configuration.overrideFilamentService;
     }
 
     @Override
@@ -75,7 +80,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
-            returnedPacket = (RoboxRxPacket)remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            returnedPacket = (RoboxRxPacket) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle.getConnectionHandle() + " :" + ex.getMessage());
@@ -103,12 +108,27 @@ public class RemoteClient implements LowLevelInterface
         PrintJobStatistics statistics = null;
         try
         {
-            statistics = (PrintJobStatistics)remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + retrieveStatisticsUrlString, null, PrintJobStatistics.class);
+            statistics = (PrintJobStatistics) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + retrieveStatisticsUrlString, null, PrintJobStatistics.class);
         } catch (IOException ex)
         {
             throw new RoboxCommsException("Failed to retrieve statistics from remote printer" + remotePrinterHandle);
         }
-        
+
         return statistics;
+    }
+
+    public void overrideFilament(String printerID, int reelNumber, Filament filament) throws RoboxCommsException
+    {
+        Map<Integer, Filament> filamentMap = new HashMap();
+        filamentMap.put(reelNumber, filament);
+        try
+        {
+            String jsonified = mapper.writeValueAsString(filamentMap);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + overrideFilamentUrlString, jsonified, null);
+        } catch (IOException ex)
+        {
+            steno.error("Failed to override filament on remote printer " + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to override filament on remote printer" + remotePrinterHandle);
+        }
     }
 }
