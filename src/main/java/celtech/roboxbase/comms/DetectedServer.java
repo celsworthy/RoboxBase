@@ -41,6 +41,7 @@ public final class DetectedServer
 
     private InetAddress address;
     private final StringProperty name = new SimpleStringProperty("");
+    @JsonIgnore
     private final StringProperty serverIP = new SimpleStringProperty("");
     private final StringProperty version = new SimpleStringProperty("");
     private final StringProperty pin = new SimpleStringProperty("1111");
@@ -117,22 +118,22 @@ public final class DetectedServer
 
     public String getServerIP()
     {
-        return serverIP.get();
+        return address.getHostAddress();
     }
-
-    public void setServerIP(String serverIP)
-    {
-        if (!serverIP.equals(this.serverIP))
-        {
-            this.serverIP.set(serverIP);
-            dataChanged.set(!dataChanged.get());
-        }
-    }
-
-    public StringProperty serverIPProperty()
-    {
-        return serverIP;
-    }
+//
+//    public void setServerIP(String serverIP)
+//    {
+//        if (!serverIP.equals(this.serverIP))
+//        {
+//            this.serverIP.set(serverIP);
+//            dataChanged.set(!dataChanged.get());
+//        }
+//    }
+//
+//    public StringProperty serverIPProperty()
+//    {
+//        return serverIP;
+//    }
 
     public String getVersion()
     {
