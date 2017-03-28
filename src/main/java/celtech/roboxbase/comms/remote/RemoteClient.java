@@ -119,8 +119,8 @@ public class RemoteClient implements LowLevelInterface
 
     public void overrideFilament(String printerID, int reelNumber, Filament filament) throws RoboxCommsException
     {
-        Map<Integer, Filament> filamentMap = new HashMap();
-        filamentMap.put(reelNumber, filament);
+        Map<Integer, String> filamentMap = new HashMap();
+        filamentMap.put(reelNumber, filament.getFilamentID());
         try
         {
             String jsonified = mapper.writeValueAsString(filamentMap);
