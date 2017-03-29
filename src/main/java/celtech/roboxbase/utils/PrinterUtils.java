@@ -7,6 +7,7 @@ import celtech.roboxbase.comms.remote.BusyStatus;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.printerControl.model.Head;
@@ -71,20 +72,10 @@ public class PrinterUtils
         {
             throw new RuntimeException("Cannot call this function from the GUI thread");
         }
-        // we need to wait here because it takes a little while before status changes
-        // away from IDLE
-        try
-        {
-            Thread.sleep(1500);
-        } catch (InterruptedException ex)
-        {
-            interrupted = true;
-            steno.error("Interrupted whilst waiting on Macro");
-        }
 
         if (task != null && !interrupted)
         {
-            while (printerToCheck.printerStatusProperty().get() != PrinterStatus.IDLE
+            while (printerToCheck.getPrintEngine().isBusy()
                     && task.isCancelled() == false && !BaseLookup.isShuttingDown())
             {
                 try
@@ -98,7 +89,7 @@ public class PrinterUtils
             }
         } else
         {
-            while (printerToCheck.printerStatusProperty().get() != PrinterStatus.IDLE
+            while (printerToCheck.getPrintEngine().isBusy()
                     && !BaseLookup.isShuttingDown())
             {
                 try
@@ -165,6 +156,12 @@ public class PrinterUtils
         {
             try
             {
+                //Slug the status check if we're working remotely
+                if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+                {
+                    Thread.sleep(1000);
+                }
+
                 StatusResponse response = printerToCheck.transmitStatusRequest();
 
                 while (response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
@@ -224,6 +221,12 @@ public class PrinterUtils
 
         try
         {
+            //Slug the status check if we're working remotely
+            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+            {
+                Thread.sleep(1000);
+            }
+
             StatusResponse response = printerToCheck.transmitStatusRequest();
 
             while (response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
@@ -253,9 +256,10 @@ public class PrinterUtils
     /**
      * For each head chamber/heater check if a purge is necessary. Return true
      * if one or more nozzle heaters require a purge.
+     *
      * @param printer
      * @param usedExtruders
-     * @return 
+     * @return
      */
     public static boolean isPurgeNecessary(Printer printer, List<Boolean> usedExtruders)
     {
@@ -265,7 +269,7 @@ public class PrinterUtils
         {
             if (usedExtruders.get(extruderNumber))
             {
-            purgeIsNecessary |= isPurgeNecessaryForExtruder(printer, extruderNumber);
+                purgeIsNecessary |= isPurgeNecessaryForExtruder(printer, extruderNumber);
             }
         };
 
@@ -322,7 +326,7 @@ public class PrinterUtils
 
         if (Math.abs(targetNozzleTemperature
                 - printer.headProperty().get().getNozzleHeaters().get(nozzleNumber).
-                lastFilamentTemperatureProperty().get())
+                        lastFilamentTemperatureProperty().get())
                 > BaseConfiguration.maxPermittedTempDifferenceForPurge)
         {
             return true;

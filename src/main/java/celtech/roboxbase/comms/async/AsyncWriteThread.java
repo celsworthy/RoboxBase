@@ -21,7 +21,7 @@ public class AsyncWriteThread extends Thread
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer(AsyncWriteThread.class.getName());
-    private final int NUMBER_OF_SIMULTANEOUS_COMMANDS = 10;
+    private final int NUMBER_OF_SIMULTANEOUS_COMMANDS = 50;
     private final BlockingQueue<CommandHolder> inboundQueue = new ArrayBlockingQueue<>(NUMBER_OF_SIMULTANEOUS_COMMANDS);
     private final List<BlockingQueue<RoboxRxPacket>> outboundQueues;
     private final CommandInterface commandInterface;
