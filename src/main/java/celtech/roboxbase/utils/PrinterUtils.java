@@ -128,18 +128,8 @@ public class PrinterUtils
         {
             throw new RuntimeException("Cannot call this function from the GUI thread");
         }
-        // we need to wait here because it takes a little while before status changes
-        // away from IDLE
-        try
-        {
-            Thread.sleep(1500);
-        } catch (InterruptedException ex)
-        {
-            failed = true;
-            steno.error("Interrupted whilst waiting on Macro");
-        }
 
-        while (printJobIDIndicatesPrinting(printerToCheck.printJobIDProperty().get())
+        while (printerToCheck.getPrintEngine().isBusy()
                 && !BaseLookup.isShuttingDown())
         {
             try

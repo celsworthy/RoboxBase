@@ -568,7 +568,6 @@ public interface Printer extends RoboxResponseConsumer
 
     public boolean reprintJob(String printJobID);
     
-    
     // Methods provided to allow a simple, more thread-safe way of accessing the printer info
     public AckResponse getLastErrorResponse();
     public StatusResponse getLastStatusResponse();

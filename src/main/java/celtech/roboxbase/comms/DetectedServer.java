@@ -401,8 +401,8 @@ public final class DetectedServer
             }
         } else
         {
+            //Raise an error but don't disconnect...
             steno.error("Got " + responseCode + " when trying " + urlString);
-            disconnect();
         }
 
         return returnvalue;

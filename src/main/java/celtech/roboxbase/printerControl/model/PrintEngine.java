@@ -128,6 +128,7 @@ public class PrintEngine implements ControllableService
 
     private boolean consideringPrintRequest = false;
     ETCCalculator etcCalculator;
+
     /**
      * progressETC holds the number of seconds predicted for the ETC of the
      * print
@@ -1161,12 +1162,13 @@ public class PrintEngine implements ControllableService
     {
         boolean roboxIsPrinting = false;
 
-        if (associatedPrinter != null)
+        if (associatedPrinter
+                != null)
         {
             String printJobID = associatedPrinter.printJobIDProperty().get();
             if (printJobID != null)
             {
-                if (!printJobID.equals("")
+                if (!printJobID.trim().equals("")
                         && printJobID.codePointAt(0) != 0)
                 {
                     roboxIsPrinting = true;
@@ -1275,5 +1277,10 @@ public class PrintEngine implements ControllableService
     public void takingItThroughTheBackDoor(boolean ohYesIAm)
     {
         iAmTakingItThroughTheBackDoor = ohYesIAm;
+    }
+
+    public boolean isBusy()
+    {
+        return macroBeingRun.get() != null;
     }
 }
