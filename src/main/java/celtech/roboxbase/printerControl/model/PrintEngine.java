@@ -176,7 +176,7 @@ public class PrintEngine implements ControllableService
         failedSliceEventHandler = (WorkerStateEvent t) ->
         {
             steno.info(t.getSource().getTitle() + " has failed");
-            if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+            if (macroBeingRun.get() == null)
             {
                 BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
                         "notification.sliceFailed"), BaseLookup.i18n(
@@ -206,13 +206,13 @@ public class PrintEngine implements ControllableService
                 postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
                 postProcessorService.start();
 
-                if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+                if (macroBeingRun.get() == null)
                 {
                     BaseLookup.getSystemNotificationHandler().showSliceSuccessfulNotification();
                 }
             } else
             {
-                if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+                if (macroBeingRun.get() == null)
                 {
                     BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
                             "notification.sliceFailed"), BaseLookup.i18n(
@@ -279,7 +279,7 @@ public class PrintEngine implements ControllableService
 
                 printJobStartTime.set(new Date());
 
-                if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+                if (macroBeingRun.get() == null)
                 {
                     BaseLookup.getSystemNotificationHandler().
                             showGCodePostProcessSuccessfulNotification();
@@ -300,7 +300,9 @@ public class PrintEngine implements ControllableService
         cancelPrintEventHandler = (WorkerStateEvent t) ->
         {
             steno.info(t.getSource().getTitle() + " has been cancelled");
-            if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+            Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(((TransferGCodeToPrinterService) t.getSource()).getCurrentPrintJobID());
+
+            if (!macroRunning.isPresent())
             {
                 BaseLookup.getSystemNotificationHandler().showPrintJobCancelledNotification();
             }
@@ -309,7 +311,8 @@ public class PrintEngine implements ControllableService
         failedPrintEventHandler = (WorkerStateEvent t) ->
         {
             steno.error(t.getSource().getTitle() + " has failed");
-            if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+            Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(((TransferGCodeToPrinterService) t.getSource()).getCurrentPrintJobID());
+            if (!macroRunning.isPresent())
             {
                 BaseLookup.getSystemNotificationHandler().showPrintJobFailedNotification();
             }
@@ -327,7 +330,7 @@ public class PrintEngine implements ControllableService
             GCodePrintResult result = (GCodePrintResult) (t.getSource().getValue());
             if (result.isSuccess())
             {
-                steno.info("Transfer of file to printer complete for job: " + result.getPrintJobID());
+                steno.debug("Transfer of file to printer complete for job: " + result.getPrintJobID());
 //                if (associatedPrinter.printerStatusProperty().get()
 //                    == PrinterStatus.EJECTING_STUCK_MATERIAL)
 //                {
@@ -351,7 +354,9 @@ public class PrintEngine implements ControllableService
 //                    }
 //                } else
                 {
-                    if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE && canDisconnectDuringPrint)
+                    Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(result.getPrintJobID());
+
+                    if (!macroRunning.isPresent() && canDisconnectDuringPrint)
                     {
                         BaseLookup.getSystemNotificationHandler().
                                 showPrintTransferSuccessfulNotification(
@@ -361,7 +366,9 @@ public class PrintEngine implements ControllableService
                 }
             } else
             {
-                if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+                Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(result.getPrintJobID());
+
+                if (!macroRunning.isPresent())
                 {
                     BaseLookup.getSystemNotificationHandler().showPrintTransferFailedNotification(
                             associatedPrinter.getPrinterIdentity().printerFriendlyNameProperty().get());
@@ -386,7 +393,10 @@ public class PrintEngine implements ControllableService
         scheduledPrintEventHandler = (WorkerStateEvent t) ->
         {
             takingItThroughTheBackDoor(false);
-            if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+
+            Optional<Macro> macroRunning = Macro.getMacroForPrintJobID(((TransferGCodeToPrinterService) t.getSource()).getCurrentPrintJobID());
+
+            if (!macroRunning.isPresent())
             {
                 BaseLookup.getSystemNotificationHandler().showPrintTransferInitiatedNotification();
             }
@@ -794,7 +804,7 @@ public class PrintEngine implements ControllableService
         boolean acceptedPrintRequest;
         //Reprint directly from printer
         steno.info("Printing job " + printJob.getJobUUID() + " from printer store");
-        if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+        if (macroBeingRun.get() == null)
         {
             BaseLookup.getSystemNotificationHandler().showReprintStartedNotification();
         }
@@ -1138,7 +1148,7 @@ public class PrintEngine implements ControllableService
         if (printJob.roboxisedFileExists())
         {
             acceptedPrintRequest = reprintFileFromDisk(printJob, expectedSequenceNumber);
-            if (associatedPrinter.printerStatusProperty().get() != PrinterStatus.RUNNING_MACRO_FILE)
+            if (macroBeingRun.get() == null)
             {
                 BaseLookup.getSystemNotificationHandler().removePrintTransferFailedNotification();
             }
