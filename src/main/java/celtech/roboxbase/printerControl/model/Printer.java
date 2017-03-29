@@ -187,6 +187,8 @@ public interface Printer extends RoboxResponseConsumer
     public void goToXYPosition(double xPosition, double yPosition);
 
     public void goToXYZPosition(double xPosition, double yPosition, double zPosition);
+    
+    public void executeMacroWithoutPurgeCheck(Macro macro) throws PrinterException;
 
     public void homeX();
 

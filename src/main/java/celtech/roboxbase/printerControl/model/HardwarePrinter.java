@@ -1223,7 +1223,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 true, cancellable, requireNozzle0, requireNozzle1, false);
     }
 
-    private void executeMacroWithoutPurgeCheck(Macro macro) throws PrinterException
+    public void executeMacroWithoutPurgeCheck(Macro macro) throws PrinterException
     {
         executeMacroWithoutPurgeCheck(macro, false, false, false);
     }
