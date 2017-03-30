@@ -457,8 +457,6 @@ public final class DetectedServer
     {
         return new HashCodeBuilder(21, 31)
                 .append(address)
-                .append(name)
-                .append(version)
                 .toHashCode();
     }
 
@@ -477,8 +475,6 @@ public final class DetectedServer
         DetectedServer rhs = (DetectedServer) obj;
         return new EqualsBuilder()
                 .append(address, rhs.address)
-                .append(name.get(), rhs.name.get())
-                .append(version.get(), rhs.version.get())
                 .isEquals();
     }
 
