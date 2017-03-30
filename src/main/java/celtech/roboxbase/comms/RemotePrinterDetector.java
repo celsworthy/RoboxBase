@@ -14,7 +14,6 @@ public class RemotePrinterDetector extends DeviceDetector
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer("RemotePrinterDetector");
-    private final List<DetectedDevice> currentPrinters = new ArrayList<>();
 
     public RemotePrinterDetector(DeviceDetectionListener listener)
     {

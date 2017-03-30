@@ -8,6 +8,9 @@ import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import libertysystems.stenographer.Stenographer;
@@ -44,6 +47,10 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     private BooleanProperty detectLoadedFilamentOverride = new SimpleBooleanProperty(true);
     private boolean searchForRemotePrinters = false;
 
+    private final IntegerBinding usbNumPrintersProperty;
+    private final IntegerBinding remotePrintersProperty;
+    private final BooleanBinding tooManyRoboxAttachedProperty;
+
     private RoboxCommsManager(String pathToBinaries,
             boolean suppressPrinterIDChecks,
             boolean doNotCheckForPresenceOfHead,
@@ -59,6 +66,10 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         remotePrinterDetector = new RemotePrinterDetector(this);
 
         steno = StenographerFactory.getStenographer(this.getClass().getName());
+        
+        usbNumPrintersProperty = Bindings.size(usbSerialDeviceDetector.currentPrinters);
+        remotePrintersProperty = Bindings.size(remotePrinterDetector.currentPrinters);
+        tooManyRoboxAttachedProperty = usbNumPrintersProperty.add(remotePrintersProperty).greaterThan(9);
     }
 
     /**
@@ -164,12 +175,15 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
 
             if (!noNeedToAddPrinter)
             {
-                // We need to connect!
-                steno.debug("Adding new printer " + detectedPrinter);
+                if (!tooManyRoboxAttachedProperty.get())
+                {
+                    // We need to connect!
+                    steno.debug("Adding new printer " + detectedPrinter);
 
-                Printer newPrinter = makePrinter(detectedPrinter);
-                pendingPrinters.put(detectedPrinter, newPrinter);
-                newPrinter.startComms();
+                    Printer newPrinter = makePrinter(detectedPrinter);
+                    pendingPrinters.put(detectedPrinter, newPrinter);
+                    newPrinter.startComms();
+                }
             }
         }
     }
@@ -223,7 +237,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     public void start()
     {
         BaseLookup.getTaskExecutor().runOnBackgroundThread(() ->
-        {   
+        {
             if (!remotePrinterDetector.isAlive() && searchForRemotePrinters)
             {
                 remotePrinterDetector.start();
@@ -363,5 +377,10 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
         {
             steno.info("not in active list");
         }
+    }
+
+    public BooleanBinding tooManyRoboxAttachedProperty()
+    {
+        return tooManyRoboxAttachedProperty;
     }
 }

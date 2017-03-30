@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import libertysystems.stenographer.Stenographer;
@@ -21,7 +20,6 @@ public class SerialDeviceDetector extends DeviceDetector
 {
 
     private static final Stenographer steno = StenographerFactory.getStenographer(SerialDeviceDetector.class.getName());
-    private List<DetectedDevice> currentPrinters = new ArrayList<>();
     private final String deviceDetectorStringMac;
     private final String deviceDetectorStringWindows;
     private final String deviceDetectorStringLinux;
@@ -172,4 +170,6 @@ public class SerialDeviceDetector extends DeviceDetector
     {
         currentPrinters.remove(printerHandle);
     }
+    
+    
 }
