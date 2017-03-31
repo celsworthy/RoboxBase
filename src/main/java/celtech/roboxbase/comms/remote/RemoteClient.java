@@ -6,6 +6,7 @@ import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
@@ -81,6 +82,9 @@ public class RemoteClient implements LowLevelInterface
         {
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
             returnedPacket = (RoboxRxPacket) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+        } catch (JsonProcessingException ex)
+        {
+            steno.warning("Didn't get correct JSON from request - passing back null for " + messageToWrite.getPacketType().name());
         } catch (IOException ex)
         {
             steno.error("Failed to write to remote printer (" + messageToWrite.getPacketType().name() + ") " + remotePrinterHandle.getConnectionHandle() + " :" + ex.getMessage());

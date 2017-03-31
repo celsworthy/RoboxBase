@@ -6,6 +6,7 @@ import celtech.roboxbase.comms.async.AsyncWriteThread;
 import celtech.roboxbase.comms.async.CommandPacket;
 import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.FirmwareResponse;
@@ -355,6 +356,12 @@ public abstract class CommandInterface extends Thread
                                 writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST));
 
                                 writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
+
+                                // If we're talking to a remote printer we need to keep checking data that may have changed without us knowing
+                                if (this instanceof RoboxRemoteCommandInterface)
+                                {
+                                    writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+                                }
                             } catch (RoboxCommsException ex)
                             {
                                 if (isConnected)
@@ -421,6 +428,7 @@ public abstract class CommandInterface extends Thread
     {
         steno.debug("Shutdown command interface...");
         keepRunning = false;
+        commsState = RoboxCommsState.SHUTTING_DOWN;
         suspendStatusChecks(true);
         disconnectPrinterImpl();
         Platform.runLater(() ->
