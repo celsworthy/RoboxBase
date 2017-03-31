@@ -165,7 +165,7 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
     @Override
     public boolean cancelRun()
     {
-        steno.info("Print service cancelled - job " + getCurrentPrintJobID());
+        steno.info("Print transfer service cancelled - job " + getCurrentPrintJobID());
         return cancel();
     }
 

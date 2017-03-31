@@ -376,14 +376,6 @@ public class PrintEngine implements ControllableService
                             associatedPrinter.getPrinterIdentity().printerFriendlyNameProperty().get());
                 }
                 steno.error("Submission of job to printer failed");
-                try
-                {
-                    //TODO - can't submit in this case...?
-                    associatedPrinter.cancel(null);
-                } catch (PrinterException ex)
-                {
-                    steno.error("Couldn't abort on print job failed to submit");
-                }
             }
         };
 

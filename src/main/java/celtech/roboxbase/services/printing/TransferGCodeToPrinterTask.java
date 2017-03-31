@@ -153,18 +153,8 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             steno.error("Couldn't open gcode file " + gcodeFileToPrint + ": " + ex);
         } catch (RoboxCommsException ex)
         {
-            steno.error("Error during print operation - abandoning print " + printJobID + " " + ex.
+            steno.error("Error during print operation - abandoning transfer of " + printJobID + " " + ex.
                     getMessage());
-            if (printUsingSDCard)
-            {
-                try
-                {
-                    printerToUse.cancel(null);
-                } catch (PrinterException exp)
-                {
-                    steno.error("Error cancelling print - " + exp.getMessage());
-                }
-            }
             updateMessage("Printing error");
         } finally
         {
