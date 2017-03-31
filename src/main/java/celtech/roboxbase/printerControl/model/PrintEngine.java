@@ -134,6 +134,7 @@ public class PrintEngine implements ControllableService
      * print
      */
     private final IntegerProperty progressETC = new SimpleIntegerProperty();
+    private final IntegerProperty totalDurationSeconds = new SimpleIntegerProperty(0);
     /**
      * The current layer being processed
      */
@@ -502,6 +503,7 @@ public class PrintEngine implements ControllableService
         }
         primaryProgressPercent.unbind();
         primaryProgressPercent.set(0);
+        totalDurationSeconds.set((int)etcCalculator.totalPredictedDurationAllLayers);
         progressETC.set(etcCalculator.getETCPredicted(0));
         etcAvailable.set(true);
     }
@@ -1076,6 +1078,11 @@ public class PrintEngine implements ControllableService
     public IntegerProperty progressETCProperty()
     {
         return progressETC;
+    }
+
+    public IntegerProperty totalDurationSecondsProperty()
+    {
+        return totalDurationSeconds;
     }
 
     public ReadOnlyBooleanProperty etcAvailableProperty()
