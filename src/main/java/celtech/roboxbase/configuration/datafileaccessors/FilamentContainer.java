@@ -1,7 +1,9 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
 import celtech.roboxbase.MaterialType;
+import celtech.roboxbase.comms.DetectedServer;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.FilamentFileFilter;
 import celtech.roboxbase.utils.DeDuplicator;
@@ -39,7 +41,7 @@ public class FilamentContainer
     private final ObservableList<Filament> completeFilamentListNoDuplicates = FXCollections.observableArrayList();
     private final ObservableMap<String, Filament> completeFilamentMapByID = FXCollections.observableHashMap();
     private final ObservableMap<String, String> completeFilamentNameByID = FXCollections.observableHashMap();
-    
+
     public final Filament createNewFilament = new Filament(null, null, null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
             0, 0, false);
@@ -326,6 +328,13 @@ public class FilamentContainer
      */
     public void saveFilament(Filament filament)
     {
+        List<DetectedServer> serversToPushTo = new ArrayList<>(CoreMemory.getInstance().getActiveRoboxRoots());
+
+        for (DetectedServer server : serversToPushTo)
+        {
+            server.saveFilament(filament);
+        }
+
         if (!completeFilamentMapByID.containsKey(filament.getFilamentID()))
         {
             addNewFilament(filament);
@@ -411,6 +420,14 @@ public class FilamentContainer
     public void deleteFilament(Filament filament)
     {
         assert (filament.isMutable());
+
+        List<DetectedServer> serversToPushTo = new ArrayList<>(CoreMemory.getInstance().getActiveRoboxRoots());
+
+        for (DetectedServer server : serversToPushTo)
+        {
+            server.deleteFilament(filament);
+        }
+
         File filamentToDeleteFile = new File(constructFilePath(filament));
         try
         {

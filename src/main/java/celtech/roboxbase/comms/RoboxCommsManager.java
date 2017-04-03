@@ -361,7 +361,7 @@ public class RoboxCommsManager implements PrinterStatusConsumer, DeviceDetection
     @Override
     public void deviceNoLongerPresent(DetectedDevice detectedDevice)
     {
-        steno.info("Robox Comms Manager has been told that a printer is no longer detected: " + detectedDevice);
+        steno.info("Robox Comms Manager has been told that a printer is no longer detected: " + detectedDevice.getConnectionHandle());
         Printer printerToDisconnect = activePrinters.get(detectedDevice);
         if (printerToDisconnect != null)
         {

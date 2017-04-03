@@ -1565,7 +1565,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * @param reelToWrite
      * @throws RoboxCommsException
      */
-    public void writeReelEEPROM(int reelNumber, Reel reelToWrite) throws RoboxCommsException
+    private void writeReelEEPROM(int reelNumber, Reel reelToWrite, boolean dontPublishResult) throws RoboxCommsException
     {
         RoboxTxPacket readPacket = null;
         RoboxTxPacket writePacket = null;
@@ -1615,7 +1615,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         if (readPacket != null
                 && writePacket != null)
         {
-            response = (AckResponse) commandInterface.writeToPrinter(writePacket);
+            response = (AckResponse) commandInterface.writeToPrinter(writePacket, dontPublishResult);
 //            commandInterface.writeToPrinter(readPacket);
         }
     }
@@ -4101,11 +4101,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                 try
                                 {
                                     writeReelEEPROM(reelResponse.getReelNumber(), reels.get(
-                                            reelResponse.getReelNumber()));
+                                            reelResponse.getReelNumber()), true);
                                     steno.debug("Automatically updated reel data");
                                     BaseLookup.getSystemNotificationHandler().
                                             showReelUpdatedNotification();
-                                    readReelEEPROM(reelResponse.getReelNumber(), true);
+                                    //Force the next iteration of status check to read the reel eeprom
+                                    reelEEPROMCheckCounter[reelResponse.getReelNumber()] = REEL_EEPROM_COUNTS_BEFORE_CHECK;
                                 } catch (RoboxCommsException ex)
                                 {
                                     steno.error("Error updating reel after repair " + ex.

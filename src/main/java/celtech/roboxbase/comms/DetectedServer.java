@@ -6,6 +6,7 @@ import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.utils.PercentProgressReceiver;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -63,6 +64,10 @@ public final class DetectedServer
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
+    @JsonIgnore
+    private static final String SAVE_FILAMENT_COMMAND = "/api/admin/saveFilament";
+    @JsonIgnore
+    private static final String DELETE_FILAMENT_COMMAND = "/api/admin/deleteFilament";
 
     public enum ServerStatus
     {
@@ -208,12 +213,12 @@ public final class DetectedServer
     {
         return wasAutomaticallyAdded.get();
     }
-    
+
     public BooleanProperty wasAutomaticallyAddedProperty()
     {
         return wasAutomaticallyAdded;
     }
-    
+
     public void setWasAutomaticallyAdded(boolean value)
     {
         wasAutomaticallyAdded.set(value);
@@ -500,6 +505,30 @@ public final class DetectedServer
         }
 
         return success;
+    }
+
+    public void saveFilament(Filament filament)
+    {
+        try
+        {
+            String jsonifiedData = mapper.writeValueAsString(filament);
+            postData(SAVE_FILAMENT_COMMAND, jsonifiedData);
+        } catch (IOException ex)
+        {
+            steno.exception("Failed to save filament to root " + getName(), ex);
+        }
+    }
+
+    public void deleteFilament(Filament filament)
+    {
+        try
+        {
+            String jsonifiedData = mapper.writeValueAsString(filament);
+            postData(DELETE_FILAMENT_COMMAND, jsonifiedData);
+        } catch (IOException ex)
+        {
+            steno.exception("Failed to delete filament from root " + getName(), ex);
+        }
     }
 
     @Override

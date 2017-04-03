@@ -387,7 +387,7 @@ public abstract class CommandInterface extends Thread
             }
         }
         finalShutdown();
-        steno.debug("Handler for " + printerHandle + " exiting");
+        steno.debug("Handler for " + printerHandle.getConnectionHandle() + " exiting");
     }
 
     private void moveOnFromFirmwareCheck(FirmwareResponse firmwareResponse)
@@ -443,7 +443,7 @@ public abstract class CommandInterface extends Thread
         commsState = RoboxCommsState.DISCONNECTED;
         isConnected = false;
         asyncWriteThread.shutdown();
-        steno.debug("Shutdown command interface for " + printerHandle + " complete");
+        steno.debug("Shutdown command interface for " + printerHandle.getConnectionHandle() + " complete");
         controlInterface.disconnected(printerHandle);
     }
 
