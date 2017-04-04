@@ -2062,15 +2062,21 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             nozzle0FirstLayerTarget = filament1.getFirstLayerNozzleTemperature();
             nozzle0Target = filament1.getNozzleTemperature();
 
-            changeFilamentInfo("E", filament0.getDiameter(),
-                    filament0.getFilamentMultiplier());
-            changeEFeedRateMultiplier(filament0.getFeedRateMultiplier());
-            extruders.get(0).lastFeedrateMultiplierInUse.set((float) filament0.getFeedRateMultiplier());
+            if (extruders.get(0).isFittedProperty().get())
+            {
+                changeFilamentInfo("E", filament0.getDiameter(),
+                        filament0.getFilamentMultiplier());
+                changeEFeedRateMultiplier(filament0.getFeedRateMultiplier());
+                extruders.get(0).lastFeedrateMultiplierInUse.set((float) filament0.getFeedRateMultiplier());
+            }
 
-            changeFilamentInfo("D", filament1.getDiameter(),
-                    filament1.getFilamentMultiplier());
-            changeDFeedRateMultiplier(filament1.getFeedRateMultiplier());
-            extruders.get(1).lastFeedrateMultiplierInUse.set((float) filament1.getFeedRateMultiplier());
+            if (extruders.get(1).isFittedProperty().get())
+            {
+                changeFilamentInfo("D", filament1.getDiameter(),
+                        filament1.getFilamentMultiplier());
+                changeDFeedRateMultiplier(filament1.getFeedRateMultiplier());
+                extruders.get(1).lastFeedrateMultiplierInUse.set((float) filament1.getFeedRateMultiplier());
+            }
         } else
         {
             nozzle0FirstLayerTarget = filament0.getFirstLayerNozzleTemperature();
