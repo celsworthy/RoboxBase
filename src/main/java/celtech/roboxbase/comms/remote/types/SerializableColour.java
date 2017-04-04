@@ -9,6 +9,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public class SerializableColour
 {
+
     private String webColour;
 
     public SerializableColour()
@@ -50,4 +51,5 @@ public class SerializableColour
                 // if deriving: appendSuper(super.equals(obj)).
                 append(webColour, rhs.webColour)
                 .isEquals();
-    }}
+    }
+}

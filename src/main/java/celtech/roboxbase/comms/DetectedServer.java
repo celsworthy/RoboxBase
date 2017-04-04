@@ -4,6 +4,7 @@ import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
+import celtech.roboxbase.comms.remote.types.SerializableFilament;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
@@ -511,7 +512,8 @@ public final class DetectedServer
     {
         try
         {
-            String jsonifiedData = mapper.writeValueAsString(filament);
+            SerializableFilament serializableFilament = new SerializableFilament(filament);
+            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
             postData(SAVE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {
@@ -523,7 +525,8 @@ public final class DetectedServer
     {
         try
         {
-            String jsonifiedData = mapper.writeValueAsString(filament);
+            SerializableFilament serializableFilament = new SerializableFilament(filament);
+            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
             postData(DELETE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {
