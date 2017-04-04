@@ -55,7 +55,7 @@ public class RemotePrinterDetector extends DeviceDetector
 
             for (DetectedDevice printerToDisconnect : printersToDisconnect)
             {
-                steno.info("Performing disconnection from " + printerToDisconnect);
+                steno.info("Performing disconnection from " + printerToDisconnect.getConnectionHandle());
                 currentPrinters.remove(printerToDisconnect);
                 deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
             }
