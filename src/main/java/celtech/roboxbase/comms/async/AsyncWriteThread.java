@@ -74,7 +74,7 @@ public class AsyncWriteThread extends Thread
         int queueNumber = addCommandToQueue(command);
         try
         {
-            response = outboundQueues.get(queueNumber).poll(750, TimeUnit.MILLISECONDS);
+            response = outboundQueues.get(queueNumber).poll(1500, TimeUnit.MILLISECONDS);
 //            steno.info("Received response:" + response.getPacketType());
         } catch (InterruptedException ex)
         {
