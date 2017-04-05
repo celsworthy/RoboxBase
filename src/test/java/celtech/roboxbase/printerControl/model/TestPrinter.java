@@ -1213,4 +1213,10 @@ public class TestPrinter implements Printer
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void executeMacroWithoutPurgeCheck(Macro macro, boolean requireNozzle0, boolean requireNozzle1, boolean requireSafetyFeatures) throws PrinterException
+    {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

@@ -396,16 +396,16 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canInitiateNewState.bind(printerStatus.isEqualTo(PrinterStatus.IDLE));
 
         canCancel.bind(
-                (pauseStatus.isEqualTo(PauseStatus.PAUSED)
+                pauseStatus.isEqualTo(PauseStatus.PAUSED)
                         .or(printEngine.postProcessorService.runningProperty())
                         .or(printEngine.slicerService.runningProperty())
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_HEIGHT))
-                        .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_OPENING)))
-                        .and((printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
-                                .and(printEngine.macroBeingRun.isEqualTo(Macro.CANCEL_PRINT))).not()));
+                        .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_OPENING))
+                        .or(printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
+                                .and(printEngine.macroBeingRun.isNotEqualTo(Macro.CANCEL_PRINT))));
 
         canRunMacro.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))
@@ -1229,7 +1229,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         executeMacroWithoutPurgeCheck(macro, false, false, false);
     }
 
-    private void executeMacroWithoutPurgeCheck(Macro macro,
+    public void executeMacroWithoutPurgeCheck(Macro macro,
             boolean requireNozzle0, boolean requireNozzle1,
             boolean requireSafetyFeatures) throws PrinterException
     {

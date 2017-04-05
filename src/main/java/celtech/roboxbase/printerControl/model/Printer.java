@@ -187,8 +187,12 @@ public interface Printer extends RoboxResponseConsumer
     public void goToXYPosition(double xPosition, double yPosition);
 
     public void goToXYZPosition(double xPosition, double yPosition, double zPosition);
-    
+
     public void executeMacroWithoutPurgeCheck(Macro macro) throws PrinterException;
+
+    public void executeMacroWithoutPurgeCheck(Macro macro,
+            boolean requireNozzle0, boolean requireNozzle1,
+            boolean requireSafetyFeatures) throws PrinterException;
 
     public void homeX();
 
@@ -355,7 +359,7 @@ public interface Printer extends RoboxResponseConsumer
      * @throws PrinterException
      */
     public void executeGCodeFile(String fileName, boolean canDisconnectDuringPrint) throws PrinterException;
-    
+
     public void executeGCodeFile(String printJobName, String fileName, boolean canDisconnectDuringPrint) throws PrinterException;
 
     public void callbackWhenNotBusy(TaskResponder responder);
@@ -454,7 +458,7 @@ public interface Printer extends RoboxResponseConsumer
     public void updatePrinterSerialNumber(String serialIdentifier) throws PrinterException;
 
     public void updatePrinterIDChecksum(String checksum) throws PrinterException;
-    
+
     public void updatePrinterIdentity(PrinterIdentity identity) throws PrinterException;
 
     public void writeHeadEEPROM(Head headToWrite, boolean readback) throws RoboxCommsException;
@@ -569,9 +573,11 @@ public interface Printer extends RoboxResponseConsumer
     public List<SuitablePrintJob> listJobsReprintableByMe();
 
     public boolean reprintJob(String printJobID);
-    
+
     // Methods provided to allow a simple, more thread-safe way of accessing the printer info
     public AckResponse getLastErrorResponse();
+
     public StatusResponse getLastStatusResponse();
+
     public PrinterIDResponse getLastIdentityResponse();
 }
