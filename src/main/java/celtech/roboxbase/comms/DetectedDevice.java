@@ -1,6 +1,7 @@
 package celtech.roboxbase.comms;
 
-import java.util.Objects;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  *
@@ -8,6 +9,7 @@ import java.util.Objects;
  */
 public class DetectedDevice
 {
+
     private final DeviceDetector.PrinterConnectionType connectionType;
     private final String connectionHandle;
 
@@ -35,26 +37,30 @@ public class DetectedDevice
     }
 
     @Override
-    public boolean equals(Object obj)
+    public int hashCode()
     {
-        boolean equal = false;
-
-        if (obj instanceof DetectedDevice
-                && ((DetectedDevice) obj).getConnectionHandle().equals(connectionHandle)
-                && ((DetectedDevice) obj).getConnectionType() == connectionType)
-        {
-            equal = true;
-        }
-
-        return equal;
+        return new HashCodeBuilder(21, 31)
+                .append(connectionHandle)
+                .append(connectionType)
+                .toHashCode();
     }
 
     @Override
-    public int hashCode()
+    public boolean equals(Object obj)
     {
-        int hash = 5;
-        hash = 41 * hash + Objects.hashCode(this.connectionType);
-        hash = 41 * hash + Objects.hashCode(this.connectionHandle);
-        return hash;
+        if (!(obj instanceof DetectedDevice))
+        {
+            return false;
+        }
+        if (obj == this)
+        {
+            return true;
+        }
+
+        DetectedDevice rhs = (DetectedDevice) obj;
+        return new EqualsBuilder()
+                .append(connectionHandle, rhs.connectionHandle)
+                .append(connectionType, rhs.connectionType)
+                .isEquals();
     }
 }

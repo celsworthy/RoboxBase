@@ -1,28 +1,15 @@
 package celtech.roboxbase.comms;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import java.util.List;
 
 /**
  *
  * @author Ian
  */
-public abstract class DeviceDetector extends Thread
+public abstract class DeviceDetector
 {
-    protected final ObservableList<DetectedDevice> currentPrinters = FXCollections.observableArrayList();
-    protected final DeviceDetectionListener deviceDetectionListener;
-    protected boolean keepRunning = true;
-
-    public DeviceDetector(DeviceDetectionListener listener)
+    public DeviceDetector()
     {
-        this.deviceDetectionListener = listener;
-        
-        this.setDaemon(true);
-    }
-
-    public final void shutdownDetector()
-    {
-        keepRunning = false;
     }
 
     public enum PrinterConnectionType
@@ -31,5 +18,5 @@ public abstract class DeviceDetector extends Thread
         ROBOX_REMOTE
     }
     
-    public abstract void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle);
+    public abstract List<DetectedDevice> searchForDevices();
 }

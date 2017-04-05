@@ -29,12 +29,9 @@ public class SerialDeviceDetector extends DeviceDetector
     public SerialDeviceDetector(String pathToBinaries,
             String vendorID,
             String productID,
-            String deviceNameToSearchFor,
-            DeviceDetectionListener deviceDetectionListener)
+            String deviceNameToSearchFor)
     {
-        super(deviceDetectionListener);
-
-        this.setName("SerialDeviceDetector");
+        super();
 
         deviceDetectorStringMac = pathToBinaries + "RoboxDetector.mac.sh";
         deviceDetectorStringLinux = pathToBinaries + "RoboxDetector.linux.sh";
@@ -73,7 +70,8 @@ public class SerialDeviceDetector extends DeviceDetector
         steno.trace("Device detector command: " + completeCommand.toString());
     }
 
-    private List<DetectedDevice> searchForDevices()
+    @Override
+    public List<DetectedDevice> searchForDevices()
     {
         StringBuilder outputBuffer = new StringBuilder();
 
@@ -113,63 +111,4 @@ public class SerialDeviceDetector extends DeviceDetector
 
         return detectedPrinters;
     }
-
-    @Override
-    public void run()
-    {
-        while (keepRunning)
-        {
-            List<DetectedDevice> newlyDetectedPrinters = searchForDevices();
-
-            //Deal with disconnections
-            List<DetectedDevice> printersToDisconnect = new ArrayList<>();
-            currentPrinters.forEach(existingPrinter ->
-            {
-                if (!newlyDetectedPrinters.contains(existingPrinter))
-                {
-                    printersToDisconnect.add(existingPrinter);
-                }
-            });
-
-            for (DetectedDevice printerToDisconnect : printersToDisconnect)
-            {
-                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                deviceDetectionListener.deviceNoLongerPresent(printerToDisconnect);
-                currentPrinters.remove(printerToDisconnect);
-            }
-
-            //Now new connections
-            List<DetectedDevice> printersToConnect = new ArrayList<>();
-            newlyDetectedPrinters.forEach(newPrinter ->
-            {
-                if (!currentPrinters.contains(newPrinter))
-                {
-                    printersToConnect.add(newPrinter);
-                }
-            });
-
-            for (DetectedDevice printerToConnect : printersToConnect)
-            {
-                steno.debug("We have found a new printer " + printerToConnect);
-                currentPrinters.add(printerToConnect);
-                deviceDetectionListener.deviceDetected(printerToConnect);
-            }
-
-            try
-            {
-                Thread.sleep(500);
-            } catch (InterruptedException ex)
-            {
-                steno.warning("Interrupted within remote host discovery loop");
-            }
-        }
-    }
-
-    @Override
-    public void notifyOfFailedCommsForPrinter(DetectedDevice printerHandle)
-    {
-        currentPrinters.remove(printerHandle);
-    }
-    
-    
 }

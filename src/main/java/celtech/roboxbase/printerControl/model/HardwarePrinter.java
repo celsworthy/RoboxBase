@@ -399,6 +399,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 (pauseStatus.isEqualTo(PauseStatus.PAUSED)
                         .or(printEngine.postProcessorService.runningProperty())
                         .or(printEngine.slicerService.runningProperty())
+                        .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_HEIGHT))
@@ -1930,7 +1931,14 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                     AckResponse response = transmitDataFileChunk(outputBuffer.toString(),
                             dataFileSequenceNumber);
-                    if (response.isError())
+                    if (response.isError()
+                            && response.getFirmwareErrors().contains(FirmwareError.USB_RX)
+                            && response.getFirmwareErrors().contains(FirmwareError.USB_TX)
+                            && response.getFirmwareErrors().contains(FirmwareError.BAD_COMMAND)
+                            && response.getFirmwareErrors().contains(FirmwareError.CHUNK_SEQUENCE)
+                            && response.getFirmwareErrors().contains(FirmwareError.FILE_READ_CLOBBERED)
+                            && response.getFirmwareErrors().contains(FirmwareError.GCODE_BUFFER_OVERRUN)
+                            && response.getFirmwareErrors().contains(FirmwareError.GCODE_LINE_TOO_LONG))
                     {
                         steno.error("Error sending data file chunk - seq " + dataFileSequenceNumber);
                     }

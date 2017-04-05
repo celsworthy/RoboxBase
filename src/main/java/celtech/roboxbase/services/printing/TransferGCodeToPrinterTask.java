@@ -93,79 +93,90 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         steno.info("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
                 + startFromSequenceNumber);
 
+        boolean errorTransferringStats = false;
+
         if (printerToUse.getCommandInterface() instanceof RoboxRemoteCommandInterface)
         {
             //We're talking to a remote printer
             //Send the statistics if they exist
             if (printJobStatistics != null)
             {
-                ((RoboxRemoteCommandInterface) printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+                try
+                {
+                    ((RoboxRemoteCommandInterface) printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+                } catch (RoboxCommsException ex)
+                {
+                    errorTransferringStats = true;
+                }
             }
         }
 
-        //Note that FileReader is used, not File, since File is not Closeable
-        try
+        if (!errorTransferringStats)
         {
-            gcodeReader = new FileReader(gcodeFile);
-            scanner = new Scanner(gcodeReader);
-
-            if (printUsingSDCard && startFromSequenceNumber == 0)
+            //Note that FileReader is used, not File, since File is not Closeable
+            try
             {
-                printerToUse.initialiseDataFileSend(printJobID, thisJobCanBeReprinted);
-            }
+                gcodeReader = new FileReader(gcodeFile);
+                scanner = new Scanner(gcodeReader);
 
-            printerToUse.resetDataFileSequenceNumber();
-            printerToUse.setDataFileSequenceNumberStartPoint(startFromSequenceNumber);
-
-            updateMessage("Transferring data");
-
-            lineCounter = 0;
-
-            final int bufferSize = 512;
-            StringBuffer outputBuffer = new StringBuffer(bufferSize);
-
-            while (scanner.hasNextLine() && !isCancelled())
-            {
-                String line = scanner.nextLine();
-                line = line.trim();
-
-                if (GCodeMacros.isMacroExecutionDirective(line))
+                if (printUsingSDCard && startFromSequenceNumber == 0)
                 {
-                    //Put in contents of macro
-                    List<String> macroLines = GCodeMacros.getMacroContents(line, printerToUse.headProperty().get().typeCodeProperty().get(), false, false, false);
-                    for (String macroLine : macroLines)
+                    printerToUse.initialiseDataFileSend(printJobID, thisJobCanBeReprinted);
+                }
+
+                printerToUse.resetDataFileSequenceNumber();
+                printerToUse.setDataFileSequenceNumberStartPoint(startFromSequenceNumber);
+
+                updateMessage("Transferring data");
+
+                lineCounter = 0;
+
+                final int bufferSize = 512;
+                StringBuffer outputBuffer = new StringBuffer(bufferSize);
+
+                while (scanner.hasNextLine() && !isCancelled())
+                {
+                    String line = scanner.nextLine();
+                    line = line.trim();
+
+                    if (GCodeMacros.isMacroExecutionDirective(line))
                     {
-                        outputLine(macroLine);
+                        //Put in contents of macro
+                        List<String> macroLines = GCodeMacros.getMacroContents(line, printerToUse.headProperty().get().typeCodeProperty().get(), false, false, false);
+                        for (String macroLine : macroLines)
+                        {
+                            outputLine(macroLine);
+                        }
+                    } else
+                    {
+                        outputLine(line);
                     }
-                } else
+
+                    if (lineCounter < numberOfLines)
+                    {
+                        updateProgress((float) lineCounter, (float) numberOfLines);
+                    }
+                }
+                gotToEndOK = true;
+            } catch (FileNotFoundException ex)
+            {
+                steno.error("Couldn't open gcode file " + gcodeFileToPrint + ": " + ex);
+            } catch (RoboxCommsException ex)
+            {
+                steno.error("Error during print operation - abandoning transfer of " + printJobID + " " + ex.
+                        getMessage());
+                updateMessage("Printing error");
+            } finally
+            {
+                if (scanner != null)
                 {
-                    outputLine(line);
+                    scanner.close();
                 }
 
-                if (lineCounter < numberOfLines)
+                if (gcodeReader != null)
                 {
-                    updateProgress((float) lineCounter, (float) numberOfLines);
+                    gcodeReader.close();
                 }
-            }
-            gotToEndOK = true;
-        } catch (FileNotFoundException ex)
-        {
-            steno.error("Couldn't open gcode file " + gcodeFileToPrint + ": " + ex);
-        } catch (RoboxCommsException ex)
-        {
-            steno.error("Error during print operation - abandoning transfer of " + printJobID + " " + ex.
-                    getMessage());
-            updateMessage("Printing error");
-        } finally
-        {
-            if (scanner != null)
-            {
-                scanner.close();
-            }
-
-            if (gcodeReader != null)
-            {
-                gcodeReader.close();
             }
         }
 

@@ -1,6 +1,7 @@
 package celtech.roboxbase.comms.async;
 
 import celtech.roboxbase.comms.CommandInterface;
+import celtech.roboxbase.comms.exceptions.ConnectionLostException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
@@ -107,15 +108,18 @@ public class AsyncWriteThread extends Thread
                         createNullPacket = false;
                         outboundQueues.get(commandHolder.getQueueIndex()).add(response);
                     }
-                }
-                else
+                } else
                 {
                     //Just drop out - we got the poisoned pill
                     createNullPacket = false;
                 }
+            } catch (ConnectionLostException ex)
+            {
+                // This is ok - the printer has probably been unplugged
+                steno.info("Connection lost - " + getName());
             } catch (RoboxCommsException | InterruptedException ex)
             {
-                steno.exception("Arrgh", ex);
+                steno.exception("Unexpected error during write", ex);
             } finally
             {
                 if (createNullPacket)

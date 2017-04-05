@@ -21,6 +21,7 @@ import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
+import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
@@ -171,6 +172,13 @@ public abstract class CommandInterface extends Thread
                         }
                     } catch (PortNotFoundException ex)
                     {
+                        if (BaseConfiguration.getMachineType() == MachineType.WINDOWS)
+                        {
+                            steno.info("Port not ready for comms - windows needs time to settle...");
+                        } else
+                        {
+                            steno.info("Port not ready for comms - non-windows - this is unusual");
+                        }
                         shutdown();
                     }
                     break;
@@ -386,8 +394,9 @@ public abstract class CommandInterface extends Thread
                     break;
             }
         }
+        steno.info("Handler for " + printerHandle.getConnectionHandle() + " beginning exit routine - state was " + commsState);
         finalShutdown();
-        steno.debug("Handler for " + printerHandle.getConnectionHandle() + " exiting");
+        steno.info("Handler for " + printerHandle.getConnectionHandle() + " exited");
     }
 
     private void moveOnFromFirmwareCheck(FirmwareResponse firmwareResponse)
