@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Arrays;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
@@ -13,6 +15,7 @@ import java.util.Arrays;
 public class DiscoveryAgentRemoteEnd implements Runnable
 {
 
+    private Stenographer steno = StenographerFactory.getStenographer(DiscoveryAgentRemoteEnd.class.getName());
     private boolean keepRunning = true;
     private String applicationVersion = null;
 
@@ -25,6 +28,8 @@ public class DiscoveryAgentRemoteEnd implements Runnable
     public void run()
     {
         // The outer loop is to deal with disconnections that happen if the IP address changes
+        boolean listeningToMulticast = true;
+
         while (keepRunning)
         {
             try
@@ -32,6 +37,8 @@ public class DiscoveryAgentRemoteEnd implements Runnable
                 InetAddress group = InetAddress.getByName(RemoteDiscovery.multicastAddress);
                 MulticastSocket s = new MulticastSocket(RemoteDiscovery.remoteSocket);
                 s.joinGroup(group);
+                listeningToMulticast = true;
+
                 while (keepRunning)
                 {
                     byte[] buf = new byte[100];
@@ -51,7 +58,18 @@ public class DiscoveryAgentRemoteEnd implements Runnable
                 s.leaveGroup(group);
             } catch (IOException ex)
             {
-                System.out.println("Error listening for multicast messages");
+                if (listeningToMulticast)
+                {
+                    steno.warning("Error listening for multicast messages");
+                }
+                listeningToMulticast = false;
+            }
+
+            try
+            {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex)
+            {
             }
         }
     }
