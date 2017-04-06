@@ -218,24 +218,6 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             List<DetectedDevice> directlyAttachedDevices = usbSerialDeviceDetector.searchForDevices();
             List<DetectedDevice> remotelyAttachedDevices = remotePrinterDetector.searchForDevices();
 
-            //Deal with disconnections
-            List<DetectedDevice> printersToDisconnect = new ArrayList<>();
-            activePrinters.forEach((device, printer) ->
-            {
-                if (!directlyAttachedDevices.contains(device)
-                        && !remotelyAttachedDevices.contains(device))
-                {
-                    printersToDisconnect.add(device);
-                }
-            });
-
-//            for (DetectedDevice printerToDisconnect : printersToDisconnect)
-//            {
-//                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-////                deviceNoLongerPresent(printerToDisconnect);
-//                activePrinters.remove(printerToDisconnect);
-//            }
-
             //Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();
             directlyAttachedDevices.forEach(newPrinter ->
