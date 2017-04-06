@@ -31,8 +31,7 @@ public class RemotePrinterDetector extends DeviceDetector
         // Search the roots that have been registered in core memory
         for (DetectedServer server : activeRoboxRoots)
         {
-            if (server.getServerStatus() == DetectedServer.ServerStatus.NOT_CONNECTED
-                    || server.getServerStatus() == DetectedServer.ServerStatus.CONNECTED)
+            if (server.getServerStatus() == DetectedServer.ServerStatus.CONNECTED)
             {
                 List<DetectedDevice> attachedPrinters = server.listAttachedPrinters();
                 newlyDetectedPrinters.addAll(attachedPrinters);

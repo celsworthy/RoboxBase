@@ -49,6 +49,8 @@ public final class DetectedServer
     private final StringProperty pin = new SimpleStringProperty("1111");
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
 
+    private List<DetectedDevice> detectedDevices = new ArrayList();
+
     @JsonIgnore
     private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
 
@@ -230,8 +232,10 @@ public final class DetectedServer
         return dataChanged;
     }
 
-    public void connect()
+    public boolean connect()
     {
+        boolean success = false;
+
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
         {
@@ -240,6 +244,7 @@ public final class DetectedServer
                 if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
                 {
                     setServerStatus(ServerStatus.WRONG_VERSION);
+                    CoreMemory.getInstance().deactivateRoboxRoot(this);
                 } else
                 {
 
@@ -247,24 +252,37 @@ public final class DetectedServer
                     if (response == 200)
                     {
                         setServerStatus(ServerStatus.CONNECTED);
+                        CoreMemory.getInstance().activateRoboxRoot(this);
+                        success = true;
                     } else if (response == 401)
                     {
                         setServerStatus(ServerStatus.WRONG_PIN);
+                        CoreMemory.getInstance().deactivateRoboxRoot(this);
                     } else
                     {
                         setServerStatus(ServerStatus.NOT_CONNECTED);
+                        CoreMemory.getInstance().deactivateRoboxRoot(this);
                     }
                 }
             } catch (IOException ex)
             {
                 setServerStatus(ServerStatus.NOT_CONNECTED);
+                CoreMemory.getInstance().deactivateRoboxRoot(this);
             }
         }
+
+        return success;
     }
 
     public void disconnect()
     {
         setServerStatus(ServerStatus.NOT_CONNECTED);
+        CoreMemory.getInstance().deactivateRoboxRoot(this);
+        
+        detectedDevices.forEach((device) ->
+        {
+            RoboxCommsManager.getInstance().disconnected(device);
+        });
     }
 
     public boolean whoAreYou()
@@ -325,8 +343,6 @@ public final class DetectedServer
 
     public List<DetectedDevice> listAttachedPrinters()
     {
-        List<DetectedDevice> detectedDevices = new ArrayList();
-
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_PRINTERS_COMMAND;
 
         try
