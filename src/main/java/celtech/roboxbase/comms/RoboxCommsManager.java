@@ -63,6 +63,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
         this.setDaemon(true);
         this.setName("Robox Comms Manager");
+        this.setPriority(6);
 
         usbSerialDeviceDetector = new SerialDeviceDetector(pathToBinaries, roboxVendorID, roboxProductID, printerToSearchFor);
         remotePrinterDetector = new RemotePrinterDetector();

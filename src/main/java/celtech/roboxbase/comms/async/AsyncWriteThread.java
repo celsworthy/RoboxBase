@@ -35,6 +35,7 @@ public class AsyncWriteThread extends Thread
         this.commandInterface = commandInterface;
         this.setDaemon(true);
         this.setName("AsyncCommandProcessor|" + ciReference);
+        this.setPriority(Thread.MAX_PRIORITY);
 
         outboundQueues = new ArrayList<>();
         for (int i = 0; i < NUMBER_OF_SIMULTANEOUS_COMMANDS; i++)

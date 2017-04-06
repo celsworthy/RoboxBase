@@ -4066,15 +4066,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
 
-                    if (idResponse.getPrinterColour() != null)
+                    //Update the LED colour if we're dealing with a local printer
+                    if (!(commandInterface instanceof RoboxRemoteCommandInterface))
                     {
-                        try
+                        if (idResponse.getPrinterColour() != null)
                         {
-                            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
+                            try
+                            {
+                                setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
 
-                        } catch (PrinterException ex)
-                        {
-                            steno.warning("Couldn't set printer LED colour");
+                            } catch (PrinterException ex)
+                            {
+                                steno.warning("Couldn't set printer LED colour");
+                            }
                         }
                     }
                     break;

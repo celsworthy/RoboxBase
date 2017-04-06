@@ -7,13 +7,10 @@ import celtech.roboxbase.comms.async.CommandPacket;
 import celtech.roboxbase.comms.exceptions.PortNotFoundException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
-import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.FirmwareResponse;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
-import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
-import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacketFactory;
@@ -93,6 +90,7 @@ public abstract class CommandInterface extends Thread
 
         this.setDaemon(true);
         this.setName("CommandInterface|" + printerHandle.getConnectionHandle());
+        this.setPriority(8);
 
         asyncWriteThread = new AsyncWriteThread(this, printerHandle.getConnectionHandle());
         asyncWriteThread.start();
