@@ -343,6 +343,8 @@ public final class DetectedServer
 
     public List<DetectedDevice> listAttachedPrinters()
     {
+        detectedDevices.clear();
+        
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_PRINTERS_COMMAND;
 
         try
