@@ -153,6 +153,7 @@ public class BaseLookup
     {
         BaseLookup.getTaskExecutor().runOnGUIThread(() ->
         {
+            steno.debug(">>>Printer connection notification - " + printer);
             doPrinterConnect(printer);
         });
     }
@@ -166,6 +167,7 @@ public class BaseLookup
     {
         BaseLookup.getTaskExecutor().runOnGUIThread(() ->
         {
+            steno.debug("<<<Printer disconnection notification - " + printer);
             doPrinterDisconnect(printer);
         });
     }
@@ -189,7 +191,7 @@ public class BaseLookup
     {
         return availableLocales;
     }
-    
+
     public static Locale getApplicationLocale()
     {
         return applicationLocale;

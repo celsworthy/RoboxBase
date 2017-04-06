@@ -6,11 +6,9 @@ import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
-import javafx.beans.binding.IntegerBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -231,12 +229,12 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                 }
             });
 
-            for (DetectedDevice printerToDisconnect : printersToDisconnect)
-            {
-                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
-                deviceNoLongerPresent(printerToDisconnect);
-                activePrinters.remove(printerToDisconnect);
-            }
+//            for (DetectedDevice printerToDisconnect : printersToDisconnect)
+//            {
+//                steno.info("Disconnecting from " + printerToDisconnect + " as it doesn't seem to be present anymore");
+////                deviceNoLongerPresent(printerToDisconnect);
+//                activePrinters.remove(printerToDisconnect);
+//            }
 
             //Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();
@@ -386,7 +384,6 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
     private void deviceNoLongerPresent(DetectedDevice detectedDevice)
     {
-        steno.info("Robox Comms Manager has been told that a printer is no longer detected: " + detectedDevice.getConnectionHandle());
         Printer printerToDisconnect = activePrinters.get(detectedDevice);
         if (printerToDisconnect != null)
         {
