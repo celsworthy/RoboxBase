@@ -75,7 +75,7 @@ public class PrinterUtils
 
         if (task != null && !interrupted)
         {
-            while (printerToCheck.getPrintEngine().isBusy()
+            while (printerToCheck.getPrintEngine().macroBeingRun.get() != null
                     && task.isCancelled() == false && !BaseLookup.isShuttingDown())
             {
                 try
@@ -120,7 +120,19 @@ public class PrinterUtils
             throw new RuntimeException("Cannot call this function from the GUI thread");
         }
 
-        while (printerToCheck.getPrintEngine().isBusy()
+        //Slug the status check if we're working remotely
+        try
+        {
+            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+            {
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException ex)
+        {
+
+        }
+
+        while (printerToCheck.getPrintEngine().macroBeingRun.get() != null
                 && !BaseLookup.isShuttingDown())
         {
             try
@@ -248,6 +260,50 @@ public class PrinterUtils
         {
             steno.error("Interrupted during busy check");
             failed = true;
+        }
+
+        return failed;
+    }
+
+    public static boolean waitOnPrintFinished(Printer printerToCheck, Cancellable cancellable)
+    {
+        boolean failed = false;
+
+        if (Platform.isFxApplicationThread())
+        {
+            throw new RuntimeException("Cannot call this function from the GUI thread");
+        }
+
+        //Slug the status check if we're working remotely
+        try
+        {
+            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+            {
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException ex)
+        {
+
+        }
+
+        while (printerToCheck.getPrintEngine().isRoboxPrinting()
+                || printerToCheck.getPrintEngine().highIntensityCommsInProgressProperty().get()
+                && !BaseLookup.isShuttingDown())
+        {
+            try
+            {
+                Thread.sleep(100);
+
+                if (cancellable != null && cancellable.cancelled().get())
+                {
+                    failed = true;
+                    break;
+                }
+            } catch (InterruptedException ex)
+            {
+                failed = true;
+                steno.error("Interrupted whilst waiting on print job to complete");
+            }
         }
 
         return failed;

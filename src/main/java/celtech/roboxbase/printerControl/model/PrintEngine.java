@@ -495,7 +495,7 @@ public class PrintEngine implements ControllableService
         }
         primaryProgressPercent.unbind();
         primaryProgressPercent.set(0);
-        totalDurationSeconds.set((int)etcCalculator.totalPredictedDurationAllLayers);
+        totalDurationSeconds.set((int) etcCalculator.totalPredictedDurationAllLayers);
         progressETC.set(etcCalculator.getETCPredicted(0));
         etcAvailable.set(true);
     }
@@ -1157,25 +1157,32 @@ public class PrintEngine implements ControllableService
         return acceptedPrintRequest;
     }
 
-    private void detectAlreadyPrinting()
+    public boolean isRoboxPrinting()
     {
         boolean roboxIsPrinting = false;
 
+        String printJobID = associatedPrinter.printJobIDProperty().get();
+        if (printJobID != null)
+        {
+            if (!printJobID.trim().equals("")
+                    && printJobID.codePointAt(0) != 0)
+            {
+                roboxIsPrinting = true;
+            }
+        }
+
+        return roboxIsPrinting;
+    }
+
+    private void detectAlreadyPrinting()
+    {
         if (associatedPrinter
                 != null)
         {
-            String printJobID = associatedPrinter.printJobIDProperty().get();
-            if (printJobID != null)
+            if (isRoboxPrinting())
             {
-                if (!printJobID.trim().equals("")
-                        && printJobID.codePointAt(0) != 0)
-                {
-                    roboxIsPrinting = true;
-                }
-            }
+                String printJobID = associatedPrinter.printJobIDProperty().get();
 
-            if (roboxIsPrinting)
-            {
                 if (!iAmTakingItThroughTheBackDoor
                         && !transferGCodeToPrinterService.isRunning())
                 {

@@ -74,7 +74,7 @@ public class CalibrationXAndYActions extends StateTransitionActions
             printer.executeGCodeFile(BaseConfiguration.getApplicationModelDirectory().concat(
                     "rbx_test_xy-offset-1_dm_roboxised.gcode"), false);
         }
-        PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable);
+//        PrinterUtils.waitOnPrintFinished(printer, userOrErrorCancellable);
     }
 
     public void doSaveSettingsAndPrintCircle() throws PrinterException, InterruptedException, CalibrationException
