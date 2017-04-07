@@ -264,7 +264,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private StatusResponse latestStatusResponse = null;
     private AckResponse latestErrorResponse = null;
-    private PrinterIDResponse latestIdentityResponse = null;
 
     @Override
     public CommandInterface getCommandInterface()
@@ -4053,7 +4052,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                 case PRINTER_ID_RESPONSE:
                     PrinterIDResponse idResponse = (PrinterIDResponse) rxPacket;
-                    latestIdentityResponse = idResponse;
                     printerIdentity.printermodel.set(idResponse.getModel());
                     printerIdentity.printeredition.set(idResponse.getEdition());
                     printerIdentity.printerweekOfManufacture.set(idResponse.
@@ -4720,11 +4718,5 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public StatusResponse getLastStatusResponse()
     {
         return latestStatusResponse;
-    }
-
-    @Override
-    public PrinterIDResponse getLastIdentityResponse()
-    {
-        return latestIdentityResponse;
     }
 }

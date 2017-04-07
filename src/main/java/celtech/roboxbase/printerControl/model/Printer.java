@@ -578,6 +578,4 @@ public interface Printer extends RoboxResponseConsumer
     public AckResponse getLastErrorResponse();
 
     public StatusResponse getLastStatusResponse();
-
-    public PrinterIDResponse getLastIdentityResponse();
 }
