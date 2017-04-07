@@ -42,6 +42,9 @@ public class FilamentContainer
     private final ObservableMap<String, Filament> completeFilamentMapByID = FXCollections.observableHashMap();
     private final ObservableMap<String, String> completeFilamentNameByID = FXCollections.observableHashMap();
 
+    public static final String CUSTOM_BRAND = "Custom";
+    public static final String CUSTOM_CATEGORY = "";
+
     public final Filament createNewFilament = new Filament(null, null, null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
             0, 0, false);
@@ -160,8 +163,8 @@ public class FilamentContainer
             filaments.sort(Filament.BY_MATERIAL.thenComparing(Filament::compareByFilamentID));
             for (Filament filament : filaments)
             {
-                filament.setBrand("Custom");
-                filament.setCategory("");
+                filament.setBrand(CUSTOM_BRAND);
+                filament.setCategory(CUSTOM_CATEGORY);
             }
             completeFilamentList.addAll(filaments);
             userFilamentList.addAll(filaments);
