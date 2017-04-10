@@ -1457,7 +1457,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 TxPacketTypeEnum.INITIATE_PRINT);
         gcodePacket.setMessagePayload(printJobUUID);
 
-        steno.info("Initiate Print sent to " + printerIdentity.printerFriendlyName.get() + " - Print Job " + printJobUUID + " starting ----------------------------------->");
+        steno.debug("Initiate Print sent to " + printerIdentity.printerFriendlyName.get() + " - Print Job " + printJobUUID + " starting ----------------------------------->");
         commandInterface.writeToPrinter(gcodePacket);
     }
 
@@ -3215,19 +3215,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         try
         {
             transmitDirectGCode(GCodeConstants.openNozzle, true);
-        } catch (RoboxCommsException ex)
-        {
-            steno.error("Error sending open nozzle command");
-            throw new PrinterException("Error whilst sending nozzle open command");
-        }
-    }
-
-    @Override
-    public void openNozzleFullyExtra() throws PrinterException
-    {
-        try
-        {
-            transmitDirectGCode(GCodeConstants.openNozzleExtra, true);
         } catch (RoboxCommsException ex)
         {
             steno.error("Error sending open nozzle command");

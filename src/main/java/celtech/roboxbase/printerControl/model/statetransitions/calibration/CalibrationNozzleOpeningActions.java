@@ -58,14 +58,14 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         this.printer = printer;
         nozzlePosition.addListener(
                 (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
-                {
-                    BaseLookup.getTaskExecutor().runOnGUIThread(() ->
-                            {
-                                // bPositionGUIT mirrors nozzlePosition but is only changed on the GUI Thread
-                                steno.debug("set bPositionGUIT to " + nozzlePosition.get());
-                                bPositionGUIT.set(nozzlePosition.get());
-                    });
-                });
+        {
+            BaseLookup.getTaskExecutor().runOnGUIThread(() ->
+            {
+                // bPositionGUIT mirrors nozzlePosition but is only changed on the GUI Thread
+                steno.debug("set bPositionGUIT to " + nozzlePosition.get());
+                bPositionGUIT.set(nozzlePosition.get());
+            });
+        });
         printerErrorHandler = new CalibrationPrinterErrorHandler(printer, errorCancellable);
         printerErrorHandler.registerForPrinterErrors();
         CalibrationUtils.setCancelledIfPrinterDisconnected(printer, errorCancellable);
@@ -89,7 +89,34 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
 
         HeadFile headReferenceData = HeadContainer.getHeadByID(savedHeadData.getHeadTypeCode());
 
-        printer.switchAllNozzleHeatersOff();
+        printer.homeAllAxes(true, userOrErrorCancellable);
+
+        printer.goToTargetNozzleHeaterTemperature(
+                0);
+        if (printer.headProperty()
+                .get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+        {
+            printer.goToTargetNozzleHeaterTemperature(1);
+        }
+
+        waitOnNozzleTemperature(
+                0);
+        if (PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable))
+        {
+            return;
+        }
+
+        if (printer.headProperty()
+                .get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+        {
+            waitOnNozzleTemperature(1);
+            if (PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable))
+            {
+                return;
+            }
+        }
+
+        setMaximumOpen();
 
         try
         {
@@ -103,29 +130,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         if (headReferenceData
                 != null)
         {
-            steno.debug("Setting B offsets to defaults ("
-                    + headReferenceData.getNozzles().get(0).getMinBOffset()
-                    + " - "
-                    + headReferenceData.getNozzles().get(1).getMaxBOffset()
-                    + ")");
-            printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
-                    savedHeadData.getUniqueID(),
-                    savedHeadData.getMaximumTemperature(),
-                    savedHeadData.getThermistorBeta(),
-                    savedHeadData.getThermistorTCal(),
-                    0,
-                    0,
-                    0,
-                    headReferenceData.getNozzles().get(0).getMinBOffset(),
-                    savedHeadData.getFilamentID(0),
-                    savedHeadData.getFilamentID(1),
-                    0,
-                    0,
-                    0,
-                    headReferenceData.getNozzles().get(1).getMaxBOffset(),
-                    savedHeadData.getLastFilamentTemperature(0),
-                    savedHeadData.getLastFilamentTemperature(1),
-                    savedHeadData.getHeadHours());
+            setMinimumOpenZeroXYZ();
         } else
         {
             // We shouldn't ever get here, but just in case...
@@ -166,30 +171,6 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
             return;
         }
 
-        printer.goToTargetNozzleHeaterTemperature(
-                0);
-        if (printer.headProperty()
-                .get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
-        {
-            printer.goToTargetNozzleHeaterTemperature(1);
-        }
-
-        waitOnNozzleTemperature(
-                0);
-        if (PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable))
-        {
-            return;
-        }
-
-        if (printer.headProperty()
-                .get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
-        {
-            waitOnNozzleTemperature(1);
-            if (PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable))
-            {
-                return;
-            }
-        }
     }
 
     private void waitOnNozzleTemperature(int nozzleNumber) throws InterruptedException
@@ -199,7 +180,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         PrinterUtils.waitUntilTemperatureIsReached(
                 nozzleHeater.nozzleTemperatureProperty(), null,
                 nozzleHeater
-                .nozzleTargetTemperatureProperty().get(), 5, 300, userOrErrorCancellable);
+                        .nozzleTargetTemperatureProperty().get(), 5, 300, userOrErrorCancellable);
     }
 
     public void doNoMaterialCheckAction() throws CalibrationException, InterruptedException, PrinterException
@@ -217,10 +198,98 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
         nozzlePosition.set(0);
     }
 
+    private void setMaximumOpen()
+    {
+        try
+        {
+            HeadFile headReferenceData = HeadContainer.getHeadByID(savedHeadData.getHeadTypeCode());
+            printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
+                    savedHeadData.getUniqueID(),
+                    savedHeadData.getMaximumTemperature(),
+                    savedHeadData.getThermistorBeta(),
+                    savedHeadData.getThermistorTCal(),
+                    savedHeadData.getNozzle1XOffset(),
+                    savedHeadData.getNozzle1YOffset(),
+                    savedHeadData.getNozzle1ZOffset(),
+                    headReferenceData.getNozzles().get(0).getMaxBOffset(),
+                    savedHeadData.getFilamentID(0),
+                    savedHeadData.getFilamentID(1),
+                    savedHeadData.getNozzle2XOffset(),
+                    savedHeadData.getNozzle2YOffset(),
+                    savedHeadData.getNozzle2ZOffset(),
+                    headReferenceData.getNozzles().get(1).getMinBOffset(),
+                    savedHeadData.getLastFilamentTemperature(0),
+                    savedHeadData.getLastFilamentTemperature(1),
+                    savedHeadData.getHeadHours());
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Unable to set max opening values in head");
+        }
+    }
+
+    private void setMaximumOpenZeroXYZ()
+    {
+        try
+        {
+            HeadFile headReferenceData = HeadContainer.getHeadByID(savedHeadData.getHeadTypeCode());
+            printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
+                    savedHeadData.getUniqueID(),
+                    savedHeadData.getMaximumTemperature(),
+                    savedHeadData.getThermistorBeta(),
+                    savedHeadData.getThermistorTCal(),
+                    0,
+                    0,
+                    0,
+                    headReferenceData.getNozzles().get(0).getMaxBOffset(),
+                    savedHeadData.getFilamentID(0),
+                    savedHeadData.getFilamentID(1),
+                    0,
+                    0,
+                    0,
+                    headReferenceData.getNozzles().get(1).getMinBOffset(),
+                    savedHeadData.getLastFilamentTemperature(0),
+                    savedHeadData.getLastFilamentTemperature(1),
+                    savedHeadData.getHeadHours());
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Unable to set max opening values in head");
+        }
+    }
+
+    private void setMinimumOpenZeroXYZ()
+    {
+        try
+        {
+            HeadFile headReferenceData = HeadContainer.getHeadByID(savedHeadData.getHeadTypeCode());
+            printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
+                    savedHeadData.getUniqueID(),
+                    savedHeadData.getMaximumTemperature(),
+                    savedHeadData.getThermistorBeta(),
+                    savedHeadData.getThermistorTCal(),
+                    0,
+                    0,
+                    0,
+                    headReferenceData.getNozzles().get(0).getMinBOffset(),
+                    savedHeadData.getFilamentID(0),
+                    savedHeadData.getFilamentID(1),
+                    0,
+                    0,
+                    0,
+                    headReferenceData.getNozzles().get(1).getMaxBOffset(),
+                    savedHeadData.getLastFilamentTemperature(0),
+                    savedHeadData.getLastFilamentTemperature(1),
+                    savedHeadData.getHeadHours());
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Unable to set max opening values in head");
+        }
+    }
+
     public void doT0Extrusion() throws PrinterException, CalibrationException
     {
+        setMaximumOpenZeroXYZ();
         printer.selectNozzle(0);
-        printer.openNozzleFullyExtra();
+        printer.openNozzleFully();
         if (printer.headProperty().get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
         {
             printer.sendRawGCode("G1 D15 F300", false);
@@ -235,7 +304,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
     public void doT1Extrusion() throws PrinterException, CalibrationException
     {
         printer.selectNozzle(1);
-        printer.openNozzleFullyExtra();
+        printer.openNozzleFully();
         if (printer.headProperty().get().headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
         {
             printer.sendRawGCode("G1 E15 F300", false);
@@ -244,10 +313,13 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
             printer.sendRawGCode("G1 E45 F600", false);
         }
         PrinterUtils.waitOnBusy(printer, userOrErrorCancellable);
+        setMinimumOpenZeroXYZ();
+        printer.selectNozzle(0);
+        printer.selectNozzle(1);
         printer.closeNozzleFully();
     }
 
-    public void doPreCalibrationPrimingFine() throws RoboxCommsException, CalibrationException
+    public void doPreCalibrationPrimingFine() throws RoboxCommsException, CalibrationException, PrinterException
     {
         nozzlePosition.set(0);
 
@@ -286,9 +358,9 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
 
     public void doIncrementFineNozzlePosition() throws CalibrationException, InterruptedException
     {
-        nozzlePosition.set(nozzlePosition.get() + 0.05f);
+        nozzlePosition.set(nozzlePosition.get() + nozzleTolerance);
         steno.debug("(FINE) nozzle position set to " + nozzlePosition.get());
-        if (nozzlePosition.get() >= 2f)
+        if (nozzlePosition.get() > 1f + nozzleTolerance)
         {
             throw new CalibrationException("Nozzle position beyond limit");
         }
@@ -298,9 +370,9 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
 
     public void doIncrementFillNozzlePosition() throws CalibrationException, InterruptedException
     {
-        nozzlePosition.set(nozzlePosition.get() + 0.05f);
+        nozzlePosition.set(nozzlePosition.get() + nozzleTolerance);
         steno.debug("(FILL) nozzle position set to " + nozzlePosition);
-        if (nozzlePosition.get() >= 2f)
+        if (nozzlePosition.get() > 1 + nozzleTolerance)
         {
             throw new CalibrationException("Nozzle position beyond limit");
         }

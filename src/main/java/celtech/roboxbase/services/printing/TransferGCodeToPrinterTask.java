@@ -90,7 +90,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         numberOfLines = GCodeMacros.countLinesInMacroFile(gcodeFile, ";");
         linesInFile.setValue(numberOfLines);
 
-        steno.info("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
+        steno.debug("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
                 + startFromSequenceNumber);
 
         boolean errorTransferringStats = false;

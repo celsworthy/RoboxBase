@@ -233,8 +233,6 @@ public interface Printer extends RoboxResponseConsumer
 
     public void openNozzleFully() throws PrinterException;
 
-    public void openNozzleFullyExtra() throws PrinterException;
-
     public void pause() throws PrinterException;
 
     public void printMeshes(PrintableMeshes printableMeshes) throws PrinterException;
