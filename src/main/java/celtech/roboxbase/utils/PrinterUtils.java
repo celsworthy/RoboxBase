@@ -123,10 +123,7 @@ public class PrinterUtils
         //Slug the status check if we're working remotely
         try
         {
-            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-            {
-                Thread.sleep(1000);
-            }
+            Thread.sleep(1000);
         } catch (InterruptedException ex)
         {
 
@@ -169,10 +166,7 @@ public class PrinterUtils
             try
             {
                 //Slug the status check if we're working remotely
-                if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-                {
-                    Thread.sleep(1000);
-                }
+                Thread.sleep(1000);
 
                 StatusResponse response = printerToCheck.transmitStatusRequest();
 
@@ -233,11 +227,7 @@ public class PrinterUtils
 
         try
         {
-            //Slug the status check if we're working remotely
-            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-            {
-                Thread.sleep(1000);
-            }
+            Thread.sleep(1000);
 
             StatusResponse response = printerToCheck.transmitStatusRequest();
 
@@ -274,13 +264,10 @@ public class PrinterUtils
             throw new RuntimeException("Cannot call this function from the GUI thread");
         }
 
-        //Slug the status check if we're working remotely
+        //Slug the status check to make sure we see the status change
         try
         {
-            if (printerToCheck.getCommandInterface() instanceof RoboxRemoteCommandInterface)
-            {
-                Thread.sleep(1000);
-            }
+            Thread.sleep(1000);
         } catch (InterruptedException ex)
         {
 
