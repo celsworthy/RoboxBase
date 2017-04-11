@@ -14,6 +14,8 @@ public enum NozzleOpeningCalibrationState
 
     HEATING("calibrationPanel.heating", ""),
     
+    HEAD_CLEAN_CHECK_BEFORE_LEAK_TEST("calibrationPanel.ensureHeadIsCleanBMessage", "Nozzle Opening Illustrations_Step 5 and 7.fxml"),
+
     NO_MATERIAL_CHECK_NO_YES_NO_BUTTONS("calibrationPanel.valvesClosedNoMaterial", "Nozzle Opening Illustrations_Step 3.fxml"),
 
     NO_MATERIAL_CHECK("calibrationPanel.valvesClosedNoMaterial", "Nozzle Opening Illustrations_Step 3.fxml"),
