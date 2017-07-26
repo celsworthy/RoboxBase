@@ -15,7 +15,8 @@ public abstract class DeviceDetector
     public enum PrinterConnectionType
     {
         SERIAL,
-        ROBOX_REMOTE
+        ROBOX_REMOTE,
+        DUMMY
     }
     
     public abstract List<DetectedDevice> searchForDevices();

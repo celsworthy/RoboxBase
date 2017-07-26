@@ -201,6 +201,16 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                 newPrinter = new HardwarePrinter(this, commandInterface, filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
                 break;
+            case DUMMY:
+                DummyPrinterCommandInterface dummyCommandInterface = new DummyPrinterCommandInterface(this,
+                        detectedPrinter,
+                        suppressPrinterIDChecks,
+                        sleepBetweenStatusChecksMS,
+                        "DP "
+                        + dummyPrinterCounter++);
+                newPrinter = new HardwarePrinter(this, dummyCommandInterface, filamentLoadedGetter,
+                        doNotCheckForPresenceOfHead);
+                break;
             default:
                 steno.error("Don't know how to handle connected printer: " + detectedPrinter);
                 break;
@@ -334,16 +344,18 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     {
         dummyPrinterCounter++;
         String actualPrinterPort = dummyPrinterPort + " " + dummyPrinterCounter;
-        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.SERIAL, actualPrinterPort);
-        Printer nullPrinter = new HardwarePrinter(this,
-                new DummyPrinterCommandInterface(this,
-                        printerHandle,
-                        suppressPrinterIDChecks,
-                        sleepBetweenStatusChecksMS,
-                        "DP "
-                        + dummyPrinterCounter));
-        dummyPrinters.add(nullPrinter);
-        nullPrinter.startComms();
+        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.DUMMY, actualPrinterPort);
+        assessCandidatePrinter(printerHandle);
+//        Printer nullPrinter = new HardwarePrinter(this,
+//                new DummyPrinterCommandInterface(this,
+//                        printerHandle,
+//                        suppressPrinterIDChecks,
+//                        sleepBetweenStatusChecksMS,
+//                        "DP "
+//                        + dummyPrinterCounter));
+//        dummyPrinters.add(nullPrinter);
+//        nullPrinter.startComms();
+//        BaseLookup.printerConnected(nullPrinter);
     }
 
     public void removeDummyPrinter(DetectedDevice printerHandle)
