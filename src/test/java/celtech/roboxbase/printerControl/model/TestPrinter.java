@@ -218,7 +218,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void cancel(TaskResponder responder) throws PrinterException
+    public void cancel(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -386,7 +386,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void removeHead(TaskResponder responder) throws PrinterException
+    public void removeHead(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -601,13 +601,13 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public XAndYStateTransitionManager startCalibrateXAndY()
+    public XAndYStateTransitionManager startCalibrateXAndY(boolean safetyFeaturesRequired)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight()
+    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight(boolean safetyFeaturesRequired)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -619,7 +619,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening() throws PrinterException
+    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening(boolean safetyFeaturesRequired) throws PrinterException
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -1065,7 +1065,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void printMeshes(PrintableMeshes printableMeshes) throws PrinterException
+    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

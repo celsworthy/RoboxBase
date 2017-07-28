@@ -672,7 +672,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void removeHead(TaskResponder responder) throws PrinterException
+    public void removeHead(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException
     {
         if (!canRemoveHead.get())
         {
@@ -683,7 +683,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         new Thread(() ->
         {
-            boolean success = doRemoveHeadActivity(cancellable);
+            boolean success = doRemoveHeadActivity(cancellable, safetyFeaturesRequired);
 
             BaseLookup.getTaskExecutor().respondOnGUIThread(responder, success, "Ready to remove head");
 
@@ -692,13 +692,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         }, "Removing head").start();
     }
 
-    protected boolean doRemoveHeadActivity(Cancellable cancellable)
+    protected boolean doRemoveHeadActivity(Cancellable cancellable, boolean safetyFeaturesRequired)
     {
         boolean success = false;
 
         try
         {
-            printEngine.runMacroPrintJob(Macro.REMOVE_HEAD);
+            printEngine.runMacroPrintJob(Macro.REMOVE_HEAD, true, false, safetyFeaturesRequired);
             PrinterUtils.waitOnMacroFinished(this, cancellable);
             success = true;
         } catch (MacroPrintException ex)
@@ -823,7 +823,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         return canCancel;
     }
 
-    private void doCancel(TaskResponder responder, boolean force) throws PrinterException
+    private void doCancel(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException
     {
         if (!canCancel.get())
         {
@@ -834,7 +834,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         new Thread(() ->
         {
-            boolean success = doAbortActivity(cancellable);
+            boolean success = doAbortActivity(cancellable, safetyFeaturesRequired);
 
             if (responder != null)
             {
@@ -847,18 +847,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void cancel(TaskResponder responder) throws PrinterException
+    public void cancel(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException
     {
-        doCancel(responder, false);
+        doCancel(responder, safetyFeaturesRequired);
     }
 
     @Override
     public void forcedCancel(TaskResponder responder) throws PrinterException
     {
-        doCancel(responder, true);
+        doCancel(responder, false);
     }
 
-    private boolean doAbortActivity(Cancellable cancellable)
+    private boolean doAbortActivity(Cancellable cancellable, boolean safetyFeaturesRequired)
     {
         boolean success = false;
 
@@ -879,7 +879,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         try
         {
-            printEngine.runMacroPrintJob(Macro.CANCEL_PRINT);
+            printEngine.runMacroPrintJob(Macro.CANCEL_PRINT, true, false, safetyFeaturesRequired);
             PrinterUtils.waitOnMacroFinished(this, cancellable);
             success = true;
         } catch (MacroPrintException ex)
@@ -1956,7 +1956,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * @throws celtech.roboxbase.printerControl.model.PrinterException
      */
     @Override
-    public void printMeshes(PrintableMeshes printableMeshes) throws PrinterException
+    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException
     {
         Filament filament0 = effectiveFilamentsProperty().get(0);
         Filament filament1 = effectiveFilamentsProperty().get(1);
@@ -2120,7 +2120,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             steno.error("Error whilst sending preheat commands");
         }
 
-        printEngine.printProject(printableMeshes);
+        printEngine.printProject(printableMeshes, safetyFeaturesRequired);
     }
 
     @Override
@@ -3329,7 +3329,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public XAndYStateTransitionManager startCalibrateXAndY() throws PrinterException
+    public XAndYStateTransitionManager startCalibrateXAndY(boolean safetyFeaturesRequired) throws PrinterException
     {
         if (!canCalibrateXYAlignment.get())
         {
@@ -3339,7 +3339,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         StateTransitionManager.StateTransitionActionsFactory actionsFactory = (Cancellable userCancellable,
                 Cancellable errorCancellable)
                 -> new CalibrationXAndYActions(HardwarePrinter.this, userCancellable,
-                        errorCancellable);
+                        errorCancellable, safetyFeaturesRequired);
 
         StateTransitionManager.TransitionsFactory transitionsFactory = (StateTransitionActions actions)
                 -> new CalibrationXAndYTransitions((CalibrationXAndYActions) actions);
@@ -3350,7 +3350,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight() throws PrinterException
+    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight(boolean safetyFeaturesRequired) throws PrinterException
     {
         if (!canCalibrateNozzleHeight.get())
         {
@@ -3360,7 +3360,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         StateTransitionManager.StateTransitionActionsFactory actionsFactory = (Cancellable userCancellable,
                 Cancellable errorCancellable)
                 -> new CalibrationNozzleHeightActions(HardwarePrinter.this, userCancellable,
-                        errorCancellable);
+                        errorCancellable, safetyFeaturesRequired);
 
         StateTransitionManager.TransitionsFactory transitionsFactory = (StateTransitionActions actions)
                 -> new CalibrationNozzleHeightTransitions((CalibrationNozzleHeightActions) actions);
@@ -3400,13 +3400,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening() throws PrinterException
+    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening(boolean safetyFeaturesRequired) throws PrinterException
     {
 
         StateTransitionManager.StateTransitionActionsFactory actionsFactory = (Cancellable userCancellable,
                 Cancellable errorCancellable)
                 -> new CalibrationNozzleOpeningActions(HardwarePrinter.this, userCancellable,
-                        errorCancellable);
+                        errorCancellable, safetyFeaturesRequired);
 
         StateTransitionManager.TransitionsFactory transitionsFactory = (StateTransitionActions actions)
                 -> new CalibrationNozzleOpeningTransitions((CalibrationNozzleOpeningActions) actions);

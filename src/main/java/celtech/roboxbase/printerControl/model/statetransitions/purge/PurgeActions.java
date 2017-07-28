@@ -68,11 +68,14 @@ public class PurgeActions extends StateTransitionActions
 
     private boolean failedActionPerformed = false;
     private boolean doorNeedsOpening = false;
+    
+    private final boolean safetyFeaturesRequired;
 
     public PurgeActions(Printer printer, Cancellable userCancellable, Cancellable errorCancellable,
             boolean requireSafetyFeatures)
     {
         super(userCancellable, errorCancellable);
+        this.safetyFeaturesRequired = requireSafetyFeatures;
         this.printer = printer;
         CalibrationUtils.setCancelledIfPrinterDisconnected(printer, errorCancellable);
 
@@ -432,7 +435,7 @@ public class PurgeActions extends StateTransitionActions
         {
             if (printer.canCancelProperty().get())
             {
-                printer.cancel(null);
+                printer.cancel(null, safetyFeaturesRequired);
             }
         } catch (PrinterException ex)
         {

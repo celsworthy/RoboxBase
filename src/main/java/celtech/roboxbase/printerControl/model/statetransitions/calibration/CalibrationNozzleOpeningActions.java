@@ -50,11 +50,14 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
     private final CalibrationPrinterErrorHandler printerErrorHandler;
 
     private boolean failedActionPerformed = false;
+    
+    private final boolean safetyFeaturesRequired;
 
     public CalibrationNozzleOpeningActions(Printer printer, Cancellable userCancellable,
-            Cancellable errorCancellable)
+            Cancellable errorCancellable, boolean safetyFeaturesRequired)
     {
         super(userCancellable, errorCancellable);
+        this.safetyFeaturesRequired = safetyFeaturesRequired;
         this.printer = printer;
         nozzlePosition.addListener(
                 (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
@@ -651,7 +654,7 @@ public class CalibrationNozzleOpeningActions extends StateTransitionActions
             if (printer.canCancelProperty().get())
             {
                 steno.debug("Cancel ongoing job");
-                printer.cancel(null);
+                printer.cancel(null, safetyFeaturesRequired);
             } else
             {
                 steno.debug("Nothing ongoing to cancel");

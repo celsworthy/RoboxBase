@@ -43,11 +43,15 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
     private final CalibrationPrinterErrorHandler printerErrorHandler;
 
     private boolean failedActionPerformed = false;
+    private final boolean safetyFeaturesRequired;
 
     public CalibrationNozzleHeightActions(Printer printer, Cancellable userCancellable,
-            Cancellable errorCancellable)
+            Cancellable errorCancellable, boolean safetyFeaturesRequired)
     {
         super(userCancellable, errorCancellable);
+        
+        this.safetyFeaturesRequired = safetyFeaturesRequired;
+        
         this.printer = printer;
         zco.addListener(
                 (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
@@ -456,7 +460,7 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
         {
             if (printer.canCancelProperty().get())
             {
-                printer.cancel(null);
+                printer.cancel(null, safetyFeaturesRequired);
             }
         } catch (PrinterException ex)
         {

@@ -114,11 +114,11 @@ public interface Printer extends RoboxResponseConsumer
      */
     public ReadOnlyBooleanProperty canCalibrateHeadProperty();
 
-    public XAndYStateTransitionManager startCalibrateXAndY() throws PrinterException;
+    public XAndYStateTransitionManager startCalibrateXAndY(boolean safetyFeaturesRequired) throws PrinterException;
 
-    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight() throws PrinterException;
+    public NozzleHeightStateTransitionManager startCalibrateNozzleHeight(boolean safetyFeaturesRequired) throws PrinterException;
 
-    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening() throws PrinterException;
+    public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening(boolean safetyFeaturesRequired) throws PrinterException;
 
     public NozzleHeightStateTransitionManager getNozzleHeightCalibrationStateManager();
 
@@ -133,7 +133,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void forcedCancel(TaskResponder responder) throws PrinterException;
 
-    public void cancel(TaskResponder responder) throws PrinterException;
+    public void cancel(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException;
 
     public void gotoNozzlePosition(float position);
 
@@ -235,7 +235,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void pause() throws PrinterException;
 
-    public void printMeshes(PrintableMeshes printableMeshes) throws PrinterException;
+    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException;
 
     public ReadOnlyObjectProperty<PrinterStatus> printerStatusProperty();
 
@@ -252,7 +252,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public ObservableMap<Integer, Reel> reelsProperty();
 
-    public void removeHead(TaskResponder responder) throws PrinterException;
+    public void removeHead(TaskResponder responder, boolean safetyFeaturesRequired) throws PrinterException;
 
     public void resume() throws PrinterException;
 

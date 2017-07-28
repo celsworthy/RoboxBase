@@ -157,6 +157,8 @@ public class PrintEngine implements ControllableService
     private BooleanProperty highIntensityCommsInProgress = new SimpleBooleanProperty(false);
 
     private boolean iAmTakingItThroughTheBackDoor = false;
+    
+    private boolean safetyFeaturesRequiredForCurrentJob = true;
 
     public PrintEngine(Printer associatedPrinter)
     {
@@ -168,7 +170,7 @@ public class PrintEngine implements ControllableService
             steno.info(t.getSource().getTitle() + " has been cancelled");
             try
             {
-                associatedPrinter.cancel(null);
+                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
             } catch (PrinterException ex)
             {
                 steno.error("Couldn't abort on slice cancel");
@@ -186,7 +188,7 @@ public class PrintEngine implements ControllableService
             }
             try
             {
-                associatedPrinter.cancel(null);
+                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
             } catch (PrinterException ex)
             {
                 steno.error("Couldn't abort on slice fail");
@@ -222,7 +224,7 @@ public class PrintEngine implements ControllableService
                 }
                 try
                 {
-                    associatedPrinter.cancel(null);
+                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
                 } catch (PrinterException ex)
                 {
                     steno.error("Couldn't abort on slice fail");
@@ -235,7 +237,7 @@ public class PrintEngine implements ControllableService
             steno.info(t.getSource().getTitle() + " has been cancelled");
             try
             {
-                associatedPrinter.cancel(null);
+                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
             } catch (PrinterException ex)
             {
                 steno.error("Couldn't abort on post process cancel");
@@ -247,7 +249,7 @@ public class PrintEngine implements ControllableService
             steno.info(t.getSource().getTitle() + " has failed");
             try
             {
-                associatedPrinter.cancel(null);
+                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
             } catch (PrinterException ex)
             {
                 steno.error("Couldn't abort on post process fail");
@@ -290,7 +292,7 @@ public class PrintEngine implements ControllableService
             {
                 try
                 {
-                    associatedPrinter.cancel(null);
+                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
                 } catch (PrinterException ex)
                 {
                     steno.error("Couldn't abort on post process fail");
@@ -320,7 +322,7 @@ public class PrintEngine implements ControllableService
             }
             try
             {
-                associatedPrinter.cancel(null);
+                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
             } catch (PrinterException ex)
             {
                 steno.error("Couldn't abort on print job fail");
@@ -560,7 +562,7 @@ public class PrintEngine implements ControllableService
         stopAllServices();
     }
 
-    public synchronized boolean printProject(PrintableMeshes printableMeshes)
+    public synchronized boolean printProject(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired)
     {
         boolean acceptedPrintRequest = false;
         canDisconnectDuringPrint = true;
@@ -968,11 +970,6 @@ public class PrintEngine implements ControllableService
         }
     }
 
-    protected boolean runMacroPrintJob(Macro macro) throws MacroPrintException
-    {
-        return runMacroPrintJob(macro, true, false, false);
-    }
-
     protected boolean runMacroPrintJob(Macro macro,
             boolean requireNozzle0,
             boolean requireNozzle1,
@@ -986,6 +983,7 @@ public class PrintEngine implements ControllableService
             boolean requireNozzle1,
             boolean requireSafetyFeatures) throws MacroPrintException
     {
+        safetyFeaturesRequiredForCurrentJob = requireSafetyFeatures;
         macroBeingRun.set(macro);
 
         boolean acceptedPrintRequest = false;

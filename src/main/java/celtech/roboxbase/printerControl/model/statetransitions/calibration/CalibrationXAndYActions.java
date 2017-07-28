@@ -35,11 +35,14 @@ public class CalibrationXAndYActions extends StateTransitionActions
     private final CalibrationPrinterErrorHandler printerErrorHandler;
 
     private boolean failedActionPerformed = false;
+    
+    private final boolean safetyFeaturesRequired;
 
     public CalibrationXAndYActions(Printer printer, Cancellable userCancellable,
-            Cancellable errorCancellable)
+            Cancellable errorCancellable, boolean safetyFeaturesRequired)
     {
         super(userCancellable, errorCancellable);
+        this.safetyFeaturesRequired = safetyFeaturesRequired;
         this.printer = printer;
 
         printerErrorHandler = new CalibrationPrinterErrorHandler(printer, errorCancellable);
@@ -295,7 +298,7 @@ public class CalibrationXAndYActions extends StateTransitionActions
             if (printer.canCancelProperty().get())
             {
                 steno.debug("call cancel");
-                printer.cancel(null);
+                printer.cancel(null, safetyFeaturesRequired);
             } else
             {
                 steno.debug("can't cancel");
