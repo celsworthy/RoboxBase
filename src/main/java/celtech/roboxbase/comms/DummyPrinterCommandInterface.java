@@ -1,12 +1,8 @@
 package celtech.roboxbase.comms;
 
-import celtech.roboxbase.comms.remote.EEPROMState;
-import celtech.roboxbase.configuration.Filament;
-import celtech.roboxbase.printerControl.model.HeaterMode;
-import celtech.roboxbase.comms.remote.PauseStatus;
-import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
-import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.EEPROMState;
+import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.FirmwareResponse;
@@ -37,9 +33,12 @@ import celtech.roboxbase.comms.tx.SendPrintFileStart;
 import celtech.roboxbase.comms.tx.SendResetErrors;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.WriteHeadEEPROM;
-import celtech.roboxbase.comms.remote.types.SerializableColour;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.printerControl.model.Head;
+import celtech.roboxbase.printerControl.model.HeaterMode;
 import celtech.roboxbase.printerControl.model.Reel;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
@@ -54,6 +53,8 @@ public class DummyPrinterCommandInterface extends CommandInterface
 
     private Stenographer steno = StenographerFactory.getStenographer(
             DummyPrinterCommandInterface.class.getName());
+
+    public static final String dummyYear = "1901DUMMY$";
 
     public static final String defaultRoboxAttachCommand = "DEFAULT";
     public static final String defaultRoboxAttachCommand2 = "DEFAULS";
@@ -391,6 +392,17 @@ public class DummyPrinterCommandInterface extends CommandInterface
             PrinterIDResponse idResponse = (PrinterIDResponse) RoboxRxPacketFactory.createPacket(
                     RxPacketTypeEnum.PRINTER_ID_RESPONSE);
             idResponse.setEdition("KS");
+            // Every other dummy printer is a Brobox
+            char lastDigitOfName = printerName.charAt(printerName.length() - 1);
+            if ("02468".contains(lastDigitOfName + ""))
+            {
+                idResponse.setModel("RBX10");
+            } else
+            {
+                idResponse.setModel("RBX01");
+            }
+            // this dummy year marks this printer as a dummy printer
+            idResponse.setYearOfManufacture(dummyYear);
             idResponse.setPrinterFriendlyName(printerName);
             idResponse.setPrinterColour(Color.web("#FF0082").toString());
             response = (RoboxRxPacket) idResponse;
@@ -429,6 +441,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     RxPacketTypeEnum.GCODE_RESPONSE);
 
             String messageData = request.getMessagePayload().trim();
+
             if (messageData.equalsIgnoreCase(defaultRoboxAttachCommand))
             {
                 gcodeResponse.setMessagePayload(

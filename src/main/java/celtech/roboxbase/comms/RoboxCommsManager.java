@@ -32,7 +32,6 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     private final String roboxProductID = "081B";
 
     private Stenographer steno = null;
-    private final List<Printer> dummyPrinters = new ArrayList<>();
     private final ObservableMap<DetectedDevice, Printer> activePrinters = FXCollections.observableHashMap();
     private boolean suppressPrinterIDChecks = false;
     private int sleepBetweenStatusChecksMS = 1000;
@@ -207,7 +206,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                         suppressPrinterIDChecks,
                         sleepBetweenStatusChecksMS,
                         "DP "
-                        + dummyPrinterCounter++);
+                        + dummyPrinterCounter);
                 newPrinter = new HardwarePrinter(this, dummyCommandInterface, filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
                 break;
@@ -344,28 +343,14 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     {
         dummyPrinterCounter++;
         String actualPrinterPort = dummyPrinterPort + " " + dummyPrinterCounter;
-        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.DUMMY, actualPrinterPort);
+        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.DUMMY,
+                actualPrinterPort);
         assessCandidatePrinter(printerHandle);
-//        Printer nullPrinter = new HardwarePrinter(this,
-//                new DummyPrinterCommandInterface(this,
-//                        printerHandle,
-//                        suppressPrinterIDChecks,
-//                        sleepBetweenStatusChecksMS,
-//                        "DP "
-//                        + dummyPrinterCounter));
-//        dummyPrinters.add(nullPrinter);
-//        nullPrinter.startComms();
-//        BaseLookup.printerConnected(nullPrinter);
     }
 
     public void removeDummyPrinter(DetectedDevice printerHandle)
     {
         disconnected(printerHandle);
-    }
-
-    public List<Printer> getDummyPrinters()
-    {
-        return dummyPrinters;
     }
 
     /**
