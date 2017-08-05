@@ -1,12 +1,11 @@
 package celtech.roboxbase.postprocessor.stylus;
 
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.importers.twod.svg.SVGConverterConfiguration;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.PathHelper;
-import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.StylusScribeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Arc;
@@ -240,7 +240,8 @@ public class PrintableShapesToGCode
             //Add a macro header
             try
             {
-                List<String> startMacro = GCodeMacros.getMacroContents("stylus_start", null, false, false, false);
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_start",
+                        Optional.<PrinterType>empty(), null, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);
@@ -261,7 +262,8 @@ public class PrintableShapesToGCode
             //Add a macro footer
             try
             {
-                List<String> startMacro = GCodeMacros.getMacroContents("stylus_end", null, false, false, false);
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_end",
+                        Optional.<PrinterType>empty(), null, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);

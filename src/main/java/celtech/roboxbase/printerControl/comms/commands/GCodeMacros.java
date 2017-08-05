@@ -1,9 +1,9 @@
 package celtech.roboxbase.printerControl.comms.commands;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.SystemUtils;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -31,8 +32,7 @@ public class GCodeMacros
             getName());
     private static final String macroDefinitionString = "Macro:";
 
-    public interface FilenameEncoder
-    {
+    public interface FilenameEncoder {
 
         public String getFilenameCode();
     }
@@ -119,21 +119,26 @@ public class GCodeMacros
 
     /**
      *
-     * @param macroName - this can include the macro execution directive at the
-     * start of the line
+     * @param macroFileName - this can include the macro execution directive at the     * start of the line
+     * @param typeCode
      * @param headTypeCode
      * @param requireNozzle0
      * @param requireNozzle1
+     * @param requireSafetyFeatures
      * @return
      * @throws java.io.IOException
      * @throws celtech.roboxbase.printerControl.comms.commands.MacroLoadException
      */
-    public static ArrayList<String> getMacroContents(String macroName,
+    public static ArrayList<String> getMacroContents(String macroFileName,
+            Optional<PrinterType> typeCode,
             String headTypeCode,
             boolean requireNozzle0,
             boolean requireNozzle1,
             boolean requireSafetyFeatures) throws IOException, MacroLoadException
     {
+
+        assert typeCode != null;
+
         ArrayList<String> contents = new ArrayList<>();
         ArrayList<String> parentMacros = new ArrayList<>();
 
@@ -171,8 +176,8 @@ public class GCodeMacros
             }
         }
 
-        appendMacroContents(contents, parentMacros, macroName,
-                specifiedHeadType, nozzleUse,
+        appendMacroContents(contents, parentMacros, macroFileName,
+                typeCode, specifiedHeadType, nozzleUse,
                 (requireSafetyFeatures == false) ? GCodeMacros.SafetyIndicator.SAFETIES_OFF : GCodeMacros.SafetyIndicator.DONT_CARE);
 
         return contents;
@@ -191,6 +196,7 @@ public class GCodeMacros
     private static ArrayList<String> appendMacroContents(ArrayList<String> contents,
             final ArrayList<String> parentMacros,
             final String macroName,
+            Optional<PrinterType> typeCode,
             String headTypeCode,
             NozzleUseIndicator nozzleUse,
             SafetyIndicator safeties) throws IOException, MacroLoadException
@@ -211,6 +217,7 @@ public class GCodeMacros
             try
             {
                 fileReader = new FileReader(GCodeMacros.getFilename(cleanedMacroName,
+                        typeCode,
                         headTypeCode,
                         nozzleUse,
                         safeties
@@ -230,6 +237,7 @@ public class GCodeMacros
                             steno.debug("Sub-macro " + subMacroName + " detected");
 
                             appendMacroContents(contents, parentMacros, subMacroName,
+                                    typeCode,
                                     headTypeCode,
                                     nozzleUse,
                                     safeties);
@@ -274,28 +282,78 @@ public class GCodeMacros
     }
 
     /**
-     * Macros are stored in a single directory They are named as follows:
-     * <baseMacroName>_<[S|U]>_<headType>_<[nozzle0Used|nozzle1Used]>
-     * e.g. macroA_S_RBX01-SM - is a macro that should be used for safe mode
-     * when using head RBX01-SM
+     * For the given macroName check that there are no specialized macros present for different
+     * printer types
      *
      * @param macroName
+     */
+    private static void checkNoSpecialisedMacrosFound(String macroName) {
+
+    }
+
+    private static boolean existsMacrosForPrinterType(File macroDirectory,
+            String macroName, Optional<PrinterType> typeCode) {
+        File subDirectory = new File(macroDirectory.getAbsolutePath() + File.separator
+                + typeCode.get().getTypeCode());
+        if (subDirectory.exists())
+        {
+            FilenameFilter filterForMacrosWithCorrectBase = new FilenameStartsWithFilter(macroName);
+            String[] matchingMacroFilenames = subDirectory.list(filterForMacrosWithCorrectBase);
+            return matchingMacroFilenames.length > 0;
+        }
+            return false;
+    }
+
+    /**
+     * Macros are named as follows:
+     * <baseMacroName>_<[S|U]>_<headType>_<[nozzle0Used|nozzle1Used]>
+     * e.g. macroA_S_RBX01-SM - is a macro that should be used for safe mode
+     * when using head
+     * RBX01-SM
+     *
+     * Specialized macros can be provided for different PrinterTypes. This is done by placing the
+     * macro for the given printer type in a subdirectory of the name of the type, e.g. RBX10. If,
+     * for a given baseMacroName, there is one or more macros of that name in a given subdirectory,
+     * then all macros of the same name in the base (default) directory will be ignored.
+     *
+     * @param macroName
+     * @param typeCode
      * @param headTypeCode
      * @param nozzleUse
      * @param safeties
      * @return
+     * @throws java.io.FileNotFoundException
      */
     public static String getFilename(String macroName,
+            Optional<PrinterType> typeCode,
             String headTypeCode,
             NozzleUseIndicator nozzleUse,
             SafetyIndicator safeties) throws FileNotFoundException
     {
 
+        assert typeCode != null;
+
+        if (!typeCode.isPresent())
+        {
+            // not specifying a type code requires that there only be a default macro
+            // with no specialisations
+            checkNoSpecialisedMacrosFound(macroName);
+        }
+
         //Try with all attributes first
         //
         FilenameFilter filterForMacrosWithCorrectBase = new FilenameStartsWithFilter(macroName);
 
-        File macroDirectory = new File(BaseConfiguration.getCommonApplicationDirectory() + BaseConfiguration.macroFileSubpath);
+        File macroDirectory = new File(BaseConfiguration.getCommonApplicationDirectory()
+                + BaseConfiguration.macroFileSubpath);
+
+        // if there is one or more macro for the given printer type than only check
+        // for macros in that directory  -ignore all base directory macros
+        if (existsMacrosForPrinterType(macroDirectory, macroName, typeCode))
+        {
+            macroDirectory = new File(macroDirectory.getAbsolutePath() + File.separator
+                    + typeCode.get().getTypeCode());
+        }
 
         String[] matchingMacroFilenames = macroDirectory.list(filterForMacrosWithCorrectBase);
 
@@ -317,9 +375,10 @@ public class GCodeMacros
                 }
             }
 
-            return BaseConfiguration.getCommonApplicationDirectory()
-                    + BaseConfiguration.macroFileSubpath
+            String path = macroDirectory.getAbsolutePath() + File.separator
                     + matchingMacroFilenames[indexOfHighestScoringFilename];
+            path = path.replace('\\', '/');
+            return path;
         } else
         {
             steno.error("Couldn't find macro " + macroName + " with head " + headTypeCode + " nozzle " + nozzleUse.name() + " safety " + safeties.name());
@@ -460,21 +519,22 @@ public class GCodeMacros
         return input.startsWith(macroDefinitionString);
     }
 
-    private String getMacroNameFromDirective(String macroDirective)
-    {
-        String macroName = null;
-        String[] parts = macroDirective.split(":");
-        if (parts.length == 2)
-        {
-            macroName = parts[1].trim();
-        } else
-        {
-            steno.error("Saw macro directive but couldn't understand it: " + macroDirective);
-        }
-        return macroName;
-    }
+//    private String getMacroNameFromDirective(String macroDirective)
+//    {
+//        String macroName = null;
+//        String[] parts = macroDirective.split(":");
+//        if (parts.length == 2)
+//        {
+//            macroName = parts[1].trim();
+//        } else
+//        {
+//            steno.error("Saw macro directive but couldn't understand it: " + macroDirective);
+//        }
+//        return macroName;
+//    }
 
     public static int getNumberOfOperativeLinesInMacro(String macroDirective,
+            Optional<PrinterType> typeCode,
             String headType,
             boolean useNozzle0,
             boolean useNozzle1,
@@ -486,7 +546,8 @@ public class GCodeMacros
         {
             try
             {
-                List<String> contents = getMacroContents(macro, headType, useNozzle0, useNozzle1, requireSafetyFeatures);
+                List<String> contents = getMacroContents(macro, typeCode,
+                        headType, useNozzle0, useNozzle1, requireSafetyFeatures);
                 for (String line : contents)
                 {
                     if (line.trim().startsWith(";") == false && line.equals("") == false)
@@ -505,8 +566,10 @@ public class GCodeMacros
 
     public static void sendMacroLineByLine(Printer printer, Macro macro, Cancellable cancellable) throws IOException, MacroLoadException
     {
+        PrinterType typeCode = printer.printerConfigurationProperty().get().getPrinterType();
+
         ArrayList<String> macroLines = GCodeMacros.getMacroContents(macro.getMacroFileName(),
-                printer.headProperty().get().typeCodeProperty().get(),
+                Optional.of(typeCode), printer.headProperty().get().typeCodeProperty().get(),
                 false, false, false);
 
         for (String macroLine : macroLines)
@@ -531,13 +594,14 @@ public class GCodeMacros
      */
     public static int countLinesInMacroFile(File aFile, String commentCharacter)
     {
-        return countLinesInMacroFile(aFile, commentCharacter, null, false, false, false);
+        return countLinesInMacroFile(aFile, commentCharacter, null, null, false, false, false);
     }
 
     /**
      *
      * @param aFile
      * @param commentCharacter
+     * @param typeCode
      * @param headType
      * @param useNozzle0
      * @param useNozzle1
@@ -546,11 +610,14 @@ public class GCodeMacros
      */
     public static int countLinesInMacroFile(File aFile,
             String commentCharacter,
+            Optional<PrinterType> typeCode,
             String headType,
             boolean useNozzle0,
             boolean useNozzle1,
             boolean requireSafetyFeatures)
     {
+
+        // if typeCode is null then ensure that no alternative macros exist in subdirectory
         LineNumberReader reader = null;
         int numberOfLines = 0;
         try
@@ -563,7 +630,8 @@ public class GCodeMacros
                 lineRead = lineRead.trim();
                 if (GCodeMacros.isMacroExecutionDirective(lineRead))
                 {
-                    numberOfLines += GCodeMacros.getNumberOfOperativeLinesInMacro(lineRead, headType, useNozzle0, useNozzle1, requireSafetyFeatures);
+                    numberOfLines += GCodeMacros.getNumberOfOperativeLinesInMacro(lineRead,
+                            typeCode, headType, useNozzle0, useNozzle1, requireSafetyFeatures);
                 } else if (lineRead.startsWith(commentCharacter) == false && lineRead.equals("")
                         == false)
                 {

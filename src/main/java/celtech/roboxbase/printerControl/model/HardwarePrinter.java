@@ -1,17 +1,18 @@
 package celtech.roboxbase.printerControl.model;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.comms.remote.BusyStatus;
-import celtech.roboxbase.comms.remote.EEPROMState;
-import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.PrinterColourMap;
 import celtech.roboxbase.appManager.SystemNotificationManager;
-import celtech.roboxbase.comms.remote.PauseStatus;
-import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.CommandInterface;
 import celtech.roboxbase.comms.PrinterStatusConsumer;
+import celtech.roboxbase.comms.events.ErrorConsumer;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.remote.BusyStatus;
+import celtech.roboxbase.comms.remote.EEPROMState;
+import celtech.roboxbase.comms.remote.PauseStatus;
+import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
+import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
 import celtech.roboxbase.comms.rx.AckResponse;
 import celtech.roboxbase.comms.rx.DebugDataResponse;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -42,8 +43,8 @@ import celtech.roboxbase.comms.tx.RoboxTxPacketFactory;
 import celtech.roboxbase.comms.tx.SetAmbientLEDColour;
 import celtech.roboxbase.comms.tx.SetDFeedRateMultiplier;
 import celtech.roboxbase.comms.tx.SetDFilamentInfo;
-import celtech.roboxbase.comms.tx.SetEFilamentInfo;
 import celtech.roboxbase.comms.tx.SetEFeedRateMultiplier;
+import celtech.roboxbase.comms.tx.SetEFilamentInfo;
 import celtech.roboxbase.comms.tx.SetReelLEDColour;
 import celtech.roboxbase.comms.tx.SetTemperatures;
 import celtech.roboxbase.comms.tx.StatusRequest;
@@ -52,22 +53,18 @@ import celtech.roboxbase.comms.tx.WriteHeadEEPROM;
 import celtech.roboxbase.comms.tx.WritePrinterID;
 import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
 import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
-import celtech.roboxbase.comms.events.ErrorConsumer;
-import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
-import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
-import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
-import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintActionUnavailableException;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.PrintJobRejectedException;
-import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.PurgeRequiredException;
 import celtech.roboxbase.printerControl.comms.commands.GCodeConstants;
@@ -75,7 +72,12 @@ import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import celtech.roboxbase.printerControl.comms.commands.MacroPrintException;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
+import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionActions;
+import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightActions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningActions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
@@ -84,11 +86,6 @@ import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndY
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeActions;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeTransitions;
-import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionActions;
-import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionManager;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightActions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightTransitions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningTransitions;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
@@ -97,6 +94,7 @@ import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
@@ -112,6 +110,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import javafx.beans.binding.Bindings;
@@ -1275,7 +1274,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         {
             try
             {
-                ArrayList<String> macroContents = GCodeMacros.getMacroContents(macroName, headProperty().get().typeCodeProperty().get(), false, false, false);
+                ArrayList<String> macroContents = GCodeMacros.getMacroContents(macroName,
+                        Optional.of(printerConfigurationProperty().get().getPrinterType()),
+                        headProperty().get().typeCodeProperty().get(), false, false, false);
                 macroContents.forEach(line ->
                 {
                     String lineToOutput = SystemUtils.cleanGCodeForTransmission(line);

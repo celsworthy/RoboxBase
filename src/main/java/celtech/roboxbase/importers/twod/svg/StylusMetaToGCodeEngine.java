@@ -1,5 +1,6 @@
 package celtech.roboxbase.importers.twod.svg;
 
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.StylusMetaPart;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -43,7 +45,8 @@ public class StylusMetaToGCodeEngine
             //Add a macro header
             try
             {
-                List<String> startMacro = GCodeMacros.getMacroContents("stylus_cut_start", null, false, false, false);
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_cut_start",
+                        Optional.<PrinterType>empty(), null, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);
@@ -69,7 +72,8 @@ public class StylusMetaToGCodeEngine
             //Add a macro footer
             try
             {
-                List<String> startMacro = GCodeMacros.getMacroContents("stylus_cut_finish", null, false, false, false);
+                List<String> startMacro = GCodeMacros.getMacroContents("stylus_cut_finish",
+                        Optional.<PrinterType>empty(), null, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);

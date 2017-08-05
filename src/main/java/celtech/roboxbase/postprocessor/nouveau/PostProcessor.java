@@ -8,6 +8,7 @@ import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import static celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType.*;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
@@ -19,8 +20,12 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.FeedrateProvider;
-import celtech.roboxbase.postprocessor.nouveau.spiralPrint.CuraSpiralPrintFixer;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
+import celtech.roboxbase.postprocessor.nouveau.spiralPrint.CuraSpiralPrintFixer;
+import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalc;
+import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalcResult;
+import celtech.roboxbase.postprocessor.nouveau.verifier.OutputVerifier;
+import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
 import celtech.roboxbase.printerControl.model.Printer;
@@ -35,19 +40,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
-import celtech.roboxbase.postprocessor.nouveau.verifier.OutputVerifier;
-import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
-import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalc;
-import celtech.roboxbase.postprocessor.nouveau.timeCalc.TimeAndVolumeCalcResult;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -326,7 +325,9 @@ public class PostProcessor
                     eRequired = true;
                 }
 
-                outputUtilities.prependPrePrintHeader(writer, headFile.getTypeCode(),
+                outputUtilities.prependPrePrintHeader(writer,
+                        Optional.<PrinterType>of(printer.printerConfigurationProperty().get().getPrinterType()),
+                        headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
                         safetyFeaturesRequired);
@@ -367,6 +368,7 @@ public class PostProcessor
                 timeUtils.timerStart(this, writeOutputTimerName);
                 outputUtilities.appendPostPrintFooter(writer,
                         timeAndVolumeCalcResult,
+                        Optional.<PrinterType>of(printer.printerConfigurationProperty().get().getPrinterType()),
                         headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,

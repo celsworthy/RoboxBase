@@ -3,15 +3,15 @@
  */
 package celtech.roboxbase.printerControl.model.statetransitions.calibration;
 
-import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionActions;
-import celtech.roboxbase.printerControl.model.PrinterException;
-import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.printerControl.model.Head;
-import celtech.roboxbase.printerControl.PrinterStatus;
-import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.HeadEEPROMDataResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.printerControl.PrinterStatus;
+import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
+import celtech.roboxbase.printerControl.model.Head;
+import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.printerControl.model.PrinterException;
+import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionActions;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import java.io.FileNotFoundException;
@@ -87,7 +87,9 @@ public class CalibrationXAndYActions extends StateTransitionActions
         //TODO needs to be changed for DM head
         try
         {
-            printer.executeGCodeFile(GCodeMacros.getFilename("rbx_test_xy-offset-2_roboxised", null, GCodeMacros.NozzleUseIndicator.DONT_CARE, GCodeMacros.SafetyIndicator.DONT_CARE), false);
+            printer.executeGCodeFile(GCodeMacros.getFilename("rbx_test_xy-offset-2_roboxised",
+                    null, null, GCodeMacros.NozzleUseIndicator.DONT_CARE,
+                    GCodeMacros.SafetyIndicator.DONT_CARE), false);
             PrinterUtils.waitOnMacroFinished(printer, userOrErrorCancellable);
         } catch (FileNotFoundException ex)
         {

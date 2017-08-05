@@ -1,6 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  *
@@ -24,8 +26,8 @@ import java.util.Locale;
 public class OutputUtilities
 {
 
-    protected void prependPrePrintHeader(GCodeOutputWriter writer, String headType, boolean useNozzle0, boolean useNozzle1, boolean requireSafetyFeatures)
-    {
+    protected void prependPrePrintHeader(GCodeOutputWriter writer, Optional<PrinterType> typeCode,
+            String headType, boolean useNozzle0, boolean useNozzle1, boolean requireSafetyFeatures)    {
         SimpleDateFormat formatter = new SimpleDateFormat("EEE d MMM y HH:mm:ss", Locale.UK);
         try
         {
@@ -36,7 +38,7 @@ public class OutputUtilities
 
             writer.writeOutput(";\n; Pre print gcode\n");
 
-            for (String macroLine : GCodeMacros.getMacroContents("before_print", headType, useNozzle0, useNozzle1, requireSafetyFeatures))
+            for (String macroLine : GCodeMacros.getMacroContents("before_print", typeCode, headType, useNozzle0, useNozzle1, requireSafetyFeatures))
             {
                 writer.writeOutput(macroLine);
                 writer.newLine();
@@ -50,13 +52,13 @@ public class OutputUtilities
     }
 
     protected void appendPostPrintFooter(GCodeOutputWriter writer,
-            TimeAndVolumeCalcResult timeAndVolumeCalcResult,
+            TimeAndVolumeCalcResult timeAndVolumeCalcResult, Optional<PrinterType> typeCode,
             String headType, boolean useNozzle0, boolean useNozzle1, boolean requireSafetyFeatures)
     {
         try
         {
             writer.writeOutput(";\n; Post print gcode\n");
-            for (String macroLine : GCodeMacros.getMacroContents("after_print", headType, useNozzle0, useNozzle1, requireSafetyFeatures))
+            for (String macroLine : GCodeMacros.getMacroContents("after_print", typeCode, headType, useNozzle0, useNozzle1, requireSafetyFeatures))
             {
                 writer.writeOutput(macroLine);
                 writer.newLine();

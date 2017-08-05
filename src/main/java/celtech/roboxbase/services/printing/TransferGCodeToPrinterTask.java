@@ -5,12 +5,12 @@ import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.utils.SystemUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import javafx.beans.property.IntegerProperty;
 import javafx.concurrent.Task;
@@ -82,8 +82,6 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         boolean gotToEndOK = false;
 
         updateTitle("GCode Print ID:" + printJobID);
-        int sequenceNumber = 0;
-        boolean successfulWrite = false;
         File gcodeFile = new File(gcodeFileToPrint);
         FileReader gcodeReader = null;
         Scanner scanner = null;
@@ -131,9 +129,6 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
                 lineCounter = 0;
 
-                final int bufferSize = 512;
-                StringBuffer outputBuffer = new StringBuffer(bufferSize);
-
                 while (scanner.hasNextLine() && !isCancelled())
                 {
                     String line = scanner.nextLine();
@@ -142,7 +137,10 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                     if (GCodeMacros.isMacroExecutionDirective(line))
                     {
                         //Put in contents of macro
-                        List<String> macroLines = GCodeMacros.getMacroContents(line, printerToUse.headProperty().get().typeCodeProperty().get(), false, false, false);
+                        List<String> macroLines = GCodeMacros.getMacroContents(line,
+                                Optional.of(printerToUse.printerConfigurationProperty().get().getPrinterType()),
+                                printerToUse.headProperty().get().typeCodeProperty().get(),
+                                false, false, false);
                         for (String macroLine : macroLines)
                         {
                             outputLine(macroLine);

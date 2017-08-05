@@ -17,7 +17,6 @@ import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.PrintQueueStatus;
-import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
@@ -34,6 +33,7 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1007,6 +1007,7 @@ public class PrintEngine implements ControllableService
         try
         {
             ArrayList<String> macroContents = GCodeMacros.getMacroContents(macro.getMacroFileName(),
+                    Optional.of(associatedPrinter.printerConfigurationProperty().get().getPrinterType()),
                     associatedPrinter.headProperty().get().typeCodeProperty().get(),
                     requireNozzle0, requireNozzle1,
                     requireSafetyFeatures);

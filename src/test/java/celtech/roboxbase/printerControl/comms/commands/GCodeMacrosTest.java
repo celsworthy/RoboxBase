@@ -1,8 +1,10 @@
 package celtech.roboxbase.printerControl.comms.commands;
 
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
-import org.junit.Test;
+import java.util.Optional;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  *
@@ -11,14 +13,78 @@ import static org.junit.Assert.*;
 public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 {
 
+    @Test
+    public void testGetFilenameNoSpecialisation() throws Exception {
+        PrinterType typeCode = PrinterType.ROBOX;
+        String headTypeCode = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_0;
+        String fileName = GCodeMacros.getFilename("Purge_T1", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("Common/Macros/Purge_T1.gcode"));
+    }
+
+    @Test
+    public void testGetFilenameForHeadSpecialisation() throws Exception {
+        PrinterType typeCode = PrinterType.ROBOX;
+        String headTypeCode = "RBX01-DM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_0;
+        String fileName = GCodeMacros.getFilename("PurgeMaterial", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("/Common/Macros/PurgeMaterial#RBX01-DM#N0.gcode"));
+    }
+
+    @Test
+    public void testGetFilenameForNozzleSpecialisation() throws Exception {
+        PrinterType typeCode = PrinterType.ROBOX;
+        String headTypeCode = "RBX01-DM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
+        String fileName = GCodeMacros.getFilename("Short_Purge", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("/Common/Macros/Short_Purge#RBX01-DM#N1.gcode"));
+    }
+
+    @Test
+    public void testGetFilenameForPrinterTypeSpecialisation() throws Exception {
+        PrinterType typeCode = PrinterType.BROBOX;
+        String headTypeCode = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
+        String fileName = GCodeMacros.getFilename("Remove_Head", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("/Common/Macros/RBX10/Remove_Head.gcode"));
+    }
+
+    @Test
+    public void testGetFilenameForPrinterTypeSpecialisation2() throws Exception {
+        PrinterType typeCode = PrinterType.BROBOX;
+        String headTypeCode = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
+        String fileName = GCodeMacros.getFilename("before_print", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("/Common/Macros/before_print.gcode"));
+    }
+
+    @Test
+    public void testGetFilenameForPrinterTypeNozzleSpecialisation() throws Exception {
+        PrinterType typeCode = PrinterType.BROBOX;
+        String headTypeCode = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
+        String fileName = GCodeMacros.getFilename("Short_Purge", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("/Common/Macros/RBX10/Short_Purge#N1.gcode"));
+    }
+
     /**
      * Test of getMacroContents method, of class GCodeMacros.
      */
     @Test
     public void testScoreMacroFilename() throws Exception
     {
-        System.out.println("scoreMacroFilename");
-
         // File: DC, DC, DC
         // Specification: DC, DC, DC
         String filename1 = "before_print.gcode";
@@ -87,8 +153,6 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testScoreMacroFilenameRank() throws Exception
     {
-        System.out.println("scoreMacroFilenameRank");
-        
         String headTypeToScoreAgainst = "RBX01-DM";
         GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
         GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.SAFETIES_OFF;
@@ -125,8 +189,6 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testScoreMacroFilename_DefaultSM() throws Exception
     {
-        System.out.println("scoreMacroFilename_DefaultSM");
-
         String headTypeToScoreAgainst = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;
         GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.DONT_CARE;
@@ -163,8 +225,6 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testScoreMacroFilename_safeties() throws Exception
     {
-        System.out.println("scoreMacroFilename_safeties");
-
         String headTypeToScoreAgainst = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;
         GCodeMacros.SafetyIndicator safetyToScoreAgainst = GCodeMacros.SafetyIndicator.DONT_CARE;
@@ -209,7 +269,6 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testScoreMacroFilename_unrecognisedHead() throws Exception
     {
-        System.out.println("scoreMacroFilename_unrecognisedHead");
 
         String headTypeToScoreAgainst = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleToScoreAgainst = GCodeMacros.NozzleUseIndicator.DONT_CARE;

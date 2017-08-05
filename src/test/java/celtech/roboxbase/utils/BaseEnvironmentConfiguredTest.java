@@ -36,7 +36,6 @@ public class BaseEnvironmentConfiguredTest
         Properties testProperties = new Properties();
 
         testProperties.setProperty("language", "UK");
-        URL applicationInstallURL = BaseEnvironmentConfiguredTest.class.getResource("/InstallDir/AutoMaker/");
         String applicationInstallDir = BaseEnvironmentConfiguredTest.class.getResource("/InstallDir/AutoMaker/").getFile();
         userStorageFolderPath = temporaryUserStorageFolder.getRoot().getAbsolutePath()
             + File.separator;

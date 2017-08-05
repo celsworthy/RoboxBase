@@ -1,6 +1,6 @@
 package celtech.roboxbase.configuration.fileRepresentation;
 
-import java.util.ArrayList;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import java.util.List;
 
 /**
@@ -32,6 +32,10 @@ public class PrinterDefinitionFile
     public String getTypeCode()
     {
         return typeCode;
+    }
+
+    public PrinterType getPrinterType() {
+        return PrinterType.getPrinterTypeForTypeCode(typeCode);
     }
 
     public void setTypeCode(String typeCode)
