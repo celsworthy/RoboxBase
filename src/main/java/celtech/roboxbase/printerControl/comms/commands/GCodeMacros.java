@@ -378,6 +378,7 @@ public class GCodeMacros
             String path = macroDirectory.getAbsolutePath() + File.separator
                     + matchingMacroFilenames[indexOfHighestScoringFilename];
             path = path.replace('\\', '/');
+            steno.info("found macro " + path);
             return path;
         } else
         {
