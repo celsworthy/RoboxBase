@@ -1216,17 +1216,28 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         runCommissioningTest(macro, cancellable, false, false);
     }
 
+    @Override
     public void runCommissioningTest(Macro macro, Cancellable cancellable, boolean requireNozzle0, boolean requireNozzle1) throws PrinterException
     {
         executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
                 true, cancellable, requireNozzle0, requireNozzle1, false);
     }
 
+    @Override
     public void executeMacroWithoutPurgeCheck(Macro macro) throws PrinterException
     {
         executeMacroWithoutPurgeCheck(macro, false, false, false);
     }
 
+    /**
+     *
+     * @param macro
+     * @param requireNozzle0
+     * @param requireNozzle1
+     * @param requireSafetyFeatures
+     * @throws PrinterException
+     */
+    @Override
     public void executeMacroWithoutPurgeCheck(Macro macro,
             boolean requireNozzle0, boolean requireNozzle1,
             boolean requireSafetyFeatures) throws PrinterException
