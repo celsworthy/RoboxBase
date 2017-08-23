@@ -217,17 +217,7 @@ public class BaseConfiguration
 
     public static String getApplicationName()
     {
-        if (configuration == null)
-        {
-            try
-            {
-                configuration = Configuration.getInstance();
-            } catch (ConfigNotLoadedException ex)
-            {
-                steno.error(
-                        "Couldn't load configuration - the application cannot derive the install directory");
-            }
-        }
+        loadConfigurationInstance();
 
         if (configuration != null && applicationName == null)
         {
@@ -244,8 +234,7 @@ public class BaseConfiguration
         return applicationName;
     }
 
-    public static String getApplicationShortName()
-    {
+    private static void loadConfigurationInstance() {
         if (configuration == null)
         {
             try
@@ -257,6 +246,13 @@ public class BaseConfiguration
                         "Couldn't load configuration - the application cannot derive the install directory");
             }
         }
+
+    }
+
+    public static String getApplicationShortName()
+    {
+
+        loadConfigurationInstance();
 
         if (configuration != null && applicationShortName == null)
         {
@@ -276,17 +272,7 @@ public class BaseConfiguration
 
     public static String getApplicationInstallDirectory(Class classToCheck)
     {
-        if (configuration == null)
-        {
-            try
-            {
-                configuration = Configuration.getInstance();
-            } catch (ConfigNotLoadedException ex)
-            {
-                steno.error(
-                        "Couldn't load configuration - the application cannot derive the install directory");
-            }
-        }
+        loadConfigurationInstance();
 
         if (configuration != null && applicationInstallDirectory == null)
         {
@@ -374,6 +360,19 @@ public class BaseConfiguration
         }
 
         return printerFileDirectory;
+    }
+
+    public static String getExternalStaticDirectory() {
+        loadConfigurationInstance();
+        try
+        {
+            return configuration.getFilenameString(applicationConfigComponent,
+                    "ExternalStaticDirectory", null);
+        } catch (ConfigNotLoadedException ex)
+        {
+            steno.info("No external static directory specified");
+            return null;
+        }
     }
 
     public static boolean isAutoRepairHeads()
@@ -470,17 +469,7 @@ public class BaseConfiguration
 
     public static String getUserStorageDirectory()
     {
-        if (configuration == null)
-        {
-            try
-            {
-                configuration = Configuration.getInstance();
-            } catch (ConfigNotLoadedException ex)
-            {
-                steno.error(
-                        "Couldn't load configuration - the application cannot derive the install directory");
-            }
-        }
+        loadConfigurationInstance();
 
         if (configuration != null && userStorageDirectory == null)
         {
@@ -579,17 +568,7 @@ public class BaseConfiguration
 
     public static String getApplicationStorageDirectory()
     {
-        if (configuration == null)
-        {
-            try
-            {
-                configuration = Configuration.getInstance();
-            } catch (ConfigNotLoadedException ex)
-            {
-                steno.error(
-                        "Couldn't load configuration - the application cannot derive the install directory");
-            }
-        }
+        loadConfigurationInstance();
 
         if (configuration != null && applicationStorageDirectory == null)
         {
