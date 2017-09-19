@@ -3083,7 +3083,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeHeadEEPROM);
 
-        if (readback && !response.isError())
+        if (readback)
         {
             readHeadEEPROM(false);
         }
