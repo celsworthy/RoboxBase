@@ -34,6 +34,20 @@ public class WriteReel1EEPROM extends RoboxTxPacket
         return String.format(formatString, rawString);
     }
 
+    public String filamentID;
+    public float reelFirstLayerNozzleTemperature;
+    public float reelNozzleTemperature;
+    public float reelFirstLayerBedTemperature;
+    public float reelBedTemperature;
+    public float reelAmbientTemperature;
+    public float reelFilamentDiameter;
+    public float reelFilamentMultiplier;
+    public float reelFeedRateMultiplier;
+    public float reelRemainingFilament;
+    public String friendlyName;
+    public MaterialType materialType;
+    public String displayColourString;
+
     public void populateEEPROM(String filamentID, float reelFirstLayerNozzleTemperature,
             float reelNozzleTemperature,
             float reelFirstLayerBedTemperature, float reelBedTemperature, float reelAmbientTemperature,
@@ -44,6 +58,20 @@ public class WriteReel1EEPROM extends RoboxTxPacket
         StringBuilder payload = new StringBuilder();
 
         FixedDecimalFloatFormat decimalFloatFormatter = new FixedDecimalFloatFormat();
+
+        this.filamentID = filamentID;
+        this.reelFirstLayerNozzleTemperature = reelFirstLayerNozzleTemperature;
+        this.reelNozzleTemperature = reelNozzleTemperature;
+        this.reelFirstLayerBedTemperature = reelFirstLayerBedTemperature;
+        this.reelBedTemperature = reelBedTemperature;
+        this.reelAmbientTemperature = reelAmbientTemperature;
+        this.reelFilamentDiameter = reelFilamentDiameter;
+        this.reelFilamentMultiplier = reelFilamentMultiplier;
+        this.reelFeedRateMultiplier = reelFeedRateMultiplier;
+        this.reelRemainingFilament = reelRemainingFilament;
+        this.friendlyName = friendlyName;
+        this.materialType = materialType;
+        this.displayColourString = displayColourString;
 
         payload.append(formatString(filamentID, 16));
         payload.append(formatString(displayColourString, DISPLAY_COLOUR_LENGTH));
@@ -149,4 +177,101 @@ public class WriteReel1EEPROM extends RoboxTxPacket
         return false;
     }
 
+    public String getFilamentID()
+    {
+        return filamentID;
+    }
+
+    public float getReelFirstLayerNozzleTemperature()
+    {
+        return reelFirstLayerNozzleTemperature;
+    }
+
+    public float getReelNozzleTemperature()
+    {
+        return reelNozzleTemperature;
+    }
+
+    public float getReelFirstLayerBedTemperature()
+    {
+        return reelFirstLayerBedTemperature;
+    }
+
+    public float getReelBedTemperature()
+    {
+        return reelBedTemperature;
+    }
+
+    public float getReelAmbientTemperature()
+    {
+        return reelAmbientTemperature;
+    }
+
+    public float getReelFilamentDiameter()
+    {
+        return reelFilamentDiameter;
+    }
+
+    public float getReelFilamentMultiplier()
+    {
+        return reelFilamentMultiplier;
+    }
+
+    public float getReelFeedRateMultiplier()
+    {
+        return reelFeedRateMultiplier;
+    }
+
+    public float getReelRemainingFilament()
+    {
+        return reelRemainingFilament;
+    }
+
+    public String getFriendlyName()
+    {
+        return friendlyName;
+    }
+
+    public MaterialType getMaterialType()
+    {
+        return materialType;
+    }
+
+    public String getDisplayColourString()
+    {
+        return displayColourString;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder outputString = new StringBuilder();
+
+        outputString.append("Reel 0 write\n");
+        outputString.append("Friendly Name: ");
+        outputString.append(getFriendlyName());
+        outputString.append('\n');
+        outputString.append("Filament ID: ");
+        outputString.append(getFilamentID());
+        outputString.append('\n');
+        outputString.append("Material Type: ");
+        outputString.append(getMaterialType());
+        outputString.append('\n');
+        outputString.append("Ambient Temperature: ");
+        outputString.append(getReelAmbientTemperature());
+        outputString.append('\n');
+        outputString.append("Bed Temperature: ");
+        outputString.append(getReelBedTemperature());
+        outputString.append('\n');
+        outputString.append("Feed rate multiplier: ");
+        outputString.append(getReelFeedRateMultiplier());
+        outputString.append('\n');
+        outputString.append("Filament diameter: ");
+        outputString.append(getReelFilamentDiameter());
+        outputString.append('\n');
+        outputString.append("Remaining length: ");
+        outputString.append(getReelRemainingFilament());
+        outputString.append('\n');
+        return outputString.toString();
+    }
 }

@@ -33,9 +33,11 @@ import celtech.roboxbase.comms.tx.SendPrintFileStart;
 import celtech.roboxbase.comms.tx.SendResetErrors;
 import celtech.roboxbase.comms.tx.StatusRequest;
 import celtech.roboxbase.comms.tx.WriteHeadEEPROM;
-import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.comms.tx.WriteReel0EEPROM;
+import celtech.roboxbase.comms.tx.WriteReel1EEPROM;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.HeaterMode;
@@ -765,6 +767,53 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     attachedReels[1].friendlyFilamentNameProperty().get());
             reelResponse.setReelNumber(1);
             response = (RoboxRxPacket) reelResponse;
+        } else if (messageToWrite instanceof WriteReel0EEPROM)
+        {
+            WriteReel0EEPROM reelWriteMessage = (WriteReel0EEPROM) messageToWrite;
+
+            Filament f = new Filament(reelWriteMessage.getFriendlyName(),
+                    reelWriteMessage.getMaterialType(),
+                    reelWriteMessage.getFilamentID(),
+                    "", "",
+                    reelWriteMessage.getReelFilamentDiameter(),
+                    reelWriteMessage.getReelFilamentMultiplier(),
+                    reelWriteMessage.getReelFeedRateMultiplier(),
+                    (int) reelWriteMessage.getReelAmbientTemperature(),
+                    (int) reelWriteMessage.getReelFirstLayerBedTemperature(),
+                    (int) reelWriteMessage.getReelBedTemperature(),
+                    (int) reelWriteMessage.getReelFirstLayerNozzleTemperature(),
+                    (int) reelWriteMessage.getReelNozzleTemperature(),
+                    Color.web(reelWriteMessage.getDisplayColourString()),
+                    1.0f,
+                    (int) reelWriteMessage.getReelRemainingFilament(),
+                    true);
+            attachedReels[0].updateContents(f);
+            steno.debug(reelWriteMessage.toString());
+            response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
+                    getExpectedResponse());
+        } else if (messageToWrite instanceof WriteReel1EEPROM)
+        {
+            WriteReel1EEPROM reelWriteMessage = (WriteReel1EEPROM) messageToWrite;
+            Filament f = new Filament(reelWriteMessage.getFriendlyName(),
+                    reelWriteMessage.getMaterialType(),
+                    reelWriteMessage.getFilamentID(),
+                    "", "",
+                    reelWriteMessage.getReelFilamentDiameter(),
+                    reelWriteMessage.getReelFilamentMultiplier(),
+                    reelWriteMessage.getReelFeedRateMultiplier(),
+                    (int) reelWriteMessage.getReelAmbientTemperature(),
+                    (int) reelWriteMessage.getReelFirstLayerBedTemperature(),
+                    (int) reelWriteMessage.getReelBedTemperature(),
+                    (int) reelWriteMessage.getReelFirstLayerNozzleTemperature(),
+                    (int) reelWriteMessage.getReelNozzleTemperature(),
+                    Color.web(reelWriteMessage.getDisplayColourString()),
+                    1.0f,
+                    (int) reelWriteMessage.getReelRemainingFilament(),
+                    true);
+            attachedReels[1].updateContents(f);
+            steno.debug(reelWriteMessage.toString());
+            response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
+                    getExpectedResponse());
         } else if (messageToWrite instanceof PausePrint)
         {
             switch (messageToWrite.getMessagePayload())
