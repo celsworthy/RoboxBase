@@ -137,7 +137,8 @@ public class Head implements Cloneable, RepairableComponent
     private void updateFromHeadFileData(HeadFile headData, boolean flagDataChanged)
     {
         setTypeCode(headData.getTypeCode());
-
+        valveType.set(headData.getValves());
+        
         nozzleHeaters.clear();
         headData.getNozzleHeaters().stream().
                 map((nozzleHeaterData) -> makeNozzleHeater(nozzleHeaterData))
@@ -192,6 +193,11 @@ public class Head implements Cloneable, RepairableComponent
     public ObjectProperty<HeadType> headTypeProperty()
     {
         return headType;
+    }
+    
+     public ObjectProperty<ValveType> valveTypeProperty()
+    {
+        return valveType;
     }
 
     public StringProperty uniqueIDProperty()

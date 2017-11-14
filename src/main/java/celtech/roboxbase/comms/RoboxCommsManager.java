@@ -7,6 +7,7 @@ import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -351,6 +352,15 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     public void removeDummyPrinter(DetectedDevice printerHandle)
     {
         disconnected(printerHandle);
+    }
+
+    public List<Printer> getDummyPrinters()
+    {
+        return activePrinters.entrySet()
+                             .stream()
+                             .filter(p -> p.getKey().getConnectionType() == DeviceDetector.PrinterConnectionType.DUMMY)
+                             .map(e -> e.getValue())
+                             .collect(Collectors.toList()); 
     }
 
     /**
