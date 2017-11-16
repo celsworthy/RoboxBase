@@ -14,6 +14,7 @@ import celtech.roboxbase.printerControl.model.PrinterListChangesNotifier;
 import celtech.roboxbase.utils.tasks.LiveTaskExecutor;
 import celtech.roboxbase.utils.tasks.TaskExecutor;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -60,7 +61,15 @@ public class BaseLookup
 
     public static String i18n(String stringId)
     {
-        String langString = i18nbundle.getString(stringId);
+        String langString = null;
+        try
+        {
+           langString = i18nbundle.getString(stringId);
+        }
+        catch (MissingResourceException ex)
+        {
+            langString = stringId;
+        }
         langString = substituteTemplates(langString);
         return langString;
     }

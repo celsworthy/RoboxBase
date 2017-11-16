@@ -343,22 +343,24 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                 if (newHeadValue != null)
                 {
-
-                    canCalibrateNozzleOpening.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
-                            .and(extrudersProperty().get(0).filamentLoadedProperty())
-                            .and(Bindings.valueAt(reels, 0).isNotNull())
-                            .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
-                                    .or(extrudersProperty().get(1).filamentLoadedProperty()
-                                            .and(Bindings.valueAt(reels, 1).isNotNull())))
-                    );
+                    if (head.get().valveTypeProperty().get() == Head.ValveType.FITTED)
+                    {
+                        canCalibrateNozzleOpening.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                                .and(extrudersProperty().get(0).filamentLoadedProperty())
+                                .and(Bindings.valueAt(reels, 0).isNotNull())
+                                .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
+                                        .or(extrudersProperty().get(1).filamentLoadedProperty()
+                                                .and(Bindings.valueAt(reels, 1).isNotNull())))
+                        );
+                        canCalibrateXYAlignment.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                                .and(extrudersProperty().get(0).filamentLoadedProperty())
+                                .and(Bindings.valueAt(reels, 0).isNotNull())
+                                .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
+                                        .or(extrudersProperty().get(1).filamentLoadedProperty()
+                                                .and(Bindings.valueAt(reels, 1).isNotNull())))
+                        );
+                    }
                     canCalibrateNozzleHeight.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
-                            .and(extrudersProperty().get(0).filamentLoadedProperty())
-                            .and(Bindings.valueAt(reels, 0).isNotNull())
-                            .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
-                                    .or(extrudersProperty().get(1).filamentLoadedProperty()
-                                            .and(Bindings.valueAt(reels, 1).isNotNull())))
-                    );
-                    canCalibrateXYAlignment.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                             .and(extrudersProperty().get(0).filamentLoadedProperty())
                             .and(Bindings.valueAt(reels, 0).isNotNull())
                             .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
