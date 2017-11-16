@@ -92,7 +92,11 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
     {
         HeadFile headDataFile = HeadContainer.getHeadByID(savedHeadData.getHeadTypeCode());
         NozzleData nozzle1Data = headDataFile.getNozzles().get(0);
-        NozzleData nozzle2Data = headDataFile.getNozzles().get(1);
+        NozzleData nozzle2Data = null;
+        if (headDataFile.getNozzles().size() == 1)
+            nozzle2Data= nozzle1Data;
+        else
+            nozzle2Data = headDataFile.getNozzles().get(1);
 
         printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
                 savedHeadData.getUniqueID(),

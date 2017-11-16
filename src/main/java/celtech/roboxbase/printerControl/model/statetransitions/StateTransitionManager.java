@@ -71,8 +71,7 @@ public class StateTransitionManager<StateType>
      */
     public enum GUIName
     {
-
-        START, CANCEL, BACK, NEXT, RETRY, COMPLETE, YES, NO, UP, DOWN, A_BUTTON, B_BUTTON, AUTO;
+        START, CANCEL, BACK, NEXT, NEXT_2, RETRY, COMPLETE, YES, NO, UP, DOWN, A_BUTTON, B_BUTTON, AUTO;
     }
 
     private final Stenographer steno = StenographerFactory.getStenographer(
