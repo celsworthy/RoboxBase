@@ -35,8 +35,15 @@ public class PrinterContainer
         completePrinterMap = FXCollections.observableHashMap();
         File printerDirHandle = new File(BaseConfiguration.getApplicationPrinterDirectory());
         File[] printerFiles = printerDirHandle.listFiles(new PrinterFileFilter());
-        ArrayList<PrinterDefinitionFile> printers = ingestPrinters(printerFiles);
-        completePrinterList.addAll(printers);
+        if (printerFiles == null)
+        {
+            steno.error("Error loading printer list from \"" + printerDirHandle.getAbsolutePath() + "\"");
+        }
+        else
+        {
+            ArrayList<PrinterDefinitionFile> printers = ingestPrinters(printerFiles);
+            completePrinterList.addAll(printers);
+        }
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 

@@ -76,11 +76,14 @@ import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionAc
 import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightTransitions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightActions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeActions;
@@ -247,6 +250,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * Calibration state managers
      */
     private NozzleHeightStateTransitionManager calibrationHeightManager;
+    private SingleNozzleHeightStateTransitionManager calibrationSingleNozzleHeightManager;
     private NozzleOpeningStateTransitionManager calibrationOpeningManager;
     private XAndYStateTransitionManager calibrationAlignmentManager;
 
@@ -3385,6 +3389,27 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
+    public SingleNozzleHeightStateTransitionManager startCalibrateSingleNozzleHeight(boolean safetyFeaturesRequired) throws PrinterException
+    {
+        if (!canCalibrateNozzleHeight.get())
+        {
+            throw new PrinterException("Calibrate not permitted");
+        }
+
+        StateTransitionManager.StateTransitionActionsFactory actionsFactory = (Cancellable userCancellable,
+                Cancellable errorCancellable)
+                -> new CalibrationSingleNozzleHeightActions(HardwarePrinter.this, userCancellable,
+                        errorCancellable, safetyFeaturesRequired);
+
+        StateTransitionManager.TransitionsFactory transitionsFactory = (StateTransitionActions actions)
+                -> new CalibrationSingleNozzleHeightTransitions((CalibrationSingleNozzleHeightActions) actions);
+
+        calibrationSingleNozzleHeightManager = new SingleNozzleHeightStateTransitionManager(actionsFactory,
+                transitionsFactory);
+        return calibrationSingleNozzleHeightManager;
+    }
+
+    @Override
     public PurgeStateTransitionManager startPurge(boolean requireSafetyFeatures) throws PrinterException
     {
         if (!canPurgeHead.get())
@@ -4531,6 +4556,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public NozzleHeightStateTransitionManager getNozzleHeightCalibrationStateManager()
     {
         return calibrationHeightManager;
+    }
+
+    public SingleNozzleHeightStateTransitionManager getSingleNozzleHeightCalibrationStateManager()
+    {
+        return calibrationSingleNozzleHeightManager;
     }
 
     public NozzleOpeningStateTransitionManager getNozzleOpeningCalibrationStateManager()

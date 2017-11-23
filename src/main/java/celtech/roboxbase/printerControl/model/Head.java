@@ -572,7 +572,7 @@ public class Head implements Cloneable, RepairableComponent
         boolean typeCodeIsValid = false;
 
         if (typeCode != null
-                && typeCode.matches("RBX[0-9]{2}-.*"))
+                && typeCode.matches("[a-zA-Z][0-9a-zA-Z]{4}-[0-9a-zA-Z]{2}"))
         {
             typeCodeIsValid = true;
         }

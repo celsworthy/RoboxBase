@@ -19,6 +19,7 @@ import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
@@ -117,6 +118,8 @@ public interface Printer extends RoboxResponseConsumer
     public XAndYStateTransitionManager startCalibrateXAndY(boolean safetyFeaturesRequired) throws PrinterException;
 
     public NozzleHeightStateTransitionManager startCalibrateNozzleHeight(boolean safetyFeaturesRequired) throws PrinterException;
+
+    public SingleNozzleHeightStateTransitionManager startCalibrateSingleNozzleHeight(boolean safetyFeaturesRequired) throws PrinterException;
 
     public NozzleOpeningStateTransitionManager startCalibrateNozzleOpening(boolean safetyFeaturesRequired) throws PrinterException;
 

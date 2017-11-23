@@ -105,7 +105,7 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testIsTypeCodeValidFail()
     {
-        String typeCode = "RBXa1-SM";
+        String typeCode = "999a1-SM";
         boolean expResult = false;
         boolean result = Head.isTypeCodeValid(typeCode);
         assertEquals(expResult, result);
