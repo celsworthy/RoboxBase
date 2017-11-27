@@ -20,6 +20,9 @@ public class NozzleData
     private float defaultBOffset;
     private float minBOffset;
     private float maxBOffset;
+    private float defaultExtrusionWidth;
+    private float minExtrusionWidth;
+    private float maxExtrusionWidth;
     private String associatedExtruder;
 
     public float getDiameter()
@@ -155,6 +158,36 @@ public class NozzleData
     public String getAssociatedExtruder()
     {
         return associatedExtruder;
+    }
+
+    public float getDefaultExtrusionWidth()
+    {
+        return defaultExtrusionWidth;
+    }
+
+    public void setDefaultExtrusionWidth(float defaultExtrusionWidth)
+    {
+        this.defaultExtrusionWidth = defaultExtrusionWidth;
+    }
+
+    public float getMinExtrusionWidth()
+    {
+        return minExtrusionWidth;
+    }
+
+    public void setMinExtrusionWidth(float minExtrusionWidth)
+    {
+        this.minExtrusionWidth = minExtrusionWidth;
+    }
+
+    public float getMaxExtrusionWidth()
+    {
+        return maxExtrusionWidth;
+    }
+
+    public void setMaxExtrusionWidth(float maxExtrusionWidth)
+    {
+        this.maxExtrusionWidth = maxExtrusionWidth;
     }
 
     public void setAssociatedExtruder(String associatedExtruder)
