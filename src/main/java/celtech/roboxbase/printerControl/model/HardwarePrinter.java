@@ -349,6 +349,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 {
                     if (head.get().valveTypeProperty().get() == Head.ValveType.FITTED)
                     {
+			canOpenCloseNozzle.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+				.or(pauseStatus.isEqualTo(PauseStatus.PAUSED)));
+
                         canCalibrateNozzleOpening.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                                 .and(extrudersProperty().get(0).filamentLoadedProperty())
                                 .and(Bindings.valueAt(reels, 0).isNotNull())
@@ -390,9 +393,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 .and(printerStatus.isEqualTo(PrinterStatus.IDLE))
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
 
-        canOpenCloseNozzle.bind(head.isNotNull()
-                .and(printerStatus.isEqualTo(PrinterStatus.IDLE)
-                        .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))));
+        canOpenCloseNozzle.set(false);
         canCalibrateNozzleOpening.set(false);
         canCalibrateNozzleHeight.set(false);
         canCalibrateXYAlignment.set(false);
