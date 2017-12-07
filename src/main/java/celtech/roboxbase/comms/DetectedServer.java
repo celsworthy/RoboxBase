@@ -241,7 +241,8 @@ public final class DetectedServer
         {
             try
             {
-                if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+                if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()) &&
+                    !(BaseConfiguration.getApplicationVersion().startsWith("tadev") && version.get().startsWith("tadev"))) // Debug hack to allow mismatching development versions to operate.
                 {
                     setServerStatus(ServerStatus.WRONG_VERSION);
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
