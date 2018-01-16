@@ -72,22 +72,25 @@ public class AsyncWriteThread extends Thread
     {
         RoboxRxPacket response = null;
 
-//        steno.info("Adding command to queue:" + command.getCommand().getPacketType());
+        //steno.info("Adding command to queue:" + command.getCommand().getPacketType());
         int queueNumber = addCommandToQueue(command);
         try
         {
             response = outboundQueues.get(queueNumber).poll(1500, TimeUnit.MILLISECONDS);
-//            steno.info("Received response:" + response.getPacketType());
+            //steno.info("Received response:" + response.getPacketType());
         } catch (InterruptedException ex)
         {
+            //steno.info("Throwing RoboxCommsException('Interrupted waiting for response')");
             throw new RoboxCommsException("Interrupted waiting for response");
         }
 
         if (response == null
                 || response.getPacketType() == RxPacketTypeEnum.NULL_PACKET)
         {
+            //steno.info("Throwing RoboxCommsException('No response to message from command " + command + "')");
             throw new RoboxCommsException("No response to message from command " + command);
         }
+        //steno.info("Returning response " + response.getPacketType() + " for command " + command);
         return response;
     }
 
