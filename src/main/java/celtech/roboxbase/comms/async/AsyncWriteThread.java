@@ -62,6 +62,7 @@ public class AsyncWriteThread extends Thread
 
         if (queueNumber < 0)
         {
+            steno.info("Message queue full; can not add command:" + command.getCommand().getPacketType());
             throw new RoboxCommsException("Message queue full");
         }
 
@@ -87,7 +88,7 @@ public class AsyncWriteThread extends Thread
         if (response == null
                 || response.getPacketType() == RxPacketTypeEnum.NULL_PACKET)
         {
-            //steno.info("Throwing RoboxCommsException('No response to message from command " + command + "')");
+            steno.info("Throwing RoboxCommsException('No response to message from command " + command + "')");
             throw new RoboxCommsException("No response to message from command " + command);
         }
         //steno.info("Returning response " + response.getPacketType() + " for command " + command);

@@ -69,6 +69,7 @@ public class MultipartUtility
         httpConn.setRequestProperty("Content-Type",
                 "multipart/form-data; boundary=" + boundary);
         httpConn.setConnectTimeout(3000);
+        httpConn.setReadTimeout(3000);
         outputStream = httpConn.getOutputStream();
         writer = new PrintWriter(new OutputStreamWriter(outputStream, charset),
                 true);

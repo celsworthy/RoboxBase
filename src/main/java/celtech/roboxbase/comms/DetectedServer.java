@@ -64,6 +64,10 @@ public final class DetectedServer
     public static final String defaultUser = "root";
 
     @JsonIgnore
+    public static final int readTimeOut = 5000;
+    public static final int connectTimeOut = 5000;
+
+    @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
@@ -304,7 +308,9 @@ public final class DetectedServer
             //add request header
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
 
-            con.setConnectTimeout(5000);
+            con.setConnectTimeout(connectTimeOut);
+            con.setReadTimeout(readTimeOut);
+
             int responseCode = con.getResponseCode();
 
             if (responseCode == 200)
@@ -360,7 +366,9 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(5000);
+            con.setConnectTimeout(connectTimeOut);
+            con.setReadTimeout(readTimeOut);
+            
             int responseCode = con.getResponseCode();
 
             if (responseCode == 200)
@@ -405,8 +413,9 @@ public final class DetectedServer
         //add request header
         con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
         con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-        con.setConnectTimeout(2000);
-        con.setReadTimeout(2000);
+
+        con.setConnectTimeout(connectTimeOut);
+        con.setReadTimeout(readTimeOut);
 
         if (content != null)
         {
@@ -446,6 +455,9 @@ public final class DetectedServer
         con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
         con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
+        con.setReadTimeout(readTimeOut);
+        con.setConnectTimeout(connectTimeOut);
+
         if (content != null)
         {
             con.setDoOutput(true);
@@ -454,15 +466,12 @@ public final class DetectedServer
             con.getOutputStream().write(content.getBytes());
         }
 
-        con.setConnectTimeout(2000);
 
         return con.getResponseCode();
     }
 
     public int getData(String urlString) throws IOException
     {
-        Object returnvalue = null;
-
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
@@ -472,7 +481,8 @@ public final class DetectedServer
         con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
         con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-        con.setConnectTimeout(2000);
+        con.setConnectTimeout(connectTimeOut);
+        con.setReadTimeout(readTimeOut);
 
         return con.getResponseCode();
     }

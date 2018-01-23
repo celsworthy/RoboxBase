@@ -52,6 +52,8 @@ public class CameraTriggerManager
 
                     //add request header
                     con.setConnectTimeout(500);
+                    con.setReadTimeout(500);
+                    
                     int responseCode = con.getResponseCode();
 
                     if (responseCode == 200
