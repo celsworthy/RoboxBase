@@ -30,8 +30,8 @@ public class RemoteServerDetector
     private DatagramChannel datagramChannel = null;
     private static final ObjectMapper mapper = new ObjectMapper();
     private MembershipKey multicastKey;
-    private static final int MAX_WAIT_TIME_MS = 2000;
-    private static final int CYCLE_WAIT_TIME_MS = 200;
+    private static final int MAX_WAIT_TIME_MS = 3000;
+    private static final int CYCLE_WAIT_TIME_MS = 500;
 
     private RemoteServerDetector()
     {
@@ -83,14 +83,15 @@ public class RemoteServerDetector
 
                 if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                 {
-                    DetectedServer newServer = new DetectedServer(inboundAddress.getAddress());
+                    //steno.info("searchForServers got response from address " + inboundAddress.getAddress());
+                    DetectedServer newServer = DetectedServer.createDetectedServer(inboundAddress.getAddress());
                     if (newServer.whoAreYou())
                     {
                         newlyDiscoveredServers.add(newServer);
                     }
                 } else
                 {
-                    steno.warning("Didn't understand the response from a remote server. I saw: " + receivedData);
+                    steno.warning("Didn't understand the response from remote server with address " + inboundAddress.getAddress() + ". I saw: " + receivedData);
                 }
             } else
             {

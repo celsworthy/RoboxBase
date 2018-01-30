@@ -115,7 +115,7 @@ public class RemoteClient implements LowLevelInterface
             statistics = (PrintJobStatistics) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + retrieveStatisticsUrlString, null, PrintJobStatistics.class);
         } catch (IOException ex)
         {
-            throw new RoboxCommsException("Failed to retrieve statistics from remote printer" + remotePrinterHandle);
+            throw new RoboxCommsException("Failed to retrieve statistics from remote printer" + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
         }
 
         return statistics;
@@ -131,8 +131,8 @@ public class RemoteClient implements LowLevelInterface
             remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + overrideFilamentUrlString, jsonified, null);
         } catch (IOException ex)
         {
-            steno.error("Failed to override filament on remote printer " + remotePrinterHandle);
-            throw new RoboxCommsException("Failed to override filament on remote printer" + remotePrinterHandle);
+            steno.error("Failed to override filament on remote printer " + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
+            throw new RoboxCommsException("Failed to override filament on remote printer" + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
         }
     }
 }

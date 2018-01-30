@@ -52,6 +52,9 @@ public final class DetectedServer
     private List<DetectedDevice> detectedDevices = new ArrayList();
 
     @JsonIgnore
+    private int pollCount = 0;
+
+    @JsonIgnore
     private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
 
     @JsonIgnore
@@ -64,8 +67,11 @@ public final class DetectedServer
     public static final String defaultUser = "root";
 
     @JsonIgnore
-    public static final int readTimeOut = 5000;
-    public static final int connectTimeOut = 5000;
+    public static final int readTimeOut = 3000;
+    @JsonIgnore
+    public static final int connectTimeOut = 3000;
+    @JsonIgnore
+    public static final int maxAllowedPollCount = 5;
 
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
@@ -76,6 +82,11 @@ public final class DetectedServer
     @JsonIgnore
     private static final String DELETE_FILAMENT_COMMAND = "/api/admin/deleteFilament";
 
+    @JsonIgnore
+    // A server for any given address is created once, on the first create request, and placed on the
+    // known server list. Subsequent create requests the server from the known server list.
+    private static final List<DetectedServer> knownServerList = new ArrayList<>();
+    
     public enum ServerStatus
     {
 
@@ -90,13 +101,51 @@ public final class DetectedServer
         }
     }
 
-    public DetectedServer()
+    private DetectedServer()
     {
     }
 
-    public DetectedServer(InetAddress address)
+    private DetectedServer(InetAddress address)
     {
         this.address = address;
+    }
+    
+    public static synchronized DetectedServer createDetectedServer(InetAddress address)
+    {
+        // This is the only public way to create a DetectedServer. It is synchronized so that
+        // it can be called by multiple threads.
+        return knownServerList.stream()
+                              .filter(s -> s.getAddress() == address)
+                              .findAny()
+                              .orElseGet(() -> {
+                                                   DetectedServer ds = new DetectedServer(address);
+                                                   knownServerList.add(ds);
+                                                   return ds;
+                                               });
+    }
+
+    public int getPollCount()
+    {
+        return pollCount;
+    }
+
+    public boolean maxPollCountExceeded()
+    {
+        if (pollCount > maxAllowedPollCount)
+        {
+            steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
+            return true;
+        }
+        else
+            return false;
+        //return (pollCount > maxAllowedPollCount);
+    }
+
+    public boolean incrementPollCount()
+    {
+        ++pollCount;
+        steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
+        return maxPollCountExceeded();
     }
 
     public InetAddress getAddress()
@@ -168,12 +217,14 @@ public final class DetectedServer
 
     public ServerStatus getServerStatus()
     {
+        //steno.info("ServerStatus of " + getName() + " == " + this.serverStatus.get().name());
         return serverStatus.get();
     }
 
     public void setServerStatus(ServerStatus status)
     {
-//        steno.info("Updating status of server " + getName() + " to " + status.name());
+        //steno.info("Updating status of server " + getName() + " to " + status.name());
+      
         if (status != serverStatus.get())
         {
             switch (status)
@@ -194,6 +245,7 @@ public final class DetectedServer
 
     public ObjectProperty<ServerStatus> serverStatusProperty()
     {
+        //steno.info("ServerStatus of " + getName() + " == " + this.serverStatus.get().name());
         return serverStatus;
     }
 
@@ -240,6 +292,8 @@ public final class DetectedServer
     {
         boolean success = false;
 
+        steno.info("Connecting " + name.get());
+
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
         {
@@ -281,6 +335,7 @@ public final class DetectedServer
 
     public void disconnect()
     {
+        steno.info("Disconnecting " + name.get());
         setServerStatus(ServerStatus.NOT_CONNECTED);
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         
@@ -297,6 +352,7 @@ public final class DetectedServer
 
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
 
+        long t1 = System.currentTimeMillis();
         try
         {
             URL obj = new URL(url);
@@ -326,6 +382,7 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
+                    pollCount = 0; // Successfull contact, so zero the poll count;
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
@@ -339,12 +396,17 @@ public final class DetectedServer
                 disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
             }
-        } catch (IOException ex)
+        } catch (java.net.SocketTimeoutException stex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            //disconnect();
+        }
+        catch (IOException ex)
         {
             steno.error("Error whilst asking who are you @ " + address.getHostAddress());
             disconnect();
         }
-
         return gotAResponse;
     }
 
@@ -354,6 +416,7 @@ public final class DetectedServer
         
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_PRINTERS_COMMAND;
 
+        long t1 = System.currentTimeMillis();
         try
         {
             URL obj = new URL(url);
@@ -383,12 +446,20 @@ public final class DetectedServer
                     RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
                     detectedDevices.add(detectedPrinter);
                 });
+                pollCount = 0; // Successful contact, so zero the poll count;
             } else
             {
                 disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
             }
-        } catch (IOException ex)
+        } catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst polling for remote printers @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            // But don't disconnect.
+            //disconnect();
+        }
+        catch (IOException ex)
         {
             disconnect();
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);
@@ -405,86 +476,123 @@ public final class DetectedServer
     {
         Object returnvalue = null;
 
+        long t1 = System.currentTimeMillis();
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        con.setRequestMethod("POST");
-
-        //add request header
-        con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-        con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-        con.setConnectTimeout(connectTimeOut);
-        con.setReadTimeout(readTimeOut);
-
-        if (content != null)
+        try
         {
-            con.setDoOutput(true);
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Content-Length", "" + content.length());
-            con.getOutputStream().write(content.getBytes());
-        }
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-        int responseCode = con.getResponseCode();
-        if (responseCode >= 200
-                && responseCode < 300)
-        {
-            if (expectedResponseClass != null)
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setConnectTimeout(connectTimeOut);
+            con.setReadTimeout(readTimeOut);
+
+            if (content != null)
             {
-                returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
+                con.setDoOutput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Content-Length", "" + content.length());
+                con.getOutputStream().write(content.getBytes());
             }
-        } else
-        {
-            //Raise an error but don't disconnect...
-            steno.error("Got " + responseCode + " when trying " + urlString);
-        }
 
+            int responseCode = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
+
+            if (responseCode >= 200
+                    && responseCode < 300)
+            {
+                if (expectedResponseClass != null)
+                {
+                    returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
+                }
+            } else
+            {
+                //Raise an error but don't disconnect...
+                steno.error("Got " + responseCode + " when trying " + urlString);
+            }
+        }
+        catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout in postRoboxPacket @" + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
+            throw ex;
+        }
+ 
         return returnvalue;
     }
 
     public int postData(String urlString, String content) throws IOException
     {
-        Object returnvalue = null;
-
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        con.setRequestMethod("POST");
-
-        //add request header
-        con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-        con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-        con.setReadTimeout(readTimeOut);
-        con.setConnectTimeout(connectTimeOut);
-
-        if (content != null)
+        int rc = -1;
+        long t1 = System.currentTimeMillis();
+        try
         {
-            con.setDoOutput(true);
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Content-Length", "" + content.length());
-            con.getOutputStream().write(content.getBytes());
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setReadTimeout(readTimeOut);
+            con.setConnectTimeout(connectTimeOut);
+
+            if (content != null)
+            {
+                con.setDoOutput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Content-Length", "" + content.length());
+                con.getOutputStream().write(content.getBytes());
+            }
+
+            rc = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
         }
-
-
-        return con.getResponseCode();
+        catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout in postData @ " + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
+            throw ex;
+        }
+        
+        return rc;
     }
 
     public int getData(String urlString) throws IOException
     {
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        int rc = -1;
+        long t1 = System.currentTimeMillis();
+        try
+        {
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-        con.setRequestMethod("GET");
+            con.setRequestMethod("GET");
 
-        //add request header
-        con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-        con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-        con.setConnectTimeout(connectTimeOut);
-        con.setReadTimeout(readTimeOut);
+            con.setConnectTimeout(connectTimeOut);
+            con.setReadTimeout(readTimeOut);
 
-        return con.getResponseCode();
+            rc = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
+        }
+        catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout in getData @ " + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
+            throw ex;
+        }
+
+        return rc;
     }
 
     @Override
@@ -525,9 +633,13 @@ public final class DetectedServer
 
             File rootSoftwareFile = new File(path + filename);
 
-            multipart.addFilePart("name", rootSoftwareFile, progressReceiver);
+            // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
+            // being removed.
+            multipart.addFilePart("name", rootSoftwareFile, (double pp) -> { pollCount = 0; progressReceiver.updateProgressPercent(pp); });
 
             List<String> response = multipart.finish();
+            pollCount = 0; // Successful contact, so zero the poll count;
+            
             success = true;
         } catch (IOException ex)
         {

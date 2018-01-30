@@ -325,7 +325,6 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
         if (activePrinters.containsKey(printerHandle))
         {
-            String printerName = null;
             if (activePrinters.get(printerHandle) != null
                     && activePrinters.get(printerHandle).getPrinterIdentity() != null
                     && activePrinters.get(printerHandle).getPrinterIdentity().printerFriendlyNameProperty().get() != null

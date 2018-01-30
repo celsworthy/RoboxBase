@@ -81,7 +81,7 @@ public class AsyncWriteThread extends Thread
             //steno.info("Received response:" + response.getPacketType());
         } catch (InterruptedException ex)
         {
-            //steno.info("Throwing RoboxCommsException('Interrupted waiting for response')");
+            steno.info("Throwing RoboxCommsException('Interrupted waiting for response')");
             throw new RoboxCommsException("Interrupted waiting for response");
         }
 
