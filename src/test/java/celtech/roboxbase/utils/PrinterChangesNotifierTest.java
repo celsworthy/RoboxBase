@@ -15,7 +15,7 @@ import org.junit.Test;
  *
  * @author tony
  */
-public class PrinterChangesNotifierTest
+public class PrinterChangesNotifierTest extends BaseEnvironmentConfiguredTest
 {
 
     @Test

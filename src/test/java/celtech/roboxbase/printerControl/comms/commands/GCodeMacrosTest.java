@@ -25,6 +25,17 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
     }
 
     @Test
+    public void testGetFilenameCheckBase() throws Exception {
+        PrinterType typeCode = PrinterType.ROBOX;
+        String headTypeCode = "RBX01-SM";
+        GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_0;
+        String fileName = GCodeMacros.getFilename("Home_all", Optional.of(typeCode),
+                headTypeCode, nozzleUse,
+                GCodeMacros.SafetyIndicator.SAFETIES_ON);
+        assertTrue(fileName.endsWith("Common/Macros/Home_all.gcode"));
+    }
+
+    @Test
     public void testGetFilenameForHeadSpecialisation() throws Exception {
         PrinterType typeCode = PrinterType.ROBOX;
         String headTypeCode = "RBX01-DM";
@@ -89,6 +100,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         // Specification: DC, DC, DC
         String filename1 = "before_print.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                "before_print",
                 null,
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -98,6 +110,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         // Specification: DC, DC, DC
         String filename2 = "before_print#RBX01-DM.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                "before_print",
                 null,
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -107,6 +120,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         // Specification: DC, DC, DC
         String filename3 = "before_print#RBX01-DM#N0.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                "before_print",
                 null,
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -116,6 +130,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         // Specification: DM, DC, DC
         String filename4 = "before_print#RBX01-DM#N0.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                "before_print",
                 "RBX01-DM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -123,6 +138,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename5 = "before_print#RBX01-DM#N0.gcode";
         int score5 = GCodeMacros.scoreMacroFilename(filename5,
+                "before_print",
                 "RBX01-DM",
                 GCodeMacros.NozzleUseIndicator.NOZZLE_0,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -130,6 +146,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename6 = "before_print#RBX01-DM#N0.gcode";
         int score6 = GCodeMacros.scoreMacroFilename(filename6,
+                "before_print",
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -137,6 +154,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename7 = "before_print.gcode";
         int score7 = GCodeMacros.scoreMacroFilename(filename7,
+                "before_print",
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -144,6 +162,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename8 = "before_print#RBX01-SM.gcode";
         int score8 = GCodeMacros.scoreMacroFilename(filename8,
+                "before_print",
                 "RBX01-SM",
                 GCodeMacros.NozzleUseIndicator.DONT_CARE,
                 GCodeMacros.SafetyIndicator.DONT_CARE);
@@ -159,6 +178,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename1 = "eject_stuck_material#N0.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                "eject_stuck_material",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -166,6 +186,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename2 = "eject_stuck_material#N1.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                "eject_stuck_material",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -173,6 +194,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename3 = "eject_stuck_material#RBX01-DM#N0.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                "eject_stuck_material",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -180,6 +202,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename4 = "eject_stuck_material#RBX01-DM#N1.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                "eject_stuck_material",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -195,6 +218,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename1 = "before_print.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -202,6 +226,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename2 = "before_print#RBX01-DL.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -209,6 +234,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename3 = "before_print#RBX01-DM#N0.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -216,6 +242,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename4 = "before_print#RBX01-DM#NB.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -231,6 +258,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename1 = "before_print.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -238,6 +266,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename2 = "before_print#U.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -245,6 +274,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename3 = "before_print#S.gcode";
         int score3 = GCodeMacros.scoreMacroFilename(filename3,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -253,6 +283,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         safetyToScoreAgainst = GCodeMacros.SafetyIndicator.SAFETIES_OFF;
         String filename4 = "before_print#U.gcode";
         int score4 = GCodeMacros.scoreMacroFilename(filename4,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -260,6 +291,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename5 = "before_print#RBX01-SL.gcode";
         int score5 = GCodeMacros.scoreMacroFilename(filename5,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -276,6 +308,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename1 = "before_print.gcode";
         int score1 = GCodeMacros.scoreMacroFilename(filename1,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);
@@ -283,6 +316,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
         String filename2 = "before_print#XXXXX-XX.gcode";
         int score2 = GCodeMacros.scoreMacroFilename(filename2,
+                "before_print",
                 headTypeToScoreAgainst,
                 nozzleToScoreAgainst,
                 safetyToScoreAgainst);

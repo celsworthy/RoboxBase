@@ -3,6 +3,7 @@
  */
 package celtech.roboxbase;
 
+import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
 import static celtech.roboxbase.utils.ColourStringConverter.colourToString;
 import static celtech.roboxbase.utils.ColourStringConverter.stringToColor;
 import javafx.scene.paint.Color;
@@ -13,7 +14,7 @@ import static org.junit.Assert.*;
  *
  * @author tony
  */
-public class ColourStringConverterTest
+public class ColourStringConverterTest extends BaseEnvironmentConfiguredTest
 {
 
     @Test

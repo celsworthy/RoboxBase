@@ -25,7 +25,13 @@ import org.junit.rules.TemporaryFolder;
  */
 public class BaseEnvironmentConfiguredTest
 {
-
+    static
+    {
+        // Set the libertySystems config file property to inidicate it is a test request.
+        // The property is set in this static initializer because the configuration is loaded before the test is run.
+        System.setProperty("libertySystems.configFile", "$test$");
+    }
+    
     @Rule
     public TemporaryFolder temporaryUserStorageFolder = new TemporaryFolder();
     public String userStorageFolderPath;

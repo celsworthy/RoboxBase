@@ -366,7 +366,7 @@ public class GCodeMacros
         {
             for (int filenameCounter = 0; filenameCounter < matchingMacroFilenames.length; filenameCounter++)
             {
-                int score = scoreMacroFilename(matchingMacroFilenames[filenameCounter], headTypeCode, nozzleUse, safeties);
+                int score = scoreMacroFilename(matchingMacroFilenames[filenameCounter], macroName, headTypeCode, nozzleUse, safeties);
                 steno.debug("Assessed macro file " + matchingMacroFilenames[filenameCounter] + " as score " + score);
                 if (score > highestScore)
                 {
@@ -378,7 +378,7 @@ public class GCodeMacros
             String path = macroDirectory.getAbsolutePath() + File.separator
                     + matchingMacroFilenames[indexOfHighestScoringFilename];
             path = path.replace('\\', '/');
-            steno.info("found macro " + path);
+            steno.debug("found macro " + path);
             return path;
         } else
         {
@@ -412,6 +412,7 @@ public class GCodeMacros
     }
 
     protected static int scoreMacroFilename(String filename,
+            String macroName,
             String headTypeCode,
             NozzleUseIndicator nozzleUse,
             SafetyIndicator safeties)
@@ -434,12 +435,20 @@ public class GCodeMacros
                 && ("." + filenameSplit[1]).equalsIgnoreCase(BaseConfiguration.macroFileExtension))
         {
             String[] nameParts = filenameSplit[0].split(separator);
-
+            
             int namePartCounter = 0;
 
             for (String namePart : nameParts)
             {
-                if (namePartCounter > 0)
+                if (namePartCounter == 0)
+                {
+                    if (!namePart.equalsIgnoreCase(macroName))
+                    {
+                        // Reject on the basis that the base part of the file name does not match macro name.
+                        return -9999;
+                    }
+                }
+                else // (namePartCounter > 0)
                 {
                     if (NozzleUseIndicator.getEnumForFilenameCode(namePart) != null)
                     {
