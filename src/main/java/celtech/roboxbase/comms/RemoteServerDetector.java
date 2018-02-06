@@ -41,11 +41,18 @@ public class RemoteServerDetector
             datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
 
             NetworkInterface interf = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            if (interf == null)
+                interf = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
+            if (interf == null)
+            {
+                steno.error("Unable to set up remote discovery client - no local host or loopback interface.");
+                return;
+            }
             datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
             datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, interf);
             datagramChannel.configureBlocking(false);
-        } catch (IOException ex)
+    } catch (IOException ex)
         {
             steno.error("Unable to set up remote discovery client");
         }

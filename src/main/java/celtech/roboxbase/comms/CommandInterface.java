@@ -108,6 +108,10 @@ public abstract class CommandInterface extends Thread
             {
                 steno.error("Firmware version was an array... can't interpret firmware version");
             }
+            catch (java.lang.NumberFormatException ex)
+            {
+                steno.error("Connot interpret firmware version as a number.");
+            }
         } catch (ConfigNotLoadedException ex)
         {
             steno.error("Couldn't load configuration - will not be able to check firmware version");
@@ -202,7 +206,7 @@ public abstract class CommandInterface extends Thread
                     {
                         firmwareResponse = printerToUse.readFirmwareVersion();
 
-                        if (firmwareResponse.getFirmwareRevisionFloat() != requiredFirmwareVersion)
+                        if (requiredFirmwareVersion > 0 && firmwareResponse.getFirmwareRevisionFloat() != requiredFirmwareVersion)
                         {
                             // The firmware version is different to that associated with AutoMaker
                             steno.warning("Firmware version is "
@@ -324,6 +328,8 @@ public abstract class CommandInterface extends Thread
 
                         determinePrinterStatus(statusResponse);
 
+                        steno.debug("Printer connected");
+                        
                         controlInterface.printerConnected(printerHandle);
 
                         //Stash the connected printer info
@@ -360,7 +366,7 @@ public abstract class CommandInterface extends Thread
                             try
                             {
                                 writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST));
-
+                                
                                 writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.REPORT_ERRORS));
 
                                 // If we're talking to a remote printer we need to keep checking data that may have changed without us knowing

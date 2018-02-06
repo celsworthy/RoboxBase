@@ -133,7 +133,7 @@ public final class DetectedServer
     {
         if (pollCount > maxAllowedPollCount)
         {
-            steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
+            //steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
             return true;
         }
         else
@@ -144,7 +144,7 @@ public final class DetectedServer
     public boolean incrementPollCount()
     {
         ++pollCount;
-        steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
+        //steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
         return maxPollCountExceeded();
     }
 
