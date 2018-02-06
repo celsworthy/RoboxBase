@@ -5,13 +5,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.MembershipKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -29,7 +30,6 @@ public class RemoteServerDetector
     private InetSocketAddress transmitGroup = null;
     private DatagramChannel datagramChannel = null;
     private static final ObjectMapper mapper = new ObjectMapper();
-    private MembershipKey multicastKey;
     private static final int MAX_WAIT_TIME_MS = 3000;
     private static final int CYCLE_WAIT_TIME_MS = 500;
 
@@ -37,22 +37,47 @@ public class RemoteServerDetector
     {
         try
         {
-            transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
-            datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
-
-            NetworkInterface interf = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
-            if (interf == null)
-                interf = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
-            if (interf == null)
+            NetworkInterface localInterface = null;
+            try 
+            {
+                Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+                while (localInterface == null && networkInterfaces.hasMoreElements()) 
+                {
+                    NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();
+                    Enumeration<InetAddress> nias = ni.getInetAddresses();
+                    while(nias.hasMoreElements())
+                    {
+                        InetAddress ia= (InetAddress) nias.nextElement();
+                        if (!ia.isLinkLocalAddress() &&
+                            !ia.isLoopbackAddress())
+                        {
+                            localInterface = ni;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (SocketException e)
+            {
+                steno.error("Unable to get current IP " + e.getMessage());
+            }
+    
+            if (localInterface == null)
+                localInterface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
+            if (localInterface == null)
             {
                 steno.error("Unable to set up remote discovery client - no local host or loopback interface.");
                 return;
             }
+
+            transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
+            datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
             datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
-            datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, interf);
+            datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, localInterface);
             datagramChannel.configureBlocking(false);
-    } catch (IOException ex)
+        }
+        catch (IOException ex)
         {
             steno.error("Unable to set up remote discovery client");
         }
