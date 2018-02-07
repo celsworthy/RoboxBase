@@ -38,6 +38,14 @@ public class RemoteServerDetector
         try
         {
             NetworkInterface localInterface = null;
+            // Look for a local interface with external access. The code used to do the following:
+            // 
+            //     NetworkInterface localInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            //
+            // but this failed on some Linux distributions, because InetAddress.getLocalHost() would return 127.0.1.1.
+            // This address did not map to a network interface, so localInterface was null.
+            //
+            // This code, copied from StackOverflow, finds the first interface that is not a loopback or link local address.
             try 
             {
                 Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();

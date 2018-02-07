@@ -66,7 +66,7 @@ public class InterAppCommsThread extends Thread
         try
         {
             //Bind to localhost adapter with a zero connection queue 
-            initialServerSocket = new ServerSocket(InterAppConfiguration.PORT, 0, InetAddress.getLocalHost());
+            initialServerSocket = new ServerSocket(InterAppConfiguration.PORT, 0, InetAddress.getLoopbackAddress());
 
             status = InterAppStartupStatus.STARTED_OK;
             this.start();
@@ -79,7 +79,7 @@ public class InterAppCommsThread extends Thread
 
             try
             {
-                Socket clientSocket = new Socket(InetAddress.getLocalHost(), InterAppConfiguration.PORT);
+                Socket clientSocket = new Socket(InetAddress.getLoopbackAddress(), InterAppConfiguration.PORT);
                 OutputStreamWriter out = new OutputStreamWriter(clientSocket.getOutputStream(), InterAppConfiguration.charSetToUse);
 
                 String dataToOutput = mapper.writeValueAsString(interAppCommsRequest);
