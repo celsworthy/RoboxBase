@@ -27,11 +27,14 @@ public class BaseEnvironmentConfiguredTest
 {
     static
     {
-        // Set the libertySystems config file property to inidicate it is a test request.
+        // Set the libertySystems config file property..
         // The property is set in this static initializer because the configuration is loaded before the test is run.
-        System.setProperty("libertySystems.configFile", "$test$");
+        URL applicationURL = BaseEnvironmentConfiguredTest.class.getResource("/");
+        String configDir = applicationURL.getPath();
+        String configFile = configDir + "Base.configFile.xml";
+        System.setProperty("libertySystems.configFile", configFile);
     }
-    
+     
     @Rule
     public TemporaryFolder temporaryUserStorageFolder = new TemporaryFolder();
     public String userStorageFolderPath;

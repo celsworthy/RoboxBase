@@ -24,6 +24,7 @@ import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.comms.rx.ReelEEPROMDataResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
+import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.ACK_WITH_ERRORS;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.FIRMWARE_RESPONSE;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.HEAD_EEPROM_DATA;
@@ -4323,6 +4324,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 case HOURS_COUNTER:
                     HoursCounterResponse hoursResponse = (HoursCounterResponse) rxPacket;
                     printerAncillarySystems.hoursCounter.set(hoursResponse.getHoursCounter());
+                    break;
+
+                case SEND_FILE:
                     break;
 
                 default:
