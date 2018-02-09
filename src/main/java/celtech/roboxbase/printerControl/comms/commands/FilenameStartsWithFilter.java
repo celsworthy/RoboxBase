@@ -14,12 +14,12 @@ public class FilenameStartsWithFilter implements FilenameFilter
 
     public FilenameStartsWithFilter(String baseFilename)
     {
-        this.baseFilename = baseFilename;
+        this.baseFilename = baseFilename.toUpperCase();
     }
 
     @Override
     public boolean accept(File dir, String name)
     {
-        return (name.toUpperCase().startsWith(baseFilename.toUpperCase()));
+        return (name.toUpperCase().startsWith(baseFilename));
     }
 }

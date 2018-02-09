@@ -31,6 +31,7 @@ public class GCodeMacros
     private static final Stenographer steno = StenographerFactory.getStenographer(GCodeMacros.class.
             getName());
     private static final String macroDefinitionString = "Macro:";
+    private static final String macroSeparator = "#";
 
     public interface FilenameEncoder {
 
@@ -343,7 +344,8 @@ public class GCodeMacros
         //Try with all attributes first
         //
         FilenameFilter filterForMacrosWithCorrectBase = new FilenameStartsWithFilter(macroName);
-
+        String baseMacroName = macroName.split(macroSeparator)[0];
+            
         File macroDirectory = new File(BaseConfiguration.getCommonApplicationDirectory()
                 + BaseConfiguration.macroFileSubpath);
 
@@ -366,7 +368,7 @@ public class GCodeMacros
         {
             for (int filenameCounter = 0; filenameCounter < matchingMacroFilenames.length; filenameCounter++)
             {
-                int score = scoreMacroFilename(matchingMacroFilenames[filenameCounter], macroName, headTypeCode, nozzleUse, safeties);
+                int score = scoreMacroFilename(matchingMacroFilenames[filenameCounter], baseMacroName, headTypeCode, nozzleUse, safeties);
                 steno.debug("Assessed macro file " + matchingMacroFilenames[filenameCounter] + " as score " + score);
                 if (score > highestScore)
                 {
@@ -375,6 +377,13 @@ public class GCodeMacros
                 }
             }
 
+            if (indexOfHighestScoringFilename < 0 || indexOfHighestScoringFilename >= matchingMacroFilenames.length)
+            {
+                steno.error("Couldn't find macro " + macroName + " with head " + headTypeCode + " nozzle " + nozzleUse.name() + " safety " + safeties.name());
+                steno.error("indexOfHighestScoringFilename = " + Integer.toString(indexOfHighestScoringFilename));
+                steno.error("matchingMacroFilenames.length = " + Integer.toString(matchingMacroFilenames.length));
+                throw new FileNotFoundException("Couldn't find macro " + macroName + " with head " + headTypeCode + " nozzle " + nozzleUse.name() + " safety " + safeties.name());
+            }
             String path = macroDirectory.getAbsolutePath() + File.separator
                     + matchingMacroFilenames[indexOfHighestScoringFilename];
             path = path.replace('\\', '/');
@@ -412,13 +421,12 @@ public class GCodeMacros
     }
 
     protected static int scoreMacroFilename(String filename,
-            String macroName,
+            String baseMacroName,
             String headTypeCode,
             NozzleUseIndicator nozzleUse,
             SafetyIndicator safeties)
     {
         int score = 0;
-        final String separator = "#";
 
         String[] filenameSplit = filename.split("\\.");
 
@@ -434,7 +442,7 @@ public class GCodeMacros
         if (filenameSplit.length == 2
                 && ("." + filenameSplit[1]).equalsIgnoreCase(BaseConfiguration.macroFileExtension))
         {
-            String[] nameParts = filenameSplit[0].split(separator);
+            String[] nameParts = filenameSplit[0].split(macroSeparator);
             
             int namePartCounter = 0;
 
@@ -442,9 +450,9 @@ public class GCodeMacros
             {
                 if (namePartCounter == 0)
                 {
-                    if (!namePart.equalsIgnoreCase(macroName))
+                    if (!namePart.equalsIgnoreCase(baseMacroName))
                     {
-                        // Reject on the basis that the base part of the file name does not match macro name.
+                        // Reject on the basis that the base part of the file name does not match the base macro name.
                         return -9999;
                     }
                 }
