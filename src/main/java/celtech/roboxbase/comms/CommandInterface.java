@@ -378,8 +378,9 @@ public abstract class CommandInterface extends Thread
                             {
                                 if (isConnected)
                                 {
-                                    steno.debug("Failure during printer status request: " + ex);
-                                    shutdown();
+                                    steno.warning("Failure during printer status request: " + ex);
+                                    // Don't force a disconnect as this seems to fail fairly often with a timeout for some reason.
+                                    //shutdown();
                                 }
                             }
                         }

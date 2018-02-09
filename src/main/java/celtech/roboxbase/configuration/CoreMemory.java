@@ -93,7 +93,7 @@ public class CoreMemory
             writeRoboxRootData();
         } else
         {
-            steno.warning("Root " + server.getName() + " is already active");
+            //steno.warning("Root " + server.getName() + " is already active");
         }
     }
 

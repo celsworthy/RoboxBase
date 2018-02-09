@@ -67,11 +67,13 @@ public final class DetectedServer
     public static final String defaultUser = "root";
 
     @JsonIgnore
-    public static final int readTimeOut = 3000;
+    public static final int readTimeOut = 1000;
     @JsonIgnore
-    public static final int connectTimeOut = 3000;
+    public static final int connectTimeOut = 1000;
     @JsonIgnore
     public static final int maxAllowedPollCount = 5;
+    @JsonIgnore
+    public static final int maxAllowedRetryCount = 5;
 
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
@@ -84,7 +86,7 @@ public final class DetectedServer
 
     @JsonIgnore
     // A server for any given address is created once, on the first create request, and placed on the
-    // known server list. Subsequent create requests the server from the known server list.
+    // known server list. Subsequent create requests get the server from the known server list.
     private static final List<DetectedServer> knownServerList = new ArrayList<>();
     
     public enum ServerStatus
@@ -476,52 +478,55 @@ public final class DetectedServer
     {
         Object returnvalue = null;
 
-        long t1 = System.currentTimeMillis();
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
-        try
+        boolean gotResponse = false;
+        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            con.setRequestMethod("POST");
-
-            //add request header
-            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-            con.setConnectTimeout(connectTimeOut);
-            con.setReadTimeout(readTimeOut);
-
-            if (content != null)
+            try
             {
-                con.setDoOutput(true);
-                con.setRequestProperty("Content-Type", "application/json");
-                con.setRequestProperty("Content-Length", "" + content.length());
-                con.getOutputStream().write(content.getBytes());
-            }
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-            int responseCode = con.getResponseCode();
-            pollCount = 0; // Successful contact, so zero the poll count;
+                con.setRequestMethod("POST");
 
-            if (responseCode >= 200
-                    && responseCode < 300)
-            {
-                if (expectedResponseClass != null)
+                //add request header
+                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+                con.setConnectTimeout(connectTimeOut);
+                con.setReadTimeout(readTimeOut);
+
+                if (content != null)
                 {
-                    returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
+                    con.setDoOutput(true);
+                    con.setRequestProperty("Content-Type", "application/json");
+                    con.setRequestProperty("Content-Length", "" + content.length());
+                    con.getOutputStream().write(content.getBytes());
                 }
-            } else
+
+                int responseCode = con.getResponseCode();
+                pollCount = 0; // Successful contact, so zero the poll count;
+                gotResponse = true;
+                
+                if (responseCode >= 200
+                        && responseCode < 300)
+                {
+                    if (expectedResponseClass != null)
+                    {
+                        returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
+                    }
+                } else
+                {
+                    //Raise an error but don't disconnect...
+                    steno.error("Got " + responseCode + " when trying " + urlString);
+                }
+            }
+            catch (java.net.SocketTimeoutException ex)
             {
-                //Raise an error but don't disconnect...
-                steno.error("Got " + responseCode + " when trying " + urlString);
+                steno.error("Timeout in postRoboxPacket @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
+                if (retryCount >= maxAllowedRetryCount)
+                    throw ex;
             }
         }
-        catch (java.net.SocketTimeoutException ex)
-        {
-            long t2 = System.currentTimeMillis();
-            steno.error("Timeout in postRoboxPacket @" + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
-            throw ex;
-        }
- 
         return returnvalue;
     }
 
@@ -529,38 +534,42 @@ public final class DetectedServer
     {
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         int rc = -1;
-        long t1 = System.currentTimeMillis();
-        try
+
+        boolean gotResponse = false;
+        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            con.setRequestMethod("POST");
-
-            //add request header
-            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-            con.setReadTimeout(readTimeOut);
-            con.setConnectTimeout(connectTimeOut);
-
-            if (content != null)
+            try
             {
-                con.setDoOutput(true);
-                con.setRequestProperty("Content-Type", "application/json");
-                con.setRequestProperty("Content-Length", "" + content.length());
-                con.getOutputStream().write(content.getBytes());
-            }
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-            rc = con.getResponseCode();
-            pollCount = 0; // Successful contact, so zero the poll count;
-        }
-        catch (java.net.SocketTimeoutException ex)
-        {
-            long t2 = System.currentTimeMillis();
-            steno.error("Timeout in postData @ " + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
-            throw ex;
-        }
-        
+                con.setRequestMethod("POST");
+
+                //add request header
+                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+                con.setReadTimeout(readTimeOut);
+                con.setConnectTimeout(connectTimeOut);
+
+                if (content != null)
+                {
+                    con.setDoOutput(true);
+                    con.setRequestProperty("Content-Type", "application/json");
+                    con.setRequestProperty("Content-Length", "" + content.length());
+                    con.getOutputStream().write(content.getBytes());
+                }
+
+                rc = con.getResponseCode();
+                pollCount = 0; // Successful contact, so zero the poll count;
+                gotResponse = true;
+            }
+            catch (java.net.SocketTimeoutException ex)
+            {
+                steno.error("Timeout in postData @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
+                if (retryCount >= maxAllowedRetryCount)
+                    throw ex;
+            }
+        }        
         return rc;
     }
 
@@ -568,30 +577,32 @@ public final class DetectedServer
     {
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         int rc = -1;
-        long t1 = System.currentTimeMillis();
-        try
+        boolean gotResponse = false;
+        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            try
+            {
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-            con.setRequestMethod("GET");
+                con.setRequestMethod("GET");
 
-            //add request header
-            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+                //add request header
+                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOut);
-            con.setReadTimeout(readTimeOut);
+                con.setConnectTimeout(connectTimeOut);
+                con.setReadTimeout(readTimeOut);
 
-            rc = con.getResponseCode();
-            pollCount = 0; // Successful contact, so zero the poll count;
+                rc = con.getResponseCode();
+                pollCount = 0; // Successful contact, so zero the poll count;
+            }
+            catch (java.net.SocketTimeoutException ex)
+            {
+                steno.error("Timeout in getData @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
+                if (retryCount >= maxAllowedRetryCount)
+                    throw ex;
+            }
         }
-        catch (java.net.SocketTimeoutException ex)
-        {
-            long t2 = System.currentTimeMillis();
-            steno.error("Timeout in getData @ " + obj.toString() + " - time taken = " + Long.toString(t2 - t1));
-            throw ex;
-        }
-
         return rc;
     }
 
