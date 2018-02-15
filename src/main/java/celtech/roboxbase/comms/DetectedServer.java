@@ -73,7 +73,7 @@ public final class DetectedServer
     @JsonIgnore
     public static final int maxAllowedPollCount = 5;
     @JsonIgnore
-    public static final int maxAllowedRetryCount = 5;
+    public static final int maxAllowedRetryCount = 1; // Once it has timed out, it seems that it never succeeds.
 
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
@@ -135,7 +135,7 @@ public final class DetectedServer
     {
         if (pollCount > maxAllowedPollCount)
         {
-            //steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
+            steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
             return true;
         }
         else
@@ -146,7 +146,7 @@ public final class DetectedServer
     public boolean incrementPollCount()
     {
         ++pollCount;
-        //steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
+        steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
         return maxPollCountExceeded();
     }
 
@@ -343,6 +343,7 @@ public final class DetectedServer
         
         detectedDevices.forEach((device) ->
         {
+            steno.info("Disconnecting device " + device.toString());
             RoboxCommsManager.getInstance().disconnected(device);
         });
     }
@@ -402,7 +403,7 @@ public final class DetectedServer
         {
             long t2 = System.currentTimeMillis();
             steno.error("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
-            //disconnect();
+            disconnect();
         }
         catch (IOException ex)
         {
@@ -414,8 +415,6 @@ public final class DetectedServer
 
     public List<DetectedDevice> listAttachedPrinters()
     {
-        detectedDevices.clear();
-        
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_PRINTERS_COMMAND;
 
         long t1 = System.currentTimeMillis();
@@ -443,10 +442,25 @@ public final class DetectedServer
                 con.getInputStream().read(inputData, 0, availChars);
                 ListPrintersResponse listPrintersResponse = mapper.readValue(inputData, ListPrintersResponse.class);
 
+                List<DetectedDevice> previousDetectedDevices = detectedDevices;
+                detectedDevices = new ArrayList();
+                // Move any existing devices from the current list to the new list.
                 listPrintersResponse.getPrinterIDs().forEach((printerID) ->
                 {
-                    RemoteDetectedPrinter detectedPrinter = new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID);
-                    detectedDevices.add(detectedPrinter);
+                     detectedDevices.add(previousDetectedDevices.stream()
+                                                                .filter((d) -> d.getConnectionHandle().equals(printerID) && d.getConnectionType() == DeviceDetector.PrinterConnectionType.ROBOX_REMOTE)
+                                                                .findAny()
+                                                                .orElse(new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID)));
+                });
+                
+                // Disconnect any devices that were previously found, but are not in the new list.
+                previousDetectedDevices.forEach((device) -> 
+                {
+                    if (!detectedDevices.contains(device))
+                    {
+                        steno.info("Disconnecting missing device " + device.getConnectionHandle());
+                        RoboxCommsManager.getInstance().disconnected(device);
+                    }
                 });
                 pollCount = 0; // Successful contact, so zero the poll count;
             } else
@@ -480,7 +494,7 @@ public final class DetectedServer
 
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         boolean gotResponse = false;
-        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
             try
             {
@@ -536,7 +550,7 @@ public final class DetectedServer
         int rc = -1;
 
         boolean gotResponse = false;
-        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
             try
             {
@@ -578,7 +592,7 @@ public final class DetectedServer
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         int rc = -1;
         boolean gotResponse = false;
-        for (int retryCount = 0; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
         {
             try
             {

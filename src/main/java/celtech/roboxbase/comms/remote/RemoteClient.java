@@ -80,8 +80,10 @@ public class RemoteClient implements LowLevelInterface
 
         try
         {
+            //steno.info("remoteClient.writeToPrinter(" + printerID + ", " + messageToWrite.getPacketType().name());
             String dataToOutput = mapper.writeValueAsString(messageToWrite);
             returnedPacket = (RoboxRxPacket) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
+            //steno.info("got response " + returnedPacket.getPacketType());
         } catch (JsonProcessingException ex)
         {
             steno.warning("Didn't get correct JSON from request - passing back null for " + messageToWrite.getPacketType().name());

@@ -196,11 +196,13 @@ public class PrinterUtils
             {
                 StatusResponse response = printerToCheck.transmitStatusRequest();
 
-                while (response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
+                while (response != null && response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
                 {
                     Thread.sleep(100);
                     response = printerToCheck.transmitStatusRequest();
                 }
+                if (response == null)
+                    failed = true;
             } catch (RoboxCommsException ex)
             {
                 steno.error("Error requesting status");
@@ -230,8 +232,7 @@ public class PrinterUtils
             Thread.sleep(1000);
 
             StatusResponse response = printerToCheck.transmitStatusRequest();
-
-            while (response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
+            while (response != null && response.getBusyStatus() != BusyStatus.NOT_BUSY && !BaseLookup.isShuttingDown())
             {
                 Thread.sleep(100);
                 response = printerToCheck.transmitStatusRequest();
@@ -242,6 +243,9 @@ public class PrinterUtils
                     break;
                 }
             }
+            if (response == null)
+                failed = true;
+            
         } catch (RoboxCommsException ex)
         {
             steno.error("Error requesting status");

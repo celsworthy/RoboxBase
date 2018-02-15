@@ -66,10 +66,6 @@ public class CalibrationNozzleHeightTransitions extends Transitions<NozzleHeight
                                             StateTransitionManager.GUIName.NEXT,
                                             NozzleHeightCalibrationState.MEASURE_Z_DIFFERENCE));
 
-        transitions.add(new StateTransition(NozzleHeightCalibrationState.HEAD_CLEAN_CHECK,
-                                            StateTransitionManager.GUIName.NEXT_2,
-                                            NozzleHeightCalibrationState.INSERT_PAPER));
-
         // MEASURE_Z_DIFFERENCE
         transitions.add(new StateTransition(NozzleHeightCalibrationState.MEASURE_Z_DIFFERENCE,
                                             StateTransitionManager.GUIName.AUTO,

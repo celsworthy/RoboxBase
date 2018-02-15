@@ -30,8 +30,8 @@ public class RemoteServerDetector
     private InetSocketAddress transmitGroup = null;
     private DatagramChannel datagramChannel = null;
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final int MAX_WAIT_TIME_MS = 3000;
-    private static final int CYCLE_WAIT_TIME_MS = 500;
+    private static final int MAX_WAIT_TIME_MS = 2000;
+    private static final int CYCLE_WAIT_TIME_MS = 200;
 
     private RemoteServerDetector()
     {

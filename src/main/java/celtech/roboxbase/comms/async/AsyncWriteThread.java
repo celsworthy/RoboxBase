@@ -27,7 +27,8 @@ public class AsyncWriteThread extends Thread
     private final List<BlockingQueue<RoboxRxPacket>> outboundQueues;
     private final CommandInterface commandInterface;
     private boolean keepRunning = true;
-
+    private boolean[] queueInUse = new boolean[NUMBER_OF_SIMULTANEOUS_COMMANDS];
+    
     private static CommandHolder poisonedPill = new CommandHolder(-1, null);
 
     public AsyncWriteThread(CommandInterface commandInterface, String ciReference)
@@ -41,6 +42,7 @@ public class AsyncWriteThread extends Thread
         for (int i = 0; i < NUMBER_OF_SIMULTANEOUS_COMMANDS; i++)
         {
             outboundQueues.add(new ArrayBlockingQueue<>(1));
+            queueInUse[i] = false;
         }
     }
 
@@ -51,11 +53,13 @@ public class AsyncWriteThread extends Thread
         // Look for an empty outbound queue
         for (int queueIndex = 0; queueIndex < outboundQueues.size(); queueIndex++)
         {
-            if (outboundQueues.get(queueIndex).remainingCapacity() > 0)
+            if (!queueInUse[queueIndex])
             {
+                outboundQueues.get(queueIndex).clear(); // Clear out any junk in the queue.
                 CommandHolder commandHolder = new CommandHolder(queueIndex, command);
                 inboundQueue.add(commandHolder);
                 queueNumber = queueIndex;
+                queueInUse[queueIndex] = true;
                 break;
             }
         }
@@ -73,16 +77,26 @@ public class AsyncWriteThread extends Thread
     {
         RoboxRxPacket response = null;
 
-        //steno.info("Adding command to queue:" + command.getCommand().getPacketType());
+        //steno.info("**** Adding command to queue:" + command.getCommand().getPacketType());
         int queueNumber = addCommandToQueue(command);
         try
         {
+            //steno.info("**** Awaiting response on queue " + queueNumber);
+            // If the async command processor writes to
+            // the queue after the listener has timed out, it used to cause the queue to
+            // be permanantly lost, because it contained an entry. Now it clears the queue.
+            // However, there is still a risk that if a timed-out queue is used, it could
+            // get the response intended for the previous queue. This is quite a tricky problem.
             response = outboundQueues.get(queueNumber).poll(1500, TimeUnit.MILLISECONDS);
+            //steno.info("Received response on queue " + queueNumber);
             //steno.info("Received response:" + response.getPacketType());
         } catch (InterruptedException ex)
         {
-            steno.info("Throwing RoboxCommsException('Interrupted waiting for response')");
+            steno.info("Throwing RoboxCommsException('Interrupted waiting for response') on queue " + queueNumber);
             throw new RoboxCommsException("Interrupted waiting for response");
+        }
+        finally {
+            queueInUse[queueNumber] = false;
         }
 
         if (response == null
@@ -104,17 +118,42 @@ public class AsyncWriteThread extends Thread
             CommandHolder commandHolder = null;
             try
             {
+                //steno.info("++++ Taking a command");
                 commandHolder = inboundQueue.take();
                 if (commandHolder != poisonedPill)
                 {
+                    //steno.info("++++ Processing command for queue " + commandHolder.getQueueIndex() + " : " + commandHolder.getCommandPacket().getCommand().getPacketType());
                     RoboxRxPacket response = processCommand(commandHolder.getCommandPacket());
+                    //steno.info("++++ Got response for queue " + commandHolder.getQueueIndex());
+                    
                     if (response != null)
                     {
                         createNullPacket = false;
-                        outboundQueues.get(commandHolder.getQueueIndex()).add(response);
+                        //steno.info("++++ sending response to queue " + commandHolder.getQueueIndex());
+                        if (outboundQueues.get(commandHolder.getQueueIndex()).offer(response))
+                        {
+                            //steno.info("++++ sent response to queue " + commandHolder.getQueueIndex());
+                        }
+                        else
+                        {
+                            // Queue is full. Nothing is waiting for the response to this queue, so empty the queue.
+                            BlockingQueue<RoboxRxPacket> q = outboundQueues.get(commandHolder.getQueueIndex());
+                            steno.warning("++++ Unable to send response to queue " + commandHolder.getQueueIndex());
+                            //steno.warning("++++ Queue already contains " + Integer.toString(q.size()) + "responses");
+                            //if (q.size() > 0)
+                            //{
+                                //RoboxRxPacket[] r = q.toArray(new RoboxRxPacket[0]);
+                               // for (int rIndex = 0; rIndex < r.length; rIndex++)
+                                //{
+                                //    steno.warning("++++    Response " + Integer.toString(rIndex) + " = " + r[rIndex].getPacketType());
+                                //}
+                            //}
+                            q.clear();
+                        }
                     }
                 } else
                 {
+                    //steno.info("++++ Got poisoned pill");
                     //Just drop out - we got the poisoned pill
                     createNullPacket = false;
                 }
@@ -129,7 +168,27 @@ public class AsyncWriteThread extends Thread
             {
                 if (createNullPacket)
                 {
-                    outboundQueues.get(commandHolder.getQueueIndex()).add(RoboxRxPacketFactory.createNullPacket());
+                    //steno.info("++++ sending null response to queue " + commandHolder.getQueueIndex());
+                    if (outboundQueues.get(commandHolder.getQueueIndex()).offer(RoboxRxPacketFactory.createNullPacket()))
+                    {
+                        //steno.info("++++ sent null response to queue " + commandHolder.getQueueIndex());
+                    }
+                    else
+                    {
+                        // Nothing is waiting for the response to this queue.
+                        BlockingQueue<RoboxRxPacket> q = outboundQueues.get(commandHolder.getQueueIndex());
+                        //steno.warning("++++ Unable to send null response to queue " + commandHolder.getQueueIndex());
+                        //steno.warning("++++ Queue already contains " + Integer.toString(q.size()) + "responses");
+                        //if (q.size() > 0)
+                        //{
+                        //    RoboxRxPacket[] r = q.toArray(new RoboxRxPacket[0]);
+                        //    for (int rIndex = 0; rIndex < r.length; rIndex++)
+                        //    {
+                        //        steno.warning("++++    Response " + Integer.toString(rIndex) + " = " + r[rIndex].getPacketType());
+                        //    }
+                        //}
+                        q.clear();
+                    }
                 }
             }
         }

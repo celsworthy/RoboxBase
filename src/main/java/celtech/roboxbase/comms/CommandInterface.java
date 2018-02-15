@@ -69,6 +69,8 @@ public abstract class CommandInterface extends Thread
     private PrinterIDResponse lastPrinterIDResponse = null;
 
     private boolean isConnected = false;
+    private int statusRequestCount = 0;
+    private static final int maxAllowedStatusRequestCount = 3;
 
     private final AsyncWriteThread asyncWriteThread;
 
@@ -110,7 +112,7 @@ public abstract class CommandInterface extends Thread
             }
             catch (java.lang.NumberFormatException ex)
             {
-                steno.error("Connot interpret firmware version as a number.");
+                steno.error("Couldn't interpret firmware version as a number.");
             }
         } catch (ConfigNotLoadedException ex)
         {
@@ -166,6 +168,7 @@ public abstract class CommandInterface extends Thread
                         if (printerCommsOpen)
                         {
                             steno.debug("Connected to Robox on " + printerHandle);
+                            statusRequestCount = 0;
                             commsState = RoboxCommsState.CHECKING_FIRMWARE;
                         } else
                         {
@@ -374,13 +377,19 @@ public abstract class CommandInterface extends Thread
                                 {
                                     writeToPrinter(RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
                                 }
+                                statusRequestCount = 0;
                             } catch (RoboxCommsException ex)
                             {
                                 if (isConnected)
                                 {
-                                    steno.warning("Failure during printer status request: " + ex);
-                                    // Don't force a disconnect as this seems to fail fairly often with a timeout for some reason.
-                                    //shutdown();
+                                    // Disconnect printer after max allowed number of failed attempts.
+                                    ++statusRequestCount;
+                                    if (statusRequestCount > maxAllowedStatusRequestCount)
+                                    {
+                                        steno.warning("Failure during printer status request: " + ex);
+                                        //steno.debug("Status request count for " + printerHandle.getConnectionHandle() + " (" + Integer.toString(statusRequestCount) + ") exceeds maxAllowedStatusRequestCount(" + Integer.toString(maxAllowedStatusRequestCount));
+                                        shutdown();
+                                    }
                                 }
                             }
                         }
