@@ -351,7 +351,7 @@ public class GCodeMacros
 
         // if there is one or more macro for the given printer type than only check
         // for macros in that directory  -ignore all base directory macros
-        if (existsMacrosForPrinterType(macroDirectory, macroName, typeCode))
+        if (existsMacrosForPrinterType(macroDirectory, baseMacroName, typeCode))
         {
             macroDirectory = new File(macroDirectory.getAbsolutePath() + File.separator
                     + typeCode.get().getTypeCode());

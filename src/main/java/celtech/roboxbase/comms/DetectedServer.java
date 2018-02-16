@@ -73,7 +73,7 @@ public final class DetectedServer
     @JsonIgnore
     public static final int maxAllowedPollCount = 5;
     @JsonIgnore
-    public static final int maxAllowedRetryCount = 1; // Once it has timed out, it seems that it never succeeds.
+    public static final int maxAllowedRetryCount = 3; // Once it has timed out, it seems that it never succeeds. Need to figure out why.
 
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
