@@ -12,6 +12,7 @@ import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
@@ -1003,14 +1004,20 @@ public class PrintEngine implements ControllableService
                 + BaseConfiguration.gcodeTempFileExtension;
 
         File printjobFile = new File(printjobFilename);
-
         try
         {
+            String s = macro.getMacroFileName();
+            String headTypeCode = null;
+            Head head = associatedPrinter.headProperty().get();
+            if (head != null)
+                headTypeCode = head.typeCodeProperty().get();
             ArrayList<String> macroContents = GCodeMacros.getMacroContents(macro.getMacroFileName(),
                     Optional.of(associatedPrinter.printerConfigurationProperty().get().getPrinterType()),
-                    associatedPrinter.headProperty().get().typeCodeProperty().get(),
-                    requireNozzle0, requireNozzle1,
+                    headTypeCode,
+                    requireNozzle0,
+                    requireNozzle1,
                     requireSafetyFeatures);
+
             // Write the contents of the macro file to the print area
             FileUtils.writeLines(printjobFile, macroContents, false);
         } catch (IOException ex)

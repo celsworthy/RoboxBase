@@ -59,7 +59,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
     @Test
     public void testGetFilenameForPrinterTypeSpecialisation() throws Exception {
-        PrinterType typeCode = PrinterType.BROBOX;
+        PrinterType typeCode = PrinterType.ROBOX_PRO;
         String headTypeCode = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
         String fileName = GCodeMacros.getFilename("Remove_Head", Optional.of(typeCode),
@@ -70,7 +70,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
     @Test
     public void testGetFilenameForPrinterTypeSpecialisation2() throws Exception {
-        PrinterType typeCode = PrinterType.BROBOX;
+        PrinterType typeCode = PrinterType.ROBOX_PRO;
         String headTypeCode = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
         String fileName = GCodeMacros.getFilename("before_print", Optional.of(typeCode),
@@ -81,7 +81,7 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
 
     @Test
     public void testGetFilenameForPrinterTypeNozzleSpecialisation() throws Exception {
-        PrinterType typeCode = PrinterType.BROBOX;
+        PrinterType typeCode = PrinterType.ROBOX_PRO;
         String headTypeCode = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
         String fileName = GCodeMacros.getFilename("Short_Purge", Optional.of(typeCode),

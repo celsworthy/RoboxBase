@@ -14,7 +14,7 @@ public enum PrinterType {
 
     ROBOX("RBX01"),
     ROBOX_DUAL("RBX02"),
-    BROBOX("RBX10");
+    ROBOX_PRO("RBX10");
 
     private final String typeCode;
 
