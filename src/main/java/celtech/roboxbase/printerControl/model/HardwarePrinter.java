@@ -4239,8 +4239,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             } catch (RoboxCommsException ex)
                                             {
                                                 steno.error("Error updating head after repair "
-                                                        + ex.
-                                                                getMessage());
+                                                        + ex.getMessage());
                                             }
                                             break;
                                     }
