@@ -188,7 +188,7 @@ public class WriteHeadEEPROM extends RoboxTxPacket
                     0,
                     0,
                     0,
-                    0,
+                    lastFilamentTemperatureA,
                     0,
                     hoursUsedIn);
         } else
