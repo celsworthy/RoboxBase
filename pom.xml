@@ -34,7 +34,7 @@
         <dependency>
             <groupId>libertysystems</groupId>
             <artifactId>Stenographer</artifactId>
-            <version>1.8-SNAPSHOT</version>
+            <version>1.9</version>
             <type>jar</type>
         </dependency>
         <dependency>
