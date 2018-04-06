@@ -411,7 +411,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void sendRawGCode(String gCode, boolean addToTranscript)
+    public String sendRawGCode(String gCode, boolean addToTranscript)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

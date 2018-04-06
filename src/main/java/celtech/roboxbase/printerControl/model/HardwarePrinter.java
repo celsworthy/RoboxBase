@@ -2703,15 +2703,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void sendRawGCode(String gCode, boolean addToTranscript)
+    public String sendRawGCode(String gCode, boolean addToTranscript)
     {
+        String transcript = null;
         try
         {
-            transmitDirectGCode(gCode, addToTranscript);
+            transcript = transmitDirectGCode(gCode, addToTranscript);
         } catch (RoboxCommsException ex)
         {
             steno.error("Error when sending raw gcode : " + gCode);
         }
+        
+        return transcript;
     }
 
     @Override

@@ -369,7 +369,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void sendDataFileChunk(String hexDigits, boolean lastPacket, boolean appendCRLF) throws DatafileSendNotInitialised, RoboxCommsException;
 
-    public void sendRawGCode(String gCode, boolean addToTranscript);
+    public String sendRawGCode(String gCode, boolean addToTranscript);
 
     public void setAmbientLEDColour(Color colour) throws PrinterException;
 
