@@ -185,7 +185,7 @@ public class PurgeActions extends StateTransitionActions
 
             if (nozzleHeatFailed)
             {
-                throw new PurgeException("Nozzle 0 heat failed");
+                throw new PurgeException("Left nozzle heat failed");
             }
         }
 
@@ -197,7 +197,7 @@ public class PurgeActions extends StateTransitionActions
 
             if (nozzleHeatFailed)
             {
-                throw new PurgeException("Nozzle 1 heat failed");
+                throw new PurgeException("Right nozzle heat failed");
             }
         }
     }

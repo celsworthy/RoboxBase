@@ -38,14 +38,14 @@ public class StatusResponse extends RoboxRxPacket
      a = Z top switch state
      m = extruder E ('0'->not present, '1'->present)
      n = extruder D ('0'->not present, '1'->present)
-     k = nozzle 0 heater mode ('0'->off, '1'->normal, '2'->first layer, '3' -> filament eject)
-     mmmmmmmm = nozzle 0 temperature (decimal float format)
-     nnnnnnnn = nozzle 0 target (decimal float format)
-     cccccccc = nozzle 0 first layer target (decimal float format)
-     l = nozzle 1 heater mode ('0'-> off, '1'-<normal, '2'->first layer, '3' -> filament eject)
-     rrrrrrrr = nozzle 1 temperature (decimal float format)
-     uuuuuuuu = nozzle 1 target (decimal float format)
-     dddddddd = nozzle 1 first layer target (decimal float format)
+     k = left (0) nozzle heater mode ('0'->off, '1'->normal, '2'->first layer, '3' -> filament eject)
+     mmmmmmmm = left (0) nozzle temperature (decimal float format)
+     nnnnnnnn = left (0) nozzle target (decimal float format)
+     cccccccc = left (0) nozzle first layer target (decimal float format)
+     l = right (1) nozzle heater mode ('0'-> off, '1'-<normal, '2'->first layer, '3' -> filament eject)
+     rrrrrrrr = right (1) nozzle temperature (decimal float format)
+     uuuuuuuu = right (1) nozzle target (decimal float format)
+     dddddddd = right (1) nozzle first layer target (decimal float format)
      o = bed heater mode ('0'->off, '1'->normal, '2'->first layer)
      pppppppp = bed temperature (decimal float format)
      qqqqqqqq = bed target (decimal float format)
@@ -1032,7 +1032,7 @@ public class StatusResponse extends RoboxRxPacket
             this.extruderDPresent = (byteData[byteOffset] & 1) > 0 ? true : false;
             byteOffset += 1;
 
-            // Nozzle 0
+            // Left (0) Nozzle
             this.nozzle0HeaterModeString = new String(byteData, byteOffset, 1, charsetToUse);
             byteOffset += 1;
             this.nozzle0HeaterMode = HeaterMode.modeFromValue(Integer.valueOf(
@@ -1080,7 +1080,7 @@ public class StatusResponse extends RoboxRxPacket
                         + nozzle0FirstLayerTargetTemperatureString);
             }
 
-            // Nozzle 1
+            // Right (1) Nozzle
             this.nozzle1HeaterModeString = new String(byteData, byteOffset, 1, charsetToUse);
             byteOffset += 1;
             this.nozzle1HeaterMode = HeaterMode.modeFromValue(Integer.valueOf(

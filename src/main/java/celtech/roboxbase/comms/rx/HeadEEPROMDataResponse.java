@@ -21,16 +21,16 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
     //0x28: max temp Celsius (8)
     //0x30: thermistor beta (8)
     //0x38: thermistor tcal (8)
-    //0x40: nozzle 0 X offset (8)
-    //0x48: nozzle 0 Y offset (8)
-    //0x50: nozzle 0 Z offset (8)
-    //0x58: nozzle 0 B offset (8)
+    //0x40: (left) nozzle 0 X offset (8)
+    //0x48: (left) nozzle 0 Y offset (8)
+    //0x50: (left) nozzle 0 Z offset (8)
+    //0x58: (left) nozzle 0 B offset (8)
     //0x60: Filament 0 ID (8) e.g. PLARD057,  SPCMF001
     //0x68: Filament 1 ID (8)
-    //0x70: nozzle 1 X offset (8)
-    //0x78: nozzle 1 Y offset (8)
-    //0x80: nozzle 1 Z offset (8)    
-    //0x88: nozzle 1 B offset (8)
+    //0x70: (right) nozzle 1 X offset (8)
+    //0x78: (right) nozzle 1 Y offset (8)
+    //0x80: (right) nozzle 1 Z offset (8)    
+    //0x88: (right) nozzle 1 B offset (8)
     //0x90: spare (24)
     //0xa8: melting temperature of material in nozzle heater 1 (8)
     //0xb0: melting temperature of material in nozzle heater 0 (8)
@@ -123,7 +123,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle1XOffset(decimalFloatFormatter.parse(nozzle1XOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 1 X offset - " + nozzle1XOffsetString);
+                steno.error("Couldn't parse right nozzle X offset - " + nozzle1XOffsetString);
             }
 
             String nozzle1YOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -135,7 +135,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle1YOffset(decimalFloatFormatter.parse(nozzle1YOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 1 Y offset - " + nozzle1YOffsetString);
+                steno.error("Couldn't parse right nozzle Y offset - " + nozzle1YOffsetString);
             }
 
             String nozzle1ZOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -147,7 +147,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle1ZOffset(decimalFloatFormatter.parse(nozzle1ZOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 1 Z offset - " + nozzle1ZOffsetString);
+                steno.error("Couldn't parse right nozzle Z offset - " + nozzle1ZOffsetString);
             }
 
             String nozzle1BOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -159,7 +159,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle1BOffset(decimalFloatFormatter.parse(nozzle1BOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 1 B offset - " + nozzle1BOffsetString);
+                steno.error("Couldn't parse right nozzle B offset - " + nozzle1BOffsetString);
             }
 
             //Empty section
@@ -173,7 +173,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle2XOffset(decimalFloatFormatter.parse(nozzle2XOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 2 X offset - " + nozzle2XOffsetString);
+                steno.error("Couldn't parse left nozzle X offset - " + nozzle2XOffsetString);
             }
 
             String nozzle2YOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -185,7 +185,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle2YOffset(decimalFloatFormatter.parse(nozzle2YOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 2 Y offset - " + nozzle2YOffsetString);
+                steno.error("Couldn't parse left nozzle Y offset - " + nozzle2YOffsetString);
             }
 
             String nozzle2ZOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -197,7 +197,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle2ZOffset(decimalFloatFormatter.parse(nozzle2ZOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 2 Z offset - " + nozzle2ZOffsetString);
+                steno.error("Couldn't parse left nozzle Z offset - " + nozzle2ZOffsetString);
             }
 
             String nozzle2BOffsetString = new String(byteData, byteOffset, decimalFloatFormatBytes,
@@ -209,7 +209,7 @@ public class HeadEEPROMDataResponse extends RoboxRxPacket
                 headEEPROMData.setNozzle2BOffset(decimalFloatFormatter.parse(nozzle2BOffsetString.trim()).floatValue());
             } catch (ParseException ex)
             {
-                steno.error("Couldn't parse nozzle 2 B offset - " + nozzle2BOffsetString);
+                steno.error("Couldn't parse left nozzle B offset - " + nozzle2BOffsetString);
             }
 
             //Empty section
