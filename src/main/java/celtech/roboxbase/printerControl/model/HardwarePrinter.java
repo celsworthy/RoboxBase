@@ -4419,22 +4419,29 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         }
 
         /**
-         * If the filament is not a Robox filament then update the database with
-         * the filament details, if it is an unknown Robox filament then add it
-         * to the database in memory but do not save it to disk.
+         * Update the database with the filament details.
+         * 
+         * Before V3.01.00 the behaviour used to be as follows:
+         *     "If the filament is not a Robox filament then update the database with
+         *      the filament details. If it is an unknown Robox filament just add it
+         *      to the database in memory but do not save it to disk."
+         * 
+         * The new behaviour means that missing Robox filaments are saved
+         * to the users filament directory.
          *
          * @param reelResponse
          */
         private void saveUnknownFilamentToDatabase(ReelEEPROMDataResponse reelResponse)
         {
             Filament filament = new Filament(reelResponse);
-            if (filament.isMutable())
-            {
-                filamentContainer.saveFilament(filament);
-            } else
-            {
-                filamentContainer.addFilamentToUserFilamentList(filament);
-            }
+            filamentContainer.saveFilament(filament);
+            //if (filament.isMutable())
+            //{
+            //    filamentContainer.saveFilament(filament);
+            //} else
+            //{
+            //    filamentContainer.addFilamentToUserFilamentList(filament);
+            //}
         }
     };
 
@@ -4663,7 +4670,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 PrintJob pj = new PrintJob(printJobDir.getName());
                 File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
                 File statistics = new File(pj.getStatisticsFileLocation());
-
+                
                 if (roboxisedGCode.exists() && statistics.exists())
                 {
                     //Valid files - does it work for us?

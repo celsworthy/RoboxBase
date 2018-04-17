@@ -10,8 +10,20 @@ package celtech.roboxbase;
 public enum SystemErrorHandlerOptions
 {
     
-    ABORT, CLEAR_CONTINUE, RETRY, OK, OK_ABORT, OK_CONTINUE;
+    ABORT(1),
+    CLEAR_CONTINUE(2),
+    RETRY(4),
+    OK(8),
+    OK_ABORT(16),
+    OK_CONTINUE(32);
     
+    private final int flag;
+
+    private SystemErrorHandlerOptions(int flag)
+    {
+        this.flag = flag;
+    }
+
     public String getErrorTitleKey()
     {
         return "error.handler." + name() + ".title";
@@ -20,5 +32,10 @@ public enum SystemErrorHandlerOptions
     public String getErrorMessageKey()
     {
         return "error.handler." + name() + ".message";
+    }
+
+    public int getFlag()
+    {
+        return flag;
     }
 }
