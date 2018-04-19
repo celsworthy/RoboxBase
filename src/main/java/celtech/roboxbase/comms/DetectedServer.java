@@ -67,14 +67,15 @@ public final class DetectedServer
     public static final String defaultUser = "root";
 
     @JsonIgnore
-    public static final int readTimeOut = 1000;
+    public static final int readTimeOutShort = 1500;
     @JsonIgnore
-    public static final int connectTimeOut = 1000;
+    public static final int connectTimeOutShort = 200;
+    @JsonIgnore
+    public static final int readTimeOutLong = 8000;
+    @JsonIgnore
+    public static final int connectTimeOutLong = 2000;
     @JsonIgnore
     public static final int maxAllowedPollCount = 5;
-    @JsonIgnore
-    public static final int maxAllowedRetryCount = 3; // Once it has timed out, it seems that it never succeeds. Need to figure out why.
-
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
@@ -367,8 +368,8 @@ public final class DetectedServer
             //add request header
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
 
-            con.setConnectTimeout(connectTimeOut);
-            con.setReadTimeout(readTimeOut);
+            con.setConnectTimeout(connectTimeOutShort);
+            con.setReadTimeout(readTimeOutShort);
 
             int responseCode = con.getResponseCode();
 
@@ -430,8 +431,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOut);
-            con.setReadTimeout(readTimeOut);
+            con.setConnectTimeout(connectTimeOutShort);
+            con.setReadTimeout(readTimeOutShort);
             
             int responseCode = con.getResponseCode();
 
@@ -493,53 +494,47 @@ public final class DetectedServer
         Object returnvalue = null;
 
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
-        boolean gotResponse = false;
-        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        try
         {
-            try
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setConnectTimeout(connectTimeOutLong);
+            con.setReadTimeout(readTimeOutLong);
+
+            if (content != null)
             {
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-                con.setRequestMethod("POST");
-
-                //add request header
-                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-                con.setConnectTimeout(connectTimeOut);
-                con.setReadTimeout(readTimeOut);
-
-                if (content != null)
-                {
-                    con.setDoOutput(true);
-                    con.setRequestProperty("Content-Type", "application/json");
-                    con.setRequestProperty("Content-Length", "" + content.length());
-                    con.getOutputStream().write(content.getBytes());
-                }
-
-                int responseCode = con.getResponseCode();
-                pollCount = 0; // Successful contact, so zero the poll count;
-                gotResponse = true;
-                
-                if (responseCode >= 200
-                        && responseCode < 300)
-                {
-                    if (expectedResponseClass != null)
-                    {
-                        returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
-                    }
-                } else
-                {
-                    //Raise an error but don't disconnect...
-                    steno.error("Got " + responseCode + " when trying " + urlString);
-                }
+                con.setDoOutput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Content-Length", "" + content.length());
+                con.getOutputStream().write(content.getBytes());
             }
-            catch (java.net.SocketTimeoutException ex)
+
+            int responseCode = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
+
+            if (responseCode >= 200
+                    && responseCode < 300)
             {
-                steno.error("Timeout in postRoboxPacket @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
-                if (retryCount >= maxAllowedRetryCount)
-                    throw ex;
+                if (expectedResponseClass != null)
+                {
+                    returnvalue = mapper.readValue(con.getInputStream(), expectedResponseClass);
+                }
+            } else
+            {
+                //Raise an error but don't disconnect...
+                steno.error("Got " + responseCode + " when trying " + urlString);
             }
+        }
+        catch (java.net.SocketTimeoutException ex)
+        {
+            steno.error("Timeout in postRoboxPacket @" + obj.toString() + ", exception message = " + ex.getMessage());
+            throw ex;
         }
         return returnvalue;
     }
@@ -549,41 +544,35 @@ public final class DetectedServer
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         int rc = -1;
 
-        boolean gotResponse = false;
-        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        try
         {
-            try
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setReadTimeout(readTimeOutLong);
+            con.setConnectTimeout(connectTimeOutLong);
+
+            if (content != null)
             {
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-                con.setRequestMethod("POST");
-
-                //add request header
-                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
-
-                con.setReadTimeout(readTimeOut);
-                con.setConnectTimeout(connectTimeOut);
-
-                if (content != null)
-                {
-                    con.setDoOutput(true);
-                    con.setRequestProperty("Content-Type", "application/json");
-                    con.setRequestProperty("Content-Length", "" + content.length());
-                    con.getOutputStream().write(content.getBytes());
-                }
-
-                rc = con.getResponseCode();
-                pollCount = 0; // Successful contact, so zero the poll count;
-                gotResponse = true;
+                con.setDoOutput(true);
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setRequestProperty("Content-Length", "" + content.length());
+                con.getOutputStream().write(content.getBytes());
             }
-            catch (java.net.SocketTimeoutException ex)
-            {
-                steno.error("Timeout in postData @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
-                if (retryCount >= maxAllowedRetryCount)
-                    throw ex;
-            }
-        }        
+
+            rc = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
+        }
+        catch (java.net.SocketTimeoutException ex)
+        {
+            steno.error("Timeout in postData @" + obj.toString() + ", exception message = " + ex.getMessage());
+            throw ex;
+        }
         return rc;
     }
 
@@ -591,31 +580,26 @@ public final class DetectedServer
     {
         URL obj = new URL("http://" + address.getHostAddress() + ":" + Configuration.remotePort + urlString);
         int rc = -1;
-        boolean gotResponse = false;
-        for (int retryCount = 1; !gotResponse && retryCount <= maxAllowedRetryCount; ++retryCount)
+        try
         {
-            try
-            {
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-                con.setRequestMethod("GET");
+            con.setRequestMethod("GET");
 
-                //add request header
-                con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
-                con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-                con.setConnectTimeout(connectTimeOut);
-                con.setReadTimeout(readTimeOut);
+            con.setConnectTimeout(connectTimeOutLong);
+            con.setReadTimeout(readTimeOutLong);
 
-                rc = con.getResponseCode();
-                pollCount = 0; // Successful contact, so zero the poll count;
-            }
-            catch (java.net.SocketTimeoutException ex)
-            {
-                steno.error("Timeout in getData @" + obj.toString() + ", retryCount = " + Integer.toString(retryCount) + ", exception message = " + ex.getMessage());
-                if (retryCount >= maxAllowedRetryCount)
-                    throw ex;
-            }
+            rc = con.getResponseCode();
+            pollCount = 0; // Successful contact, so zero the poll count;
+        }
+        catch (java.net.SocketTimeoutException ex)
+        {
+            steno.error("Timeout in getData @" + obj.toString() + ", exception message = " + ex.getMessage());
+            throw ex;
         }
         return rc;
     }

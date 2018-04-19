@@ -7,6 +7,7 @@ import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.FilamentFileFilter;
 import celtech.roboxbase.utils.DeDuplicator;
+import celtech.roboxbase.utils.FileUtilities;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -126,8 +127,8 @@ public class FilamentContainer
     public static String constructFilePath(Filament filament)
     {
         return BaseConfiguration.getUserFilamentDirectory()
-                + filament.getFriendlyFilamentName() + "-" + filament.getMaterial().getFriendlyName()
-                + BaseConfiguration.filamentFileExtension;
+                + FileUtilities.cleanFileName(filament.getFriendlyFilamentName() + "-" + filament.getMaterial().getFriendlyName())
+                    + BaseConfiguration.filamentFileExtension;
     }
 
     private void loadFilamentData()

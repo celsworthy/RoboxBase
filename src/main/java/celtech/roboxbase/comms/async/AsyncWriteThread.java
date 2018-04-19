@@ -6,6 +6,8 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
 import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
+import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -20,11 +22,21 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class AsyncWriteThread extends Thread
 {
-
-    private final Stenographer steno = StenographerFactory.getStenographer(AsyncWriteThread.class.getName());
+    // The timeout here has to be at least greater than the sum of the connect and read time out
+    // values in detected server, as it can wait at least as long as that. 
     private final int NUMBER_OF_SIMULTANEOUS_COMMANDS = 50;
+
+    // The thread can retry sending a command if it fails due to a timeout. Currently the maxCommandRetryCount
+    // is one, which disables the mechanism.
+    private final int maxCommandRetryCount = 1;
+    // The poll timeout must be longer than the total timeout of the detected server. Otherwise
+    // this thread can timeout before the server to which it is connected times out.
+    // It is 12 seconds because the remote server can pause for several seconds, for reasons unknown.
+    private final int pollTimeout = 12000;
+    private final Stenographer steno = StenographerFactory.getStenographer(AsyncWriteThread.class.getName());
     private final BlockingQueue<CommandHolder> inboundQueue = new ArrayBlockingQueue<>(NUMBER_OF_SIMULTANEOUS_COMMANDS);
     private final List<BlockingQueue<RoboxRxPacket>> outboundQueues;
+    
     private final CommandInterface commandInterface;
     private boolean keepRunning = true;
     private boolean[] queueInUse = new boolean[NUMBER_OF_SIMULTANEOUS_COMMANDS];
@@ -37,7 +49,7 @@ public class AsyncWriteThread extends Thread
         this.setDaemon(true);
         this.setName("AsyncCommandProcessor|" + ciReference);
         this.setPriority(Thread.MAX_PRIORITY);
-
+        
         outboundQueues = new ArrayList<>();
         for (int i = 0; i < NUMBER_OF_SIMULTANEOUS_COMMANDS; i++)
         {
@@ -77,35 +89,70 @@ public class AsyncWriteThread extends Thread
     {
         RoboxRxPacket response = null;
 
-        //steno.info("**** Adding command to queue:" + command.getCommand().getPacketType());
-        int queueNumber = addCommandToQueue(command);
-        try
+        //steno.info("**** Sending command:" + command.getCommand().getPacketType());
+        //if (command.getCommand().getPacketType() == TxPacketTypeEnum.DATA_FILE_CHUNK)
+        //    steno.info("        sequence number = " + command.getCommand().getSequenceNumber());
+        for (int retryCount = 0; response == null && retryCount < maxCommandRetryCount; ++retryCount)
         {
-            //steno.info("**** Awaiting response on queue " + queueNumber);
-            // If the async command processor writes to
-            // the queue after the listener has timed out, it used to cause the queue to
-            // be permanantly lost, because it contained an entry. Now it clears the queue.
-            // However, there is still a risk that if a timed-out queue is used, it could
-            // get the response intended for the previous queue. This is quite a tricky problem.
-            response = outboundQueues.get(queueNumber).poll(1500, TimeUnit.MILLISECONDS);
-            //steno.info("Received response on queue " + queueNumber);
-            //steno.info("Received response:" + response.getPacketType());
-        } catch (InterruptedException ex)
-        {
-            steno.info("Throwing RoboxCommsException('Interrupted waiting for response') on queue " + queueNumber);
-            throw new RoboxCommsException("Interrupted waiting for response");
-        }
-        finally {
-            queueInUse[queueNumber] = false;
-        }
+            //if (retryCount == 0)
+            //    steno.info("@@@@ Adding command " + command.getCommand().getPacketType() + " to queue");
+            //else
+            //    steno.info("@@@@ requeuing (" + retryCount + ") command " + command.getCommand().getPacketType());
+            int queueNumber = addCommandToQueue(command);
 
+            try
+            {
+                //steno.info("        Awaiting response on queue " + queueNumber);
+                // If the async command processor writes to
+                // the queue after the listener has timed out, it used to cause the queue to
+                // be permanantly lost, because it contained an entry. Now it clears the queue.
+                // However, there is still a risk that if a timed-out queue is used, it could
+                // get the response intended for the previous queue. This is quite a tricky problem.
+                long t1 = System.currentTimeMillis();
+                
+                // The timeout here has to be at least greater than the sum of the connect and read time out
+                // values and 
+                response = outboundQueues.get(queueNumber).poll(pollTimeout, TimeUnit.MILLISECONDS);
+                long t2 = System.currentTimeMillis();
+                if (response == null)
+                {
+                //    steno.info("    No response on queue " + queueNumber);
+                }
+                else
+                {
+                //    steno.info("    Received response on queue " + queueNumber);
+                //    steno.info("        response:" + response.getPacketType());
+                    if (response.getPacketType() == RxPacketTypeEnum.NULL_PACKET)
+                        response = null;
+                }
+                long dt = t2 -t1;
+                if (dt > 500)
+                {
+                    steno.debug("@@@@ Long wait (" + Long.toString(dt) + ") for response to command " + command.getCommand().getPacketType());
+                    if (command.getCommand().getPacketType() == TxPacketTypeEnum.DATA_FILE_CHUNK)
+                            steno.debug("        sequence number = " + command.getCommand().getSequenceNumber());
+                    if (retryCount > 0 )
+                        steno.debug("        retryCount = " + retryCount);
+          
+                }
+                //steno.info("    Time taken = " + Long.toString(t2 - t1));
+            }
+            catch (InterruptedException ex)
+            {
+                steno.debug("**** Throwing RoboxCommsException('Interrupted waiting for response') on queue " + queueNumber);
+                throw new RoboxCommsException("Interrupted waiting for response");
+            }
+            finally {
+                queueInUse[queueNumber] = false;
+            }
+        }
         if (response == null
                 || response.getPacketType() == RxPacketTypeEnum.NULL_PACKET)
         {
-            steno.info("Throwing RoboxCommsException('No response to message from command " + command + "')");
+            steno.debug("**** Throwing RoboxCommsException('No response to message from command " + command + "')");
             throw new RoboxCommsException("No response to message from command " + command);
         }
-        //steno.info("Returning response " + response.getPacketType() + " for command " + command);
+        //steno.info("**** Returning response " + response.getPacketType() + " for command " + command);
         return response;
     }
 

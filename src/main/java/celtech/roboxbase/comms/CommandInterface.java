@@ -83,13 +83,14 @@ public abstract class CommandInterface extends Thread
      */
     public CommandInterface(PrinterStatusConsumer controlInterface,
             DetectedDevice printerHandle,
-            boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
+            boolean suppressPrinterIDChecks,
+            int sleepBetweenStatusChecks)
     {
         this.controlInterface = controlInterface;
         this.printerHandle = printerHandle;
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.sleepBetweenStatusChecks = sleepBetweenStatusChecks;
-
+        
         this.setDaemon(true);
         this.setName("CommandInterface|" + printerHandle.getConnectionHandle());
         this.setPriority(8);
