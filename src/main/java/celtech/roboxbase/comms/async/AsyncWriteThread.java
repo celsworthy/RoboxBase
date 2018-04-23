@@ -32,7 +32,7 @@ public class AsyncWriteThread extends Thread
     // The poll timeout must be longer than the total timeout of the detected server. Otherwise
     // this thread can timeout before the server to which it is connected times out.
     // It is 12 seconds because the remote server can pause for several seconds, for reasons unknown.
-    private final int pollTimeout = 12000;
+    private final int pollTimeout = 30000;
     private final Stenographer steno = StenographerFactory.getStenographer(AsyncWriteThread.class.getName());
     private final BlockingQueue<CommandHolder> inboundQueue = new ArrayBlockingQueue<>(NUMBER_OF_SIMULTANEOUS_COMMANDS);
     private final List<BlockingQueue<RoboxRxPacket>> outboundQueues;
@@ -128,11 +128,11 @@ public class AsyncWriteThread extends Thread
                 long dt = t2 -t1;
                 if (dt > 500)
                 {
-                    steno.debug("@@@@ Long wait (" + Long.toString(dt) + ") for response to command " + command.getCommand().getPacketType());
+                    steno.warning("Long wait (" + Long.toString(dt) + ") for response to command " + command.getCommand().getPacketType());
                     if (command.getCommand().getPacketType() == TxPacketTypeEnum.DATA_FILE_CHUNK)
-                            steno.debug("        sequence number = " + command.getCommand().getSequenceNumber());
+                            steno.debug("    sequence number = " + command.getCommand().getSequenceNumber());
                     if (retryCount > 0 )
-                        steno.debug("        retryCount = " + retryCount);
+                        steno.debug("    retryCount = " + retryCount);
           
                 }
                 //steno.info("    Time taken = " + Long.toString(t2 - t1));

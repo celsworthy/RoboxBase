@@ -6,45 +6,116 @@ package celtech.roboxbase;
  */
 public enum MaterialType
 {
-
     /**
-     *
+     * Acrylonitrile Butadiene Styrene
      */
-    ABS("ABS", 1.04),
+    ABS("ABS", 1.05),
     /**
-     *
+     * Acrylonitrile Styrene Acrylate
      */
-    PLA("PLA", 1.25),
+	ASA("ASA", 1.11),
     /**
-     *
+     * Methyl Methacrylate Acrylonitrile Butadiene Styrene
      */
-    NYL("Nylon", 1.134),
+    MBS("mABS", 1.08),
     /**
-     *
+     * Polylactic Acid
      */
-    HIP("HIPS", 1.134),
+    PLA("PLA", 1.24),
     /**
-     *
+     * Polyamide 12
+     */
+    P12("PA12", 1.01),
+    /**
+     * Polyamide 6
+     */
+    PA6("PA6", 1.01),
+    /**
+     * Polyamide 6/66 Copolymer
+     */
+    N66("PA6/66", 1.12),
+    /**
+     * High-Impact Polystyrene
+     */
+    HIP("HIPS", 1.04),
+    /**
+     * Special
      */
     SPC("Special", 1.0),
     /**
-     *
+     * Co-Polyester
      */
-    PET("CO-PET", 1.27),
+    CPE("CO-PET", 1.23),
     /**
-     *
+     * Butenediol Vinyl Alcohol
      */
-    TPU("TPU", 1.2),
+    BVA("BVOH", 1.14),   
     /**
-     *
+     * Thermoplastic Polyurethane
      */
-    PCP("PCP", 1.19),
+    TPU("TPU", 1.24),
     /**
-     *
+     * Polycarbonate
+     */
+    PCP("PC", 1.20),
+    /**
+     * Polycarbonate/ABS Alloy
+     */
+    PCB("PC-ABS", 1.15),
+    /**
+     * Polyvinyl Butyral
+     */
+    PVB("PVB", 1.16),
+    /**
+     * Polycaprolactone
+     */
+    PCL("PCL", 1.20),
+    /**
+     * Polyethylene Terephthalate (glycol-modified)
      */
     PTG("PETG", 1.27),
     /**
-     *
+     * Polyvinyl Alcohol
+     */
+    PVA("PVOH", 1.19),   
+    /**
+     * Polylactic Acid/Polyhydroxyalkanoate Alloy
+     */
+    PHA("PLA/PHA", 1.31),   
+    /**
+     * Polypropylene
+     */
+    PPR("PP", 0.90),   
+    /**
+     * Polyether Ether Ketone
+     */
+    PEEK("PEK", 1.30),   
+    /**
+     * Polyether Ketone Ketone
+     */
+    PEKK("PKK", 1.27),   
+    /**
+     * Polyphenylsulfone
+     */
+    PSF("PPSF", 1.29),   
+    /**
+     * Polyphenylene Sulfide
+     */
+    PPS("PPS", 1.34),   
+    /**
+     * Polysulfone
+     */
+    PSU("PSU", 1.24),   
+    /**
+     * Polyetherimide
+     */
+    PEI("PEI", 1.30),   
+    /**
+     * Polyvinylidene Fluoride
+     */
+    PVDF("PVD", 1.78),   
+    /**
+     * Thermoplastic Co-Polyester
      */
     TPC("TPC", 1.13);
 

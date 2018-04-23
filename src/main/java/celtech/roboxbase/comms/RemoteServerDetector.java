@@ -87,7 +87,7 @@ public class RemoteServerDetector
         }
         catch (IOException ex)
         {
-            steno.error("Unable to set up remote discovery client");
+            steno.error("Unable to set up remote discovery client : " + ex.getMessage());
         }
     }
 

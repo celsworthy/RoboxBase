@@ -59,7 +59,7 @@ public class WriteReelEEPROMTest
         float reelFeedRateMultiplier = 88;
         float reelRemainingFilament = 99;
         String friendlyName = "سلام";
-        MaterialType materialType = MaterialType.NYL;
+        MaterialType materialType = MaterialType.N66;
         Color displayColour = Color.BLUE;
         WriteReel0EEPROM instance = new WriteReel0EEPROM();
         instance.populateEEPROM(filamentID, reelFirstLayerNozzleTemperature, reelNozzleTemperature,
@@ -70,7 +70,7 @@ public class WriteReelEEPROMTest
         String bufferString = instance.getMessagePayload();
         assertEquals(192, bufferString.length());
         System.out.println(bufferString);
-        assertEquals("ABCABC          0000FF                        11      22      33      44      55      66      77      882LPZhNin2YU=                            C                                             99", bufferString);
+        assertEquals("ABCABC          0000FF                        11      22      33      44      55      66      77      882LPZhNin2YU=                            G                                             99", bufferString);
     }
 
 }

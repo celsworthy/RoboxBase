@@ -36,7 +36,7 @@ public class LanguageDataResourceBundleTest
         assertEquals(
                 "Nozzle firmware control", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
-                1033, bundle.keySet().size());
+                1045, bundle.keySet().size());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class LanguageDataResourceBundleTest
         assertEquals(
                 "Contrôle firmware de la buse", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
-                1033, bundle.keySet().size());
+                1045, bundle.keySet().size());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class LanguageDataResourceBundleTest
         assertEquals(
                 "Nozzle firmware control", bundle.getString("error.ERROR_B_POSITION_LOST"));
         assertEquals(
-                1033, bundle.keySet().size());
+                1045, bundle.keySet().size());
     }
 
 }

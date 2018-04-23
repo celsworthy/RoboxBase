@@ -133,7 +133,7 @@ public class TestPrinter implements Printer
         eepromData.setFirstLayerBedTemperature(110);
         eepromData.setFirstLayerNozzleTemperature(180);
         eepromData.setFriendlyName("F1");
-        eepromData.setMaterialType(MaterialType.NYL);
+        eepromData.setMaterialType(MaterialType.N66);
         eepromData.setNozzleTemperature(205);
         eepromData.setRemainingFilament(85);
         reelsProperty().get(i).updateFromEEPROMData(eepromData);

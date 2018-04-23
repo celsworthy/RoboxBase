@@ -73,10 +73,10 @@ public class GCodeMacrosTest extends BaseEnvironmentConfiguredTest
         PrinterType typeCode = PrinterType.ROBOX_PRO;
         String headTypeCode = "RBX01-SM";
         GCodeMacros.NozzleUseIndicator nozzleUse = GCodeMacros.NozzleUseIndicator.NOZZLE_1;
-        String fileName = GCodeMacros.getFilename("before_print", Optional.of(typeCode),
+        String fileName = GCodeMacros.getFilename("after_print", Optional.of(typeCode),
                 headTypeCode, nozzleUse,
                 GCodeMacros.SafetyIndicator.SAFETIES_ON);
-        assertTrue(fileName.endsWith("/Common/Macros/before_print.gcode"));
+        assertTrue(fileName.endsWith("/Common/Macros/after_print.gcode"));
     }
 
     @Test

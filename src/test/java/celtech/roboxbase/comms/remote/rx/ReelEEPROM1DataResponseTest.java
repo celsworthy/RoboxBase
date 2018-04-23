@@ -20,7 +20,7 @@ public class ReelEEPROM1DataResponseTest
 {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.ReelEEPROM1DataResponse\",\"packetType\":\"REEL_1_EEPROM_DATA\",\"messagePayload\":null,\"sequenceNumber\":44,\"includeSequenceNumber\":false,\"includeCharsOfDataInOutput\":false,\"filamentID\":null,\"firstLayerNozzleTemperature\":0,\"nozzleTemperature\":0,\"firstLayerBedTemperature\":0,\"bedTemperature\":48,\"ambientTemperature\":0,\"filamentDiameter\":0.0,\"filamentMultiplier\":0.0,\"feedRateMultiplier\":0.0,\"remainingFilament\":0.0,\"displayColourString\":null,\"friendlyName\":null,\"reelNumber\":0,\"materialType\":\"PET\"}";
+    private static final String jsonifiedClass = "{\"@class\":\"celtech.roboxbase.comms.rx.ReelEEPROM1DataResponse\",\"packetType\":\"REEL_1_EEPROM_DATA\",\"messagePayload\":null,\"sequenceNumber\":44,\"includeSequenceNumber\":false,\"includeCharsOfDataInOutput\":false,\"filamentID\":null,\"firstLayerNozzleTemperature\":0,\"nozzleTemperature\":0,\"firstLayerBedTemperature\":0,\"bedTemperature\":48,\"ambientTemperature\":0,\"filamentDiameter\":0.0,\"filamentMultiplier\":0.0,\"feedRateMultiplier\":0.0,\"remainingFilament\":0.0,\"displayColourString\":null,\"friendlyName\":null,\"reelNumber\":0,\"materialType\":\"PTG\"}";
     
     public ReelEEPROM1DataResponseTest()
     {
@@ -77,7 +77,7 @@ public class ReelEEPROM1DataResponseTest
 
         packet.setSequenceNumber(44);
         packet.setBedTemperature(48);
-        packet.setMaterialType(MaterialType.PET);
+        packet.setMaterialType(MaterialType.PTG);
 
         return packet;
     }
