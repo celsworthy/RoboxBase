@@ -425,7 +425,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canPause.bind(pauseStatus.isNotEqualTo(PauseStatus.PAUSED)
                 .and(pauseStatus.isNotEqualTo(PauseStatus.PAUSE_PENDING))
-                .and(printEngine.highIntensityCommsInProgressProperty().not())
                 .and(printerStatus.isEqualTo(PrinterStatus.PRINTING_PROJECT)
                         .or(pauseStatus.isEqualTo(PauseStatus.RESUME_PENDING))));
 
@@ -450,8 +449,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         //TODO make this work with multiple extruders
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
-                .and(extruders.get(0).filamentLoaded)
-                .and(printEngine.highIntensityCommsInProgressProperty().not()));
+                .and(extruders.get(0).filamentLoaded));
     }
 
     FilamentContainer.FilamentDatabaseChangesListener filamentDatabaseChangesListener
