@@ -326,7 +326,7 @@ public class PostProcessor
                 }
 
                 outputUtilities.prependPrePrintHeader(writer,
-                        Optional.<PrinterType>of(printer.printerConfigurationProperty().get().getPrinterType()),
+                        Optional.<PrinterType>of(printer.findPrinterType()),
                         headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
@@ -368,7 +368,7 @@ public class PostProcessor
                 timeUtils.timerStart(this, writeOutputTimerName);
                 outputUtilities.appendPostPrintFooter(writer,
                         timeAndVolumeCalcResult,
-                        Optional.<PrinterType>of(printer.printerConfigurationProperty().get().getPrinterType()),
+                        Optional.<PrinterType>of(printer.findPrinterType()),
                         headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,

@@ -62,6 +62,7 @@ import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintActionUnavailableException;
 import celtech.roboxbase.printerControl.PrintJob;
@@ -532,6 +533,16 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty()
     {
         return printerConfiguration;
+    }
+    
+    @Override
+    public PrinterType findPrinterType() 
+    {
+        if(printerConfigurationProperty().get() == null) {
+            return null;
+        }
+        
+        return printerConfigurationProperty().get().getPrinterType();
     }
 
     @Override
@@ -1292,7 +1303,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             try
             {
                 ArrayList<String> macroContents = GCodeMacros.getMacroContents(macroName,
-                        Optional.of(printerConfigurationProperty().get().getPrinterType()),
+                        Optional.of(findPrinterType()),
                         headProperty().get().typeCodeProperty().get(), false, false, false);
                 macroContents.forEach(line ->
                 {
