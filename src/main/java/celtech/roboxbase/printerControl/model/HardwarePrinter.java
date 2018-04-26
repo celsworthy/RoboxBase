@@ -1303,7 +1303,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             try
             {
                 ArrayList<String> macroContents = GCodeMacros.getMacroContents(macroName,
-                        Optional.of(printerConfigurationProperty().get().getPrinterType()),
+                        Optional.of(findPrinterType()),
                         headProperty().get().typeCodeProperty().get(), false, false, false);
                 macroContents.forEach(line ->
                 {

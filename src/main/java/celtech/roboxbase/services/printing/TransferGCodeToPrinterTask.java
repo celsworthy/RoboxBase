@@ -140,7 +140,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                     {
                         //Put in contents of macro
                         List<String> macroLines = GCodeMacros.getMacroContents(line,
-                                Optional.of(printerToUse.printerConfigurationProperty().get().getPrinterType()),
+                                Optional.of(printerToUse.findPrinterType()),
                                 printerToUse.headProperty().get().typeCodeProperty().get(),
                                 false, false, false);
                         for (String macroLine : macroLines)

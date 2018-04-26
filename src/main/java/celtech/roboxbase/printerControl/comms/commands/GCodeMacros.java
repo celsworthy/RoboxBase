@@ -584,7 +584,7 @@ public class GCodeMacros
 
     public static void sendMacroLineByLine(Printer printer, Macro macro, Cancellable cancellable) throws IOException, MacroLoadException
     {
-        PrinterType typeCode = printer.printerConfigurationProperty().get().getPrinterType();
+        PrinterType typeCode = printer.findPrinterType();
 
         ArrayList<String> macroLines = GCodeMacros.getMacroContents(macro.getMacroFileName(),
                 Optional.of(typeCode), printer.headProperty().get().typeCodeProperty().get(),
