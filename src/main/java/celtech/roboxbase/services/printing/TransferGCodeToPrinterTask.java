@@ -2,6 +2,7 @@ package celtech.roboxbase.services.printing;
 
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.model.Printer;
@@ -83,9 +84,10 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
         updateTitle("GCode Print ID:" + printJobID);
         File gcodeFile = new File(gcodeFileToPrint);
+        Optional<PrinterType> printerType = Optional.of(printerToUse.findPrinterType());
         FileReader gcodeReader = null;
         Scanner scanner = null;
-        numberOfLines = GCodeMacros.countLinesInMacroFile(gcodeFile, ";");
+        numberOfLines = GCodeMacros.countLinesInMacroFile(gcodeFile, ";", printerType);
         linesInFile.setValue(numberOfLines);
 
         steno.debug("Beginning transfer of file " + gcodeFileToPrint + " to printer from line "
@@ -138,7 +140,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                     {
                         //Put in contents of macro
                         List<String> macroLines = GCodeMacros.getMacroContents(line,
-                                Optional.of(printerToUse.printerConfigurationProperty().get().getPrinterType()),
+                                Optional.of(printerToUse.findPrinterType()),
                                 printerToUse.headProperty().get().typeCodeProperty().get(),
                                 false, false, false);
                         for (String macroLine : macroLines)

@@ -584,7 +584,7 @@ public class GCodeMacros
 
     public static void sendMacroLineByLine(Printer printer, Macro macro, Cancellable cancellable) throws IOException, MacroLoadException
     {
-        PrinterType typeCode = printer.printerConfigurationProperty().get().getPrinterType();
+        PrinterType typeCode = printer.findPrinterType();
 
         ArrayList<String> macroLines = GCodeMacros.getMacroContents(macro.getMacroFileName(),
                 Optional.of(typeCode), printer.headProperty().get().typeCodeProperty().get(),
@@ -610,9 +610,9 @@ public class GCodeMacros
      * @param commentCharacter
      * @return
      */
-    public static int countLinesInMacroFile(File aFile, String commentCharacter)
+    public static int countLinesInMacroFile(File aFile, String commentCharacter, Optional<PrinterType> typeCode)
     {
-        return countLinesInMacroFile(aFile, commentCharacter, null, null, false, false, false);
+        return countLinesInMacroFile(aFile, commentCharacter, typeCode, null, false, false, false);
     }
 
     /**

@@ -903,12 +903,13 @@ public class PrintEngine implements ControllableService
 
         File src = new File(filename);
         File dest = new File(printjobFilename);
+        Optional<PrinterType> printerType = Optional.of(associatedPrinter.findPrinterType());
         try
         {
             FileUtils.copyFile(src, dest);
             BaseLookup.getTaskExecutor().runOnGUIThread(() ->
             {
-                int numberOfLines = GCodeMacros.countLinesInMacroFile(dest, ";");
+                int numberOfLines = GCodeMacros.countLinesInMacroFile(dest, ";", printerType);
                 linesInPrintingFile.set(numberOfLines);
                 transferGCodeToPrinterService.reset();
                 transferGCodeToPrinterService.setPrintUsingSDCard(useSDCard);
@@ -1004,6 +1005,7 @@ public class PrintEngine implements ControllableService
                 + BaseConfiguration.gcodeTempFileExtension;
 
         File printjobFile = new File(printjobFilename);
+        Optional<PrinterType> printerType = Optional.of(associatedPrinter.findPrinterType());
         try
         {
             String s = macro.getMacroFileName();
@@ -1012,7 +1014,7 @@ public class PrintEngine implements ControllableService
             if (head != null)
                 headTypeCode = head.typeCodeProperty().get();
             ArrayList<String> macroContents = GCodeMacros.getMacroContents(macro.getMacroFileName(),
-                    Optional.of(associatedPrinter.printerConfigurationProperty().get().getPrinterType()),
+                    printerType,
                     headTypeCode,
                     requireNozzle0,
                     requireNozzle1,
@@ -1032,7 +1034,7 @@ public class PrintEngine implements ControllableService
 
         BaseLookup.getTaskExecutor().runOnGUIThread(() ->
         {
-            int numberOfLines = GCodeMacros.countLinesInMacroFile(printjobFile, ";");
+            int numberOfLines = GCodeMacros.countLinesInMacroFile(printjobFile, ";", printerType);
             linesInPrintingFile.set(numberOfLines);
             steno.
                     info("Print service is in state:" + transferGCodeToPrinterService.stateProperty().

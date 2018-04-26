@@ -27,6 +27,7 @@ import celtech.roboxbase.comms.events.ErrorConsumer;
 import celtech.roboxbase.comms.remote.clear.SuitablePrintJob;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
@@ -1105,6 +1106,16 @@ public class TestPrinter implements Printer
     public ReadOnlyObjectProperty<PrinterDefinitionFile> printerConfigurationProperty()
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public PrinterType findPrinterType() 
+    {
+        if(printerConfigurationProperty().get() == null) {
+            return null;
+        }
+        
+        return printerConfigurationProperty().get().getPrinterType();
     }
 
     @Override
