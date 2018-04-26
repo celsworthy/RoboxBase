@@ -610,9 +610,9 @@ public class GCodeMacros
      * @param commentCharacter
      * @return
      */
-    public static int countLinesInMacroFile(File aFile, String commentCharacter)
+    public static int countLinesInMacroFile(File aFile, String commentCharacter, Optional<PrinterType> typeCode)
     {
-        return countLinesInMacroFile(aFile, commentCharacter, null, null, false, false, false);
+        return countLinesInMacroFile(aFile, commentCharacter, typeCode, null, false, false, false);
     }
 
     /**
