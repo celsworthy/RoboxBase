@@ -14,6 +14,7 @@ import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
@@ -169,6 +170,13 @@ public interface Printer extends RoboxResponseConsumer
     public PrinterAncillarySystems getPrinterAncillarySystems();
 
     public PrinterIdentity getPrinterIdentity();
+    
+    /**
+     * Find the {@link PrinterType} from the {@link PrinterDefinitionFile}
+     * 
+     * @return the PrinterType of the printer
+     */
+    public PrinterType findPrinterType();
 
     /*
      * Door open
