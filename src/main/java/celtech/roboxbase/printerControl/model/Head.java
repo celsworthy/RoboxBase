@@ -73,6 +73,8 @@ public class Head implements Cloneable, RepairableComponent
     protected ObjectProperty<ValveType> valveType = new SimpleObjectProperty<>(
             ValveType.FITTED);
 
+    protected final FloatProperty zReductionProperty = new SimpleFloatProperty(0);
+    
     protected final FloatProperty headXPosition = new SimpleFloatProperty(0);
     protected final FloatProperty headYPosition = new SimpleFloatProperty(0);
     protected final FloatProperty headZPosition = new SimpleFloatProperty(0);
@@ -139,6 +141,8 @@ public class Head implements Cloneable, RepairableComponent
         setTypeCode(headData.getTypeCode());
         valveType.set(headData.getValves());
         
+        zReductionProperty.set(headData.getZReduction());
+        
         nozzleHeaters.clear();
         headData.getNozzleHeaters().stream().
                 map((nozzleHeaterData) -> makeNozzleHeater(nozzleHeaterData))
@@ -198,6 +202,11 @@ public class Head implements Cloneable, RepairableComponent
      public ObjectProperty<ValveType> valveTypeProperty()
     {
         return valveType;
+    }
+     
+    public ReadOnlyFloatProperty getZReductionProperty() 
+    {
+        return zReductionProperty;
     }
 
     public StringProperty uniqueIDProperty()

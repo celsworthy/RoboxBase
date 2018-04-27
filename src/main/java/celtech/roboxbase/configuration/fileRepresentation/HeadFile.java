@@ -19,6 +19,7 @@ public class HeadFile
     private String typeCode;
     private HeadType type;
     private ValveType valves;
+    private float zReduction;
 
     private List<NozzleHeaterData> nozzleHeaters = new ArrayList<>();
     private List<NozzleData> nozzles = new ArrayList<>();
@@ -41,6 +42,16 @@ public class HeadFile
     public ValveType getValves()
     {
         return valves;
+    }
+    
+    public float getZReduction()
+    {
+        return zReduction;
+    }
+    
+    public void setZReduction(float zReduction)
+    {
+        this.zReduction = zReduction;
     }
 
     public int getVersion()
