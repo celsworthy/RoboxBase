@@ -48,7 +48,7 @@ public class FilamentContainer
 
     public final Filament createNewFilament = new Filament(null, null, null, null, null,
             0, 0, 0, 0, 0, 0, 0, 0, Color.ALICEBLUE,
-            0, 0, false);
+            0, 0, false, false);
     public static final Filament UNKNOWN_FILAMENT = new Filament("Unknown",
             null,
             "",
@@ -65,6 +65,7 @@ public class FilamentContainer
             Color.ALICEBLUE,
             0,
             0,
+            false,
             false);
 
     private static final String nameProperty = "name";
@@ -83,6 +84,7 @@ public class FilamentContainer
     private static final String nozzleTempProperty = "nozzle_temperature_C";
     private static final String displayColourProperty = "display_colour";
     private static final String defaultLengthProperty = "default_length_m";
+    private static final String filledProperty = "filled";
 
     public interface FilamentDatabaseChangesListener
     {
@@ -230,17 +232,26 @@ public class FilamentContainer
                         costGBPPerKGString = filamentProperties.getProperty(costGBPPerKGProperty).trim();
                     } catch (Exception ex)
                     {
-                        steno.warning("No cost per GBP found in filament file");
+                        steno.warning("No cost per GBP found in filament file " + filamentFile.getAbsolutePath());
                     }
 
                     // introduced in 2.01.03
-                    String default_length_mString = "240";
+                    String defaultLengthString = "240";
                     try
                     {
-                        default_length_mString = filamentProperties.getProperty(defaultLengthProperty).trim();
+                        defaultLengthString = filamentProperties.getProperty(defaultLengthProperty).trim();
                     } catch (Exception ex)
                     {
-                        steno.warning("No default length found in filament file");
+                        steno.warning("No default length found in filament file " + filamentFile.getAbsolutePath());
+                    }
+                    
+                    String filledString = "No";
+                    try
+                    {
+                        filledString = filamentProperties.getProperty(filledProperty).trim();
+                    } catch (Exception ex)
+                    {
+                        steno.debug("No 'filled' property found in filament file");
                     }
 
                     if (name != null
@@ -256,6 +267,20 @@ public class FilamentContainer
                             && nozzleTempString != null
                             && displayColourString != null)
                     {
+                        MaterialType selectedMaterial;
+                        try
+                        {
+                            selectedMaterial = MaterialType.valueOf(material);
+                        } catch (IllegalArgumentException ex)
+                        {
+                            // Default material to 'Special'.
+                            selectedMaterial = MaterialType.SPC;
+                            steno.warning("Using material SPC as material type " 
+                                          + material
+                                          + " not recognised in filament file "
+                                          + filamentFile.getAbsolutePath());
+                        }
+
                         try
                         {
                             float diameter = Float.valueOf(diameterString);
@@ -268,9 +293,9 @@ public class FilamentContainer
                             int nozzleTemp = Integer.valueOf(nozzleTempString);
                             Color colour = Color.web(displayColourString);
                             float costGBPPerKG = Float.valueOf(costGBPPerKGString);
-                            int defaultLength_m = Integer.valueOf(default_length_mString);
-                            MaterialType selectedMaterial = MaterialType.valueOf(material);
-
+                            int defaultLength_m = Integer.valueOf(defaultLengthString);
+                            boolean filled = filledString.equalsIgnoreCase("yes");
+                            
                             Filament newFilament = new Filament(
                                     name,
                                     selectedMaterial,
@@ -288,6 +313,7 @@ public class FilamentContainer
                                     colour,
                                     costGBPPerKG,
                                     defaultLength_m,
+                                    filled,
                                     filamentsAreMutable);
 
                             filamentList.add(newFilament);
@@ -400,6 +426,7 @@ public class FilamentContainer
                     filament.getFirstLayerNozzleTemperature()));
             filamentProperties.setProperty(nozzleTempProperty, String.valueOf(
                     filament.getNozzleTemperature()));
+            filamentProperties.setProperty(filledProperty, (filament.isFilled() ? "Yes" : "No"));
 
             String webColour = String.format("#%02X%02X%02X",
                     (int) (filament.getDisplayColour().getRed() * 255),

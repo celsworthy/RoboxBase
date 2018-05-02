@@ -44,7 +44,7 @@ public class SerializableFilamentTest
 
     private SerializableFilament getTestFilament()
     {
-        SerializableFilament packet = new SerializableFilament("A Filament", MaterialType.ABS, "U123456", "", "", 0.4f, 0, 0, 0, 0, 0, 0, 0, Color.AQUA.toString(), 0, 0, true);
+        SerializableFilament packet = new SerializableFilament("A Filament", MaterialType.ABS, "U123456", "", "", 0.4f, 0, 0, 0, 0, 0, 0, 0, Color.AQUA.toString(), 0, 0, false, true);
 
         return packet;
     }

@@ -128,7 +128,7 @@ public class AsyncWriteThread extends Thread
                 long dt = t2 -t1;
                 if (dt > 500)
                 {
-                    steno.warning("Long wait (" + Long.toString(dt) + ") for response to command " + command.getCommand().getPacketType());
+                    steno.debug("Long wait (" + Long.toString(dt) + ") for response to command " + command.getCommand().getPacketType());
                     if (command.getCommand().getPacketType() == TxPacketTypeEnum.DATA_FILE_CHUNK)
                             steno.debug("    sequence number = " + command.getCommand().getSequenceNumber());
                     if (retryCount > 0 )

@@ -4,6 +4,7 @@ import celtech.roboxbase.printerControl.model.Extruder;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
 import celtech.roboxbase.printerControl.model.Head.ValveType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,11 +45,13 @@ public class HeadFile
         return valves;
     }
     
+    @JsonProperty("zReduction") // Needed otherwise property is all in lower case - i.e. 'zreduction'.
     public float getZReduction()
     {
         return zReduction;
     }
     
+    @JsonProperty("zReduction") // Needed otherwise property is all in lower case - i.e. 'zreduction'.
     public void setZReduction(float zReduction)
     {
         this.zReduction = zReduction;

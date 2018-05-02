@@ -30,6 +30,7 @@ public class SerializableFilament
     private String webDisplayColour;
     private float costGBPPerKG;
     private int defaultLength_m;
+    private boolean filled;
     private boolean mutable;
 
     public SerializableFilament()
@@ -54,6 +55,7 @@ public class SerializableFilament
         this.webDisplayColour = filament.getDisplayColour().toString();
         this.costGBPPerKG = filament.getCostGBPPerKG();
         this.defaultLength_m = filament.getDefaultLength_m();
+        this.filled = filament.isFilled();
         this.mutable = filament.isMutable();
     }
 
@@ -73,6 +75,7 @@ public class SerializableFilament
             String webDisplayColour,
             float costGBPPerKG,
             int defaultLength_m,
+            boolean filled,
             boolean mutable)
     {
         this.friendlyFilamentName = friendlyFilamentName;
@@ -91,6 +94,7 @@ public class SerializableFilament
         this.webDisplayColour = webDisplayColour;
         this.costGBPPerKG = costGBPPerKG;
         this.defaultLength_m = defaultLength_m;
+        this.filled = filled;
         this.mutable = mutable;
     }
 
@@ -342,6 +346,7 @@ public class SerializableFilament
                 Color.web(this.webDisplayColour),
                 this.costGBPPerKG,
                 this.defaultLength_m,
+                this.filled,
                 this.mutable);
 
         return filament;

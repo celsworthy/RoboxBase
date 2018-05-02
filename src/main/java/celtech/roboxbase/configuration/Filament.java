@@ -51,7 +51,8 @@ public class Filament implements Serializable, Cloneable
     private final FloatProperty remainingFilament = new SimpleFloatProperty(0);
     private final FloatProperty costGBPPerKG = new SimpleFloatProperty(35f);
     private final IntegerProperty defaultLength_m = new SimpleIntegerProperty(0);
-
+    private final BooleanProperty filled = new SimpleBooleanProperty(false);
+    
     public static final Comparator<Filament> BY_MATERIAL
             = (Filament o1, Filament o2) -> o1.getMaterial().name().compareTo(o2.getMaterial().name());
 
@@ -116,6 +117,7 @@ public class Filament implements Serializable, Cloneable
             Color displayColour,
             float costGBPPerKG,
             int defaultLength_m,
+            boolean filled,
             boolean mutable)
     {
         this.friendlyFilamentName.set(friendlyFilamentName);
@@ -136,6 +138,7 @@ public class Filament implements Serializable, Cloneable
         this.defaultLength_m.set(defaultLength_m);
         //Remaining filament is in mm on the reel
         this.remainingFilament.set(defaultLength_m * 1000);
+        this.filled.set(filled);
         this.mutable.set(mutable);
     }
 
@@ -191,6 +194,7 @@ public class Filament implements Serializable, Cloneable
                 append(displayColour.get()).
                 append(costGBPPerKG.get()).
                 append(defaultLength_m.get()).
+                append(filled.get()).
                 toHashCode();
     }
 
@@ -222,6 +226,7 @@ public class Filament implements Serializable, Cloneable
                 append(displayColour.get(), rhs.displayColour.get()).
                 append(costGBPPerKG.get(), rhs.costGBPPerKG.get()).
                 append(defaultLength_m.get(), rhs.defaultLength_m.get()).
+                append(filled.get(), rhs.filled.get()).
                 isEquals();
     }
 
@@ -380,6 +385,16 @@ public class Filament implements Serializable, Cloneable
         return remainingFilament.get();
     }
 
+    public boolean isFilled()
+    {
+        return filled.get();
+    }
+
+    public BooleanProperty getFilledProperty()
+    {
+        return filled;
+    }
+
     public void setFriendlyFilamentName(String friendlyColourName)
     {
         this.friendlyFilamentName.set(friendlyColourName);
@@ -454,6 +469,11 @@ public class Filament implements Serializable, Cloneable
     public void setRemainingFilament(float value)
     {
         this.remainingFilament.set(value);
+    }
+
+    public void setFilled(boolean value)
+    {
+        this.filled.set(value);
     }
 
     public boolean isMutable()
@@ -569,6 +589,7 @@ public class Filament implements Serializable, Cloneable
                 this.getDisplayColour(),
                 this.getCostGBPPerKG(),
                 this.getDefaultLength_m(),
+                this.isFilled(),
                 this.isMutable()
         );
 

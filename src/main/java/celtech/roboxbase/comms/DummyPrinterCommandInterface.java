@@ -394,7 +394,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             PrinterIDResponse idResponse = (PrinterIDResponse) RoboxRxPacketFactory.createPacket(
                     RxPacketTypeEnum.PRINTER_ID_RESPONSE);
             idResponse.setEdition("KS");
-            // Every other dummy printer is a Brobox
+            // Every other dummy printer is a RoboxPro
             char lastDigitOfName = printerName.charAt(printerName.length() - 1);
             if ("02468".contains(lastDigitOfName + ""))
             {
@@ -786,6 +786,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     Color.web(reelWriteMessage.getDisplayColourString()),
                     1.0f,
                     (int) reelWriteMessage.getReelRemainingFilament(),
+                    false,
                     true);
             attachedReels[0].updateContents(f);
             steno.debug(reelWriteMessage.toString());
@@ -809,6 +810,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     Color.web(reelWriteMessage.getDisplayColourString()),
                     1.0f,
                     (int) reelWriteMessage.getReelRemainingFilament(),
+                    false,
                     true);
             attachedReels[1].updateContents(f);
             steno.debug(reelWriteMessage.toString());
