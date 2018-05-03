@@ -69,7 +69,7 @@ public final class DetectedServer
     @JsonIgnore
     public static final int readTimeOutShort = 1500;
     @JsonIgnore
-    public static final int connectTimeOutShort = 200;
+    public static final int connectTimeOutShort = 300;
     @JsonIgnore
     public static final int readTimeOutLong = 15000;
     @JsonIgnore

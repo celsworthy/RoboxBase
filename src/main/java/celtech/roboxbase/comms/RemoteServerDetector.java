@@ -33,61 +33,87 @@ public class RemoteServerDetector
     private static final int MAX_WAIT_TIME_MS = 2000;
     private static final int CYCLE_WAIT_TIME_MS = 200;
 
+    private void setupDatagramChannel(NetworkInterface localInterface) throws IOException
+    {
+        steno.info("Using local address " + localInterface.toString());
+        transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
+        datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
+        datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+        datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
+        datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, localInterface);
+        datagramChannel.configureBlocking(false);
+        steno.info("setup datagram channel " + datagramChannel.toString());
+    }
+    
     private RemoteServerDetector()
     {
+        boolean done = false;
+        // Look for a local interface with external access. The code used to do the following:
+        // 
+        //     NetworkInterface localInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+        //
+        // but this failed on some Linux distributions, because InetAddress.getLocalHost() would return 127.0.1.1.
+        // This address did not map to a network interface, so localInterface was null.
+        //
+        // This code, copied from StackOverflow, finds the first interface that is not a loopback or link local address.
         try
         {
-            NetworkInterface localInterface = null;
-            // Look for a local interface with external access. The code used to do the following:
-            // 
-            //     NetworkInterface localInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
-            //
-            // but this failed on some Linux distributions, because InetAddress.getLocalHost() would return 127.0.1.1.
-            // This address did not map to a network interface, so localInterface was null.
-            //
-            // This code, copied from StackOverflow, finds the first interface that is not a loopback or link local address.
-            try 
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (!done && networkInterfaces.hasMoreElements()) 
             {
-                Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-                while (localInterface == null && networkInterfaces.hasMoreElements()) 
+                try
                 {
                     NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();
                     Enumeration<InetAddress> nias = ni.getInetAddresses();
                     while(nias.hasMoreElements())
                     {
-                        InetAddress ia= (InetAddress) nias.nextElement();
+                        InetAddress ia = (InetAddress) nias.nextElement();
+                        steno.debug("Checking internet address " + ia.toString());
                         if (!ia.isLinkLocalAddress() &&
                             !ia.isLoopbackAddress())
                         {
-                            localInterface = ni;
+                            setupDatagramChannel(ni);
+                            done = true;
                             break;
                         }
                     }
                 }
+                catch (IOException ex)
+                {
+                    steno.debug("IO Exception when checking network interface : " + ex.getMessage());
+                }
             }
-            catch (SocketException e)
-            {
-                steno.error("Unable to get current IP " + e.getMessage());
-            }
-    
-            if (localInterface == null)
-                localInterface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
-            if (localInterface == null)
-            {
-                steno.error("Unable to set up remote discovery client - no local host or loopback interface.");
-                return;
-            }
-
-            transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
-            datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
-            datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
-            datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, localInterface);
-            datagramChannel.configureBlocking(false);
         }
-        catch (IOException ex)
+        catch (SocketException ex)
         {
-            steno.error("Unable to set up remote discovery client : " + ex.getMessage());
+            steno.debug("Socket Exception when getting network interfaces : " + ex.getMessage());
+        }
+
+        if (!done)
+        {
+            // No external interfaces found. Try the loopback address. Not sure this is actually useful.
+            try
+            {
+                NetworkInterface localInterface = NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
+                if (localInterface != null)
+                {
+                        setupDatagramChannel(localInterface);
+                        done = true;
+                }
+            }
+            catch (SocketException ex)
+            {
+                steno.debug("Socket exception when checking loopback address: " + ex.getMessage());
+            }
+            catch (IOException ex)
+            {
+                steno.debug("IO Exception when checking loopback address: " + ex.getMessage());
+            }
+        }
+        
+        if (!done)
+        {
+            steno.error("Unable to set up remote discovery client");
         }
     }
 
