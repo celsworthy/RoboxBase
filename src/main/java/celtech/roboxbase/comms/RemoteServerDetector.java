@@ -35,14 +35,14 @@ public class RemoteServerDetector
 
     private void setupDatagramChannel(NetworkInterface localInterface) throws IOException
     {
-        steno.info("Using local address " + localInterface.toString());
+        steno.debug("Using local address " + localInterface.toString());
         transmitGroup = new InetSocketAddress(RemoteDiscovery.multicastAddress, RemoteDiscovery.remoteSocket);
         datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET);
         datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         datagramChannel.bind(new InetSocketAddress(RemoteDiscovery.remoteSocket));
         datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, localInterface);
         datagramChannel.configureBlocking(false);
-        steno.info("setup datagram channel " + datagramChannel.toString());
+        steno.debug("setup datagram channel " + datagramChannel.toString());
     }
     
     private RemoteServerDetector()

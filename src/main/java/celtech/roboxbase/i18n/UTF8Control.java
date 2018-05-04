@@ -194,6 +194,14 @@ public class UTF8Control extends Control
         return bundle;
     }
 
+    @Override
+    public Locale getFallbackLocale(String baseName,
+                                    Locale locale)
+    {
+        // Always fallback to English.
+        return locale.equals(Locale.ENGLISH) ? null : Locale.ENGLISH;
+    }
+    
     private String toResourceName0(String bundleName, String suffix)
     {
         // application protocol check

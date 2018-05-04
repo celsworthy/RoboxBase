@@ -52,7 +52,9 @@ public class InterAppCommsThread extends Thread
 
             } catch (IOException ex)
             {
-                steno.error("Error trying to listen for InterApp comms");
+                // Get a "SocketException - socket closed" when the thread is terminated.
+                if (keepRunning)
+                    steno.error("Error trying to listen for InterApp comms");
             }
         }
     }
