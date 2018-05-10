@@ -218,11 +218,11 @@ public class BaseLookup
         steno.debug("Starting AutoMaker - loading resources...");
 
         applicationLocale = appLocale;
-
+        
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
-        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", appLocale);
+        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
