@@ -206,6 +206,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private ObjectProperty<EEPROMState> lastHeadEEPROMState = new SimpleObjectProperty<>(EEPROMState.NOT_PRESENT);
     private final int maxNumberOfReels = 2;
+    private final int[] reelEEPROMCheckCounter = new int[maxNumberOfReels];
     private ObservableList<EEPROMState> lastReelEEPROMState = FXCollections.observableArrayList(EEPROMState.NOT_PRESENT, EEPROMState.NOT_PRESENT);
 
     /*
@@ -3787,14 +3788,36 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         return data;
 
     }
+    
+    /**
+     * Synchronised method to update a reels EEPROM check counter
+     * 
+     * @param reelNumber the reel to update
+     * @param count the counter value
+     */
+    private synchronized void setEEPROMCheckCounterForReel(final int reelNumber, final int count) {
+        reelEEPROMCheckCounter[reelNumber] = count;
+    }
+    
+    /**
+     * Synchronised method to get a reels EEPROM check counter
+     * 
+     * @param reelNumber the reel number to get the count for
+     * @return the count as an int
+     */
+    private synchronized int getEEPROMCheckCounterForReel(final int reelNumber) {
+        return reelEEPROMCheckCounter[reelNumber];
+    }
 
     class RoboxEventProcessor implements Runnable
     {
-
-        private Printer printer;
-        private RoboxRxPacket rxPacket;
+        // This boolean is mutable and possibly put here as a work around to not
+        // being able to use mutable local variables in lambda expressions, idealy
+        // we would not have mutable members in a runnable class.
         private boolean errorWasConsumed;
-        private int[] reelEEPROMCheckCounter = new int[maxNumberOfReels];
+        
+        private final Printer printer;
+        private final RoboxRxPacket rxPacket;
         private final int REEL_EEPROM_COUNTS_BEFORE_CHECK = 400;
 
         public RoboxEventProcessor(Printer printer, RoboxRxPacket rxPacket)
@@ -4162,7 +4185,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     BaseLookup.getSystemNotificationHandler().
                                             showReelUpdatedNotification();
                                     //Force the next iteration of status check to read the reel eeprom
-                                    reelEEPROMCheckCounter[reelResponse.getReelNumber()] = REEL_EEPROM_COUNTS_BEFORE_CHECK;
+                                    setEEPROMCheckCounterForReel(reelResponse.getReelNumber(), REEL_EEPROM_COUNTS_BEFORE_CHECK);
                                 } catch (RoboxCommsException ex)
                                 {
                                     steno.error("Error updating reel after repair " + ex.
@@ -4388,9 +4411,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             {
                 if ((lastReelEEPROMState.get(reelNumber)
                         != statusResponse.getReelEEPROMState(reelNumber))
-                        || reelEEPROMCheckCounter[reelNumber] >= REEL_EEPROM_COUNTS_BEFORE_CHECK)
+                        || getEEPROMCheckCounterForReel(reelNumber) >= REEL_EEPROM_COUNTS_BEFORE_CHECK)
                 {
-                    reelEEPROMCheckCounter[reelNumber] = 0;
+                    setEEPROMCheckCounterForReel(reelNumber, 0);
                     lastReelEEPROMState.set(reelNumber, statusResponse.getReelEEPROMState(
                             reelNumber));
                     switch (statusResponse.getReelEEPROMState(reelNumber))
@@ -4423,7 +4446,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             break;
                     }
                 }
-                reelEEPROMCheckCounter[reelNumber]++;
+                setEEPROMCheckCounterForReel(reelNumber, getEEPROMCheckCounterForReel(reelNumber) + 1);
             }
         }
 
