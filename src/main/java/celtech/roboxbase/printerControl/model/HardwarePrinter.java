@@ -3811,10 +3811,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     class RoboxEventProcessor implements Runnable
     {
-
-        private Printer printer;
-        private RoboxRxPacket rxPacket;
+        // This boolean is mutable and possibly put here as a work around to not
+        // being able to use mutable local variables in lambda expressions, idealy
+        // we would not have mutable members in a runnable class.
         private boolean errorWasConsumed;
+        
+        private final Printer printer;
+        private final RoboxRxPacket rxPacket;
         private final int REEL_EEPROM_COUNTS_BEFORE_CHECK = 400;
 
         public RoboxEventProcessor(Printer printer, RoboxRxPacket rxPacket)
