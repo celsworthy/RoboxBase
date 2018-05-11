@@ -206,7 +206,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
     private ObjectProperty<EEPROMState> lastHeadEEPROMState = new SimpleObjectProperty<>(EEPROMState.NOT_PRESENT);
     private final int maxNumberOfReels = 2;
-    private final int[] reelEEPROMCheckCounter = new int[maxNumberOfReels];
+    private final boolean[] reelEEPROMCheck = new boolean[maxNumberOfReels];
     private ObservableList<EEPROMState> lastReelEEPROMState = FXCollections.observableArrayList(EEPROMState.NOT_PRESENT, EEPROMState.NOT_PRESENT);
 
     /*
@@ -3795,8 +3795,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * @param reelNumber the reel to update
      * @param count the counter value
      */
-    private synchronized void setEEPROMCheckCounterForReel(final int reelNumber, final int count) {
-        reelEEPROMCheckCounter[reelNumber] = count;
+    private synchronized void setEEPROMCheckForReel(final int reelNumber, final boolean check) {
+        reelEEPROMCheck[reelNumber] = check;
     }
     
     /**
@@ -3805,8 +3805,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * @param reelNumber the reel number to get the count for
      * @return the count as an int
      */
-    private synchronized int getEEPROMCheckCounterForReel(final int reelNumber) {
-        return reelEEPROMCheckCounter[reelNumber];
+    private synchronized boolean getEEPROMCheckForReel(final int reelNumber) {
+        return reelEEPROMCheck[reelNumber];
     }
 
     class RoboxEventProcessor implements Runnable
@@ -4185,7 +4185,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     BaseLookup.getSystemNotificationHandler().
                                             showReelUpdatedNotification();
                                     //Force the next iteration of status check to read the reel eeprom
-                                    setEEPROMCheckCounterForReel(reelResponse.getReelNumber(), REEL_EEPROM_COUNTS_BEFORE_CHECK);
+                                    setEEPROMCheckForReel(reelResponse.getReelNumber(), true);
                                 } catch (RoboxCommsException ex)
                                 {
                                     steno.error("Error updating reel after repair " + ex.
@@ -4411,9 +4411,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             {
                 if ((lastReelEEPROMState.get(reelNumber)
                         != statusResponse.getReelEEPROMState(reelNumber))
-                        || getEEPROMCheckCounterForReel(reelNumber) >= REEL_EEPROM_COUNTS_BEFORE_CHECK)
+                        || getEEPROMCheckForReel(reelNumber))
                 {
-                    setEEPROMCheckCounterForReel(reelNumber, 0);
+                    setEEPROMCheckForReel(reelNumber, false);
                     lastReelEEPROMState.set(reelNumber, statusResponse.getReelEEPROMState(
                             reelNumber));
                     switch (statusResponse.getReelEEPROMState(reelNumber))
@@ -4446,7 +4446,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             break;
                     }
                 }
-                setEEPROMCheckCounterForReel(reelNumber, getEEPROMCheckCounterForReel(reelNumber) + 1);
             }
         }
 
