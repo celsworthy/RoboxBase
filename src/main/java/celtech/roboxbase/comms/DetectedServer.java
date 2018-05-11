@@ -386,7 +386,7 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    pollCount = 0; // Successfull contact, so zero the poll count;
+                    pollCount = 0; // Successful contact, so zero the poll count;
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
@@ -638,16 +638,31 @@ public final class DetectedServer
 
         try
         {
+            long t1 = System.currentTimeMillis();
             MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
 
             File rootSoftwareFile = new File(path + filename);
-
+            steno.info("upgradeRootSoftware: uploading file " + path + filename);
+                                      
             // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
             // being removed.
-            multipart.addFilePart("name", rootSoftwareFile, (double pp) -> { pollCount = 0; progressReceiver.updateProgressPercent(pp); });
-
+            multipart.addFilePart("name", rootSoftwareFile,
+                                  (double pp) -> 
+                                  {
+                                      pollCount = 0;
+                                      progressReceiver.updateProgressPercent(pp);
+                                  });
+            long t2 = System.currentTimeMillis();
+            steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
+            
             List<String> response = multipart.finish();
-            pollCount = 0; // Successful contact, so zero the poll count;
+            disconnect();
+            
+            // Disconnecting here does not clear the user interface, so also set the poll count to force the user interface to clear.
+            pollCount = maxAllowedPollCount + 1;
+            
+            long t3 = System.currentTimeMillis();            
+            steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
             
             success = true;
         } catch (IOException ex)

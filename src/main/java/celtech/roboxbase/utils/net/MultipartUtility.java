@@ -35,7 +35,8 @@ public class MultipartUtility
     private String charset;
     private OutputStream outputStream;
     private PrintWriter writer;
-
+    private final int connectionTimeout = 3000;
+    private final int readTimeout = 40000;
     /**
      * This constructor initializes a new HTTP POST request with content type is
      * set to multipart/form-data
@@ -68,8 +69,8 @@ public class MultipartUtility
         httpConn.setRequestProperty("Expect", "100-continue");
         httpConn.setRequestProperty("Content-Type",
                 "multipart/form-data; boundary=" + boundary);
-        httpConn.setConnectTimeout(3000);
-        httpConn.setReadTimeout(3000);
+        httpConn.setConnectTimeout(connectionTimeout);
+        httpConn.setReadTimeout(readTimeout);
         outputStream = httpConn.getOutputStream();
         writer = new PrintWriter(new OutputStreamWriter(outputStream, charset),
                 true);
@@ -121,8 +122,7 @@ public class MultipartUtility
         writer.flush();
 
         long fileLength = uploadFile.length();
-        double progress = 0;
-
+        
         FileInputStream inputStream = new FileInputStream(uploadFile);
         byte[] buffer = new byte[4096];
         int bytesRead = -1;
