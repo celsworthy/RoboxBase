@@ -149,7 +149,8 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public final class HardwarePrinter implements Printer, ErrorConsumer
 {
-
+    private static final String ROOT_APPLICATION_SHORT_NAME = "Root";
+    
     private final Stenographer steno = StenographerFactory.getStenographer(
             HardwarePrinter.class.getName());
     private final FilamentContainer filamentContainer = FilamentContainer.getInstance();
@@ -3808,6 +3809,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private synchronized boolean getEEPROMCheckForReel(final int reelNumber) {
         return reelEEPROMCheck[reelNumber];
     }
+    
+    /**
+     * Check the application that we are in, if it's root return true
+     * 
+     * @return true if application's short name is root
+     */
+    private boolean runningRoot() {
+        return BaseConfiguration.getApplicationShortName().equals(ROOT_APPLICATION_SHORT_NAME);
+    }
 
     class RoboxEventProcessor implements Runnable
     {
@@ -4148,6 +4158,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 case REEL_1_EEPROM_DATA:
                     ReelEEPROMDataResponse reelResponse = (ReelEEPROMDataResponse) rxPacket;
 
+                    Filament filament = new Filament(reelResponse);
+                    
+                    if (runningRoot() && filament.isMutable()) {
+                        // We only wish to display the data from the EEPROM,
+                        // we don't want to have custom filament files saved on root
+                        addFilamentWithoutSavingToDatabase(reelResponse.getReelNumber(), filament);
+                        break;
+                    }
+                    
                     if (!filamentContainer.isFilamentIDInDatabase(reelResponse.getFilamentID()))
                     {
                         // unrecognised reel
@@ -4195,7 +4214,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             default:
                                 //Update the effective filament if *and only if* we have this filament in our database
                                 // Should happen on the second time through after an auto-update
-                                Filament filament = filamentContainer.getFilamentByID(reelResponse.getFilamentID());
+                                filament = filamentContainer.getFilamentByID(reelResponse.getFilamentID());
                                 effectiveFilaments.put(reelResponse.getReelNumber(), filament);
                                 break;
                         }
@@ -4473,6 +4492,17 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             //{
             //    filamentContainer.addFilamentToUserFilamentList(filament);
             //}
+        }
+        
+        /**
+         * Update the filament details but do not save to file.
+         * 
+         * @param reelNumber
+         * @param filament 
+         */
+        private void addFilamentWithoutSavingToDatabase(int reelNumber, Filament filament) {
+            filamentContainer.addFilamentToUserFilamentList(filament);
+            effectiveFilaments.put(reelNumber, filament);
         }
     };
 
