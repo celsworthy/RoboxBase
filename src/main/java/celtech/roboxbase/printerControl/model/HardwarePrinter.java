@@ -4157,70 +4157,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 case REEL_0_EEPROM_DATA:
                 case REEL_1_EEPROM_DATA:
                     ReelEEPROMDataResponse reelResponse = (ReelEEPROMDataResponse) rxPacket;
-
-                    Filament filament = new Filament(reelResponse);
-                    
-                    if (runningRoot() && filament.isMutable()) {
-                        // We only wish to display the data from the EEPROM,
-                        // we don't want to have custom filament files saved on root
-                        addFilamentWithoutSavingToDatabase(reelResponse.getReelNumber(), filament);
-                        break;
-                    }
-                    
-                    if (!filamentContainer.isFilamentIDInDatabase(reelResponse.getFilamentID()))
-                    {
-                        // unrecognised reel
-                        saveUnknownFilamentToDatabase(reelResponse);
-                    }
-
-                    Reel reel;
-                    if (!reels.containsKey(reelResponse.getReelNumber()))
-                    {
-                        reel = new Reel();
-                        reel.updateFromEEPROMData(reelResponse);
-                        reels.put(reelResponse.getReelNumber(), reel);
-                    } else
-                    {
-                        reel = reels.get(reelResponse.getReelNumber());
-                        reel.updateFromEEPROMData(reelResponse);
-                    }
-
-                    extruders.get(reelResponse.getReelNumber()).lastFeedrateMultiplierInUse.set(reelResponse.getFeedRateMultiplier());
-
-                    if (filamentContainer.isFilamentIDInDatabase(reelResponse.getFilamentID()))
-                    {
-                        // Check to see if the data is in bounds
-                        RepairResult result = reels.get(reelResponse.getReelNumber()).
-                                bringDataInBounds(filamentContainer.getFilamentByID(reelResponse.getFilamentID()));
-
-                        switch (result)
-                        {
-                            case REPAIRED_WRITE_ONLY:
-                                try
-                                {
-                                    writeReelEEPROM(reelResponse.getReelNumber(), reels.get(
-                                            reelResponse.getReelNumber()), true);
-                                    steno.debug("Automatically updated reel data");
-                                    BaseLookup.getSystemNotificationHandler().
-                                            showReelUpdatedNotification();
-                                    //Force the next iteration of status check to read the reel eeprom
-                                    setEEPROMCheckForReel(reelResponse.getReelNumber(), true);
-                                } catch (RoboxCommsException ex)
-                                {
-                                    steno.error("Error updating reel after repair " + ex.
-                                            getMessage());
-                                }
-                                break;
-                            default:
-                                //Update the effective filament if *and only if* we have this filament in our database
-                                // Should happen on the second time through after an auto-update
-                                filament = filamentContainer.getFilamentByID(reelResponse.getFilamentID());
-                                effectiveFilaments.put(reelResponse.getReelNumber(), filament);
-                                break;
-                        }
-                    }
+                    processReelResponse(reelResponse);
                     break;
-
                 case HEAD_EEPROM_DATA:
 //                    steno.info("Head EEPROM data received");
 
@@ -4467,6 +4405,76 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 }
             }
         }
+        
+        /**
+         * Process a {@link ReelEEPROMDataResponse}.
+         * 
+         * @param reelResponse 
+         */
+        private void processReelResponse(ReelEEPROMDataResponse reelResponse) {
+            Reel reel;
+            if (!reels.containsKey(reelResponse.getReelNumber()))
+            {
+                reel = new Reel();
+                reel.updateFromEEPROMData(reelResponse);
+                reels.put(reelResponse.getReelNumber(), reel);
+            } else
+            {
+                reel = reels.get(reelResponse.getReelNumber());
+                reel.updateFromEEPROMData(reelResponse);
+            }
+
+            extruders.get(reelResponse.getReelNumber()).lastFeedrateMultiplierInUse.set(reelResponse.getFeedRateMultiplier());
+
+            Filament filament = new Filament(reelResponse);
+
+            if (runningRoot() && filament.isMutable()) {
+                // We only wish to display the data from the EEPROM,
+                // we don't want to have custom filament files saved on root
+                effectiveFilaments.put(reelResponse.getReelNumber(), filament);
+                steno.debug("Custom reel loaded to " + reelResponse.getReelNumber() + ", displaying contents of EEPROM");
+                return;
+            }
+
+            if (!filamentContainer.isFilamentIDInDatabase(reelResponse.getFilamentID()))
+            {
+                // unrecognised reel
+                saveUnknownFilamentToDatabase(reelResponse);
+            }
+
+            if (filamentContainer.isFilamentIDInDatabase(reelResponse.getFilamentID()))
+            {
+                // Check to see if the data is in bounds
+                RepairResult result = reels.get(reelResponse.getReelNumber()).
+                        bringDataInBounds(filamentContainer.getFilamentByID(reelResponse.getFilamentID()));
+
+                switch (result)
+                {
+                    case REPAIRED_WRITE_ONLY:
+                        try
+                        {
+                            writeReelEEPROM(reelResponse.getReelNumber(), reels.get(
+                                    reelResponse.getReelNumber()), true);
+                            steno.debug("Automatically updated reel data");
+                            BaseLookup.getSystemNotificationHandler().
+                                    showReelUpdatedNotification();
+                            //Force the next iteration of status check to read the reel eeprom
+                            setEEPROMCheckForReel(reelResponse.getReelNumber(), true);
+                        } catch (RoboxCommsException ex)
+                        {
+                            steno.error("Error updating reel after repair " + ex.
+                                    getMessage());
+                        }
+                        break;
+                    default:
+                        //Update the effective filament if *and only if* we have this filament in our database
+                        // Should happen on the second time through after an auto-update
+                        filament = filamentContainer.getFilamentByID(reelResponse.getFilamentID());
+                        effectiveFilaments.put(reelResponse.getReelNumber(), filament);
+                        break;
+                }
+            }
+        }
 
         /**
          * Update the database with the filament details.
@@ -4492,17 +4500,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             //{
             //    filamentContainer.addFilamentToUserFilamentList(filament);
             //}
-        }
-        
-        /**
-         * Update the filament details but do not save to file.
-         * 
-         * @param reelNumber
-         * @param filament 
-         */
-        private void addFilamentWithoutSavingToDatabase(int reelNumber, Filament filament) {
-            filamentContainer.addFilamentToUserFilamentList(filament);
-            effectiveFilaments.put(reelNumber, filament);
         }
     };
 
