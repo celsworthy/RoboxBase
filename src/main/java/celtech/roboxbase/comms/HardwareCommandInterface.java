@@ -28,7 +28,7 @@ public class HardwareCommandInterface extends CommandInterface
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
     {
-        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
+        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks, true);
         this.setName("HCI:" + printerHandle + " " + this.toString());
         serialPortManager = new SerialPortManager(printerHandle.getConnectionHandle());
     }

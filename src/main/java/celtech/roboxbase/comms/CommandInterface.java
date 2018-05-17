@@ -63,6 +63,7 @@ public abstract class CommandInterface extends Thread
     private boolean loadingFirmware = false;
 
     protected boolean suspendStatusChecks = false;
+    private final boolean localPrinter;
 
     private String printerName = null;
 
@@ -84,12 +85,14 @@ public abstract class CommandInterface extends Thread
     public CommandInterface(PrinterStatusConsumer controlInterface,
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks,
-            int sleepBetweenStatusChecks)
+            int sleepBetweenStatusChecks,
+            boolean localPrinter)
     {
         this.controlInterface = controlInterface;
         this.printerHandle = printerHandle;
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.sleepBetweenStatusChecks = sleepBetweenStatusChecks;
+        this.localPrinter = localPrinter;
         
         this.setDaemon(true);
         this.setName("CommandInterface|" + printerHandle.getConnectionHandle());
@@ -568,8 +571,23 @@ public abstract class CommandInterface extends Thread
         suspendStatusChecks(enableRemoteOperation);
     }
 
+    public boolean isLocalPrinter()
+    {
+        return localPrinter;
+    }
+
     public DetectedDevice getPrinterHandle()
     {
         return printerHandle;
+    }
+    
+    public void clearAllErrors()
+    {
+        // Nothing to do by default.
+    }
+
+    public void clearError(FirmwareError error)
+    {
+        // Nothing to do by default.
     }
 }

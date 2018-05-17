@@ -2,6 +2,7 @@ package celtech.roboxbase.comms.remote;
 
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.configuration.Filament;
@@ -31,6 +32,8 @@ public class RemoteClient implements LowLevelInterface
     private final String sendStatisticsUrlString;
     private final String retrieveStatisticsUrlString;
     private final String overrideFilamentUrlString;
+    private final String clearAllErrorsUrlString;
+    private final String clearErrorUrlString;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public RemoteClient(RemoteDetectedPrinter remotePrinterHandle)
@@ -43,6 +46,8 @@ public class RemoteClient implements LowLevelInterface
         sendStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.sendStatisticsService;
         retrieveStatisticsUrlString = Configuration.lowLevelAPIService + Configuration.retrieveStatisticsService;
         overrideFilamentUrlString = Configuration.lowLevelAPIService + Configuration.overrideFilamentService;
+        clearAllErrorsUrlString = Configuration.publicAPIService + Configuration.clearAllErrorsService;
+        clearErrorUrlString = Configuration.publicAPIService + Configuration.clearErrorService;
     }
 
     @Override
@@ -94,6 +99,30 @@ public class RemoteClient implements LowLevelInterface
         }
 
         return returnedPacket;
+    }
+
+    public void clearAllErrors(String printerID) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + clearAllErrorsUrlString, null, null);
+        } catch (IOException ex)
+        {
+            steno.exception("Failed to clear all errors on remote printer " + remotePrinterHandle, ex);
+            throw new RoboxCommsException("Failed to clear all errors on remote printer" + remotePrinterHandle);
+        }
+    }
+
+    public void clearError(String printerID, FirmwareError error) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + clearErrorUrlString, Integer.toString(error.getBytePosition()), null);
+        } catch (IOException ex)
+        {
+            steno.exception("Failed to clear error " + error.toString() + " on remote printer " + remotePrinterHandle, ex);
+            throw new RoboxCommsException("Failed to clear error " + error.toString() + " on remote printer " + remotePrinterHandle);
+        }
     }
 
     public void sendStatistics(String printerID, PrintJobStatistics printJobStatistics) throws RoboxCommsException

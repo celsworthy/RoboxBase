@@ -106,7 +106,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks, String printerName)
     {
-        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
+        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks, true);
         this.setName(printerName);
         this.printerName = printerName;
         filamentContainer = FilamentContainer.getInstance();
@@ -341,12 +341,12 @@ public class DummyPrinterCommandInterface extends CommandInterface
         errorStatus.getFirmwareErrors().add(error);
     }
 
-    protected void clearError(FirmwareError error)
+    public void clearError(FirmwareError error)
     {
         errorStatus.getFirmwareErrors().remove(error);
     }
 
-    protected void clearAllErrors()
+    public void clearAllErrors()
     {
         errorStatus.getFirmwareErrors().clear();
     }

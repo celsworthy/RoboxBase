@@ -3846,17 +3846,23 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         Map<ErrorConsumer, List<FirmwareError>> errorsToIterateThrough = new WeakHashMap<>(
                                 errorConsumers);
 
-                        try
+                        if (commandInterface.isLocalPrinter())
                         {
-                            steno.debug("Clearing errors");
-                            transmitResetErrors();
-                        } catch (RoboxCommsException ex)
-                        {
-                            steno.warning("Couldn't clear firmware error list");
+                            // Only clear the firmware errors on a local printer.
+                            // They will be cleared by the associated Root on a remote printer.
+                            try
+                            {
+                                transmitResetErrors();
+                            } catch (RoboxCommsException ex)
+                            {
+                                steno.warning("Couldn't clear firmware error list");
+                            }
                         }
-
+                        
                         if (processErrors)
                         {
+                            List<FirmwareError> newErrors = new ArrayList();
+                    
                             StringBuilder errorOutput = new StringBuilder();
                             ackResponse.getFirmwareErrors().forEach(error ->
                             {
@@ -3879,6 +3885,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             {
                                                 steno.error("Z+ switch occurred - no head so height could not be determined");
                                             }
+                                        }
+
+                                        if (foundError.isRequireUserToClear()
+                                                && !newErrors.contains(foundError))
+                                        {
+                                            newErrors.add(foundError);
                                         }
 
                                         if (foundError.isRequireUserToClear()
@@ -3920,6 +3932,24 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             }
                                         }
                                     });
+                            List<FirmwareError> inactiveErrors = new ArrayList();
+                            if (!commandInterface.isLocalPrinter())
+                            {
+                                activeErrors.stream()
+                                    .forEach(activeError ->
+                                        {
+                                            if(!newErrors.contains(activeError))
+                                            {
+                                                inactiveErrors.add(activeError);
+                                            }
+                                        });
+                                inactiveErrors.stream()
+                                    .forEach(inactiveError ->
+                                        {
+                                            steno.info("Error no longer active:" + inactiveError.name());
+                                            activeErrors.remove(inactiveError);
+                                        });
+                            }
                             steno.trace(ackResponse.toString());
                         } else
                         {
@@ -3929,6 +3959,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                         steno.info("No action for error:" + foundError.
                                                 name());
                                     });
+                        }
+                    }
+                    else
+                    {
+                        if (processErrors && !commandInterface.isLocalPrinter() && !activeErrors.isEmpty())
+                        {
+                            activeErrors.stream()
+                                .forEach(activeError ->
+                                {
+                                    steno.info("Error no longer active:" + activeError.name());
+                                });
+                            activeErrors.clear();
                         }
                     }
                     break;
@@ -4669,6 +4711,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         if (activeErrors.contains(error))
         {
+            commandInterface.clearError(error);
             activeErrors.remove(error);
         }
     }
@@ -4676,6 +4719,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void clearAllErrors()
     {
+        commandInterface.clearAllErrors();
         activeErrors.clear();
     }
 
