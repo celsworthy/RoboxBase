@@ -19,10 +19,13 @@ public class Configuration
      * Low Level API
      */
     public static final String lowLevelAPIService = "/printerControl";
+    public static final String publicAPIService = "/remoteControl";
     public static final String connectService = "/connect";
     public static final String disconnectService = "/disconnect";
     public static final String writeDataService = "/writeData";
     public static final String sendStatisticsService = "/sendStatistics";
     public static final String retrieveStatisticsService = "/retrieveStatistics";
     public static final String overrideFilamentService = "/overrideFilament";
+    public static final String clearAllErrorsService = "/clearAllErrors";
+    public static final String clearErrorService = "/clearError";
 }

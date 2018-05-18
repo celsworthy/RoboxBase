@@ -53,7 +53,7 @@ public class TestCommandInterface extends CommandInterface
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
     {
-        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
+        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks, true);
         this.setName("Dummy Printer");
 
         preTestInitialisation();

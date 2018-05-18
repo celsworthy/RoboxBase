@@ -5,6 +5,7 @@ import celtech.roboxbase.comms.PrinterStatusConsumer;
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.ConnectionLostException;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
+import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.PrinterNotFound;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
@@ -25,7 +26,7 @@ public class RoboxRemoteCommandInterface extends CommandInterface
             RemoteDetectedPrinter printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
     {
-        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks);
+        super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks, false);
         this.setName("RemoteCI:" + printerHandle.getConnectionHandle() + " " + this.getName());
         remoteClient = new RemoteClient(printerHandle);
     }
@@ -100,6 +101,30 @@ public class RoboxRemoteCommandInterface extends CommandInterface
         sleepBetweenStatusChecks = sleepMillis;
     }
 
+    @Override
+    public void clearAllErrors()
+    {
+        try
+        {
+            remoteClient.clearAllErrors(printerHandle.getConnectionHandle());
+        }
+        catch (RoboxCommsException ex)
+        {
+        }
+    }
+
+    @Override
+    public void clearError(FirmwareError error)
+    {
+        try
+        {
+            remoteClient.clearError(printerHandle.getConnectionHandle(), error);
+        }
+        catch (RoboxCommsException ex)
+        {
+        }
+    }
+    
     public void sendStatistics(PrintJobStatistics printJobStatistics) throws RoboxCommsException
     {
         remoteClient.sendStatistics(printerHandle.getConnectionHandle(), printJobStatistics);

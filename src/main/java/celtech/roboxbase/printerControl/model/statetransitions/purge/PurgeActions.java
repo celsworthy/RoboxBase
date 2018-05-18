@@ -134,8 +134,6 @@ public class PurgeActions extends StateTransitionActions
 
     public void doInitialiseAction() throws RoboxCommsException, PrintException
     {
-        printer.setPrinterStatus(PrinterStatus.PURGING_HEAD);
-
         printerErrorHandler = new PurgePrinterErrorHandler(printer, errorCancellable);
         printerErrorHandler.registerForPrinterErrors();
 
@@ -151,6 +149,8 @@ public class PurgeActions extends StateTransitionActions
 
     void doHeatingAction() throws InterruptedException, PurgeException
     {
+
+        printer.setPrinterStatus(PrinterStatus.PURGING_HEAD);
 
         //Set the bed to 90 degrees C
         int desiredBedTemperature = 90;
