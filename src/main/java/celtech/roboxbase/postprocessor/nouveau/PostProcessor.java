@@ -325,8 +325,10 @@ public class PostProcessor
                     eRequired = true;
                 }
 
+                Optional<PrinterType> printerTypeCode = (printer != null ? Optional.of(printer.findPrinterType()) : Optional.empty());
+                    
                 outputUtilities.prependPrePrintHeader(writer,
-                        Optional.<PrinterType>of(printer.findPrinterType()),
+                        printerTypeCode,
                         headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
@@ -368,7 +370,7 @@ public class PostProcessor
                 timeUtils.timerStart(this, writeOutputTimerName);
                 outputUtilities.appendPostPrintFooter(writer,
                         timeAndVolumeCalcResult,
-                        Optional.<PrinterType>of(printer.findPrinterType()),
+                        printerTypeCode,
                         headFile.getTypeCode(),
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
