@@ -1,5 +1,7 @@
 package celtech.roboxbase.utils.tasks;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import javafx.concurrent.Task;
 
 /**
@@ -21,6 +23,7 @@ public interface TaskExecutor
     public void respondOnCurrentThread(TaskResponder responder, boolean success, String message);
     public void runOnGUIThread(Runnable runnable);
     public void runOnBackgroundThread(Runnable runnable);
+    public void runDelayedOnBackgroundThread(Runnable runnable, long delay);
     
     /**
      * Run the given Task in a daemon thread.

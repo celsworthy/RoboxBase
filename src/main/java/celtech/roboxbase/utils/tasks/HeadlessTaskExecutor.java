@@ -1,5 +1,7 @@
 package celtech.roboxbase.utils.tasks;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
@@ -48,6 +50,20 @@ public class HeadlessTaskExecutor implements TaskExecutor
         Thread th = new Thread(runnable);
         th.setDaemon(true);
         th.start();
+    }
+    
+    @Override
+    public void runDelayedOnBackgroundThread(Runnable runnable, long delay)
+    {
+        new Timer().schedule(new TimerTask()
+                             {
+                                @Override
+                                public void run()
+                                {
+                                    runnable.run();
+                                }
+                             },
+                             delay);
     }
 
     @Override

@@ -39,7 +39,7 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
     private HeadEEPROMDataResponse savedHeadData;
     private final DoubleProperty zco = new SimpleDoubleProperty();
     private final DoubleProperty zcoGUIT = new SimpleDoubleProperty();
-    private double zDifference;
+    private double zDifference = 0.0;
     private final CalibrationPrinterErrorHandler printerErrorHandler;
 
     private boolean failedActionPerformed = false;
@@ -395,7 +395,7 @@ public class CalibrationNozzleHeightActions extends StateTransitionActions
     public void saveSettings() throws RoboxCommsException
     {
         steno.debug("zDifference is " + zDifference);
-        steno.debug("zco is " + zDifference);
+        steno.debug("zco is " + zco);
         printer.transmitWriteHeadEEPROM(savedHeadData.getHeadTypeCode(),
                 savedHeadData.getUniqueID(),
                 savedHeadData.getMaximumTemperature(),
