@@ -78,6 +78,35 @@ public class RemoteClient implements LowLevelInterface
         }
     }
 
+    private String jsonEscape(String source)
+    {
+        // Return a copy of the source with all unicode characters greater than 128 escaped
+        // as backslash u followed by the hex value for the codepoint.
+        if (source != null)
+        {
+            StringBuilder sb = new StringBuilder(source.length() + 4);
+            source.codePoints().forEach(c -> 
+                                        {
+                                            if (c > 0x7f)
+                                            {
+                                                // Encode as \\uHHHH
+                                                String t = Integer.toHexString(c).toUpperCase();
+                                                while (t.length() < 4)
+                                                    t = "0" + t;
+                                                sb.append("\\u");
+                                                sb.append(t.substring(t.length() - 4));
+                                            }
+                                            else
+                                            {
+                                                sb.appendCodePoint(c);
+                                            }
+                                        });
+            return sb.toString();
+        }
+        else
+            return "";
+    }
+    
     @Override
     public RoboxRxPacket writeToPrinter(String printerID, RoboxTxPacket messageToWrite) throws RoboxCommsException
     {
@@ -86,7 +115,8 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             //steno.info("remoteClient.writeToPrinter(" + printerID + ", " + messageToWrite.getPacketType().name());
-            String dataToOutput = mapper.writeValueAsString(messageToWrite);
+            String dataToOutput = jsonEscape(mapper.writeValueAsString(messageToWrite));
+            
             returnedPacket = (RoboxRxPacket) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
             //steno.info("got response " + returnedPacket.getPacketType());
         } catch (JsonProcessingException ex)
@@ -129,7 +159,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            String dataToOutput = mapper.writeValueAsString(printJobStatistics);
+            String dataToOutput = jsonEscape(mapper.writeValueAsString(printJobStatistics));
             remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + sendStatisticsUrlString, dataToOutput, null);
         } catch (IOException ex)
         {
@@ -158,7 +188,7 @@ public class RemoteClient implements LowLevelInterface
         filamentMap.put(reelNumber, filament.getFilamentID());
         try
         {
-            String jsonified = mapper.writeValueAsString(filamentMap);
+            String jsonified = jsonEscape(mapper.writeValueAsString(filamentMap));
             remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + overrideFilamentUrlString, jsonified, null);
         } catch (IOException ex)
         {
