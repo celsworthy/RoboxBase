@@ -225,9 +225,33 @@ public class BaseLookup
 
     public static void setupDefaultValues()
     {
-        setupDefaultValues(BaseConfiguration.getApplicationLogLevel(), 
-                           getDefaultApplicationLocale(),
-                           new ConsoleSystemNotificationManager());
+        String languageTag = BaseConfiguration.getApplicationLocale();
+        Locale appLocale;
+        if (languageTag == null || languageTag.length() == 0)
+        {
+            appLocale = Locale.getDefault();
+        } else
+        {
+            String[] languageElements = languageTag.split("-");
+            switch (languageElements.length)
+            {
+                case 1:
+                    appLocale = new Locale(languageElements[0]);
+                    break;
+                case 2:
+                    appLocale = new Locale(languageElements[0], languageElements[1]);
+                    break;
+                case 3:
+                    appLocale = new Locale(languageElements[0], languageElements[1],
+                            languageElements[2]);
+                    break;
+                default:
+                    appLocale = Locale.getDefault();
+                    break;
+            }
+        }
+        
+        setupDefaultValues(BaseConfiguration.getApplicationLogLevel(), appLocale, new ConsoleSystemNotificationManager());
     }
 
     public static Set<Locale> getAvailableLocales()

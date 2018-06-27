@@ -11,12 +11,12 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionDuringTravelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NozzleValvePositionNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.PreambleNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.PreambleNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkinSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SupportInterfaceSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
@@ -42,22 +42,22 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
 
     private final Stenographer steno = StenographerFactory.getStenographer(RoboxGCodeParser.class.getName());
     private LayerNode thisLayer = new LayerNode();
-    private double feedrateInForce = -1.0F;
+    private int feedrateInForce = -1;
     private int currentLineNumber = 0;
     private int numberOfUnrecognisedElements = 0;
     protected Var<Integer> currentObject = new Var<>(-1);
 
-    public void setFeedrateInForce(double feedrate)
+    public void setFeedrateInForce(int feedrate)
     {
         this.feedrateInForce = feedrate;
     }
 
-    public double getFeedrateInForce()
+    public int getFeedrateInForce()
     {
         return feedrateInForce;
     }
 
-        public int getCurrentLineNumber()
+    public int getCurrentLineNumber()
     {
         return currentLineNumber;
     }
@@ -80,7 +80,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     public Rule Layer()
     {
         return Sequence(
-                Sequence(';', ZeroOrMore(' '), "LAYER:", Optional('-'), OneOrMore(Digit()),
+                Sequence(';', ZeroOrMore(' '), "LAYER:", OneOrMore(Digit()),
                         (Action) (Context context1) ->
                         {
                             thisLayer.setLayerNumber(Integer.valueOf(context1.getMatch()));
@@ -106,7 +106,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 //                                }
                 //                        )
                 //                ),
-                ZeroOrMore(
+                OneOrMore(
                         FirstOf(
                                 ObjectSection(),
                                 OrphanObjectSection(),
@@ -608,9 +608,9 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     //G1 F1800 D0 E-0.5
     Rule RetractDirective()
     {
-        Var<Double> dValue = new Var<>();
-        Var<Double> eValue = new Var<>();
-        Var<Double> fValue = new Var<>();
+        Var<Float> dValue = new Var<>();
+        Var<Float> eValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -620,11 +620,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", NegativeFloatingPointNumber(),
-                                        dValue.set(Double.valueOf(match())),
+                                        dValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", NegativeFloatingPointNumber(),
-                                        eValue.set(Double.valueOf(match())),
+                                        eValue.set(Float.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
@@ -665,9 +665,9 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 F1800 E0.50000
     Rule UnretractDirective()
     {
-        Var<Double> dValue = new Var<>();
-        Var<Double> eValue = new Var<>();
-        Var<Double> fValue = new Var<>();
+        Var<Float> dValue = new Var<>();
+        Var<Float> eValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -677,11 +677,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Double.valueOf(match())),
+                                        dValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Double.valueOf(match())),
+                                        eValue.set(Float.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
@@ -722,30 +722,29 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule TravelDirective()
     {
-        Var<Double> fValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
         Var<String> commentText = new Var<>();
 
-        return Sequence(FirstOf("G0 ","G1 "),
+        return Sequence('G',
+                FirstOf('0', '1'),
+                ' ',
                 Optional(
                         Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
-                                Sequence("X",
-                                        FloatingPointNumber(),
+                                Sequence("X", FloatingPointNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y",
-                                        FloatingPointNumber(),
+                                Sequence("Y", FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Z", 
-                                        FloatingPointNumber(),
+                                Sequence("Z", FloatingPointNumber(),
                                         zValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
@@ -797,12 +796,12 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 F840 X88.700 Y44.153 E5.93294
     Rule ExtrusionDirective()
     {
-        Var<Double> fValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        Var<Double> eValue = new Var<>();
-        Var<Double> dValue = new Var<>();
+        Var<Float> eValue = new Var<>();
+        Var<Float> dValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -821,11 +820,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Double.valueOf(match())),
+                                        dValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Double.valueOf(match())),
+                                        eValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
@@ -888,21 +887,20 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 B1 F150 E0.60000
     Rule NozzleControlDirective()
     {
-        Var<Double> bValue = new Var<>();
-        Var<Double> eValue = new Var<>();
-        Var<Double> dValue = new Var<>();
-        Var<Double> fValue = new Var<>();
-        Var<String> commentValue = new Var<>();
+        Var<Float> bValue = new Var<>();
+        Var<Float> eValue = new Var<>();
+        Var<Float> dValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
 
-        return Sequence(FirstOf("G0 ","G1 "),
+        return Sequence('G', FirstOf('0', '1'), ' ',
                 OneOrMore(
                         FirstOf(
                                 Sequence("B", PositiveFloatingPointNumber(),
-                                        bValue.set(Double.valueOf(match())),
+                                        bValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("B", Digit(),
-                                        bValue.set(Double.valueOf(match())),
+                                        bValue.set(Float.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
@@ -912,17 +910,16 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         OneOrMore(
                                 FirstOf(
                                         Sequence("D", PositiveFloatingPointNumber(),
-                                                dValue.set(Double.valueOf(match())),
+                                                dValue.set(Float.valueOf(match())),
                                                 Optional(' ')
                                         ),
                                         Sequence("E", PositiveFloatingPointNumber(),
-                                                eValue.set(Double.valueOf(match())),
+                                                eValue.set(Float.valueOf(match())),
                                                 Optional(' ')
                                         )
                                 )
                         )
                 ),
-                Optional(Comment(commentValue)),
                 Newline(),
                 new Action()
                 {
@@ -945,11 +942,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.setReplenishExtrusionD(dValue.get());
                         }
-                        
-                        if (commentValue.isSet())
-                        {
-                            node.setCommentText(commentValue.get());
-                        }
+
                         node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
@@ -964,11 +957,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 B1.3
     Rule NozzleControlDuringTravelDirective()
     {
-        Var<Double> fValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        Var<Double> bValue = new Var<>();
+        Var<Float> bValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence('G',
@@ -979,18 +972,15 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 ),
                 OneOrMore(
                         FirstOf(
-                                Sequence("X", 
-                                        FloatingPointNumber(),
+                                Sequence("X", FloatingPointNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y", 
-                                        FloatingPointNumber(),
+                                Sequence("Y", FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Z", 
-                                        FloatingPointNumber(),
+                                Sequence("Z", FloatingPointNumber(),
                                         zValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
@@ -998,11 +988,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 ),
                 FirstOf(
                         Sequence("B", PositiveFloatingPointNumber(),
-                                bValue.set(Double.valueOf(match())),
+                                bValue.set(Float.valueOf(match())),
                                 Optional(' ')
                         ),
                         Sequence("B", Digit(),
-                                bValue.set(Double.valueOf(match())),
+                                bValue.set(Float.valueOf(match())),
                                 Optional(' ')
                         )
                 ),
@@ -1058,7 +1048,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G[01] Z1.020
     Rule LayerChangeDirective()
     {
-        Var<Double> fValue = new Var<>();
+        Var<Integer> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
@@ -1184,23 +1174,22 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     }
 
     @SuppressSubnodes
-    Rule IntegerNumber()
+    Rule FloatingPointNumber()
     {
-        return Sequence(
-                Optional('-'),
-                OneOrMore(Digit()));
+        return FirstOf(
+                NegativeFloatingPointNumber(),
+                PositiveFloatingPointNumber()
+        );
     }
-    
+
     @SuppressSubnodes
     Rule PositiveFloatingPointNumber()
     {
         //Positive float e.g. 1.23
         return Sequence(
                 OneOrMore(Digit()),
-                 Optional(
-                  Sequence(
-                   Ch('.'),
-                   OneOrMore(Digit()))));
+                Ch('.'),
+                OneOrMore(Digit()));
     }
 
     @SuppressSubnodes
@@ -1209,24 +1198,18 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
         //Negative float e.g. -1.23
         return Sequence(
                 Ch('-'),
-                PositiveFloatingPointNumber());
+                OneOrMore(Digit()),
+                Ch('.'),
+                OneOrMore(Digit()));
     }
 
     @SuppressSubnodes
-    Rule FloatingPointNumber()
-    {
-        return Sequence(
-                Optional('-'),
-                PositiveFloatingPointNumber());
-    }
-
-    @SuppressSubnodes
-    Rule Feedrate(Var<Double> feedrate)
+    Rule Feedrate(Var<Integer> feedrate)
     {
         return FirstOf(
                 Sequence(
-                        'F', FloatingPointNumber(),
-                        feedrate.set(Double.valueOf(match())),
+                        'F', OneOrMore(Digit()),
+                        feedrate.set(Integer.valueOf(match())),
                         Optional(' '),
                         new Action()
                         {
