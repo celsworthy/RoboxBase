@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.Set;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
+import libertysystems.stenographer.LogLevel;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.io.FileUtils;
@@ -91,6 +92,8 @@ public class BaseConfiguration
 
     private static Properties installationProperties = null;
     private static String applicationVersion = null;
+    private static String applicationLocale = null;
+    private static LogLevel applicationLogLevel = null;
     private static String applicationTitleAndVersion = null;
 
     private static String printFileSpoolDirectory = null;
@@ -437,6 +440,82 @@ public class BaseConfiguration
         }
 
         return applicationVersion;
+    }
+
+    public static String getApplicationLocale()
+    {
+        if (installationProperties == null)
+        {
+            loadProjectProperties();
+        }
+        if (installationProperties != null
+                && applicationLocale == null)
+        {
+            applicationLocale = installationProperties.getProperty("locale");
+        }
+
+        return applicationLocale;
+    }
+    
+    public static LogLevel getApplicationLogLevel()
+    {
+        if (installationProperties == null)
+        {
+            loadProjectProperties();
+        }
+        if (installationProperties != null
+                && applicationLogLevel == null)
+        {
+            String logLevel = installationProperties.getProperty("log_level");
+            if (logLevel != null && logLevel.length() > 0)
+            {
+                logLevel = logLevel.toUpperCase();
+                switch (logLevel)
+                {
+                    case "OFF":
+                        applicationLogLevel = LogLevel.OFF;
+                        break;
+                    case "TRACE":
+                        applicationLogLevel = LogLevel.TRACE;
+                        break;
+                    case "TRACE_ONLY":
+                        applicationLogLevel = LogLevel.TRACE_ONLY;
+                        break;
+                    case "DEBUG":
+                        applicationLogLevel = LogLevel.DEBUG;
+                        break;
+                    case "DEBUG_ONLY":
+                        applicationLogLevel = LogLevel.DEBUG_ONLY;
+                        break;
+                    case "WARNING":
+                        applicationLogLevel = LogLevel.WARNING;
+                        break;
+                    case "WARNING_ONLY":
+                        applicationLogLevel = LogLevel.WARNING_ONLY;
+                        break;
+                    case "ERROR":
+                        applicationLogLevel = LogLevel.ERROR;
+                        break;
+                    case "ERROR_ONLY":
+                        applicationLogLevel = LogLevel.ERROR_ONLY;
+                        break;
+                    case "PASSTHROUGH":
+                        applicationLogLevel = LogLevel.PASSTHROUGH;
+                        break;
+                    case "ALL":
+                        applicationLogLevel = LogLevel.ALL;
+                        break;
+                    case "INFO":
+                    default:
+                        applicationLogLevel = LogLevel.INFO;
+                        break;
+                }
+            }
+            else
+                applicationLogLevel = LogLevel.INFO;
+        }
+
+        return applicationLogLevel;
     }
 
     public static void setTitleAndVersion(String titleAndVersion)
