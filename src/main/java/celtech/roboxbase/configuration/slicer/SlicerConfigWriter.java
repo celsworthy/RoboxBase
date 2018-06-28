@@ -59,6 +59,14 @@ public abstract class SlicerConfigWriter
         generateConfigForSlicerWithMappings(profileData, destinationFile, mappingData);
     }
 
+    /**
+     * Generates a .roboxprofile file which takes into account the user slicer preferences,
+     * and the slicermappings.dat file, which will map the options for a particular slicer.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param destinationFile the destination for the .roboxprofile file.
+     * @param mappingData The mapping data from the slicermappings.dat file.
+     */
     public final void generateConfigForSlicerWithMappings(SlicerParametersFile profileData,
         String destinationFile, SlicerMappingData mappingData)
     {
@@ -253,6 +261,15 @@ public abstract class SlicerConfigWriter
 
     protected abstract void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException;
 
+    /**
+     * Evaluates an operation given by a particular mapping and manipulates the 
+     * profileData value based on the operation.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param value the value in the parameters file.
+     * @param operationString the operation to be applied to the value.
+     * @return the new value after an operation has been applied/
+     */
     private Optional<Float> applyValue(SlicerParametersFile profileData, float value,
         String operationString)
     {

@@ -7,7 +7,7 @@ package celtech.roboxbase.configuration;
 public enum SlicerType
 {
 
-    Slic3r(0), Cura(1);
+    Slic3r(0), Cura(1), Cura3(2);
 
     private final int enumPosition;
 
