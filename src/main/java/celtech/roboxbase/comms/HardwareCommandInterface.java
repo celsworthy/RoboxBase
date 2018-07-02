@@ -67,6 +67,7 @@ public class HardwareCommandInterface extends CommandInterface
         if (commsState == RoboxCommsState.CONNECTED
                 || commsState == RoboxCommsState.CHECKING_FIRMWARE
                 || commsState == RoboxCommsState.CHECKING_ID
+                || commsState == RoboxCommsState.RESETTING_ID
                 || commsState == RoboxCommsState.DETERMINING_PRINTER_STATUS)
         {
             try

@@ -1,5 +1,8 @@
 package celtech.roboxbase.printerControl.model;
 
+import celtech.roboxbase.utils.InvalidChecksumException;
+import celtech.roboxbase.utils.SystemUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -195,6 +198,29 @@ public class PrinterIdentity
         return clone;
     }
 
+    public boolean isValid()
+    {
+        boolean valid = false;
+        if (printermodelProperty().get().startsWith("RBX") && printercheckByteProperty().get().length() == 1)
+        {
+            String stringToChecksum = printermodelProperty().get()
+                        + printereditionProperty().get()
+                        + printerweekOfManufactureProperty().get()
+                        + printeryearOfManufactureProperty().get()
+                        + printerpoNumberProperty().get()
+                        + printerserialNumberProperty().get();
+                
+            try
+            {
+                char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
+                valid = (checkDigit == printercheckByteProperty().get().charAt(0));
+            } catch (InvalidChecksumException ex)
+            {
+            }
+        }
+        return valid;
+    }
+    
     @Override
     public String toString()
     {
