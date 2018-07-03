@@ -102,4 +102,13 @@ public class PrinterDefinitionFile
     {
         this.printVolumeHeight = printVolumeHeight;
     }
+    
+    @Override
+    public String toString()
+    {
+        if (friendlyName != null && friendlyName.length() > 0)
+            return friendlyName;
+        else
+            return super.toString();
+    } 
 }

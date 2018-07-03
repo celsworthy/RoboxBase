@@ -274,11 +274,17 @@ public abstract class CommandInterface extends Thread
 
                 case CHECKING_ID:
                     steno.debug("Check id " + printerHandle);
-
+                     
                     try
                     {
                         lastPrinterIDResponse = printerToUse.readPrinterID();
-
+                        if (!lastPrinterIDResponse.isValid())
+                        {
+                            steno.warning("Printer does not have a valid ID: " + lastPrinterIDResponse.toString());
+                            commsState = RoboxCommsState.RESETTING_ID;
+                            break;
+                        }
+                        
                         printerName = lastPrinterIDResponse.getPrinterFriendlyName();
 
                         if (printerName == null
@@ -324,6 +330,24 @@ public abstract class CommandInterface extends Thread
                     commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
                     break;
 
+                case RESETTING_ID:
+                    steno.debug("Resetting ID of " + printerHandle);
+                    int resetResult = BaseLookup.getSystemNotificationHandler()
+                                                .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
+                    switch (resetResult)
+                    {
+                        case 1: // Reset of printer id successful
+                            commsState = RoboxCommsState.CHECKING_ID;
+                            break;
+                        case 2: // Temporary set of printer type successful.
+                            commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
+                            break;
+                        default: // Cancelled or failed. Should disconnect printer.
+                            shutdown();
+                            break;
+                    }
+                    break;
+                    
                 case DETERMINING_PRINTER_STATUS:
                     steno.debug("Determining printer status on port " + printerHandle);
 
