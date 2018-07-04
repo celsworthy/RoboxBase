@@ -1,5 +1,6 @@
 package celtech.roboxbase.appManager;
 
+import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
@@ -47,10 +48,10 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
 
     @Override
-    public int askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse PrprinterID)
+    public RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse PrprinterID)
     {
         outputNotification("Reset serial number query");
-        return 1;
+        return RoboxResetIDResult.RESET_NOT_DONE;
     }
 
     @Override

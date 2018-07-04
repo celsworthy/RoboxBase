@@ -332,17 +332,23 @@ public abstract class CommandInterface extends Thread
 
                 case RESETTING_ID:
                     steno.debug("Resetting ID of " + printerHandle);
-                    int resetResult = BaseLookup.getSystemNotificationHandler()
-                                                .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
+                    RoboxResetIDResult resetResult = BaseLookup.getSystemNotificationHandler()
+                                                               .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
                     switch (resetResult)
                     {
-                        case 1: // Reset of printer id successful
+                        case RESET_SUCCESSFUL: // Reset of printer id successful
                             commsState = RoboxCommsState.CHECKING_ID;
                             break;
-                        case 2: // Temporary set of printer type successful.
+                        case RESET_TEMPORARY: // Temporary set of printer type successful.
                             commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
                             break;
-                        default: // Cancelled or failed. Should disconnect printer.
+                        case RESET_NOT_DONE: // Not done - set a default.
+                            commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
+                            printerToUse.setPrinterConfiguration(PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID));
+                            break;
+                        case RESET_CANCELLED:
+                        case RESET_FAILED:
+                        default: // Cancelled or failed. Disconnect printer.
                             shutdown();
                             break;
                     }
