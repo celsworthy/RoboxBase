@@ -15,6 +15,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -184,10 +185,13 @@ public abstract class SlicerConfigWriter
                             {
                                 FillPattern value = (FillPattern) getMethod.invoke(profileData);
                                 outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(SupportPattern.class))
+                            } else if (returnTypeClass.equals(HashMap.class))
                             {
-                                SupportPattern value = (SupportPattern) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
+                                HashMap<Object, Object> map = (HashMap) getMethod.invoke(profileData);
+                                if(map.containsKey(getSlicerType())) {
+                                    SupportPattern value = (SupportPattern) map.get(getSlicerType());
+                                    outputLine(writer, targetVariableName, value);
+                                }
                             } else
                             {
                                 steno.error("Got unknown return type: " + returnTypeClass.getName());
@@ -480,4 +484,6 @@ public abstract class SlicerConfigWriter
     }
 
     abstract void bringDataInBounds(SlicerParametersFile profileData);
+    
+    abstract SlicerType getSlicerType();
 }

@@ -89,4 +89,11 @@ public class CuraConfigWriter extends SlicerConfigWriter
     void bringDataInBounds(SlicerParametersFile profileData)
     {
     }
+
+    @Override
+    SlicerType getSlicerType() {
+        return SlicerType.Cura;
+    }
+    
+    
 }

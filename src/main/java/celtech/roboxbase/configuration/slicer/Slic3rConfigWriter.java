@@ -84,4 +84,9 @@ public class Slic3rConfigWriter extends SlicerConfigWriter
     {
         outputLine(writer, "filament_diameter", String.format(Locale.UK, "%f", diameter));
     }
+
+    @Override
+    SlicerType getSlicerType() {
+        return SlicerType.Slic3r;
+    }
 }

@@ -21,7 +21,7 @@ public class Cura3ConfigWriter extends SlicerConfigWriter {
     @Override
     protected void outputLine(FileWriter writer, String variableName, boolean value) throws IOException
     {
-        writer.append(variableName + " = " + value + "\n");
+        writer.append(variableName + "=" + value + "\n");
     }
 
     @Override
@@ -57,18 +57,7 @@ public class Cura3ConfigWriter extends SlicerConfigWriter {
     @Override
     protected void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException
     {
-        int supportType = 0;
-
-        switch (value)
-        {
-            case RECTILINEAR:
-                supportType = 1;
-                break;
-            case RECTILINEAR_GRID:
-                supportType = 0;
-                break;
-        }
-        writer.append(variableName + "=" + supportType + "\n");
+        writer.append(variableName + "=" + value.name().toLowerCase() + "\n");
     }
 
     @Override
@@ -84,6 +73,11 @@ public class Cura3ConfigWriter extends SlicerConfigWriter {
 
     @Override
     void bringDataInBounds(SlicerParametersFile profileData) {
+    }
+    
+    @Override
+    SlicerType getSlicerType() {
+        return SlicerType.Cura3;
     }
     
 }

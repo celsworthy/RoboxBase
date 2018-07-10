@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -96,7 +97,7 @@ public class SlicerParametersFile
     private boolean generateSupportMaterial;
     private int supportOverhangThreshold_degrees;
     private int forcedSupportForFirstNLayers = 0;
-    private SupportPattern supportPattern;
+    private HashMap<SlicerType, SupportPattern> supportPattern;
     private float supportPatternSpacing_mm;
     private int supportPatternAngle_degrees;
 
@@ -560,12 +561,12 @@ public class SlicerParametersFile
         firePropertyChange("forcedSupportForFirstNLayers", null, forcedSupportForFirstNLayers);
     }
 
-    public SupportPattern getSupportPattern()
+    public HashMap<SlicerType, SupportPattern> getSupportPattern()
     {
         return supportPattern;
     }
 
-    public void setSupportPattern(SupportPattern supportPattern)
+    public void setSupportPattern(HashMap<SlicerType, SupportPattern> supportPattern)
     {
         this.supportPattern = supportPattern;
         firePropertyChange("supportPattern", null, supportPattern);
@@ -925,7 +926,9 @@ public class SlicerParametersFile
         clone.generateSupportMaterial = generateSupportMaterial;
         clone.supportOverhangThreshold_degrees = supportOverhangThreshold_degrees;
         clone.forcedSupportForFirstNLayers = forcedSupportForFirstNLayers;
-        clone.supportPattern = supportPattern;
+        clone.supportPattern = new HashMap<>();
+        supportPattern.entrySet().forEach(patternEntry -> 
+                clone.supportPattern.put(patternEntry.getKey(), patternEntry.getValue()));
         clone.supportPatternSpacing_mm = supportPatternSpacing_mm;
         clone.supportPatternAngle_degrees = supportPatternAngle_degrees;
 
