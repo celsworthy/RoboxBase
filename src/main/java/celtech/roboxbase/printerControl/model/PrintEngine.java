@@ -34,6 +34,7 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.cura.CuraDefaultSettingsEditor;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
 import java.io.IOException;
@@ -744,6 +745,10 @@ public class PrintEngine implements ControllableService
                 printableMeshes.isCameraEnabled(),
                 printableMeshes.getCameraTriggerData());
 
+        if(slicerTypeToUse == SlicerType.Cura3) {
+            editCura3DefaultsForPrinter(printableMeshes);
+        }
+
         configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
                 (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
         configWriter.generateConfigForSlicer(settingsToUse,
@@ -762,6 +767,25 @@ public class PrintEngine implements ControllableService
         acceptedPrintRequest = true;
 
         return acceptedPrintRequest;
+    }
+    
+    private void editCura3DefaultsForPrinter(PrintableMeshes printableMeshes) {
+        CuraDefaultSettingsEditor curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
+        curaDefaultSettingsEditor.beginEditing();
+        
+        curaDefaultSettingsEditor.editDefaultValue("machine_width", 
+                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeWidth());
+        curaDefaultSettingsEditor.editDefaultValue("machine_depth", 
+                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeDepth());
+        curaDefaultSettingsEditor.editDefaultValue("machine_height", 
+                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeHeight());
+        
+        curaDefaultSettingsEditor.editDefaultValue("mesh_position_x", 
+                (float) -printableMeshes.getCentreOfPrintedObject().getX());
+        curaDefaultSettingsEditor.editDefaultValue("mesh_position_y", 
+                (float) printableMeshes.getCentreOfPrintedObject().getY());
+        
+        curaDefaultSettingsEditor.endEditing();
     }
 
     private boolean reprintFileFromDisk(PrintJob printJob, int startFromLineNumber)

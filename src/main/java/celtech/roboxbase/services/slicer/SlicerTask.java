@@ -155,7 +155,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
 
         String configFile = printJobUUID + BaseConfiguration.printProfileFileExtension;
-        String jsonSettingsFile = "D:/Dev/RoboxBase/src/main/java/celtech/resources/fdmprinter.def.json"; // PUT THIS IN INSTALLER
+        String jsonSettingsFile = BaseConfiguration.getApplicationStorageDirectory() + "fdmprinter_robox.def.json";
         
         MachineType machineType = BaseConfiguration.getMachineType();
         ArrayList<String> commands = new ArrayList<>();
