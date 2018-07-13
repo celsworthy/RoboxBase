@@ -4182,7 +4182,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     //Update the LED colour if we're dealing with a local printer
                     if (!(commandInterface instanceof RoboxRemoteCommandInterface))
                     {
-                        if (idResponse.getPrinterColour() != null)
+                        if (idResponse.isValid() && idResponse.getPrinterColour() != null)
                         {
                             try
                             {

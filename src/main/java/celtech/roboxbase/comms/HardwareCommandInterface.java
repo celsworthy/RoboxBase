@@ -105,7 +105,8 @@ public class HardwareCommandInterface extends CommandInterface
                             payloadSize = payloadSize * 16;
                         }
 
-                        inputBuffer = new byte[1 + packetType.getLengthFieldSize() + payloadSize];
+                        packetLength = 1 + packetType.getLengthFieldSize() + payloadSize;
+                        inputBuffer = new byte[packetLength];
                         for (int i = 0; i < packetType.getLengthFieldSize(); i++)
                         {
                             inputBuffer[1 + i] = lengthData[i];
@@ -125,6 +126,13 @@ public class HardwareCommandInterface extends CommandInterface
                         {
                             inputBuffer[1 + i] = payloadData[i];
                         }
+                    }
+                    // Clear any remaining bytes the input
+                    // There shouldn't be anything here but just in case...
+                    byte[] storage = serialPortManager.readAllDataOnBuffer();
+                    if (storage != null && storage.length > 0)
+                    {
+                        steno.debug("Cleared " + Integer.toString(storage.length) + " extra bytes from input buffer (expected " + Integer.toString(packetLength) + " but received " + Integer.toString(storage.length + packetLength) + ".");
                     }
 
                     inputBuffer[0] = respCommand[0];
