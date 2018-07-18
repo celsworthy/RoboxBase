@@ -1,7 +1,9 @@
 package celtech.roboxbase.appManager;
 
+import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
+import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
 import celtech.roboxbase.services.firmware.FirmwareLoadService;
@@ -37,6 +39,8 @@ public interface SystemNotificationManager
      */
     boolean askUserToUpdateFirmware();
 
+    RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID);
+    
     void processErrorPacketFromPrinter(FirmwareError error, Printer printer);
 
     void showCalibrationDialogue();

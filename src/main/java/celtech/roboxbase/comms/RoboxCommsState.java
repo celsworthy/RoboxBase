@@ -26,6 +26,10 @@ public enum RoboxCommsState
     /**
      *
      */
+    RESETTING_ID,
+    /**
+     *
+     */
     DETERMINING_PRINTER_STATUS,
     /**
      *

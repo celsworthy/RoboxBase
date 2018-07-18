@@ -4,6 +4,8 @@ import celtech.roboxbase.comms.remote.PrinterIDDataStructure;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
 import static celtech.roboxbase.utils.ColourStringConverter.stringToColor;
 import celtech.roboxbase.comms.tx.WritePrinterID;
+import celtech.roboxbase.utils.InvalidChecksumException;
+import celtech.roboxbase.utils.SystemUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.UnsupportedEncodingException;
 import javafx.scene.paint.Color;
@@ -332,5 +334,30 @@ public class PrinterIDResponse extends RoboxRxPacket
         idString.append(checkByte);
 
         return idString.toString();
+    }
+    
+    @JsonIgnore
+    public boolean isValid()
+    {
+        boolean valid = false;
+        if (model.startsWith("RBX") && checkByte.length() == 1)
+        {
+            String stringToChecksum = model
+                        + edition
+                        + weekOfManufacture
+                        + yearOfManufacture
+                        + poNumber
+                        + serialNumber;
+                
+            try
+            {
+                char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
+                valid = (checkDigit == checkByte.charAt(0));
+            } catch (InvalidChecksumException ex)
+            {
+                steno.error("Error whilst testing validity of printer identity \"" + stringToChecksum + "\"");
+            }
+        }
+        return valid;
     }
 }

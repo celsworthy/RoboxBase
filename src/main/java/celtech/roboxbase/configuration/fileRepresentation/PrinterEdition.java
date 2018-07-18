@@ -28,4 +28,13 @@ public class PrinterEdition
     {
         this.friendlyName = friendlyName;
     }
+    
+    @Override
+    public String toString()
+    {
+        if (friendlyName != null && friendlyName.length() > 0)
+            return friendlyName;
+        else
+            return super.toString();
+    } 
 }

@@ -1,8 +1,13 @@
 package celtech.roboxbase.printerControl.model;
 
+import celtech.roboxbase.utils.InvalidChecksumException;
+import celtech.roboxbase.utils.SystemUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -28,6 +33,7 @@ public class PrinterIdentity
     protected final StringProperty printerFriendlyName = new SimpleStringProperty("");
     protected final ObjectProperty<Color> printerColour = new SimpleObjectProperty<>();
     protected final StringProperty firmwareVersion = new SimpleStringProperty();
+    protected final BooleanProperty validID = new SimpleBooleanProperty(false);
 
     private final ChangeListener<String> stringChangeListener = new ChangeListener<String>()
     {
@@ -51,6 +57,7 @@ public class PrinterIdentity
                     ObservableValue<? extends Color> observable, Color oldValue, Color newValue)
             {
                 updatePrinterUniqueID();
+                validID.set(isValid());
             }
         });
 
@@ -165,6 +172,15 @@ public class PrinterIdentity
      *
      * @return
      */
+    public final BooleanProperty validIDProperty()
+    {
+        return validID;
+    }
+
+    /**
+     *
+     * @return
+     */
     private void updatePrinterUniqueID()
     {
         printerUniqueID.set(printermodel.get()
@@ -191,10 +207,34 @@ public class PrinterIdentity
         clone.printerserialNumber.set(printerserialNumber.get());
         clone.printerweekOfManufacture.set(printerweekOfManufacture.get());
         clone.printeryearOfManufacture.set(printeryearOfManufacture.get());
+        clone.validID.set(validID.get());
 
         return clone;
     }
 
+    public boolean isValid()
+    {
+        boolean valid = false;
+        if (printermodelProperty().get().startsWith("RBX") && printercheckByteProperty().get().length() == 1)
+        {
+            String stringToChecksum = printermodelProperty().get()
+                        + printereditionProperty().get()
+                        + printerweekOfManufactureProperty().get()
+                        + printeryearOfManufactureProperty().get()
+                        + printerpoNumberProperty().get()
+                        + printerserialNumberProperty().get();
+                
+            try
+            {
+                char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
+                valid = (checkDigit == printercheckByteProperty().get().charAt(0));
+            } catch (InvalidChecksumException ex)
+            {
+            }
+        }
+        return valid;
+    }
+    
     @Override
     public String toString()
     {

@@ -212,25 +212,33 @@ public abstract class CommandInterface extends Thread
                     try
                     {
                         firmwareResponse = printerToUse.readFirmwareVersion();
-
+                        // Set the firmware version so that the system knows which response
+                        // packet length to use.
+                        firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
+                            
                         if (requiredFirmwareVersion > 0 && firmwareResponse.getFirmwareRevisionFloat() != requiredFirmwareVersion)
                         {
                             // The firmware version is different to that associated with AutoMaker
-                            steno.warning("Firmware version is "
-                                    + firmwareResponse.getFirmwareRevisionString() + " and should be "
-                                    + requiredFirmwareVersionString);
+                            steno.warning(String.format("Firmware version is %.0f and should be %.0f.", firmwareVersionInUse, requiredFirmwareVersion));
+
+                            // Check that the printer ID is valid, as updating the firmware with a corrupt printer ID
+                            // can cause serious problems.
+                            lastPrinterIDResponse = printerToUse.readPrinterID();
+                            if (!lastPrinterIDResponse.isValid())
+                            {
+                                steno.warning("Printer does not have a valid ID!");
+                                commsState = RoboxCommsState.RESETTING_ID;
+                                break;
+                            }
 
                             if (BaseConfiguration.isApplicationFeatureEnabled(ApplicationFeature.AUTO_UPDATE_FIRMWARE))
                             {
-//                            Lookup.setFirmwareVersion()
-                                //ROB-931 - don't check for presence of the SD card if firmware version earlier than 691
                                 if (firmwareResponse.getFirmwareRevisionFloat() >= 691)
                                 {
                                     // Is the SD card present?
                                     try
                                     {
                                         StatusRequest request = (StatusRequest) RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.STATUS_REQUEST);
-                                        firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
                                         StatusResponse response = (StatusResponse) writeToPrinter(request, true);
                                         if (!response.issdCardPresent())
                                         {
@@ -262,7 +270,6 @@ public abstract class CommandInterface extends Thread
                                     + "robox_r" + requiredFirmwareVersionString + ".bin");
                         } else
                         {
-                            firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
                             moveOnFromFirmwareCheck(firmwareResponse);
                         }
                     } catch (PrinterException ex)
@@ -274,11 +281,17 @@ public abstract class CommandInterface extends Thread
 
                 case CHECKING_ID:
                     steno.debug("Check id " + printerHandle);
-
                     try
                     {
+                        // Printer ID may or may not have been read, so get it again.
                         lastPrinterIDResponse = printerToUse.readPrinterID();
-
+                        if (!lastPrinterIDResponse.isValid())
+                        {
+                            steno.warning("Printer does not have a valid ID: " + lastPrinterIDResponse.toString());
+                            commsState = RoboxCommsState.RESETTING_ID;
+                            break;
+                        }
+                        
                         printerName = lastPrinterIDResponse.getPrinterFriendlyName();
 
                         if (printerName == null
@@ -288,7 +301,6 @@ public abstract class CommandInterface extends Thread
                             steno.debug("Connected to unknown printer - setting to RBX01");
                             BaseLookup.getSystemNotificationHandler().
                                     showNoPrinterIDDialog(printerToUse);
-                            lastPrinterIDResponse = printerToUse.readPrinterID();
                             printerName = PrinterContainer.defaultPrinterID;
                         } else
                         {
@@ -324,6 +336,30 @@ public abstract class CommandInterface extends Thread
                     commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
                     break;
 
+                case RESETTING_ID:
+                    steno.debug("Resetting ID of " + printerHandle);
+                    RoboxResetIDResult resetResult = BaseLookup.getSystemNotificationHandler()
+                                                               .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
+                    switch (resetResult)
+                    {
+                        case RESET_SUCCESSFUL: // Reset of printer id successful
+                            commsState = RoboxCommsState.CHECKING_ID;
+                            break;
+                        case RESET_TEMPORARY: // Temporary set of printer type successful.
+                            commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
+                            break;
+                        case RESET_NOT_DONE: // Not done - set a default.
+                            commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
+                            printerToUse.setPrinterConfiguration(PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID));
+                            break;
+                        case RESET_CANCELLED:
+                        case RESET_FAILED:
+                        default: // Cancelled or failed. Disconnect printer.
+                            shutdown();
+                            break;
+                    }
+                    break;
+                    
                 case DETERMINING_PRINTER_STATUS:
                     steno.debug("Determining printer status on port " + printerHandle);
 
