@@ -6,5 +6,6 @@ package celtech.roboxbase;
  */
 public enum ApplicationFeature
 {
-    AUTO_UPDATE_FIRMWARE
+    AUTO_UPDATE_FIRMWARE,
+    RESET_PRINTER_ID
 }

@@ -337,24 +337,32 @@ public abstract class CommandInterface extends Thread
                     break;
 
                 case RESETTING_ID:
-                    steno.debug("Resetting ID of " + printerHandle);
-                    RoboxResetIDResult resetResult = BaseLookup.getSystemNotificationHandler()
-                                                               .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
+                    steno.debug("Resetting identity for " + printerHandle);
+                    RoboxResetIDResult resetResult = RoboxResetIDResult.RESET_NOT_DONE;
+                    if (BaseConfiguration.isApplicationFeatureEnabled(ApplicationFeature.RESET_PRINTER_ID))
+                    {
+                        resetResult = BaseLookup.getSystemNotificationHandler()
+                                                .askUserToResetPrinterID(printerToUse, lastPrinterIDResponse);
+                    }
                     switch (resetResult)
                     {
                         case RESET_SUCCESSFUL: // Reset of printer id successful
+                            steno.debug("Reset ID of " + printerHandle);
                             commsState = RoboxCommsState.CHECKING_ID;
                             break;
                         case RESET_TEMPORARY: // Temporary set of printer type successful.
+                            steno.debug("Set temporary identity for " + printerHandle);
                             commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
                             break;
                         case RESET_NOT_DONE: // Not done - set a default.
+                            steno.debug("Set default ID for " + printerHandle);
                             commsState = RoboxCommsState.DETERMINING_PRINTER_STATUS;
                             printerToUse.setPrinterConfiguration(PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID));
                             break;
                         case RESET_CANCELLED:
                         case RESET_FAILED:
                         default: // Cancelled or failed. Disconnect printer.
+                            steno.debug("Failed to set printer ID for " + printerHandle);
                             shutdown();
                             break;
                     }
