@@ -2,6 +2,7 @@ package celtech.roboxbase.configuration.fileRepresentation;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.slicer.AdhesionType;
 import celtech.roboxbase.configuration.slicer.FillPattern;
 import celtech.roboxbase.configuration.slicer.NozzleParameters;
 import celtech.roboxbase.configuration.slicer.SupportPattern;
@@ -61,7 +62,7 @@ public class SlicerParametersFile
     private float firstLayerHeight_mm;
     private float layerHeight_mm;
     private float fillDensity_normalised;
-    private FillPattern fillPattern;
+    private HashMap<SlicerType, FillPattern> fillPattern;
     private int fillEveryNLayers;
     private int solidLayersAtTop;
     private int solidLayersAtBottom;
@@ -121,16 +122,21 @@ public class SlicerParametersFile
      */
     private boolean enableCooling;
     private int minFanSpeed_percent;
+    private int minFanSpeed_percent_n2;
     private int maxFanSpeed_percent;
+    private int maxFanSpeed_percent_n2;
     private int bridgeFanSpeed_percent;
     private int disableFanFirstNLayers;
     private int coolIfLayerTimeLessThan_secs;
     private int slowDownIfLayerTimeLessThan_secs;
+    private int slowDownIfLayerTimeLessThan_secs_n2;
     private int minPrintSpeed_mm_per_s;
+    private int minPrintSpeed_mm_per_s_n2;
 
     /*
      * Raft
      */
+    private AdhesionType adhesionType;
     private boolean printRaft;
     private float raftBaseLinewidth_mm;
     private float raftAirGapLayer0_mm;
@@ -235,12 +241,12 @@ public class SlicerParametersFile
         firePropertyChange("fillDensity_normalised", null, fillDensity_normalised);
     }
 
-    public FillPattern getFillPattern()
+    public HashMap<SlicerType, FillPattern> getFillPattern()
     {
         return fillPattern;
     }
 
-    public void setFillPattern(FillPattern fillPattern)
+    public void setFillPattern(HashMap<SlicerType, FillPattern> fillPattern)
     {
         this.fillPattern = fillPattern;
         firePropertyChange("fillPattern", null, fillPattern);
@@ -470,12 +476,26 @@ public class SlicerParametersFile
 
     public void setPrintRaft(boolean printRaft)
     {
+        // Slight hack for now
+        if(printRaft == true) {
+            setAdhesionType(AdhesionType.RAFT);
+        } else {
+            setAdhesionType(AdhesionType.NONE);
+        }
         if (this.printRaft == printRaft)
         {
             return;
         }
         this.printRaft = printRaft;
         firePropertyChange("printRaft", null, printRaft);
+    }
+    
+    public AdhesionType getAdhesionType() {
+        return adhesionType;
+    }
+    
+    public void setAdhesionType(AdhesionType adhesionType) {
+        this.adhesionType = adhesionType;
     }
 
     public float getRaftBaseLinewidth_mm()
@@ -725,6 +745,17 @@ public class SlicerParametersFile
         this.minFanSpeed_percent = minFanSpeed_percent;
         firePropertyChange("minFanSpeed_percent", null, minFanSpeed_percent);
     }
+    
+    public int getMinFanSpeed_percent_n2()
+    {
+        return minFanSpeed_percent_n2;
+    }
+
+    public void setMinFanSpeed_percent_n2(int minFanSpeed_percent_n2)
+    {
+        this.minFanSpeed_percent_n2 = minFanSpeed_percent_n2;
+        firePropertyChange("minFanSpeed_percentN2", null, minFanSpeed_percent_n2);
+    }
 
     public int getMaxFanSpeed_percent()
     {
@@ -735,6 +766,17 @@ public class SlicerParametersFile
     {
         this.maxFanSpeed_percent = maxFanSpeed_percent;
         firePropertyChange("maxFanSpeed_percent", null, maxFanSpeed_percent);
+    }
+    
+    public int getMaxFanSpeed_percent_n2()
+    {
+        return maxFanSpeed_percent_n2;
+    }
+
+    public void setMaxFanSpeed_percent_n2(int maxFanSpeed_percent_n2)
+    {
+        this.maxFanSpeed_percent_n2 = maxFanSpeed_percent_n2;
+        firePropertyChange("maxFanSpeed_percent_n2", null, maxFanSpeed_percent_n2);
     }
 
     public int getInterfaceSpeed_mm_per_s()
@@ -793,6 +835,16 @@ public class SlicerParametersFile
                            slowDownIfLayerTimeLessThan_secs);
     }
 
+    public int getSlowDownIfLayerTimeLessThan_secs_n2() {
+        return slowDownIfLayerTimeLessThan_secs_n2;
+    }
+
+    public void setSlowDownIfLayerTimeLessThan_secs_n2(int slowDownIfLayerTimeLessThan_secs_n2) {
+        this.slowDownIfLayerTimeLessThan_secs_n2 = slowDownIfLayerTimeLessThan_secs_n2;
+        firePropertyChange("slowDownIfLayerTimeLessThan_secs_n2", null,
+                           slowDownIfLayerTimeLessThan_secs_n2);
+    }
+
     public int getMinPrintSpeed_mm_per_s()
     {
         return minPrintSpeed_mm_per_s;
@@ -802,6 +854,15 @@ public class SlicerParametersFile
     {
         this.minPrintSpeed_mm_per_s = minPrintSpeed_mm_per_s;
         firePropertyChange("minPrintSpeed_mm_per_s", null, minPrintSpeed_mm_per_s);
+    }
+
+    public int getMinPrintSpeed_mm_per_s_n2() {
+        return minPrintSpeed_mm_per_s_n2;
+    }
+
+    public void setMinPrintSpeed_mm_per_s_n2(int minPrintSpeed_mm_per_s_n2) {
+        this.minPrintSpeed_mm_per_s_n2 = minPrintSpeed_mm_per_s_n2;
+        firePropertyChange("minPrintSpeed_mm_per_s_n2", null, minPrintSpeed_mm_per_s_n2);
     }
 
     public int getMaxClosesBeforeNozzleReselect()
@@ -952,16 +1013,21 @@ public class SlicerParametersFile
          */
         clone.enableCooling = enableCooling;
         clone.minFanSpeed_percent = minFanSpeed_percent;
+        clone.minFanSpeed_percent_n2 = minFanSpeed_percent_n2;
         clone.maxFanSpeed_percent = maxFanSpeed_percent;
+        clone.maxFanSpeed_percent_n2 = maxFanSpeed_percent_n2;
         clone.bridgeFanSpeed_percent = bridgeFanSpeed_percent;
         clone.disableFanFirstNLayers = disableFanFirstNLayers;
         clone.coolIfLayerTimeLessThan_secs = coolIfLayerTimeLessThan_secs;
         clone.slowDownIfLayerTimeLessThan_secs = slowDownIfLayerTimeLessThan_secs;
+        clone.slowDownIfLayerTimeLessThan_secs_n2 = slowDownIfLayerTimeLessThan_secs_n2;
         clone.minPrintSpeed_mm_per_s = minPrintSpeed_mm_per_s;
+        clone.minPrintSpeed_mm_per_s_n2 = minPrintSpeed_mm_per_s_n2;
 
         /*
          * Raft
          */
+        clone.adhesionType = adhesionType;
         clone.raftAirGapLayer0_mm = raftAirGapLayer0_mm;
         clone.raftBaseLinewidth_mm = raftBaseLinewidth_mm;
         clone.raftBaseThickness_mm = raftBaseThickness_mm;
