@@ -22,7 +22,7 @@ public class Slic3rConfigWriter extends SlicerConfigWriter
     @Override
     void bringDataInBounds(SlicerParametersFile profileData)
     {
-        if (profileData.getFillPattern() == FillPattern.LINE
+        if (profileData.getFillPattern().get(slicerType) == FillPattern.LINE
             && profileData.getFillDensity_normalised() >= 0.99f)
         {
             profileData.setFillDensity_normalised(.99f);
@@ -61,13 +61,7 @@ public class Slic3rConfigWriter extends SlicerConfigWriter
     }
 
     @Override
-    protected void outputLine(FileWriter writer, String variableName, FillPattern value) throws IOException
-    {
-        writer.append(variableName + " = " + value.name().toLowerCase() + "\n");
-    }
-
-    @Override
-    protected void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException
+    protected void outputLine(FileWriter writer, String variableName, Enum value) throws IOException
     {
         writer.append(variableName + " = " + value.name().toLowerCase() + "\n");
     }
@@ -83,10 +77,5 @@ public class Slic3rConfigWriter extends SlicerConfigWriter
     protected void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException
     {
         outputLine(writer, "filament_diameter", String.format(Locale.UK, "%f", diameter));
-    }
-
-    @Override
-    SlicerType getSlicerType() {
-        return SlicerType.Slic3r;
     }
 }

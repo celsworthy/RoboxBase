@@ -93,8 +93,12 @@ public abstract class SlicerConfigWriter
             writer.write("#Profile " + profileData.getProfileName() + "\n");
             writer.write("#\n");
 
-            outputFilamentDiameter(writer,
+            if(slicerType == SlicerType.Cura3) {
+                outputFilamentDiameter(writer, BaseConfiguration.filamentDiameter);
+            } else {
+                outputFilamentDiameter(writer,
                                    BaseConfiguration.filamentDiameterToYieldVolumetricExtrusion);
+            }
 
             outputPrintCentre(writer, centreX, centreY);
 
@@ -131,8 +135,13 @@ public abstract class SlicerConfigWriter
                                                                  entry.getValue());
                     if (calculatedValue.isPresent())
                     {
+                        if(slicerType == SlicerType.Cura3) {
+                            outputLine(writer, targetVariableName,
+                                   calculatedValue.get());
+                        } else {
                         outputLine(writer, targetVariableName,
                                    calculatedValue.get().intValue());
+                        }
                     }
                 } catch (NumberFormatException nfe)
                 {
@@ -181,16 +190,20 @@ public abstract class SlicerConfigWriter
                             {
                                 SlicerType value = (SlicerType) getMethod.invoke(profileData);
                                 outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(FillPattern.class))
+                            } else if (returnTypeClass.equals(AdhesionType.class))
                             {
-                                FillPattern value = (FillPattern) getMethod.invoke(profileData);
+                                AdhesionType value = (AdhesionType) getMethod.invoke(profileData);
                                 outputLine(writer, targetVariableName, value);
                             } else if (returnTypeClass.equals(HashMap.class))
                             {
                                 HashMap<Object, Object> map = (HashMap) getMethod.invoke(profileData);
                                 if(map.containsKey(getSlicerType())) {
-                                    SupportPattern value = (SupportPattern) map.get(getSlicerType());
-                                    outputLine(writer, targetVariableName, value);
+                                    Object value = map.get(getSlicerType());
+                                    if(value instanceof SupportPattern) {
+                                        outputLine(writer, targetVariableName, (SupportPattern) value);
+                                    } else if (value instanceof FillPattern) {
+                                        outputLine(writer, targetVariableName, (FillPattern) value);
+                                    }
                                 }
                             } else
                             {
@@ -257,9 +270,7 @@ public abstract class SlicerConfigWriter
 
     protected abstract void outputLine(FileWriter writer, String variableName, SlicerType value) throws IOException;
 
-    protected abstract void outputLine(FileWriter writer, String variableName, FillPattern value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException;
+    protected abstract void outputLine(FileWriter writer, String variableName, Enum value) throws IOException;
 
     protected abstract void outputPrintCentre(FileWriter writer, float centreX, float centreY) throws IOException;
 
@@ -485,5 +496,7 @@ public abstract class SlicerConfigWriter
 
     abstract void bringDataInBounds(SlicerParametersFile profileData);
     
-    abstract SlicerType getSlicerType();
+    public SlicerType getSlicerType() {
+        return slicerType;
+    }
 }
