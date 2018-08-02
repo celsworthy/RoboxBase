@@ -13,6 +13,7 @@ import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
+import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
@@ -745,18 +746,21 @@ public class PrintEngine implements ControllableService
                 printableMeshes.isCameraEnabled(),
                 printableMeshes.getCameraTriggerData());
 
-        if(slicerTypeToUse == SlicerType.Cura3) {
-            editCura3DefaultsForPrinter(printableMeshes);
-        }
-
         configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
                 (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
-        configWriter.generateConfigForSlicer(settingsToUse,
-                printJobDirectoryName
+        
+        String configFileDest = printJobDirectoryName
                 + File.separator
                 + printUUID
-                + BaseConfiguration.printProfileFileExtension);
+                + BaseConfiguration.printProfileFileExtension;
+        
+        configWriter.generateConfigForSlicer(settingsToUse, configFileDest);
 
+        if(slicerTypeToUse == SlicerType.Cura3) {
+            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
+             cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
+        }
+        
         slicerService.reset();
         slicerService.setPrintJobUUID(printUUID);
         slicerService.setPrinterToUse(associatedPrinter);
@@ -767,25 +771,6 @@ public class PrintEngine implements ControllableService
         acceptedPrintRequest = true;
 
         return acceptedPrintRequest;
-    }
-    
-    private void editCura3DefaultsForPrinter(PrintableMeshes printableMeshes) {
-        CuraDefaultSettingsEditor curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
-        curaDefaultSettingsEditor.beginEditing();
-        
-        curaDefaultSettingsEditor.editDefaultValue("machine_width", 
-                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeWidth());
-        curaDefaultSettingsEditor.editDefaultValue("machine_depth", 
-                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeDepth());
-        curaDefaultSettingsEditor.editDefaultValue("machine_height", 
-                associatedPrinter.printerConfigurationProperty().get().getPrintVolumeHeight());
-        
-        curaDefaultSettingsEditor.editDefaultValue("mesh_position_x", 
-                (float) -printableMeshes.getCentreOfPrintedObject().getX());
-        curaDefaultSettingsEditor.editDefaultValue("mesh_position_y", 
-                (float) printableMeshes.getCentreOfPrintedObject().getY());
-        
-        curaDefaultSettingsEditor.endEditing();
     }
 
     private boolean reprintFileFromDisk(PrintJob printJob, int startFromLineNumber)
