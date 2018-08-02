@@ -38,6 +38,23 @@ public class NodeManagementUtilities
         this.nozzleProxies = nozzleProxies;
     }
 
+    protected void removeFirstUnretractWithNoRetract(LayerNode layerNode) 
+    {
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+        
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+            
+            if(node instanceof RetractNode) {
+                break;
+            } else if (node instanceof UnretractNode) {
+                node.removeFromParent();
+                break;
+            }
+        }
+    }
+    
     protected void rehabilitateUnretractNodes(LayerNode layerNode)
     {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
