@@ -11,10 +11,7 @@ import celtech.roboxbase.utils.exporters.AMFOutputConverter;
 import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -131,7 +128,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
-        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), centreOfPrintedObject, progressReceiver, steno);
+        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), printableMeshes.getExtruderForModel(), centreOfPrintedObject, progressReceiver, steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
         steno.debug("Slicer Timer Report");
@@ -146,6 +143,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             String printJobDirectory,
             SlicerType slicerType,
             List<String> createdMeshFiles,
+            List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
             Stenographer steno)
@@ -170,6 +168,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String verboseOutputCommand = "";
         String progressOutputCommand = "";
         String modelFileCommand = "";
+        String extruderTrainCommand = "";
         
         // Used for cura 3 to override th default settings
         String sOverrideOptions = "";
@@ -197,15 +196,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 break;
             case Cura3:
                 windowsSlicerCommand = "\"" + BaseConfiguration.
-                        getCommonApplicationDirectory() + "Cura\\Cura3\\CuraEngine.exe\" slice";
+                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\" slice";
                 macSlicerCommand = "Cura/CuraEngine";
                 linuxSlicerCommand = "Cura/CuraEngine";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-j";
                 progressOutputCommand = "-p";
                 modelFileCommand = " -l";
+                extruderTrainCommand = " -e";
                 combinedConfigSection = configLoadCommand + " \"" + jsonSettingsFile + "\"";
-                sOverrideOptions = generateSlicerOverrideOptions(printJobDirectory + configFile);
                 break;
         }
 
@@ -265,13 +264,18 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ());
                 }
 
-//                windowsPrintCommand += " *.stl";
-                for (String fileName : createdMeshFiles)
+                int previousExtruder = -1;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
+                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                        windowsPrintCommand += extruderTrainCommand + extrudersForMeshes.get(i);
+                    }
                     windowsPrintCommand += modelFileCommand;
                     windowsPrintCommand += " \"";
-                    windowsPrintCommand += fileName;
+                    windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
+                    
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
                 windowsPrintCommand += " && popd\"";
                 steno.debug(windowsPrintCommand);
@@ -401,38 +405,5 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
     {
         updateMessage(message);
         updateProgress(workDone, 100.0);
-    }
-    
-    /**
-     * Turn the roboxprofile into a bunch of -s commands to override the 
-     * curaEngine options.
-     * 
-     * @param configFile the roboxprofile file.
-     * @return a String containing all the -s options.
-     */
-    private static String generateSlicerOverrideOptions(String configFile) {
-        
-        String overrideOptions = "";
-        
-        try {
-            File configOptions = new File(configFile);
-            BufferedReader fileReader = new BufferedReader(new FileReader(configOptions));
-            
-            String readLine = "";
-            
-            while((readLine = fileReader.readLine()) != null) {
-                if(!readLine.startsWith("#")) {
-                    overrideOptions += " -s " + readLine;
-                }
-            }
-        } catch (FileNotFoundException ex) {
-            STENO.error("CConfig file: " + configFile + " could not be found.");
-            STENO.error(ex.getMessage());
-        } catch (IOException ex) {
-            STENO.error("Error while reading config file: " + configFile);
-            STENO.error(ex.getMessage());
-        }
-        
-        return overrideOptions;
     }
 }
