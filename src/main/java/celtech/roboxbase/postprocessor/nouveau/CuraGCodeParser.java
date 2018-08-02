@@ -42,7 +42,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
 
     private final Stenographer steno = StenographerFactory.getStenographer(CuraGCodeParser.class.getName());
     private LayerNode thisLayer = new LayerNode();
-    private int feedrateInForce = -1;
+    private float feedrateInForce = -1;
     private int currentLineNumber = 0;
     private double currentLayerHeight = 0;
     protected Var<Integer> currentObject = new Var<>(-1);
@@ -65,12 +65,12 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
         this.currentLineNumber = startingLineNumber;
     }
 
-    public void setFeedrateInForce(int feedrate)
+    public void setFeedrateInForce(float feedrate)
     {
         this.feedrateInForce = feedrate;
     }
 
-    public int getFeedrateInForce()
+    public float getFeedrateInForce()
     {
         return feedrateInForce;
     }
@@ -654,7 +654,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     {
         Var<Float> dValue = new Var<>();
         Var<Float> eValue = new Var<>();
-        Var<Integer> fValue = new Var<>();
+        Var<Float> fValue = new Var<>();
 
         return Sequence("G1 ",
                 Optional(
@@ -704,7 +704,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     {
         Var<Float> dValue = new Var<>();
         Var<Float> eValue = new Var<>();
-        Var<Integer> fValue = new Var<>();
+        Var<Float> fValue = new Var<>();
 
         return Sequence("G1 ",
                 Optional(
@@ -753,21 +753,23 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule TravelDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Float> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
 
-        return Sequence("G0 ",
+        return Sequence(FirstOf("G0 ","G1 "),
                 Optional(
                         Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
-                                Sequence("X", FloatingPointNumber(),
+                                Sequence("X", 
+                                        FloatingPointOrIntegerNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y", FloatingPointNumber(),
+                                Sequence("Y", 
+                                        FloatingPointOrIntegerNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
@@ -811,7 +813,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     // G1 F840 X88.700 Y44.153 E5.93294
     Rule ExtrusionDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Float> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
@@ -823,10 +825,12 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                         Feedrate(fValue)
                 ),
                 Optional(
-                        Sequence("X", FloatingPointNumber(),
+                        Sequence("X", 
+                                FloatingPointOrIntegerNumber(),
                                 xValue.set(Double.valueOf(match())),
                                 ' ',
-                                "Y", FloatingPointNumber(),
+                                "Y", 
+                                FloatingPointOrIntegerNumber(),
                                 yValue.set(Double.valueOf(match())),
                                 Optional(' '),
                                 Optional(Sequence(
@@ -904,7 +908,7 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule LayerChangeDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Float> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
@@ -915,17 +919,17 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 ),
                 ZeroOrMore(
                         FirstOf(
-                                Sequence("X", FloatingPointNumber(),
+                                Sequence("X", FloatingPointOrIntegerNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y", FloatingPointNumber(),
+                                Sequence("Y", FloatingPointOrIntegerNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
                 ),
-                Sequence("Z", FloatingPointNumber(),
+                Sequence("Z", FloatingPointOrIntegerNumber(),
                         zValue.set(Double.valueOf(match())),
                         Optional(' ')
                 ),
@@ -1058,14 +1062,22 @@ public class CuraGCodeParser extends BaseParser<GCodeEventNode>
                 Ch('.'),
                 OneOrMore(Digit()));
     }
-
+    
     @SuppressSubnodes
-    Rule Feedrate(Var<Integer> feedrate)
+    Rule FloatingPointOrIntegerNumber()
     {
         return FirstOf(
-                Sequence(
-                        'F', OneOrMore(Digit()),
-                        feedrate.set(Integer.valueOf(match())),
+                FloatingPointNumber(),
+                IntegerNumber()
+        );
+    }
+
+    @SuppressSubnodes
+    Rule Feedrate(Var<Float> feedrate)
+    {
+        return FirstOf(
+                Sequence('F', FloatingPointOrIntegerNumber(),
+                        feedrate.set(Float.valueOf(match())),
                         Optional(' '),
                         new Action()
                         {

@@ -111,7 +111,7 @@ public class TimeAndVolumeCalc
         double timeInThisTool = 0;
 
         ToolSelectNode lastToolSelectNode = null;
-        int lastFeedrateInForce = 0;
+        float lastFeedrateInForce = 0;
 
         for (int layerCounter = 0;
                 layerCounter < allLayerPostProcessResults.size();
