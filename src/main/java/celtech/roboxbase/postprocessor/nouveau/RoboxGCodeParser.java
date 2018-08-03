@@ -57,7 +57,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
         return feedrateInForce;
     }
 
-    public int getCurrentLineNumber()
+        public int getCurrentLineNumber()
     {
         return currentLineNumber;
     }
@@ -80,7 +80,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     public Rule Layer()
     {
         return Sequence(
-                Sequence(';', ZeroOrMore(' '), "LAYER:", OneOrMore(Digit()),
+                Sequence(';', ZeroOrMore(' '), "LAYER:", Optional('-'), OneOrMore(Digit()),
                         (Action) (Context context1) ->
                         {
                             thisLayer.setLayerNumber(Integer.valueOf(context1.getMatch()));
