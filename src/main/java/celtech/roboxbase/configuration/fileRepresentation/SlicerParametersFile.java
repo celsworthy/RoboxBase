@@ -946,7 +946,9 @@ public class SlicerParametersFile
         clone.firstLayerHeight_mm = firstLayerHeight_mm;
         clone.layerHeight_mm = layerHeight_mm;
         clone.fillDensity_normalised = fillDensity_normalised;
-        clone.fillPattern = fillPattern;
+        clone.fillPattern = new HashMap<>();
+        fillPattern.entrySet().forEach(fillEntry -> 
+                clone.fillPattern.put(fillEntry.getKey(), fillEntry.getValue()));
         clone.fillEveryNLayers = fillEveryNLayers;
         clone.solidLayersAtTop = solidLayersAtTop;
         clone.solidLayersAtBottom = solidLayersAtBottom;
