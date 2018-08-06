@@ -24,7 +24,7 @@ public enum SupportPattern
     LINES("Lines", Arrays.asList(Cura3)),
     GRID("Grid", Arrays.asList(Cura3)),
     TRIANGLES("Triangles", Arrays.asList(Cura3)),
-    CONCENTRIC("Conentric", Arrays.asList(Cura3)),
+    CONCENTRIC("Concentric", Arrays.asList(Cura3)),
     ZIGZAG("Zig Zag", Arrays.asList(Cura3)),
     CROSS("Cross", Arrays.asList(Cura3));
 
