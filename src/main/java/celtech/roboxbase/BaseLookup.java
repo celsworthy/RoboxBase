@@ -192,7 +192,7 @@ public class BaseLookup
         return connectedPrintersUnmodifiable;
     }
 
-    public static void setupDefaultValues()
+    public static Locale getApplicationLocal()
     {
         String languageTag = BaseConfiguration.getApplicationLocale();
         Locale appLocale;
@@ -220,7 +220,14 @@ public class BaseLookup
             }
         }
         
-        setupDefaultValues(BaseConfiguration.getApplicationLogLevel(), appLocale, new ConsoleSystemNotificationManager());
+        return appLocale;
+    }
+
+    public static void setupDefaultValues()
+    {
+        setupDefaultValues(BaseConfiguration.getApplicationLogLevel(), 
+                           getApplicationLocal(),
+                           new ConsoleSystemNotificationManager());
     }
 
     public static Set<Locale> getAvailableLocales()

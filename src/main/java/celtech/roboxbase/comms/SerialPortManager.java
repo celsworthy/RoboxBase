@@ -113,11 +113,6 @@ public class SerialPortManager implements SerialPortEventListener
     public void writeAndWaitForData(byte[] data) throws LowLevelInterfaceException, CommsSuppressedException
     {
         checkSerialPortOK();
-
-        if (data[0] != -80 && data[0] != -77 && data[0] != -76)
-        {
-            steno.info("Writing data: " + new String(data));
-        }
         boolean wroteOK = writeBytes(data);
 
         if (wroteOK)
