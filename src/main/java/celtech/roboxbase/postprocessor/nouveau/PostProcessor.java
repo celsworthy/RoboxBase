@@ -562,7 +562,7 @@ public class PostProcessor
             } else
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
-                int lastFeedrate = gcodeParser.getFeedrateInForce();
+                float lastFeedrate = gcodeParser.getFeedrateInForce();
                 int lastLineNumber = gcodeParser.getCurrentLineNumber();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
@@ -579,6 +579,10 @@ public class PostProcessor
     private LayerPostProcessResult postProcess(LayerNode layerNode,
             LayerPostProcessResult lastLayerParseResult)
     {
+        if(lastLayerParseResult.getLayerData() == null) {
+            nodeManagementUtilities.removeFirstUnretractWithNoRetract(layerNode);
+        }
+        
         timeUtils.timerStart(this, unretractTimerName);
         nodeManagementUtilities.rehabilitateUnretractNodes(layerNode);
         timeUtils.timerStop(this, unretractTimerName);
@@ -626,7 +630,7 @@ public class PostProcessor
     {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
 
-        int lastFeedrate = -1;
+        float lastFeedrate = -1;
 
         SectionNode lastSectionNode = null;
         ToolSelectNode lastToolSelectNode = null;

@@ -13,6 +13,7 @@ import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
+import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
@@ -34,6 +35,7 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
+import celtech.roboxbase.utils.cura.CuraDefaultSettingsEditor;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
 import java.io.IOException;
@@ -746,12 +748,19 @@ public class PrintEngine implements ControllableService
 
         configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
                 (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
-        configWriter.generateConfigForSlicer(settingsToUse,
-                printJobDirectoryName
+        
+        String configFileDest = printJobDirectoryName
                 + File.separator
                 + printUUID
-                + BaseConfiguration.printProfileFileExtension);
+                + BaseConfiguration.printProfileFileExtension;
+        
+        configWriter.generateConfigForSlicer(settingsToUse, configFileDest);
 
+        if(slicerTypeToUse == SlicerType.Cura3) {
+            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
+             cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
+        }
+        
         slicerService.reset();
         slicerService.setPrintJobUUID(printUUID);
         slicerService.setPrinterToUse(associatedPrinter);
