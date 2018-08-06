@@ -15,6 +15,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +60,14 @@ public abstract class SlicerConfigWriter
         generateConfigForSlicerWithMappings(profileData, destinationFile, mappingData);
     }
 
+    /**
+     * Generates a .roboxprofile file which takes into account the user slicer preferences,
+     * and the slicermappings.dat file, which will map the options for a particular slicer.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param destinationFile the destination for the .roboxprofile file.
+     * @param mappingData The mapping data from the slicermappings.dat file.
+     */
     public final void generateConfigForSlicerWithMappings(SlicerParametersFile profileData,
         String destinationFile, SlicerMappingData mappingData)
     {
@@ -84,8 +93,12 @@ public abstract class SlicerConfigWriter
             writer.write("#Profile " + profileData.getProfileName() + "\n");
             writer.write("#\n");
 
-            outputFilamentDiameter(writer,
+            if(slicerType == SlicerType.Cura3) {
+                outputFilamentDiameter(writer, BaseConfiguration.filamentDiameter);
+            } else {
+                outputFilamentDiameter(writer,
                                    BaseConfiguration.filamentDiameterToYieldVolumetricExtrusion);
+            }
 
             outputPrintCentre(writer, centreX, centreY);
 
@@ -122,8 +135,13 @@ public abstract class SlicerConfigWriter
                                                                  entry.getValue());
                     if (calculatedValue.isPresent())
                     {
+                        if(slicerType == SlicerType.Cura3) {
+                            outputLine(writer, targetVariableName,
+                                   calculatedValue.get());
+                        } else {
                         outputLine(writer, targetVariableName,
                                    calculatedValue.get().intValue());
+                        }
                     }
                 } catch (NumberFormatException nfe)
                 {
@@ -172,14 +190,21 @@ public abstract class SlicerConfigWriter
                             {
                                 SlicerType value = (SlicerType) getMethod.invoke(profileData);
                                 outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(FillPattern.class))
+                            } else if (returnTypeClass.equals(AdhesionType.class))
                             {
-                                FillPattern value = (FillPattern) getMethod.invoke(profileData);
+                                AdhesionType value = (AdhesionType) getMethod.invoke(profileData);
                                 outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(SupportPattern.class))
+                            } else if (returnTypeClass.equals(HashMap.class))
                             {
-                                SupportPattern value = (SupportPattern) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
+                                HashMap<Object, Object> map = (HashMap) getMethod.invoke(profileData);
+                                if(map.containsKey(getSlicerType())) {
+                                    Object value = map.get(getSlicerType());
+                                    if(value instanceof SupportPattern) {
+                                        outputLine(writer, targetVariableName, (SupportPattern) value);
+                                    } else if (value instanceof FillPattern) {
+                                        outputLine(writer, targetVariableName, (FillPattern) value);
+                                    }
+                                }
                             } else
                             {
                                 steno.error("Got unknown return type: " + returnTypeClass.getName());
@@ -245,14 +270,21 @@ public abstract class SlicerConfigWriter
 
     protected abstract void outputLine(FileWriter writer, String variableName, SlicerType value) throws IOException;
 
-    protected abstract void outputLine(FileWriter writer, String variableName, FillPattern value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException;
+    protected abstract void outputLine(FileWriter writer, String variableName, Enum value) throws IOException;
 
     protected abstract void outputPrintCentre(FileWriter writer, float centreX, float centreY) throws IOException;
 
     protected abstract void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException;
 
+    /**
+     * Evaluates an operation given by a particular mapping and manipulates the 
+     * profileData value based on the operation.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param value the value in the parameters file.
+     * @param operationString the operation to be applied to the value.
+     * @return the new value after an operation has been applied/
+     */
     private Optional<Float> applyValue(SlicerParametersFile profileData, float value,
         String operationString)
     {
@@ -463,4 +495,8 @@ public abstract class SlicerConfigWriter
     }
 
     abstract void bringDataInBounds(SlicerParametersFile profileData);
+    
+    public SlicerType getSlicerType() {
+        return slicerType;
+    }
 }

@@ -188,7 +188,7 @@ public class CuraGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof TravelNode);
         assertEquals(88.302, ((TravelNode) result.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(42.421, ((TravelNode) result.valueStack.peek(0)).getMovement().getY(), 0.001);
-        assertEquals(12000, ((TravelNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(12000, ((TravelNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
 
         String inputData2 = "G1 F1800 X116.392 Y99.457 E1.96742\n";
         ParsingResult result2 = runner.run(inputData2);
@@ -204,7 +204,7 @@ public class CuraGCodeParserTest
         assertTrue(result3.valueStack.peek(0) instanceof TravelNode);
         assertEquals(146.378, ((TravelNode) result2.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(92.092, ((TravelNode) result2.valueStack.peek(0)).getMovement().getY(), 0.001);
-        assertEquals(12000, ((TravelNode) result2.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(12000, ((TravelNode) result2.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
 
         //Don't match layer change directives
         String inputData4 = "G0 F12000 X75.479 Y64.037 Z1.900\n";
@@ -221,7 +221,7 @@ public class CuraGCodeParserTest
         assertTrue(result5.valueStack.peek(0) instanceof TravelNode);
         assertEquals(146.378, ((TravelNode) result5.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(92.092, ((TravelNode) result5.valueStack.peek(0)).getMovement().getY(), 0.001);
-        assertEquals(12000, ((TravelNode) result5.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(12000, ((TravelNode) result5.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
     }
 
     @Test
@@ -238,7 +238,7 @@ public class CuraGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof RetractNode);
         assertEquals(-0.5, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(1800, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(1800, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
     }
 
     @Test
@@ -255,7 +255,7 @@ public class CuraGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof UnretractNode);
         assertEquals(0.7, ((UnretractNode) result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((UnretractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(1800, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(1800, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
     }
 
     @Test
@@ -368,7 +368,7 @@ public class CuraGCodeParserTest
         assertEquals(75.479, ((LayerChangeDirectiveNode) result3.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(64.037, ((LayerChangeDirectiveNode) result3.valueStack.peek(0)).getMovement().getY(), 0.001);
         assertEquals(1.9, ((LayerChangeDirectiveNode) result3.valueStack.peek(0)).getMovement().getZ(), 0.001);
-        assertEquals(12000, ((LayerChangeDirectiveNode) result3.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(12000, ((LayerChangeDirectiveNode) result3.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
     }
 
     @Test

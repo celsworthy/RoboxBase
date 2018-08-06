@@ -13,7 +13,7 @@ public class LayerPostProcessResult
 {
     private final LayerNode layerData;
     private Optional<Integer> lastObjectNumber = Optional.empty();
-    private int lastFeedrateInForce = -1;
+    private float lastFeedrateInForce = -1;
     private final ToolSelectNode lastToolSelectInForce;
     private final ToolSelectNode lastToolSelectOfSameNumber;
     private SectionNode lastSectionNodeInForce = null;
@@ -25,7 +25,7 @@ public class LayerPostProcessResult
             SectionNode sectionNode,
             ToolSelectNode toolSelectNode,
             ToolSelectNode lastToolSelectOfSameNumber,
-            int lastFeedrateInForce,
+            float lastFeedrateInForce,
             int lastLineNumber)
     {
         this.layerData = layerData;
@@ -57,7 +57,7 @@ public class LayerPostProcessResult
      *
      * @param feedrate
      */
-    public void setLastFeedrateInForce(int feedrate)
+    public void setLastFeedrateInForce(float feedrate)
     {
         this.lastFeedrateInForce = feedrate;
     }
@@ -67,7 +67,7 @@ public class LayerPostProcessResult
      *
      * @return
      */
-    public int getLastFeedrateInForce()
+    public float getLastFeedrateInForce()
     {
         return lastFeedrateInForce;
     }

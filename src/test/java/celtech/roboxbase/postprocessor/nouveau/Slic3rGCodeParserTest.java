@@ -187,7 +187,7 @@ public class Slic3rGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof TravelNode);
         assertEquals(112.395, ((TravelNode) result.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(82.193, ((TravelNode) result.valueStack.peek(0)).getMovement().getY(), 0.001);
-        assertEquals(356, ((TravelNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(356, ((TravelNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
         assertEquals(commentPart, ((TravelNode) result.valueStack.peek(0)).getRawCommentText());
     }
 
@@ -206,7 +206,7 @@ public class Slic3rGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof RetractNode);
         assertEquals(-0.05, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(3545, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(3545, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
         assertEquals(commentPart, ((RetractNode) result.valueStack.peek(0)).getRawCommentText());
     }
 
@@ -225,7 +225,7 @@ public class Slic3rGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof UnretractNode);
         assertEquals(0.3, ((UnretractNode) result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((UnretractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(1200, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
+        assertEquals(1200, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
         assertEquals(commentPart, ((UnretractNode) result.valueStack.peek(0)).getRawCommentText());
     }
 

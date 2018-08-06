@@ -181,15 +181,14 @@ public class NozzleAssignmentUtilities
         for (ObjectDelineationNode objectNode : objectNodes)
         {
             objectReferenceNumber = objectNode.getObjectNumber();
+            // Add retract node to end of previous object section (before tool change)
             if (lastObjectReferenceNumber != -1
                     && lastObjectReferenceNumber != objectReferenceNumber
-                    && lastSectionNode != null)
+                    && lastSectionNode != null
+                    && (lastSectionNode.getChildren().isEmpty()
+                    || !(lastSectionNode.getChildren().get(lastSectionNode.getChildren().size() - 1) instanceof RetractNode)))
             {
-                if (lastSectionNode.getChildren().size() == 0
-                        || !(lastSectionNode.getChildren().get(lastSectionNode.getChildren().size() - 1) instanceof RetractNode))
-                {
-                    lastSectionNode.addChildAtEnd(new RetractNode());
-                }
+                lastSectionNode.addChildAtEnd(new RetractNode());
             }
 
             lastObjectReferenceNumber = objectReferenceNumber;

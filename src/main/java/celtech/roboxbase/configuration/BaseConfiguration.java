@@ -49,6 +49,7 @@ public class BaseConfiguration
      * CONSTANTS
      */
     public static final float filamentDiameterToYieldVolumetricExtrusion = 1.1283791670955125738961589031215f;
+    public static final float filamentDiameter = 1.75f;
     public static final int maxPermittedTempDifferenceForPurge = 15;
 
     private static String applicationName = null;

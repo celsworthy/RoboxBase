@@ -8,22 +8,20 @@ import java.util.Locale;
 
 /**
  *
- * @author Ian
+ * @author George Salter
  */
-public class CuraConfigWriter extends SlicerConfigWriter
-{
+public class Cura3ConfigWriter extends SlicerConfigWriter {
 
-    public CuraConfigWriter()
+    public Cura3ConfigWriter()
     {
         super();
-        slicerType = SlicerType.Cura;
+        slicerType = SlicerType.Cura3;
     }
-
+    
     @Override
     protected void outputLine(FileWriter writer, String variableName, boolean value) throws IOException
     {
-        int valueToWrite = (value) ? 1 : 0;
-        writer.append(variableName + " = " + valueToWrite + "\n");
+        writer.append(variableName + "=" + value + "\n");
     }
 
     @Override
@@ -53,7 +51,7 @@ public class CuraConfigWriter extends SlicerConfigWriter
     @Override
     protected void outputLine(FileWriter writer, String variableName, Enum value) throws IOException
     {
-        writer.append(variableName + "=" + value + "\n");
+        writer.append(variableName + "=" + value.name().toLowerCase() + "\n");
     }
 
     @Override
@@ -64,13 +62,11 @@ public class CuraConfigWriter extends SlicerConfigWriter
     @Override
     protected void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException
     {
-        outputLine(writer, "filamentDiameter", String.format(Locale.UK, "%d",
-                                                             (int) (diameter * 1000)));
+        outputLine(writer, "material_diameter", String.format(Locale.UK, "%f", diameter));
     }
 
     @Override
-    void bringDataInBounds(SlicerParametersFile profileData)
-    {
+    void bringDataInBounds(SlicerParametersFile profileData) {
     }
     
 }
