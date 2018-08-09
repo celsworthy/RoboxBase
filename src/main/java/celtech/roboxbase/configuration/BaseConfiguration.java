@@ -127,6 +127,9 @@ public class BaseConfiguration
     public static final String printProfileDirectoryPath = "PrintProfiles";
     public static final int maxPrintSpoolFiles = 20;
 
+    private static String printProfileSettingsFileLocation = null;
+    private static String printProfileSettingsFileName = "print_profile_settings.json";
+    
     private static String applicationLanguageRaw = null;
 
     private static CoreMemory coreMemory = null;
@@ -550,6 +553,16 @@ public class BaseConfiguration
         }
 
         return userPrintProfileFileDirectory;
+    }
+    
+    public static String getPrintProfileSettingsFileLocation()
+    {
+        if(printProfileSettingsFileLocation == null)
+        {
+            printProfileSettingsFileLocation = getApplicationPrintProfileDirectory() + printProfileSettingsFileName;
+        }
+        
+        return printProfileSettingsFileLocation;
     }
 
     public static String getUserTempDirectory()
