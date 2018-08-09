@@ -10,9 +10,11 @@ public class PrintProfileSetting {
     
     private String id;
     private String settingName;
+    private String defaultValue;
+    private String valueType;
     private String tooltip;
     private Optional<String> unit = Optional.empty();
-
+    
     public String getId() {
         return id;
     }
@@ -29,6 +31,22 @@ public class PrintProfileSetting {
         this.settingName = settingName;
     }
 
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public String getValueType() {
+        return valueType;
+    }
+
+    public void setValueType(String valueType) {
+        this.valueType = valueType;
+    }
+    
     public String getTooltip() {
         return tooltip;
     }
