@@ -128,7 +128,7 @@ public class BaseConfiguration
     public static final int maxPrintSpoolFiles = 20;
 
     private static String printProfileSettingsFileLocation = null;
-    private static String printProfileSettingsFileName = "print_profile_settings.json";
+    private static final String printProfileSettingsFileName = "print_profile_settings.json";
     
     private static String applicationLanguageRaw = null;
 

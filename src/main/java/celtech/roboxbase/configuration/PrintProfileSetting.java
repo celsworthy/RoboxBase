@@ -1,5 +1,6 @@
 package celtech.roboxbase.configuration;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -14,6 +15,8 @@ public class PrintProfileSetting {
     private String valueType;
     private String tooltip;
     private Optional<String> unit = Optional.empty();
+    private boolean perExtruder;
+    private Optional<Map<String, String>> options = Optional.empty();
     
     public String getId() {
         return id;
@@ -61,5 +64,21 @@ public class PrintProfileSetting {
 
     public void setUnit(Optional<String> unit) {
         this.unit = unit;
+    }
+
+    public boolean isPerExtruder() {
+        return perExtruder;
+    }
+
+    public void setPerExtruder(boolean perExtruder) {
+        this.perExtruder = perExtruder;
+    }
+    
+    public Optional<Map<String, String>> getOptions() {
+        return options;
+    }
+
+    public void setOptions(Optional<Map<String, String>> options) {
+        this.options = options;
     }
 }
