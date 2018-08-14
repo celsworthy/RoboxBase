@@ -11,12 +11,26 @@ public class PrintProfileSetting {
     
     private String id;
     private String settingName;
-    private String defaultValue;
+    private String value;
     private String valueType;
     private String tooltip;
     private Optional<String> unit = Optional.empty();
     private boolean perExtruder;
     private Optional<Map<String, String>> options = Optional.empty();
+    
+    // Default constructor for Jackson
+    public PrintProfileSetting() {}
+    
+    public PrintProfileSetting(PrintProfileSetting settingToCopy) {
+        id = settingToCopy.getId();
+        settingName = settingToCopy.getSettingName();
+        value = settingToCopy.getValue();
+        valueType = settingToCopy.getValueType();
+        tooltip = settingToCopy.getTooltip();
+        unit = settingToCopy.getUnit();
+        perExtruder = settingToCopy.isPerExtruder();
+        options = settingToCopy.getOptions();
+    }
     
     public String getId() {
         return id;
@@ -34,12 +48,12 @@ public class PrintProfileSetting {
         this.settingName = settingName;
     }
 
-    public String getDefaultValue() {
-        return defaultValue;
+    public String getValue() {
+        return value;
     }
 
-    public void setDefaultValue(String defaultValue) {
-        this.defaultValue = defaultValue;
+    public void setValue(String defaultValue) {
+        this.value = defaultValue;
     }
 
     public String getValueType() {
