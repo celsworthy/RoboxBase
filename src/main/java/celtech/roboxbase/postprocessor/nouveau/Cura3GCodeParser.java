@@ -8,11 +8,11 @@ import org.parboiled.Rule;
 
 /**
  *
- * @author Ian
+ * @author George Salter
  */
 //@BuildParseTree
-public class CuraGCodeParser extends GCodeParser
-{
+public class Cura3GCodeParser extends GCodeParser {
+
     @Override
     public Rule Layer()
     {
@@ -57,7 +57,7 @@ public class CuraGCodeParser extends GCodeParser
 
         return Sequence(
                 // Orphan - make this part of the current object
-                IsASection(),
+                //IsASection(),
                 orphanObjectSectionAction,
                 OneOrMore(
                         Sequence(

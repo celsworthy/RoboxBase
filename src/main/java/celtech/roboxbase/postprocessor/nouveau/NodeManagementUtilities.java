@@ -234,8 +234,7 @@ public class NodeManagementUtilities
 
             int potentialObjectNumber = orphanNode.getPotentialObjectNumber();
 
-            if (potentialObjectNumber
-                    < 0)
+            if (potentialObjectNumber < 0)
             {
                 if (lastLayerParseResult.getLastObjectNumber().isPresent())
                 {

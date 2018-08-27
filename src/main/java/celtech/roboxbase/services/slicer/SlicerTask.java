@@ -70,7 +70,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             return null;
         }
 
-        STENO.debug("slice " + printableMeshes.getSettings().getProfileName());
+        STENO.debug("slice " + printableMeshes.getSettings().getName());
         updateTitle("Slicer");
         updateMessage("Preparing model for conversion");
         updateProgress(0.0, 100.0);
@@ -96,10 +96,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         timeUtils.timerStart(uuidString, slicerTimerName);
 
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
-        if (printableMeshes.getSettings().getSlicerOverride() != null)
-        {
-            slicerType = printableMeshes.getSettings().getSlicerOverride();
-        }
 
         MeshFileOutputConverter outputConverter = null;
 

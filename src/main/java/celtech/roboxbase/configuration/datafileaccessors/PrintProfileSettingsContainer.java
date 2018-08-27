@@ -54,8 +54,8 @@ public class PrintProfileSettingsContainer {
         
         for(Entry<String, List<PrintProfileSetting>> entry : originalSettings.getPrintProfileSettings().entrySet()) {
             String settingSection = entry.getKey();
-            List<PrintProfileSetting> originalSettingsList = originalSettings.getPrintProfileSettings().get(settingSection);
-            List<PrintProfileSetting> newSettingsList = newSettings.getPrintProfileSettings().get(settingSection);
+            List<PrintProfileSetting> originalSettingsList = originalSettings.getAllSettingsInSection(settingSection);
+            List<PrintProfileSetting> newSettingsList = newSettings.getAllSettingsInSection(settingSection);
             List<PrintProfileSetting> changedSettingsInSection = new ArrayList<>();
             
             originalSettingsList.forEach(originalSetting -> {        

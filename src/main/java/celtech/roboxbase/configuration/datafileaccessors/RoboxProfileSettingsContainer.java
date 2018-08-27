@@ -17,8 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -34,16 +35,28 @@ public class RoboxProfileSettingsContainer {
     private static final RoboxProfileSettingsContainer INSTANCE = new RoboxProfileSettingsContainer();
     
     private static final String TITLE_BORDER = "//==============";
+    private static final String METADATA = "Metadata";
+    private static final String PROFILE_NAME = "profileName";
+    private static final String HEAD_TYPE = "headType";
     
     private static Map<String, List<RoboxProfile>> curaRoboxProfiles;
     private static Map<String, List<RoboxProfile>> cura3RoboxProfiles;
     private static Map<String, List<RoboxProfile>> slic3rRoboxProfiles;
     
+    private static Map<String, ObservableList<RoboxProfile>> curaCustomRoboxProfiles;
+    private static Map<String, ObservableList<RoboxProfile>> cura3CustomRoboxProfiles;
+    private static Map<String, ObservableList<RoboxProfile>> slic3rCustomRoboxProfiles;
+    
+    
     public RoboxProfileSettingsContainer() {
         curaRoboxProfiles = new HashMap<>();
         cura3RoboxProfiles = new HashMap<>();
         slic3rRoboxProfiles = new HashMap<>();
-        loadRoboxProfiles();
+        curaCustomRoboxProfiles = new HashMap<>();
+        cura3CustomRoboxProfiles = new HashMap<>();
+        slic3rCustomRoboxProfiles = new HashMap<>();
+        loadRoboxProfiles(SlicerType.Cura);
+        loadRoboxProfiles(SlicerType.Cura3);
     }
     
     public static RoboxProfileSettingsContainer getInstance() {
@@ -63,13 +76,33 @@ public class RoboxProfileSettingsContainer {
         }
     }
     
+    public Map<String, ObservableList<RoboxProfile>> getCustomRoboxProfilesForSlicer(SlicerType slicerType) {
+        switch (slicerType) {
+            case Cura:
+                return curaCustomRoboxProfiles;
+            case Cura3:
+                return cura3CustomRoboxProfiles;
+            case Slic3r:
+                return slic3rCustomRoboxProfiles;
+            default:
+                return new HashMap<>();
+        }
+    }
+    
+    public Optional<RoboxProfile> getRoboxProfileWithName(String profileName, SlicerType slicerType, String headType) {
+        List<RoboxProfile> profilesForHead = getRoboxProfilesForSlicer(slicerType).get(headType);
+        Optional<RoboxProfile> roboxProfile = profilesForHead.stream()
+                .filter(profile -> profile.getName().equals(profileName))
+                .findAny();
+        return roboxProfile;
+    }
+    
     public RoboxProfile loadHeadProfileForSlicer(String headType, SlicerType slicerType) {
         File slicerApplicationProfileDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(slicerType));
         for(File headDir : slicerApplicationProfileDirectory.listFiles()) {
             if(headDir.getName().equals(headType)) {
-                Map<String, String> settingsMap = loadHeadSettingsIntoMap(headType, headDir);
-                RoboxProfile headProfile = new RoboxProfile(headType, headType, true);
-                headProfile.setSettings(settingsMap);
+                Map<String, String> settingsMap = loadHeadSettingsIntoMap(headType, slicerType);
+                RoboxProfile headProfile = new RoboxProfile(headType, headType, true, settingsMap);
                 return headProfile;
             }
         }
@@ -79,59 +112,111 @@ public class RoboxProfileSettingsContainer {
     
     public RoboxProfile saveCustomProfile(Map<String, List<PrintProfileSetting>> settingsToWrite, String nameForProfile, 
             String headType, SlicerType slicerType) {
-        String headDirPath = BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType) + "/" + headType;
-        switch(slicerType) {
-            case Cura:
-                return saveCustomProfile(settingsToWrite, nameForProfile, curaRoboxProfiles.get(headType), headDirPath, headType);
-            case Cura3:
-                return saveCustomProfile(settingsToWrite, nameForProfile, cura3RoboxProfiles.get(headType), headDirPath, headType);
-            case Slic3r:
-                return saveCustomProfile(settingsToWrite, nameForProfile, slic3rRoboxProfiles.get(headType), headDirPath, headType);
+        List<RoboxProfile> allProfilesForHead = getRoboxProfilesForSlicer(slicerType).get(headType);
+        List<RoboxProfile> customProfilesForHead = getCustomRoboxProfilesForSlicer(slicerType).get(headType);
+        RoboxProfile roboxProfile;
+        
+        Optional<RoboxProfile> existingProfile = customProfilesForHead.stream()
+                .filter(profile -> profile.getName().equals(nameForProfile))
+                .findAny();
+        if(existingProfile.isPresent()) {
+            customProfilesForHead.remove(existingProfile.get());
+            allProfilesForHead.remove(existingProfile.get());
+            roboxProfile = saveUserProfile(nameForProfile, slicerType, settingsToWrite, headType);
+        } else {
+            roboxProfile = saveUserProfile(nameForProfile, slicerType, settingsToWrite, headType);
+        }
+        customProfilesForHead.add(roboxProfile);
+        allProfilesForHead.add(roboxProfile);
+        return roboxProfile;
+    }
+    
+    public void deleteCustomProfile(String profileName, SlicerType slicerType, String headType) {
+        ObservableList<RoboxProfile> customRoboxProfiles = getCustomRoboxProfilesForSlicer(slicerType).get(headType);
+        List<RoboxProfile> allRoboxProfiles = getRoboxProfilesForSlicer(slicerType).get(headType);
+        Optional<RoboxProfile> profileToDelete = customRoboxProfiles.stream()
+                .filter(profile -> profile.getName().equals(profileName))
+                .findAny();
+        if(profileToDelete.isPresent()) {
+            allRoboxProfiles.remove(profileToDelete.get());
+            customRoboxProfiles.remove(profileToDelete.get());
+        } else {
+            STENO.error("File " + profileName + ", doesn't exist in profiles list for slicer: " + slicerType);
         }
         
-        return null;
+        String filePath = BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType) + "/" + headType + "/" 
+                + profileName + BaseConfiguration.printProfileFileExtension;
+        File fileToDelete = new File(filePath);
+        if(fileToDelete.exists()) {
+            fileToDelete.delete();
+        } else {
+            STENO.error("File could not be deleted as it doesn't exist. File path: " + filePath);
+        }
     }
     
-    private static void loadRoboxProfiles() {
-        File curaApplicationProfileDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura));
-        File curaUserProfileDirectory = new File(BaseConfiguration.getUserPrintProfileDirectoryForSlicer(SlicerType.Cura));
-        loadRoboxProfilesIntoMap(curaApplicationProfileDirectory, curaRoboxProfiles, true);
-        loadRoboxProfilesIntoMap(curaUserProfileDirectory, curaRoboxProfiles, false);
-        File cura3ApplicationProfileDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3));
-        File cura3UserProfileDirectory = new File(BaseConfiguration.getUserPrintProfileDirectoryForSlicer(SlicerType.Cura3));
-        loadRoboxProfilesIntoMap(cura3ApplicationProfileDirectory, cura3RoboxProfiles, true);
-        loadRoboxProfilesIntoMap(cura3UserProfileDirectory, cura3RoboxProfiles, false);
+    public void addProfileChangeListener(ListChangeListener listChangeListener) {
+        for(SlicerType slicerType : SlicerType.values()) {
+            getCustomRoboxProfilesForSlicer(slicerType).values()
+                    .forEach(observableList -> observableList.addListener(listChangeListener));
+        }
     }
     
-    private static void loadRoboxProfilesIntoMap(File profileDirectory, Map<String, List<RoboxProfile>> profilesMap, boolean standardProfile) {
+    public void removeProfileChangeListener(ListChangeListener listChangeListener) {
+        for(SlicerType slicerType : SlicerType.values()) {
+            getCustomRoboxProfilesForSlicer(slicerType).values()
+                    .forEach(observableList -> observableList.removeListener(listChangeListener));
+        }
+    }
+    
+    private void loadRoboxProfiles(SlicerType slicerType) {
+        File applicationProfileDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(slicerType));
+        File userProfileDirectory = new File(BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType));
+        loadRoboxProfilesIntoMap(applicationProfileDirectory, slicerType, true);
+        loadRoboxProfilesIntoMap(userProfileDirectory, slicerType, false);
+    }
+    
+    private void loadRoboxProfilesIntoMap(File profileDirectory, SlicerType slicerType, boolean standardProfile) {
+        Map<String, List<RoboxProfile>> allProfilesMap = getRoboxProfilesForSlicer(slicerType);
+        Map<String, ObservableList<RoboxProfile>> customProfilesMap = getCustomRoboxProfilesForSlicer(slicerType);
+        
         for(File headDir : profileDirectory.listFiles()) {
             if(headDir.isDirectory()) {
                 String headType = headDir.getName();
-                Map<String, String> settings = loadHeadSettingsIntoMap(headType, headDir);
+                Map<String, String> settings = loadHeadSettingsIntoMap(headType, slicerType);
 
-                List<RoboxProfile> roboxProfiles = new ArrayList<>();
+                List<RoboxProfile> allRoboxProfiles = new ArrayList<>();
+                ObservableList<RoboxProfile> customRoboxProfiles = FXCollections.observableArrayList();
 
                 for(File profile : headDir.listFiles()) {
                     String profileName = profile.getName().split("\\.")[0];
                     if(!profileName.equals(headType)) {
                         Map<String, String> profileSettings = new HashMap<>(settings);
                         addOrOverriteSettings(profile, profileSettings);
-                        RoboxProfile roboxProfile = new RoboxProfile(profileName, headType, standardProfile);
-                        roboxProfile.setSettings(profileSettings);
-                        roboxProfiles.add(roboxProfile);
+                        RoboxProfile roboxProfile = new RoboxProfile(profileName, headType, standardProfile, profileSettings);
+                        allRoboxProfiles.add(roboxProfile);
+                        if(!standardProfile) {
+                            customRoboxProfiles.add(roboxProfile);
+                        }
                     }
                 }
 
-                if(profilesMap.containsKey(headType)) {
-                    profilesMap.get(headType).addAll(roboxProfiles);
+                if(allProfilesMap.containsKey(headType)) {
+                    allProfilesMap.get(headType).addAll(allRoboxProfiles);
                 } else {
-                    profilesMap.put(headType, roboxProfiles);
+                    allProfilesMap.put(headType, allRoboxProfiles);
+                }
+                
+                if(customProfilesMap.containsKey(headType)) {
+                    customProfilesMap.get(headType).addAll(customRoboxProfiles);
+                } else {
+                    customProfilesMap.put(headType, customRoboxProfiles);
                 }
             }
         }
     }
     
-    private static Map<String, String> loadHeadSettingsIntoMap(String headType, File headDirectory) {
+    private static Map<String, String> loadHeadSettingsIntoMap(String headType, SlicerType slicerType) {
+        File headDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(slicerType) + headType);
         File[] headFilesFiltered = headDirectory.listFiles((File dir, String name) -> {
             return name.split("\\.")[0].equals(headType);
         });
@@ -167,50 +252,42 @@ public class RoboxProfileSettingsContainer {
         }
     }
     
-    private RoboxProfile saveCustomProfile(Map<String, List<PrintProfileSetting>> settingsToWrite, String nameForProfile, 
-            List<RoboxProfile> loadedSettingsForHead, String headDirPath, String headType) {
-        RoboxProfile roboxProfile;
-        
-        Optional<RoboxProfile> existingProfile = loadedSettingsForHead.stream()
-                .filter(profile -> profile.getName().equals(nameForProfile))
-                .findAny();
-        if(existingProfile.isPresent()) {
-            loadedSettingsForHead.remove(existingProfile.get());
-            roboxProfile = saveUserProfile(nameForProfile, headDirPath, settingsToWrite, headType);
-        } else {
-             roboxProfile = saveUserProfile(nameForProfile, headDirPath, settingsToWrite, headType);
-        }
-        loadedSettingsForHead.add(roboxProfile);
-        return roboxProfile;
-    }
-    
-    private RoboxProfile saveUserProfile(String profileName, String headDirPath, 
+    private RoboxProfile saveUserProfile(String profileName, SlicerType slicerType, 
             Map<String, List<PrintProfileSetting>> settingsToWrite, String headType) {
+        String headDirPath = BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType) + "/" + headType;
         String profileFilePath = headDirPath + "/" + profileName + BaseConfiguration.printProfileFileExtension;
         File file = new File(profileFilePath);
         if(file.exists()) {
             file.delete();
         }
-        writeRoboxProfile(profileFilePath, settingsToWrite);
+
+        List<String> metaData = new ArrayList<>();
+        metaData.add(PROFILE_NAME + "=" + profileName);
+        metaData.add(HEAD_TYPE + "=" + headType);
+        writeRoboxProfile(profileFilePath, settingsToWrite, metaData);
         
-        Map<String, String> settingsMap = loadHeadSettingsIntoMap(headType, new File(headDirPath));
+        Map<String, String> settingsMap = loadHeadSettingsIntoMap(headType, slicerType);
         addOrOverriteSettings(new File(profileFilePath), settingsMap);
-        RoboxProfile roboxProfile = new RoboxProfile(profileName, headType, false);
-        roboxProfile.setSettings(settingsMap);
+        RoboxProfile roboxProfile = new RoboxProfile(profileName, headType, false, settingsMap);
         return roboxProfile;
     }
     
-    private void writeRoboxProfile(String profileFilePath, Map<String, List<PrintProfileSetting>> settingsToWrite) {
+    private void writeRoboxProfile(String profileFilePath, Map<String, List<PrintProfileSetting>> settingsToWrite, List<String> metaData) {
         try (PrintWriter printWriter = new PrintWriter(new FileWriter(profileFilePath))) {
+            
+            printWriter.println(TITLE_BORDER);
+            printWriter.println("//" + METADATA);
+            printWriter.println(TITLE_BORDER);
+            metaData.forEach(data -> printWriter.println(data));
+            printWriter.println("");
+            
             for(Entry<String, List<PrintProfileSetting>> entry : settingsToWrite.entrySet()) {
                 String settingsSection = entry.getKey();
                 printWriter.println(TITLE_BORDER);
                 printWriter.println("//" + settingsSection);
                 printWriter.println(TITLE_BORDER);
 
-                entry.getValue().forEach((setting) -> {
-                    printWriter.println(setting.getId() + "=" + setting.getValue());
-                });
+                entry.getValue().forEach(setting -> printWriter.println(setting.getId() + "=" + setting.getValue()));
 
                 printWriter.println("");
             }
@@ -220,4 +297,5 @@ public class RoboxProfileSettingsContainer {
             STENO.error(ex.getMessage());
         }
     }
+    
 }

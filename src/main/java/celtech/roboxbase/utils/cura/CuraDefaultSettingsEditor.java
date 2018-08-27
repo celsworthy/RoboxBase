@@ -1,6 +1,7 @@
 package celtech.roboxbase.utils.cura;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.SlicerType;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -26,8 +27,8 @@ public class CuraDefaultSettingsEditor {
     
     private static final Stenographer STENO = StenographerFactory.getStenographer(CuraDefaultSettingsEditor.class.getName());
     
-    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getCommonApplicationDirectory() + "PrintProfiles/fdmprinter.def.json";
-    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getCommonApplicationDirectory() + "PrintProfiles/fdmextruder.def.json";
+    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmprinter.def.json";
+    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmextruder.def.json";
     private static final String EDITED_FILE = BaseConfiguration.getApplicationStorageDirectory() + "fdmprinter_robox.def.json";
     private static final String SETTINGS = "settings";
     private static final String CHILDREN = "children";

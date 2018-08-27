@@ -1,10 +1,10 @@
 package celtech.roboxbase.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  *
@@ -20,6 +20,30 @@ public class PrintProfileSettings {
 
     public void setPrintProfileSettings(Map<String, List<PrintProfileSetting>> printProfileSettings) {
         this.printProfileSettings = printProfileSettings;
+    }
+    
+    @JsonIgnore
+    public List<PrintProfileSetting> getAllSettingsInSection(String section) {
+        List<PrintProfileSetting> settings = printProfileSettings.get(section);
+        List<PrintProfileSetting> allSettingsList = new ArrayList<>();
+        settings.forEach(setting -> {
+            allSettingsList.add(setting);
+            if(setting.getChildren().isPresent()) {
+                allSettingsList.addAll(setting.getChildren().get());
+            }
+        });
+        
+        return allSettingsList;
+    }
+    
+    @JsonIgnore
+    public List<PrintProfileSetting> getAllSettings() {
+        List<PrintProfileSetting> allSettings = new ArrayList<>();
+        printProfileSettings.keySet().forEach(section -> {
+            allSettings.addAll(getAllSettingsInSection(section));
+        });
+        
+        return allSettings;
     }
     
     public PrintProfileSettings copy() {

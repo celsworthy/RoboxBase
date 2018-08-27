@@ -9,9 +9,8 @@ import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Macro;
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
@@ -35,7 +34,6 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
-import celtech.roboxbase.utils.cura.CuraDefaultSettingsEditor;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
 import java.io.IOException;
@@ -211,6 +209,7 @@ public class PrintEngine implements ControllableService
                 postProcessorService.setPrinterToUse(
                         result.getPrinterToUse());
                 postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
+                postProcessorService.setSlicerType(result.getPrintableMeshes().getDefaultSlicerType());
                 postProcessorService.start();
 
                 if (macroBeingRun.get() == null)
@@ -644,7 +643,7 @@ public class PrintEngine implements ControllableService
 
     private boolean printFromScratch(boolean acceptedPrintRequest, PrintableMeshes printableMeshes)
     {
-        SlicerParametersFile settingsToUse = printableMeshes.getSettings().clone();
+        RoboxProfile settingsToUse = new RoboxProfile(printableMeshes.getSettings());
 
         //Create the print job directory
         String printUUID = SystemUtils.generate16DigitID();
@@ -668,15 +667,7 @@ public class PrintEngine implements ControllableService
             }
         }
 
-        //Write out the slicer config
-        SlicerType slicerTypeToUse = null;
-        if (settingsToUse.getSlicerOverride() != null)
-        {
-            slicerTypeToUse = settingsToUse.getSlicerOverride();
-        } else
-        {
-            slicerTypeToUse = printableMeshes.getDefaultSlicerType();
-        }
+        SlicerType slicerTypeToUse = printableMeshes.getDefaultSlicerType();
 
         SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
                 slicerTypeToUse);
@@ -685,25 +676,21 @@ public class PrintEngine implements ControllableService
         // This is a hack to force the fan speed to 100% when using PLA
         if (associatedPrinter.reelsProperty().containsKey(0))
         {
-            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA
-                    && SlicerParametersContainer.applicationProfileListContainsProfile(settingsToUse.
-                            getProfileName()))
+            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA)
             {
-                settingsToUse.setEnableCooling(true);
-                settingsToUse.setMinFanSpeed_percent(100);
-                settingsToUse.setMaxFanSpeed_percent(100);
+                settingsToUse.addOrOverride("enableCooling", "true");
+                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
             }
         }
 
         if (associatedPrinter.reelsProperty().containsKey(1))
         {
-            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA
-                    && SlicerParametersContainer.applicationProfileListContainsProfile(settingsToUse.
-                            getProfileName()))
+            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA)
             {
-                settingsToUse.setEnableCooling(true);
-                settingsToUse.setMinFanSpeed_percent(100);
-                settingsToUse.setMaxFanSpeed_percent(100);
+                settingsToUse.addOrOverride("enableCooling", "true");
+                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
             }
         }
         // End of hack
@@ -715,9 +702,9 @@ public class PrintEngine implements ControllableService
                 || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
                 && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
         {
-            settingsToUse.setRaftBaseLinewidth_mm(1.250f);
-            settingsToUse.setRaftAirGapLayer0_mm(0.285f);
-            settingsToUse.setInterfaceLayers(1);
+            settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
+            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
+            settingsToUse.addOrOverride("interfaceLayers", "1");
         }
 
         if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.NORMAL
@@ -726,7 +713,7 @@ public class PrintEngine implements ControllableService
                 || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
                 && associatedPrinter.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
         {
-            settingsToUse.setRaftAirGapLayer0_mm(0.4f);
+            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
         }
         // End of hack
 
@@ -758,7 +745,7 @@ public class PrintEngine implements ControllableService
 
         if(slicerTypeToUse == SlicerType.Cura3) {
             Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
-             cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
+            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
         }
         
         slicerService.reset();

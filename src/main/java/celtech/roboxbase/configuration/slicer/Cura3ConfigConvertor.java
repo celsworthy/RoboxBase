@@ -87,12 +87,16 @@ public class Cura3ConfigConvertor {
             while((readLine = fileReader.readLine()) != null) {
                 if(!readLine.startsWith("#")) {
                     String[] settingAndValue = readLine.split("=");
-                    String settingNameSection = settingAndValue[0];
-                    if (settingNameSection.contains(":")) {
-                        String[] settingAndNozzle = settingNameSection.split(":");
-                        curaDefaultSettingsEditor.editExtruderValue(settingAndNozzle[0], settingAndNozzle[1], settingAndValue[1]);
+                    String settingName = settingAndValue[0];
+                    String value = settingAndValue[1];
+                    if (value.contains(":")) {
+                        String[] valuesForNozzles = value.split(":");
+                        for(int i = 0; i < valuesForNozzles.length; i++) {
+                            String nozzleReference = "noz" + String.valueOf(i + 1);
+                            curaDefaultSettingsEditor.editExtruderValue(settingName, nozzleReference, valuesForNozzles[i]);
+                        }
                     } else {
-                        curaDefaultSettingsEditor.editDefaultValue(settingNameSection, settingAndValue[1]);
+                        curaDefaultSettingsEditor.editDefaultValue(settingName, value);
                     }
                 }
             }
