@@ -177,6 +177,9 @@ public class PostProcessor
                         break;
                 }
             }
+        } else if (slicerType == SlicerType.Cura3) 
+        {
+            postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE;
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
@@ -300,11 +303,9 @@ public class PostProcessor
 
                 for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
                 {
-                    if(slicerType != SlicerType.Cura3) {
-                        timeUtils.timerStart(this, assignExtrusionTimerName);
-                        NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
-                        timeUtils.timerStop(this, assignExtrusionTimerName);
-                    }
+                    timeUtils.timerStart(this, assignExtrusionTimerName);
+                    NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
+                    timeUtils.timerStop(this, assignExtrusionTimerName);
 
                     //Add the opens first - we leave it until now as the layer we have just processed may have affected the one before
                     //NOTE
@@ -627,6 +628,10 @@ public class PostProcessor
         postProcessorUtilityMethods.suppressUnnecessaryToolChangesAndInsertToolchangeCloses(layerNode, lastLayerParseResult, nozzleProxies);
         timeUtils.timerStop(this, unnecessaryToolchangeTimerName);
 
+        if(slicerType == SlicerType.Cura3) {
+            nodeManagementUtilities.fixHeaterCommands(layerNode, lastLayerParseResult);
+        }
+        
         if (featureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
         {
             timeUtils.timerStart(this, cameraEventTimerName);

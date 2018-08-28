@@ -15,7 +15,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.LayerChangeDirectiveNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.PreambleNode;

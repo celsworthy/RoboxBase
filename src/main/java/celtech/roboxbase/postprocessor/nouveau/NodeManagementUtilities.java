@@ -4,6 +4,7 @@ import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NodeProcessingException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
@@ -548,5 +549,45 @@ public class NodeManagementUtilities
             }
         }
         return new AvailableExtrusion(availableExtrusion, lastNodeExamined);
+    }
+    
+    protected void fixHeaterCommands(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult) {
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+        
+         while (layerIterator.hasNext()) {
+            GCodeEventNode node = layerIterator.next();
+
+            if (node instanceof MCodeNode) {
+                MCodeNode mcode = (MCodeNode) node;
+                
+                if (mcode.getMNumber() == 103 || mcode.getMNumber() == 104) {
+                    ToolSelectNode lastToolInForce = lastLayerParseResult.getLastToolSelectInForce();
+                    int toolToUse = 0;
+                    
+                    if(lastToolInForce != null) {
+                        toolToUse = lastToolInForce.getToolNumber();
+                    }
+                    
+                    // A specific tool is specified e.g. M104 S200 T1
+                    if(mcode.isTAndNumber()) {
+                        toolToUse = mcode.getTNumber();
+                    }
+                    
+                    int temp = 0;
+                    if (mcode.isSAndNumber()) {
+                        temp = mcode.getSNumber();
+                    }
+                    
+                    if(toolToUse == 0) {
+                        mcode.setTOnly(false);
+                        mcode.setSOnly(true);
+                    } else if(toolToUse == 1) {
+                        mcode.setTNumber(temp);
+                        mcode.setTOnly(true);
+                        mcode.setSOnly(false);
+                    }
+                }
+            }
+        }
     }
 }
