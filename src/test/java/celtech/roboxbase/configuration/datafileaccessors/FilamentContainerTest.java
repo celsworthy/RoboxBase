@@ -3,7 +3,6 @@
  */
 package celtech.roboxbase.configuration.datafileaccessors;
 
-import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
@@ -34,7 +33,6 @@ public class FilamentContainerTest extends BaseEnvironmentConfiguredTest
                 filamentFile.delete();
             }
         }
-        SlicerParametersContainer.reload();
     }
     
     @Test
