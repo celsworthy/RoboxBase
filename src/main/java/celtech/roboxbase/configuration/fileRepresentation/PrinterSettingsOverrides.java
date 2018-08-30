@@ -1,10 +1,12 @@
 package celtech.roboxbase.configuration.fileRepresentation;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
-import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType;
+import celtech.roboxbase.configuration.datafileaccessors.RoboxProfileSettingsContainer;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
+import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -24,8 +26,10 @@ import libertysystems.stenographer.StenographerFactory;
 public class PrinterSettingsOverrides
 {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(PrinterSettingsOverrides.class.getName());
+    private static final Stenographer STENO = StenographerFactory.getStenographer(PrinterSettingsOverrides.class.getName());
 
+    private static final RoboxProfileSettingsContainer ROBOX_PROFILE_SETTINGS_CONTAINER = RoboxProfileSettingsContainer.getInstance();
+    
     private final StringProperty customSettingsName = new SimpleStringProperty();
     private final ObjectProperty<PrintQualityEnumeration> printQuality
             = new SimpleObjectProperty<>(PrintQualityEnumeration.NORMAL);
@@ -42,32 +46,28 @@ public class PrinterSettingsOverrides
     public PrinterSettingsOverrides()
     {
         customSettingsName.set("");
-        SlicerParametersFile initialParametersFile = SlicerParametersContainer.getInstance().getSettings(
-                printQuality.get().getFriendlyName(), HeadContainer.defaultHeadID);
-        brimOverride = initialParametersFile.getBrimWidth_mm();
-        fillDensityOverride = initialParametersFile.getFillDensity_normalised();
+        Optional<RoboxProfile> initialRoboxProfile = ROBOX_PROFILE_SETTINGS_CONTAINER
+                .getRoboxProfileWithName(printQuality.get().getFriendlyName(), SlicerType.Cura, HeadContainer.defaultHeadID);
+        if(initialRoboxProfile.isPresent()) {
+            brimOverride = initialRoboxProfile.get().getSpecificIntSetting("brimWidth_mm");
+            fillDensityOverride = initialRoboxProfile.get().getSpecificFloatSetting("fillDensity_normalised");
+        }
         printSupportTypeOverride.set(SupportType.MATERIAL_1);
 
-        SlicerParametersContainer.addChangesListener(
-                new SlicerParametersContainer.SlicerParametersChangesListener()
-                {
-
-                    @Override
-                    public void whenSlicerParametersSaved(String originalSettingsName,
-                            SlicerParametersFile changedParameters)
-                    {
-                        if (originalSettingsName.equals(customSettingsName.get()))
-                        {
-                            customSettingsName.set(changedParameters.getProfileName());
-                        }
-                        toggleDataChanged();
-                    }
-
-                    @Override
-                    public void whenSlicerParametersDeleted(String settingsName)
-                    {
-                    }
-                });
+//        SlicerParametersContainer.addChangesListener(
+//                new SlicerParametersContainer.SlicerParametersChangesListener() {
+//
+//                    @Override
+//                    public void whenSlicerParametersSaved(String originalSettingsName,
+//                            SlicerParametersFile changedParameters)
+//                    {
+//                        if (originalSettingsName.equals(customSettingsName.get()))
+//                        {
+//                            customSettingsName.set(changedParameters.getProfileName());
+//                        }
+//                        toggleDataChanged();
+//                    } 
+//                });
 
     }
 
@@ -119,55 +119,59 @@ public class PrinterSettingsOverrides
         return customSettingsName;
     }
 
-    public SlicerParametersFile getSettings(String headType)
+    public RoboxProfile getSettings(String headType, SlicerType slicerType)
     {
-        SlicerParametersFile settings = null;
-        switch (printQuality.get())
-        {
+        Optional<RoboxProfile> settings = Optional.empty();
+        switch (printQuality.get()) {
             case DRAFT:
-                settings = SlicerParametersContainer.getSettings(
-                        BaseConfiguration.draftSettingsProfileName, headType);
+                settings = ROBOX_PROFILE_SETTINGS_CONTAINER
+                        .getRoboxProfileWithName(BaseConfiguration.draftSettingsProfileName, slicerType, headType);
                 break;
             case NORMAL:
-                settings = SlicerParametersContainer.getSettings(
-                        BaseConfiguration.normalSettingsProfileName, headType);
+                settings = ROBOX_PROFILE_SETTINGS_CONTAINER
+                        .getRoboxProfileWithName(BaseConfiguration.normalSettingsProfileName, slicerType, headType);
                 break;
             case FINE:
-                settings = SlicerParametersContainer.getSettings(
-                        BaseConfiguration.fineSettingsProfileName, headType);
+                settings = ROBOX_PROFILE_SETTINGS_CONTAINER
+                        .getRoboxProfileWithName(BaseConfiguration.fineSettingsProfileName, slicerType, headType);
                 break;
             case CUSTOM:
-                settings = SlicerParametersContainer.getSettings(
-                        customSettingsName.get(), headType);
+                settings = ROBOX_PROFILE_SETTINGS_CONTAINER
+                        .getRoboxProfileWithName(customSettingsName.get(), slicerType, headType);
                 break;
 
         }
-        if (settings == null)
-        {
-            return null;
-        }
+        
         return applyOverrides(settings);
     }
 
     /**
      * Standard profiles must have the overrides applied.
      *
-     * @param settingsByProfileName
+     * @param roboxProfile
      * @return
      */
-    public SlicerParametersFile applyOverrides(SlicerParametersFile settingsByProfileName)
+    public RoboxProfile applyOverrides(Optional<RoboxProfile> roboxProfile)
     {
-        SlicerParametersFile profileCopy = settingsByProfileName.clone();
-        profileCopy.setBrimWidth_mm(brimOverride);
-        profileCopy.setFillDensity_normalised(fillDensityOverride);
-        profileCopy.setGenerateSupportMaterial(printSupportOverride.get());
-        profileCopy.setSupportGapEnabled(printSupportGapEnabledOverride.get());
-        profileCopy.setPrintRaft(raftOverride);
-        profileCopy.setSpiralPrint(spiralPrintOverride);
+        if(!roboxProfile.isPresent()) {
+            return null;
+        }
+        RoboxProfile profileCopy = new RoboxProfile(roboxProfile.get());
+        profileCopy.addOrOverride("brimWidth_mm", String.valueOf(brimOverride));
+        profileCopy.addOrOverride("fillDensity_normalised", String.valueOf(fillDensityOverride));
+        profileCopy.addOrOverride("generateSupportMaterial", String.valueOf(printSupportOverride.get()));
+        profileCopy.addOrOverride("supportGapEnabled", String.valueOf(printSupportGapEnabledOverride.get()));
+        profileCopy.addOrOverride("printRaft", String.valueOf(raftOverride));
+        profileCopy.addOrOverride("spiralPrint", String.valueOf(spiralPrintOverride));
+        if(raftOverride) {
+            profileCopy.addOrOverride("adhesionType", "raft");
+        }
+        if(brimOverride > 0) {
+            profileCopy.addOrOverride("adhesionType", "brim");
+        }
 
-        if (spiralPrintOverride)
-        {
-            profileCopy.setNumberOfPerimeters(1);
+        if (spiralPrintOverride) {
+            profileCopy.addOrOverride("numberOfPerimeters", "1");
         }
 
         return profileCopy;

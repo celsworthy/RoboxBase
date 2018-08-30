@@ -1,6 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.slicer.NozzleParameters;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
 import celtech.roboxbase.postprocessor.NoPerimeterToCloseOverException;
@@ -48,13 +48,11 @@ public class CloseLogic
 
     private final CloseUtilities closeUtilities;
     private final NodeManagementUtilities nodeManagementUtilities;
-    private final SlicerParametersFile settings;
 
-    public CloseLogic(SlicerParametersFile settings,
+    public CloseLogic(RoboxProfile settings,
             PostProcessorFeatureSet featureSet, String headType,
             NodeManagementUtilities nodeManagementUtilities)
     {
-        this.settings = settings;
         this.featureSet = featureSet;
 
         closeUtilities = new CloseUtilities(settings, headType);

@@ -2,12 +2,13 @@ package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.appManager.NotificationType;
+import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
-import static celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType.*;
+import static celtech.roboxbase.configuration.fileRepresentation.SupportType.*;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NozzleProxy;
@@ -81,10 +82,12 @@ public class PostProcessor
     private final String gcodeFileToProcess;
     private final String gcodeOutputFile;
     private final HeadFile headFile;
-    private final SlicerParametersFile slicerParametersFile;
+    private final RoboxProfile settingsProfile;
     private final DoubleProperty taskProgress;
     private final boolean safetyFeaturesRequired;
     private final PrinterSettingsOverrides printerOverrides;
+    
+    private final SlicerType slicerType;
 
     private final List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
@@ -112,14 +115,15 @@ public class PostProcessor
             String gcodeFileToProcess,
             String gcodeOutputFile,
             HeadFile headFile,
-            SlicerParametersFile settings,
+            RoboxProfile settings,
             PrinterSettingsOverrides printerOverrides,
             PostProcessorFeatureSet postProcessorFeatureSet,
             String headType,
             DoubleProperty taskProgress,
             Map<Integer, Integer> objectToNozzleNumberMap,
             CameraTriggerData cameraTriggerData,
-            boolean safetyFeaturesRequired)
+            boolean safetyFeaturesRequired,
+            SlicerType slicerType)
     {
         this.printJobUUID = printJobUUID;
         this.nameOfPrint = nameOfPrint;
@@ -129,23 +133,24 @@ public class PostProcessor
         this.gcodeOutputFile = gcodeOutputFile;
         this.headFile = headFile;
         this.featureSet = postProcessorFeatureSet;
-        this.slicerParametersFile = settings;
+        this.settingsProfile = settings;
         this.taskProgress = taskProgress;
         this.printerOverrides = printerOverrides;
         this.safetyFeaturesRequired = safetyFeaturesRequired;
+        this.slicerType = slicerType;
 
         nozzleProxies.clear();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < slicerParametersFile.getNozzleParameters()
+                nozzleIndex < settingsProfile.getNozzleParameters()
                         .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(slicerParametersFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(settingsProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
 
-        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
+        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura3)
         {
             // If we have a dual extruder head but a single extruder machine force use of the available extruder
             if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
@@ -172,6 +177,9 @@ public class PostProcessor
                         break;
                 }
             }
+        } else if (slicerType == SlicerType.Cura3) 
+        {
+            postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE;
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
@@ -184,9 +192,9 @@ public class PostProcessor
         }
 
         nodeManagementUtilities = new NodeManagementUtilities(featureSet, nozzleProxies);
-        postProcessorUtilityMethods = new UtilityMethods(featureSet, slicerParametersFile, headType, nodeManagementUtilities, cameraTriggerData);
-        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
-        closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType, nodeManagementUtilities);
+        postProcessorUtilityMethods = new UtilityMethods(featureSet, settingsProfile, headType, nodeManagementUtilities, cameraTriggerData);
+        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, settingsProfile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
+        closeLogic = new CloseLogic(settingsProfile, featureSet, headType, nodeManagementUtilities);
         heaterSaver = new FilamentSaver(100, 120);
         outputVerifier = new OutputVerifier(featureSet);
     }
@@ -241,6 +249,8 @@ public class PostProcessor
                 List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
                 LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
 
+                String initialToolChange = "";
+                
                 for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
                     linesRead++;
@@ -253,8 +263,9 @@ public class PostProcessor
                         }
                         lastPercentSoFar = percentSoFar;
                     }
-
+                    
                     lineRead = lineRead.trim();
+                    
                     if (lineRead.matches(";LAYER:[-]*[0-9]+"))
                     {
                         if (layerCounter >= 0)
@@ -391,10 +402,10 @@ public class PostProcessor
                 String statsProfileName = "";
                 float statsLayerHeight = 0;
 
-                if (slicerParametersFile != null)
+                if (settingsProfile != null)
                 {
-                    statsProfileName = slicerParametersFile.getProfileName();
-                    statsLayerHeight = slicerParametersFile.getLayerHeight_mm();
+                    statsProfileName = settingsProfile.getName();
+                    statsLayerHeight = settingsProfile.getSpecificFloatSetting("layerHeight_mm");
                 }
 
                 PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
@@ -525,7 +536,13 @@ public class PostProcessor
         // Parse the last layer if it exists...
         if (layerBuffer.length() > 0)
         {
-            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+            GCodeParser gcodeParser;
+            
+            if(slicerType == SlicerType.Cura3) {
+                gcodeParser = Parboiled.createParser(Cura3GCodeParser.class);
+            } else {
+                gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+            }
 
             if (printer == null)
             {
@@ -611,6 +628,10 @@ public class PostProcessor
         postProcessorUtilityMethods.suppressUnnecessaryToolChangesAndInsertToolchangeCloses(layerNode, lastLayerParseResult, nozzleProxies);
         timeUtils.timerStop(this, unnecessaryToolchangeTimerName);
 
+        if(slicerType == SlicerType.Cura3) {
+            nodeManagementUtilities.fixHeaterCommands(layerNode, lastLayerParseResult);
+        }
+        
         if (featureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
         {
             timeUtils.timerStart(this, cameraEventTimerName);

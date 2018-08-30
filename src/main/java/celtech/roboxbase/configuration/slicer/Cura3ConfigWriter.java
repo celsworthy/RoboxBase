@@ -1,7 +1,7 @@
 package celtech.roboxbase.configuration.slicer;
 
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Locale;
@@ -16,6 +16,8 @@ public class Cura3ConfigWriter extends SlicerConfigWriter {
     {
         super();
         slicerType = SlicerType.Cura3;
+        PRINT_PROFILE_SETTINGS_CONTAINER.getDefaultPrintProfileSettingsForSlicer(slicerType).getAllSettings()
+                .forEach(setting -> printProfileSettingsMap.put(setting.getId(), setting));
     }
     
     @Override
@@ -66,7 +68,7 @@ public class Cura3ConfigWriter extends SlicerConfigWriter {
     }
 
     @Override
-    void bringDataInBounds(SlicerParametersFile profileData) {
+    void bringDataInBounds(RoboxProfile profileData) {
     }
     
 }

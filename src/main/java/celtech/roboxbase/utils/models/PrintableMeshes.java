@@ -1,8 +1,8 @@
 package celtech.roboxbase.utils.models;
 
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import java.util.List;
@@ -20,7 +20,7 @@ public class PrintableMeshes
     private final List<Integer> extruderForModel;
     private final String projectName;
     private final String requiredPrintJobID;
-    private final SlicerParametersFile settings;
+    private final RoboxProfile settings;
     private final PrinterSettingsOverrides printOverrides;
     private final PrintQualityEnumeration printQuality;
     private final SlicerType defaultSlicerType;
@@ -34,7 +34,7 @@ public class PrintableMeshes
             List<Integer> extruderForModel,
             String projectName,
             String requiredPrintJobID,
-            SlicerParametersFile settings,
+            RoboxProfile settings,
             PrinterSettingsOverrides printOverrides,
             PrintQualityEnumeration printQuality,
             SlicerType defaultSlicerType,
@@ -83,7 +83,7 @@ public class PrintableMeshes
         return requiredPrintJobID;
     }
 
-    public SlicerParametersFile getSettings()
+    public RoboxProfile getSettings()
     {
         return settings;
     }

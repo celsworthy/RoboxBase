@@ -1,7 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
@@ -28,15 +28,15 @@ public class NozzleManagementUtilities
 {
 
     private final List<NozzleProxy> nozzleProxies;
-    private final SlicerParametersFile slicerParametersFile;
+    private final RoboxProfile settingsProfile;
     private final HeadFile headFile;
 
     public NozzleManagementUtilities(List<NozzleProxy> nozzleProxies,
-            SlicerParametersFile slicerParametersFile,
+            RoboxProfile settingsProfile,
             HeadFile headFile)
     {
         this.nozzleProxies = nozzleProxies;
-        this.slicerParametersFile = slicerParametersFile;
+        this.settingsProfile = settingsProfile;
         this.headFile = headFile;
     }
 
@@ -129,25 +129,25 @@ public class NozzleManagementUtilities
 
         if (foundNode instanceof FillSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getFillNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("fillNozzle"));
         } else if (foundNode instanceof OuterPerimeterSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getPerimeterNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("perimeterNozzle"));
         } else if (foundNode instanceof InnerPerimeterSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getPerimeterNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("perimeterNozzle"));
         } else if (foundNode instanceof SupportSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getSupportNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("supportNozzle"));
         } else if (foundNode instanceof SupportInterfaceSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getSupportInterfaceNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("supportInterfaceNozzle"));
         } else if (foundNode instanceof SkinSectionNode)
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getFillNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("fillNozzle"));
         } else
         {
-            nozzleProxy = nozzleProxies.get(slicerParametersFile.getFillNozzle());
+            nozzleProxy = nozzleProxies.get(settingsProfile.getSpecificIntSetting("fillNozzle"));
         }
 
         return nozzleProxy;

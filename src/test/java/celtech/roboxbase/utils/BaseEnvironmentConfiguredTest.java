@@ -6,7 +6,6 @@ package celtech.roboxbase.utils;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.appManager.TestSystemNotificationManager;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
 import celtech.roboxbase.postprocessor.TestGCodeOutputWriter;
 import celtech.roboxbase.utils.tasks.TestTaskExecutor;
 import java.io.File;
@@ -67,7 +66,7 @@ public class BaseEnvironmentConfiguredTest
         // force initialisation
         URL configURL = BaseEnvironmentConfiguredTest.class.getResource("/Base.configFile.xml");
         System.setProperty("libertySystems.configFile", configURL.getFile());
-        SlicerParametersContainer.getInstance();
+        //SlicerParametersContainer.getInstance();
 
         BaseLookup.setTaskExecutor(new TestTaskExecutor());
         BaseLookup.setSystemNotificationHandler(new TestSystemNotificationManager());
