@@ -117,6 +117,7 @@ public class CuraDefaultSettingsEditor {
             case "enum":
             case "[int]":
             case "extruder":
+            case "optional_extruder":
                 settingObjectNode.remove(DEFAULT_VALUE);
                 settingObjectNode.put(DEFAULT_VALUE, value);
                 break;
