@@ -32,7 +32,7 @@ public class RoboxProfileSettingsContainer {
     private static final Stenographer STENO = StenographerFactory.getStenographer(
             RoboxProfileSettingsContainer.class.getName());
     
-    private static final RoboxProfileSettingsContainer INSTANCE = new RoboxProfileSettingsContainer();
+    private static RoboxProfileSettingsContainer instance;
     
     private static final String TITLE_BORDER = "//==============";
     private static final String METADATA = "Metadata";
@@ -60,7 +60,10 @@ public class RoboxProfileSettingsContainer {
     }
     
     public static RoboxProfileSettingsContainer getInstance() {
-        return INSTANCE;
+        if(instance == null) {
+            instance = new RoboxProfileSettingsContainer();
+        }
+        return instance;
     }
     
     public Map<String, List<RoboxProfile>> getRoboxProfilesForSlicer(SlicerType slicerType) {

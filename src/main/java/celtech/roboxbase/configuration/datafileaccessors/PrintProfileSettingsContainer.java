@@ -26,7 +26,7 @@ public class PrintProfileSettingsContainer {
     private static final Stenographer STENO = StenographerFactory.getStenographer(
             PrintProfileSettingsContainer.class.getName());
     
-    private static final PrintProfileSettingsContainer INSTANCE = new PrintProfileSettingsContainer();
+    private static PrintProfileSettingsContainer instance;
     
     private static Map<SlicerType, PrintProfileSettings> printProfileSettings;
     private static Map<SlicerType, PrintProfileSettings> defaultPrintProfileSettings;
@@ -38,7 +38,10 @@ public class PrintProfileSettingsContainer {
     }
     
     public static PrintProfileSettingsContainer getInstance() {
-        return INSTANCE;
+        if(instance == null) {
+            instance = new PrintProfileSettingsContainer();
+        }
+        return instance;
     }
     
     public PrintProfileSettings getPrintProfileSettingsForSlicer(SlicerType slicerType) {
