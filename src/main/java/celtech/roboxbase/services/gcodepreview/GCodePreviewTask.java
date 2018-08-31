@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -22,12 +24,18 @@ public class GCodePreviewTask extends Task<Boolean> {
 
     private static final Stenographer steno = StenographerFactory.getStenographer(GCodePreviewTask.class.getName());
     private OutputStream stdInStream;
+    private final IntegerProperty layerCountProperty = new SimpleIntegerProperty(0);
     
     public GCodePreviewTask()
     {
         this.stdInStream = null;
     }
 
+    public IntegerProperty getLayerCountProperty()
+    {
+        return layerCountProperty;
+    }
+    
     public void writeCommand(String command)
     {
         if (this.stdInStream != null)
@@ -98,6 +106,7 @@ public class GCodePreviewTask extends Task<Boolean> {
 
                 GCodePreviewOutputGobbler errorGobbler = new GCodePreviewOutputGobbler(previewProcess.getErrorStream(), "ERROR");
                 GCodePreviewOutputGobbler outputGobbler = new GCodePreviewOutputGobbler(previewProcess.getInputStream(), "OUTPUT");
+                outputGobbler.setLayerCountProperty(layerCountProperty);
                 this.stdInStream =  previewProcess.getOutputStream();
                 
                 // kick them off

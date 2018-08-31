@@ -2,6 +2,7 @@ package celtech.roboxbase;
 
 import celtech.roboxbase.appManager.ConsoleSystemNotificationManager;
 import celtech.roboxbase.appManager.SystemNotificationManager;
+import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappings;
@@ -191,9 +192,42 @@ public class BaseLookup
         return connectedPrintersUnmodifiable;
     }
 
+    public static Locale getDefaultApplicationLocale()
+    {
+        String languageTag = BaseConfiguration.getApplicationLocale();
+        Locale appLocale;
+        if (languageTag == null || languageTag.length() == 0)
+        {
+            appLocale = Locale.getDefault();
+        } else
+        {
+            String[] languageElements = languageTag.split("-");
+            switch (languageElements.length)
+            {
+                case 1:
+                    appLocale = new Locale(languageElements[0]);
+                    break;
+                case 2:
+                    appLocale = new Locale(languageElements[0], languageElements[1]);
+                    break;
+                case 3:
+                    appLocale = new Locale(languageElements[0], languageElements[1],
+                            languageElements[2]);
+                    break;
+                default:
+                    appLocale = Locale.getDefault();
+                    break;
+            }
+        }
+        
+        return appLocale;
+    }
+
     public static void setupDefaultValues()
     {
-        setupDefaultValues(LogLevel.INFO, Locale.ENGLISH, new ConsoleSystemNotificationManager());
+        setupDefaultValues(BaseConfiguration.getApplicationLogLevel(), 
+                           getDefaultApplicationLocale(),
+                           new ConsoleSystemNotificationManager());
     }
 
     public static Set<Locale> getAvailableLocales()

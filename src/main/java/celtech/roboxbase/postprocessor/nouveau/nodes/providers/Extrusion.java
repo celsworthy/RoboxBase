@@ -12,11 +12,11 @@ public final class Extrusion implements Renderable
 {
 
     private boolean isESet = false;
-    private float e = 0;
+    private double e = 0;
     private boolean isDSet = false;
-    private float d = 0;
+    private double d = 0;
 
-    public float getE()
+    public double getE()
     {
         return e;
     }
@@ -25,7 +25,7 @@ public final class Extrusion implements Renderable
      *
      * @param value
      */
-    public void setE(float value)
+    public void setE(double value)
     {
         if (value == 0)
         {
@@ -64,7 +64,7 @@ public final class Extrusion implements Renderable
      *
      * @return
      */
-    public float getD()
+    public double getD()
     {
         return d;
     }
@@ -73,7 +73,7 @@ public final class Extrusion implements Renderable
      *
      * @param value
      */
-    public void setD(float value)
+    public void setD(double value)
     {
         if (value == 0)
         {
