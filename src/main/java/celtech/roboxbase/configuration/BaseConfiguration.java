@@ -568,13 +568,20 @@ public class BaseConfiguration
     }
     
     public static String getUserPrintProfileDirectoryForSlicer(SlicerType slicerType) {
+        String userSlicerPrintProfileDirectory = getUserFilamentDirectory();
+        
         if(slicerType == SlicerType.Cura) {
-            return getUserPrintProfileDirectory() + curaFilePath;
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
         } else if(slicerType == SlicerType.Cura3) {
-            return getUserPrintProfileDirectory() + cura3FilePath;
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura3FilePath;
+        }
+         
+        File dirHandle = new File(userSlicerPrintProfileDirectory);
+        if (!dirHandle.exists()) {
+            dirHandle.mkdirs();
         }
         
-        return getUserPrintProfileDirectory();
+        return userSlicerPrintProfileDirectory;
     }
     
     public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)
