@@ -61,23 +61,16 @@ public class BaseLookup
 
     public static String i18n(String stringId)
     {
-        System.out.println("i18n");
         String langString = null;
         try
         {
-            System.out.println("1");
            langString = i18nbundle.getString(stringId);
-           System.out.println("2");
         }
         catch (MissingResourceException ex)
         {
-            System.out.println("error 1");
             langString = stringId;
-            System.out.println("error 2");
         }
-        System.out.println("3");
         langString = substituteTemplates(langString);
-        System.out.println("4");
         return langString;
     }
 
