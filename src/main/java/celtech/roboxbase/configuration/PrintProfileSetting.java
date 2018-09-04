@@ -1,5 +1,7 @@
 package celtech.roboxbase.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,18 +11,40 @@ import java.util.stream.Collectors;
  *
  * @author George
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PrintProfileSetting {
     
+    @JsonProperty("id")
     private String id;
+    
+    @JsonProperty("settingName")
     private String settingName;
+    
+    @JsonProperty("value")
     private String value;
+    
+    @JsonProperty("valueType")
     private String valueType;
+    
+    @JsonProperty("tooltip")
     private String tooltip;
+    
+    @JsonProperty("unit")
     private Optional<String> unit = Optional.empty();
+    
+    @JsonProperty("perExtruder")
     private boolean perExtruder;
+    
+    @JsonProperty("minimumValue")
     private Optional<String> minimumValue = Optional.empty();
+    
+    @JsonProperty("maximumValue")
     private Optional<String> maximumValue = Optional.empty();
+    
+    @JsonProperty("options")
     private Optional<Map<String, String>> options = Optional.empty();
+    
+    @JsonProperty("children")
     private Optional<List<PrintProfileSetting>> children = Optional.empty();
     
     // Default constructor for Jackson
