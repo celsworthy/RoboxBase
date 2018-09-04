@@ -87,6 +87,9 @@ public class PrintProfileSettingsContainer {
         File curaPrintProfileSettingsFile = new File(BaseConfiguration.getPrintProfileSettingsFileLocation(SlicerType.Cura));
         File cura3PrintProfileSettingsFile = new File(BaseConfiguration.getPrintProfileSettingsFileLocation(SlicerType.Cura3));
         
+        STENO.debug("File path for cura print profile settings file: " + curaPrintProfileSettingsFile.getAbsolutePath());
+        STENO.debug("File path for cura3 print profile settings file: " + cura3PrintProfileSettingsFile.getAbsolutePath());
+        
         try {
             PrintProfileSettings curaPrintProfileSettings = objectMapper.readValue(curaPrintProfileSettingsFile, PrintProfileSettings.class);
             PrintProfileSettings cura3PrintProfileSettings = objectMapper.readValue(cura3PrintProfileSettingsFile, PrintProfileSettings.class);
