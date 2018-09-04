@@ -373,7 +373,6 @@ public abstract class SlicerConfigWriter {
     private Optional<String> getSettingType(String settingId) {
         PrintProfileSetting setting = printProfileSettingsMap.get(settingId);
         if(setting == null) {
-            STENO.warning("Setting with id " + settingId + " does not exist in print profile settings.");
             return Optional.empty();
         }
         return Optional.of(setting.getValueType());
