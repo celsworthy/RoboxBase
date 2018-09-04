@@ -14,10 +14,10 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PrintProfileSettingsWrapper {
-    
+
+    @JsonProperty("printProfileSettings")
     private Map<String, List<PrintProfileSetting>> printProfileSettings;
 
-    @JsonProperty
     public Map<String, List<PrintProfileSetting>> getPrintProfileSettings() {
         return printProfileSettings;
     }
