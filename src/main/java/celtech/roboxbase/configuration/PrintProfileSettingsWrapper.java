@@ -1,6 +1,7 @@
 package celtech.roboxbase.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
  *
  * @author George Salter
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PrintProfileSettingsWrapper {
     
     private Map<String, List<PrintProfileSetting>> printProfileSettings;
