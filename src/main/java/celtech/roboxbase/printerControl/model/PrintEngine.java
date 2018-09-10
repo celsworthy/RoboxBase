@@ -745,7 +745,7 @@ public class PrintEngine implements ControllableService
 
         if(slicerTypeToUse == SlicerType.Cura3) {
             Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
-            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
+            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest, printJobDirectoryName + File.separator);
         }
         
         slicerService.reset();
