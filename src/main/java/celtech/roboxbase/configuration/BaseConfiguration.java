@@ -650,7 +650,7 @@ public class BaseConfiguration
         String userSlicerPrintProfileDirectory = getUserFilamentDirectory();
         
         if(slicerType == SlicerType.Cura) {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;
         } else if(slicerType == SlicerType.Cura3) {
             userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura3FilePath;
         }
@@ -658,6 +658,18 @@ public class BaseConfiguration
         File dirHandle = new File(userSlicerPrintProfileDirectory);
         if (!dirHandle.exists()) {
             dirHandle.mkdirs();
+            
+            // We also need to create the head directories here
+            String applicationPrintProfileDirectory = getApplicationPrintProfileDirectoryForSlicer(slicerType);
+            File appDirHandle = new File(applicationPrintProfileDirectory);
+            File[] headDirs = appDirHandle.listFiles(file -> {return file.isDirectory();});
+            for(File headDir : headDirs) {
+                String userPrintProfileHeadDirectory = userSlicerPrintProfileDirectory + headDir.getName() + "/";
+                File headDirHandle = new File(userPrintProfileHeadDirectory);
+                if(!headDirHandle.exists()) {
+                    headDirHandle.mkdir();
+                }
+            }
         }
         
         return userSlicerPrintProfileDirectory;

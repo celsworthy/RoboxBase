@@ -35,7 +35,7 @@ public class Cura3ConfigConvertor {
         this.printableMeshes = printableMeshes;
     }
     
-    public void injectConfigIntoCura3SettingsFile(String configFile) {
+    public void injectConfigIntoCura3SettingsFile(String configFile, String storageDirectory) {
         curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
         curaDefaultSettingsEditor.beginEditing();
         
@@ -43,7 +43,7 @@ public class Cura3ConfigConvertor {
         addExtrudersAndDefaults();
         addMappedSettings(configFile);
         
-        curaDefaultSettingsEditor.endEditing();
+        curaDefaultSettingsEditor.endEditing(storageDirectory);
     }
     
     private void addDefaultsForPrinter() {
