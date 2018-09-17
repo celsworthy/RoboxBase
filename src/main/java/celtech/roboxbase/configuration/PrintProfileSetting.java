@@ -41,6 +41,9 @@ public class PrintProfileSetting {
     @JsonProperty("maximumValue")
     private Optional<String> maximumValue = Optional.empty();
     
+    @JsonProperty("nonOverrideAllowed")
+    private Optional<Boolean> nonOverrideAllowed = Optional.empty();
+    
     @JsonProperty("options")
     private Optional<Map<String, String>> options = Optional.empty();
     
@@ -74,6 +77,10 @@ public class PrintProfileSetting {
         
         if(settingToCopy.getMaximumValue().isPresent()) {
             maximumValue = Optional.of(settingToCopy.getMaximumValue().get());
+        }
+        
+        if(settingToCopy.getNonOverrideAllowed().isPresent()) {
+            nonOverrideAllowed = Optional.of(settingToCopy.getNonOverrideAllowed().get());
         }
         
         if(settingToCopy.getOptions().isPresent()) {
@@ -158,6 +165,14 @@ public class PrintProfileSetting {
 
     public void setMaximumValue(Optional<String> maximumValue) {
         this.maximumValue = maximumValue;
+    }
+    
+    public Optional<Boolean> getNonOverrideAllowed() {
+        return nonOverrideAllowed;
+    }
+    
+    public void setNonOverrideAllowed(Optional<Boolean> nonOverrideAllowed) {
+        this.nonOverrideAllowed = nonOverrideAllowed;
     }
     
     public Optional<Map<String, String>> getOptions() {

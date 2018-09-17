@@ -41,6 +41,7 @@ public abstract class SlicerConfigWriter {
     private static final String OPTION = "option";
     private static final String NOZZLE = "nozzle";
     private static final String EXTRUSION = "extrusion";
+    private static final String NUMBER_LIST = "numbers";
     
     SlicerType slicerType = null;
     private SimpleDateFormat dateFormatter = null;
@@ -152,8 +153,7 @@ public abstract class SlicerConfigWriter {
                                 outputLine(writer, targetVariableName, value);
                                 break;
                             }
-                            case INT:
-                            case NOZZLE: {
+                            case INT: {
                                 if(isSettingPerExtruder(settingNameOrValue)) {
                                     outputLine(writer, targetVariableName, profileData.getSpecificSettingAsString(settingNameOrValue));
                                 } else {
@@ -163,6 +163,13 @@ public abstract class SlicerConfigWriter {
                                         outputLine(writer, targetVariableName, calculatedValue.get().intValue());
                                     }
                                 }
+                                break;
+                            }
+                            case NOZZLE: {
+                                    int value = profileData.getSpecificIntSetting(settingNameOrValue);
+                                    // Do not override the nozzle if we have anything other than 0 or 1
+                                    value = value > 1 ? -1 : value;
+                                    outputLine(writer, targetVariableName, value);
                                 break;
                             }
                             case FLOAT:
@@ -181,11 +188,12 @@ public abstract class SlicerConfigWriter {
                             case OPTION: {
                                 String value = profileData.getSpecificSettingAsString(settingNameOrValue);
                                 outputLine(writer, targetVariableName, value);
-    //                            } else if (returnTypeClass.equals(AdhesionType.class))
-    //                            {
-    //                                AdhesionType value = (AdhesionType) getMethod.invoke(profileData);
-    //                                outputLine(writer, targetVariableName, value);
-    //
+                                break;
+                            }
+                            case NUMBER_LIST: {
+                                String value = profileData.getSpecificSettingAsString(settingNameOrValue);
+                                value = formatStringIntoList(value);
+                                outputLine(writer, targetVariableName, value);
                                 break;
                             }
                             default:
@@ -381,6 +389,31 @@ public abstract class SlicerConfigWriter {
     private boolean isSettingPerExtruder(String settingId) {
         PrintProfileSetting setting = printProfileSettingsMap.get(settingId);
         return setting.isPerExtruder();
+    }
+    
+    /**
+     * Take a string in the form of numbers separated by commas, remove any trailing
+     * commas and wrap in square brackets.
+     * 
+     * @param unformattedString the string to be formated to an 'array'
+     * @return formatted String
+     */
+    private String formatStringIntoList(String unformattedString) {
+        if(unformattedString == null || unformattedString.isEmpty()) {
+            return "[]";
+        }
+        
+        String listString = unformattedString.trim();
+        
+        if(listString.charAt(listString.length() - 1) == ',') {
+            listString = listString.substring(0, listString.length() - 1);
+        }
+        
+        if(listString.charAt(0) == ',') {
+            listString = listString.substring(1);
+        }
+        
+        return "[" + listString + "]";
     }
     
     /**
