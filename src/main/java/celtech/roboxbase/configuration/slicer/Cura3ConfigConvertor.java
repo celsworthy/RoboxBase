@@ -2,6 +2,10 @@ package celtech.roboxbase.configuration.slicer;
 
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
+import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Nozzle;
 import celtech.roboxbase.printerControl.model.Printer;
@@ -47,10 +51,20 @@ public class Cura3ConfigConvertor {
     }
     
     private void addDefaultsForPrinter() {
-        int width =  printer.printerConfigurationProperty().get().getPrintVolumeWidth();
-        int depth = printer.printerConfigurationProperty().get().getPrintVolumeDepth();
-        int height = printer.printerConfigurationProperty().get().getPrintVolumeHeight();
+        int width;
+        int depth;
+        int height;
         
+        if(printer == null) {
+            PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
+            width = printerDef.getPrintVolumeWidth();
+            depth = printerDef.getPrintVolumeDepth();
+            height = printerDef.getPrintVolumeHeight();
+        } else {
+            width =  printer.printerConfigurationProperty().get().getPrintVolumeWidth();
+            depth = printer.printerConfigurationProperty().get().getPrintVolumeDepth();
+            height = printer.printerConfigurationProperty().get().getPrintVolumeHeight();
+        }
         curaDefaultSettingsEditor.editDefaultFloatValue("machine_width", width);
         curaDefaultSettingsEditor.editDefaultFloatValue("machine_depth", depth);
         curaDefaultSettingsEditor.editDefaultFloatValue("machine_height", height);
@@ -66,9 +80,14 @@ public class Cura3ConfigConvertor {
     }
     
     private void addExtrudersAndDefaults() {
-        Head headOnPrinter = printer.headProperty().get();
+        Head headOnPrinter;
+        if(printer == null || printer.headProperty() == null) {
+            HeadFile defaultHeadData = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
+            headOnPrinter = new Head(defaultHeadData);
+        } else {
+            headOnPrinter = printer.headProperty().get();
+        }
         List<Nozzle> nozzles = headOnPrinter.getNozzles();
-        boolean dualExtrusion = headOnPrinter.getNozzleHeaters().size() > 1;
         for(int i = 0; i < nozzles.size(); i++) {
             String nozzleReference = "noz" + String.valueOf(i + 1);
             curaDefaultSettingsEditor.beginNewExtruderFile(nozzleReference);
@@ -76,28 +95,6 @@ public class Cura3ConfigConvertor {
             curaDefaultSettingsEditor.editExtruderValue("machine_nozzle_id", nozzleReference, nozzleReference);
             curaDefaultSettingsEditor.editExtruderValue("machine_nozzle_size", nozzleReference, 
                     String.valueOf(nozzle.diameterProperty().get()));
- 
-            Filament filament;
-            if(dualExtrusion && i == 0) {
-                filament = printer.effectiveFilamentsProperty().get(1);
-            } else {
-                filament = printer.effectiveFilamentsProperty().get(0);
-            }
-            
-            if(filament != FilamentContainer.UNKNOWN_FILAMENT) {
-                curaDefaultSettingsEditor.editExtruderValue("default_material_print_temperature", nozzleReference, 
-                        String.valueOf(filament.getNozzleTemperature()));
-                curaDefaultSettingsEditor.editExtruderValue("material_print_temperature", nozzleReference, 
-                        String.valueOf(filament.getNozzleTemperature()));
-                curaDefaultSettingsEditor.editExtruderValue("material_print_temperature_layer_0", nozzleReference, 
-                        String.valueOf(filament.getFirstLayerNozzleTemperature()));
-                curaDefaultSettingsEditor.editExtruderValue("default_material_bed_temperature", nozzleReference, 
-                        String.valueOf(filament.getBedTemperature()));
-                curaDefaultSettingsEditor.editExtruderValue("material_bed_temperature", nozzleReference, 
-                        String.valueOf(filament.getBedTemperature()));
-                curaDefaultSettingsEditor.editExtruderValue("material_bed_temperature_layer_0", nozzleReference, 
-                        String.valueOf(filament.getFirstLayerBedTemperature()));
-            }
         }
     }
     
