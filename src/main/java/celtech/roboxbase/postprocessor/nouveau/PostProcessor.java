@@ -627,10 +627,6 @@ public class PostProcessor
         timeUtils.timerStart(this, unnecessaryToolchangeTimerName);
         postProcessorUtilityMethods.suppressUnnecessaryToolChangesAndInsertToolchangeCloses(layerNode, lastLayerParseResult, nozzleProxies);
         timeUtils.timerStop(this, unnecessaryToolchangeTimerName);
-
-        if(slicerType == SlicerType.Cura3) {
-            nodeManagementUtilities.fixHeaterCommands(layerNode, lastLayerParseResult);
-        }
         
         if (featureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
         {
