@@ -553,24 +553,26 @@ public class NodeManagementUtilities
     
     protected void fixHeaterCommands(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult) {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
-        
-         while (layerIterator.hasNext()) {
+        int toolInUse = -1;
+                    
+        while (layerIterator.hasNext()) {
             GCodeEventNode node = layerIterator.next();
-
-            if (node instanceof MCodeNode) {
+  
+            if(node instanceof ToolSelectNode) {
+                toolInUse = ((ToolSelectNode) node).getToolNumber();
+            } else if(node instanceof MCodeNode) {
                 MCodeNode mcode = (MCodeNode) node;
                 
                 if (mcode.getMNumber() == 103 || mcode.getMNumber() == 104) {
                     ToolSelectNode lastToolInForce = lastLayerParseResult.getLastToolSelectInForce();
-                    int toolToUse = 0;
-                    
-                    if(lastToolInForce != null) {
-                        toolToUse = lastToolInForce.getToolNumber();
+ 
+                    if(toolInUse < 0 && lastToolInForce != null) {
+                        toolInUse = lastToolInForce.getToolNumber();
                     }
                     
                     // A specific tool is specified e.g. M104 S200 T1
                     if(mcode.isTAndNumber()) {
-                        toolToUse = mcode.getTNumber();
+                        toolInUse = mcode.getTNumber();
                     }
                     
                     int temp = 0;
@@ -578,10 +580,10 @@ public class NodeManagementUtilities
                         temp = mcode.getSNumber();
                     }
                     
-                    if(toolToUse == 0) {
+                    if(toolInUse == 0) {
                         mcode.setTOnly(false);
                         mcode.setSOnly(true);
-                    } else if(toolToUse == 1) {
+                    } else if(toolInUse == 1) {
                         mcode.setTNumber(temp);
                         mcode.setTOnly(true);
                         mcode.setSOnly(false);

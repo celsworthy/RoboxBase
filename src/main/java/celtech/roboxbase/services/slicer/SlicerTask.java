@@ -149,7 +149,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
 
         String configFile = printJobUUID + BaseConfiguration.printProfileFileExtension;
-        String jsonSettingsFile = BaseConfiguration.getApplicationStorageDirectory() + "fdmprinter_robox.def.json";
+        String jsonSettingsFile = "fdmprinter_robox.def.json";
         
         MachineType machineType = BaseConfiguration.getMachineType();
         ArrayList<String> commands = new ArrayList<>();
@@ -264,7 +264,9 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
                     if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
-                        windowsPrintCommand += extruderTrainCommand + extrudersForMeshes.get(i);
+                        // Extruder needs swapping... just because
+                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        windowsPrintCommand += extruderTrainCommand + extruderNo;
                     }
                     windowsPrintCommand += modelFileCommand;
                     windowsPrintCommand += " \"";

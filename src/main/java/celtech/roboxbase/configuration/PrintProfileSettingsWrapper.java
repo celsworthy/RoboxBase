@@ -1,6 +1,8 @@
 package celtech.roboxbase.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +12,10 @@ import java.util.Map;
  *
  * @author George Salter
  */
-public class PrintProfileSettings {
-    
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class PrintProfileSettingsWrapper {
+
+    @JsonProperty("printProfileSettings")
     private Map<String, List<PrintProfileSetting>> printProfileSettings;
 
     public Map<String, List<PrintProfileSetting>> getPrintProfileSettings() {
@@ -46,7 +50,7 @@ public class PrintProfileSettings {
         return allSettings;
     }
     
-    public PrintProfileSettings copy() {
+    public PrintProfileSettingsWrapper copy() {
         Map<String, List<PrintProfileSetting>> printProfileSettingsMapClone = new HashMap<>();
         
         printProfileSettings.entrySet().forEach((entry) -> {
@@ -58,7 +62,7 @@ public class PrintProfileSettings {
             printProfileSettingsMapClone.put(entry.getKey(), settingsClones);
         });
         
-        PrintProfileSettings printProfileSettingsClone = new PrintProfileSettings();
+        PrintProfileSettingsWrapper printProfileSettingsClone = new PrintProfileSettingsWrapper();
         printProfileSettingsClone.setPrintProfileSettings(printProfileSettingsMapClone);
         return printProfileSettingsClone;
     }

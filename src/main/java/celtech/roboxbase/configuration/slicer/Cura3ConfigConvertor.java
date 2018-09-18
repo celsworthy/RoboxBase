@@ -35,7 +35,7 @@ public class Cura3ConfigConvertor {
         this.printableMeshes = printableMeshes;
     }
     
-    public void injectConfigIntoCura3SettingsFile(String configFile) {
+    public void injectConfigIntoCura3SettingsFile(String configFile, String storageDirectory) {
         curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
         curaDefaultSettingsEditor.beginEditing();
         
@@ -43,21 +43,21 @@ public class Cura3ConfigConvertor {
         addExtrudersAndDefaults();
         addMappedSettings(configFile);
         
-        curaDefaultSettingsEditor.endEditing();
+        curaDefaultSettingsEditor.endEditing(storageDirectory);
     }
     
     private void addDefaultsForPrinter() {
-        curaDefaultSettingsEditor.editDefaultFloatValue("machine_width", 
-                printer.printerConfigurationProperty().get().getPrintVolumeWidth());
-        curaDefaultSettingsEditor.editDefaultFloatValue("machine_depth", 
-                printer.printerConfigurationProperty().get().getPrintVolumeDepth());
-        curaDefaultSettingsEditor.editDefaultFloatValue("machine_height", 
-                printer.printerConfigurationProperty().get().getPrintVolumeHeight());
+        int width =  printer.printerConfigurationProperty().get().getPrintVolumeWidth();
+        int depth = printer.printerConfigurationProperty().get().getPrintVolumeDepth();
+        int height = printer.printerConfigurationProperty().get().getPrintVolumeHeight();
         
-        curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_x", 
-                (float) -printableMeshes.getCentreOfPrintedObject().getX());
-        curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_y", 
-                (float) -printableMeshes.getCentreOfPrintedObject().getZ());
+        curaDefaultSettingsEditor.editDefaultFloatValue("machine_width", width);
+        curaDefaultSettingsEditor.editDefaultFloatValue("machine_depth", depth);
+        curaDefaultSettingsEditor.editDefaultFloatValue("machine_height", height);
+        
+        // Currently need to move origin back to corner of bed, not center.
+        curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_x", (float) -(width /2));
+        curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_y", (float) -(depth /2));
         
         curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", 
                 printableMeshes.getUsedExtruders().size());

@@ -29,7 +29,7 @@ public class CuraDefaultSettingsEditor {
     
     private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmprinter.def.json";
     private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmextruder.def.json";
-    private static final String EDITED_FILE = BaseConfiguration.getApplicationStorageDirectory() + "fdmprinter_robox.def.json";
+    private static final String EDITED_FILE_NAME = "fdmprinter_robox.def.json";
     private static final String SETTINGS = "settings";
     private static final String CHILDREN = "children";
     private static final String DEFAULT_VALUE = "default_value";
@@ -70,19 +70,21 @@ public class CuraDefaultSettingsEditor {
     
     /**
      * Write the changes back to JSON.
+     * @param destinationDirectory
      */
-    public void endEditing() {
-        STENO.info("Writing changes made to " + EDITED_FILE);
+    public void endEditing(String destinationDirectory) {
+        String filePath = destinationDirectory + EDITED_FILE_NAME;
+        STENO.info("Writing changes made to " + filePath);
         try {
             JsonFactory factory = new JsonFactory();
                         
-            writeExtruderFiles(factory);
+            writeExtruderFiles(factory, destinationDirectory);
             addExtruders();
             
-            JsonGenerator generator = factory.createGenerator(new File(EDITED_FILE), JsonEncoding.UTF8);
+            JsonGenerator generator = factory.createGenerator(new File(filePath), JsonEncoding.UTF8);
             mapper.writeTree(generator, settingsRootNode);
         } catch (IOException ex) {
-            STENO.error("Failed to write json to file: " + EDITED_FILE + " in " + this.getClass().getName());
+            STENO.error("Failed to write json to file: " + filePath + " in " + this.getClass().getName());
             STENO.error(ex.getMessage());
         }
     }
@@ -234,9 +236,9 @@ public class CuraDefaultSettingsEditor {
      * 
      * @param factory JsonFactory to create the JsonGenerator.
      */
-    private void writeExtruderFiles(JsonFactory factory) {
+    private void writeExtruderFiles(JsonFactory factory, String destinationDirectory) {
         extruderRootNodes.entrySet().forEach(nodeEntry -> {
-            String fileName = BaseConfiguration.getApplicationStorageDirectory() + "extruder_robox_" + nodeEntry.getKey() + ".def.json";
+            String fileName = destinationDirectory + "/extruder_robox_" + nodeEntry.getKey() + ".def.json";
             try {
                 JsonGenerator generator;
                 generator = factory.createGenerator(new File(fileName), JsonEncoding.UTF8);
