@@ -336,7 +336,13 @@ public class PostProcessor
                     eRequired = true;
                 }
 
-                Optional<PrinterType> printerTypeCode = (printer != null ? Optional.of(printer.findPrinterType()) : Optional.empty());
+                Optional<PrinterType> printerTypeCode;
+                if(printer == null) {
+                    PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
+                    printerTypeCode = Optional.of(PrinterType.getPrinterTypeForTypeCode(printerDef.getTypeCode()));
+                } else {
+                    printerTypeCode = Optional.of(printer.findPrinterType());
+                }
                     
                 outputUtilities.prependPrePrintHeader(writer,
                         printerTypeCode,
