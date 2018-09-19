@@ -42,29 +42,29 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
 
     private final Stenographer steno = StenographerFactory.getStenographer(RoboxGCodeParser.class.getName());
     private LayerNode thisLayer = new LayerNode();
-    private int feedrateInForce = -1;
-    private int startingLineNumber = 0;
+    private double feedrateInForce = -1.0F;
+    private int currentLineNumber = 0;
     private int numberOfUnrecognisedElements = 0;
     protected Var<Integer> currentObject = new Var<>(-1);
 
-    public void setFeedrateInForce(int feedrate)
+    public void setFeedrateInForce(double feedrate)
     {
         this.feedrateInForce = feedrate;
     }
 
-    public int getFeedrateInForce()
+    public double getFeedrateInForce()
     {
         return feedrateInForce;
     }
 
-    public int getStartingLineNumber()
+        public int getCurrentLineNumber()
     {
-        return startingLineNumber;
+        return currentLineNumber;
     }
 
-    public void setStartingLineNumber(int startingLineNumber)
+    public void setCurrentLineNumber(int currentLineNumber)
     {
-        this.startingLineNumber = startingLineNumber;
+        this.currentLineNumber = currentLineNumber;
     }
 
     public LayerNode getLayerNode()
@@ -80,13 +80,16 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     public Rule Layer()
     {
         return Sequence(
-                Sequence(';', ZeroOrMore(' '), "LAYER:", OneOrMore(Digit()),
+                Sequence(';', ZeroOrMore(' '), "LAYER:", Optional('-'), OneOrMore(Digit()),
                         (Action) (Context context1) ->
                         {
                             thisLayer.setLayerNumber(Integer.valueOf(context1.getMatch()));
-                            thisLayer.setGCodeLineNumber(startingLineNumber);
+                            thisLayer.setGCodeLineNumber(++currentLineNumber);
                             return true;
                         },
+                        ZeroOrMore(' '),
+                        "height:",
+                        PositiveFloatingPointNumber(),
                         Newline()
                 ),
                 //                Optional(
@@ -103,7 +106,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 //                                }
                 //                        )
                 //                ),
-                OneOrMore(
+                ZeroOrMore(
                         FirstOf(
                                 ObjectSection(),
                                 OrphanObjectSection(),
@@ -257,6 +260,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -282,6 +286,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -307,6 +312,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -331,6 +337,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -355,6 +362,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -380,6 +388,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -405,6 +414,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -487,6 +497,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         CommentNode node = new CommentNode(commentValue.get());
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -562,7 +573,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                             node.setCommentText(commentText.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -585,6 +596,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         GCodeDirectiveNode node = new GCodeDirectiveNode();
+                        node.setGCodeLineNumber(++currentLineNumber);
                         node.setGValue(gcodeValue.get());
                         context.getValueStack().push(node);
                         return true;
@@ -596,9 +608,9 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     //G1 F1800 D0 E-0.5
     Rule RetractDirective()
     {
-        Var<Float> dValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Integer> fValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -608,11 +620,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", NegativeFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", NegativeFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
@@ -641,7 +653,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                             node.setCommentText(commentValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -653,9 +665,9 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 F1800 E0.50000
     Rule UnretractDirective()
     {
-        Var<Float> dValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Integer> fValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -665,11 +677,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
@@ -698,6 +710,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.setCommentText(commentValue.get());
                         }
+                        node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -709,33 +722,36 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule TravelDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
-        return Sequence('G',
-                FirstOf('0', '1'),
-                ' ',
+        return Sequence(FirstOf("G0 ","G1 "),
                 Optional(
                         Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
-                                Sequence("X", FloatingPointNumber(),
+                                Sequence("X",
+                                        FloatingPointNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y", FloatingPointNumber(),
+                                Sequence("Y",
+                                        FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Z", FloatingPointNumber(),
+                                Sequence("Z", 
+                                        FloatingPointNumber(),
                                         zValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
                 ),
+                Optional(Comment(commentText)),
                 Newline(),
                 new Action()
                 {
@@ -763,7 +779,12 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.getMovement().setZ(zValue.get());
                         }
-                        node.setGCodeLineNumber(startingLineNumber);
+                        
+                        if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+                        }
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -776,12 +797,12 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 F840 X88.700 Y44.153 E5.93294
     Rule ExtrusionDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Float> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> dValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence("G1 ",
@@ -800,11 +821,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
@@ -853,7 +874,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                             node.setCommentText(commentValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
 
@@ -864,24 +885,44 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     }
 
     //Nozzle control
-    // G1 B1.3
+    // G1 B1 F150 E0.60000
     Rule NozzleControlDirective()
     {
-        Var<Float> bValue = new Var<>();
+        Var<Double> bValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> fValue = new Var<>();
+        Var<String> commentValue = new Var<>();
 
-        return Sequence('G', FirstOf('0', '1'), ' ',
+        return Sequence(FirstOf("G0 ","G1 "),
                 OneOrMore(
                         FirstOf(
                                 Sequence("B", PositiveFloatingPointNumber(),
-                                        bValue.set(Float.valueOf(match())),
+                                        bValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("B", Digit(),
-                                        bValue.set(Float.valueOf(match())),
+                                        bValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
                 ),
+                Optional(Feedrate(fValue)),
+                Optional(
+                        OneOrMore(
+                                FirstOf(
+                                        Sequence("D", PositiveFloatingPointNumber(),
+                                                dValue.set(Double.valueOf(match())),
+                                                Optional(' ')
+                                        ),
+                                        Sequence("E", PositiveFloatingPointNumber(),
+                                                eValue.set(Double.valueOf(match())),
+                                                Optional(' ')
+                                        )
+                                )
+                        )
+                ),
+                Optional(Comment(commentValue)),
                 Newline(),
                 new Action()
                 {
@@ -894,8 +935,22 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                         {
                             node.getNozzlePosition().setB(bValue.get());
                         }
-
-                        node.setGCodeLineNumber(startingLineNumber);
+                        
+                        if (eValue.isSet())
+                        {
+                            node.setReplenishExtrusionE(eValue.get());
+                        }
+                        
+                        if (dValue.isSet())
+                        {
+                            node.setReplenishExtrusionD(dValue.get());
+                        }
+                        
+                        if (commentValue.isSet())
+                        {
+                            node.setCommentText(commentValue.get());
+                        }
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
 
@@ -909,11 +964,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G1 B1.3
     Rule NozzleControlDuringTravelDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        Var<Float> bValue = new Var<>();
+        Var<Double> bValue = new Var<>();
         Var<String> commentValue = new Var<>();
 
         return Sequence('G',
@@ -924,15 +979,18 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 ),
                 OneOrMore(
                         FirstOf(
-                                Sequence("X", FloatingPointNumber(),
+                                Sequence("X", 
+                                        FloatingPointNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Y", FloatingPointNumber(),
+                                Sequence("Y", 
+                                        FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
-                                Sequence("Z", FloatingPointNumber(),
+                                Sequence("Z", 
+                                        FloatingPointNumber(),
                                         zValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
@@ -940,11 +998,11 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                 ),
                 FirstOf(
                         Sequence("B", PositiveFloatingPointNumber(),
-                                bValue.set(Float.valueOf(match())),
+                                bValue.set(Double.valueOf(match())),
                                 Optional(' ')
                         ),
                         Sequence("B", Digit(),
-                                bValue.set(Float.valueOf(match())),
+                                bValue.set(Double.valueOf(match())),
                                 Optional(' ')
                         )
                 ),
@@ -987,7 +1045,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                             node.setCommentText(commentValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -1000,7 +1058,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     // G[01] Z1.020
     Rule LayerChangeDirective()
     {
-        Var<Integer> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
@@ -1063,7 +1121,7 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                             node.setCommentText(commentValue.get());
                         }
 
-                        node.setGCodeLineNumber(startingLineNumber);
+                        node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
                         return true;
@@ -1126,22 +1184,23 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
     }
 
     @SuppressSubnodes
-    Rule FloatingPointNumber()
+    Rule IntegerNumber()
     {
-        return FirstOf(
-                NegativeFloatingPointNumber(),
-                PositiveFloatingPointNumber()
-        );
+        return Sequence(
+                Optional('-'),
+                OneOrMore(Digit()));
     }
-
+    
     @SuppressSubnodes
     Rule PositiveFloatingPointNumber()
     {
         //Positive float e.g. 1.23
         return Sequence(
                 OneOrMore(Digit()),
-                Ch('.'),
-                OneOrMore(Digit()));
+                 Optional(
+                  Sequence(
+                   Ch('.'),
+                   OneOrMore(Digit()))));
     }
 
     @SuppressSubnodes
@@ -1150,18 +1209,24 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
         //Negative float e.g. -1.23
         return Sequence(
                 Ch('-'),
-                OneOrMore(Digit()),
-                Ch('.'),
-                OneOrMore(Digit()));
+                PositiveFloatingPointNumber());
     }
 
     @SuppressSubnodes
-    Rule Feedrate(Var<Integer> feedrate)
+    Rule FloatingPointNumber()
+    {
+        return Sequence(
+                Optional('-'),
+                PositiveFloatingPointNumber());
+    }
+
+    @SuppressSubnodes
+    Rule Feedrate(Var<Double> feedrate)
     {
         return FirstOf(
                 Sequence(
-                        'F', OneOrMore(Digit()),
-                        feedrate.set(Integer.valueOf(match())),
+                        'F', FloatingPointNumber(),
+                        feedrate.set(Double.valueOf(match())),
                         Optional(' '),
                         new Action()
                         {
@@ -1200,7 +1265,9 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                     public boolean run(Context context)
                     {
                         String line = context.getMatch();
-                        context.getValueStack().push(new UnrecognisedLineNode(line));
+                        UnrecognisedLineNode newNode = new UnrecognisedLineNode(line);
+                        newNode.setGCodeLineNumber(++currentLineNumber);
+                        context.getValueStack().push(newNode);
                         numberOfUnrecognisedElements++;
                         thisLayer.setNumberOfUnrecognisedElements(numberOfUnrecognisedElements);
                         steno.warning("Didn't understand:" + line);
@@ -1221,7 +1288,6 @@ public class RoboxGCodeParser extends BaseParser<GCodeEventNode>
                     @Override
                     public boolean run(Context context)
                     {
-                        startingLineNumber++;
                         return true;
                     }
                 });

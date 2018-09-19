@@ -80,13 +80,13 @@ public class OutputUtilities
             writer.writeOutput("; ==========\n");
             writer.writeOutput("; ----------------------------------\n");
             writer.writeOutput("; Feedrate independent time - " + TimeUtils.convertToHoursMinutesSeconds((int) timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()) + "\n");
-            writer.writeOutput("==================================================================\n");
+            writer.writeOutput("; ==================================================================\n");
             writer.writeOutput("; Total print time estimate - "
                     + TimeUtils.convertToHoursMinutesSeconds((int) (timeAndVolumeCalcResult.getExtruderEStats().getDuration().getTotal_duration()
                             + timeAndVolumeCalcResult.getExtruderDStats().getDuration().getTotal_duration()
                             + timeAndVolumeCalcResult.getFeedrateIndependentDuration().getTotal_duration()))
                     + "\n");
-            writer.writeOutput("===================================================================\n");
+            writer.writeOutput("; ===================================================================\n");
             writer.writeOutput(";\n");
         } catch (IOException | MacroLoadException ex)
         {

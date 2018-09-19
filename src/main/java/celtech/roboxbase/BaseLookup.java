@@ -220,7 +220,7 @@ public class BaseLookup
             }
         }
         
-		return appLocale;
+        return appLocale;
     }
 
     public static void setupDefaultValues()
