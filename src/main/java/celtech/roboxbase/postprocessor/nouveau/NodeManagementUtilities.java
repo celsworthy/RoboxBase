@@ -550,46 +550,4 @@ public class NodeManagementUtilities
         }
         return new AvailableExtrusion(availableExtrusion, lastNodeExamined);
     }
-    
-    protected void fixHeaterCommands(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult) {
-        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
-        int toolInUse = -1;
-                    
-        while (layerIterator.hasNext()) {
-            GCodeEventNode node = layerIterator.next();
-  
-            if(node instanceof ToolSelectNode) {
-                toolInUse = ((ToolSelectNode) node).getToolNumber();
-            } else if(node instanceof MCodeNode) {
-                MCodeNode mcode = (MCodeNode) node;
-                
-                if (mcode.getMNumber() == 103 || mcode.getMNumber() == 104) {
-                    ToolSelectNode lastToolInForce = lastLayerParseResult.getLastToolSelectInForce();
- 
-                    if(toolInUse < 0 && lastToolInForce != null) {
-                        toolInUse = lastToolInForce.getToolNumber();
-                    }
-                    
-                    // A specific tool is specified e.g. M104 S200 T1
-                    if(mcode.isTAndNumber()) {
-                        toolInUse = mcode.getTNumber();
-                    }
-                    
-                    int temp = 0;
-                    if (mcode.isSAndNumber()) {
-                        temp = mcode.getSNumber();
-                    }
-                    
-                    if(toolInUse == 0) {
-                        mcode.setTOnly(false);
-                        mcode.setSOnly(true);
-                    } else if(toolInUse == 1) {
-                        mcode.setTNumber(temp);
-                        mcode.setTOnly(true);
-                        mcode.setSOnly(false);
-                    }
-                }
-            }
-        }
-    }
 }
