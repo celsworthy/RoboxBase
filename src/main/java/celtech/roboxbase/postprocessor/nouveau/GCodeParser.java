@@ -88,8 +88,8 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
 
     //Inbound Y translates to Z
     void validateYPosition(double value) {
-        if (value > printVolumeDepth
-                || value < 0) {
+        if (printVolumeDepth > 0
+                && (value > printVolumeDepth || value < 0)) {
             throw new ParserInputException("Y value outside bed: " + value);
         }
     }
