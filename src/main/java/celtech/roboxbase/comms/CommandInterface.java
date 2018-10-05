@@ -634,4 +634,9 @@ public abstract class CommandInterface extends Thread
     {
         // Nothing to do by default.
     }
+    
+    public void dumpCommandHistory()
+    {
+        // Nothing to do by default.
+    }
 }

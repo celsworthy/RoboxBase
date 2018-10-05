@@ -45,6 +45,12 @@ public final class Movement implements Renderable
         this.x = x;
     }
 
+    public void xNotInUse()
+    {
+        isXSet = false;
+        x = 0.0;
+    }
+
     public boolean isYSet()
     {
         return isYSet;
@@ -67,6 +73,12 @@ public final class Movement implements Renderable
     {
         isYSet = true;
         this.y = y;
+    }
+
+    public void yNotInUse()
+    {
+        isYSet = false;
+        y = 0.0;
     }
 
     public boolean isZSet()
@@ -93,6 +105,12 @@ public final class Movement implements Renderable
         this.z = z;
     }
     
+    public void zNotInUse()
+    {
+        isZSet = false;
+        z = 0.0;
+    }
+
     /**
      *
      * @return

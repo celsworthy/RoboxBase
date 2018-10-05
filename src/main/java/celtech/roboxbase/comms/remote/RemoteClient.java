@@ -196,4 +196,20 @@ public class RemoteClient implements LowLevelInterface
             throw new RoboxCommsException("Failed to override filament on remote printer" + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
         }
     }
+    
+    public void startPrintJob(String printerID, String printJobID) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/reprintJob", printJobID, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to start print job \"" +
+                             printJobID +
+                             "\" on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
 }

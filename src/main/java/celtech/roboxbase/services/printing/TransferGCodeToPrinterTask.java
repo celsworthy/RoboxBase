@@ -1,15 +1,25 @@
 package celtech.roboxbase.services.printing;
 
+import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
+import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.SystemUtils;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpATTRS;
+import com.jcraft.jsch.SftpException;
+import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -24,12 +34,44 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 {
+    private class TransferProgressMonitor implements SftpProgressMonitor
+    {
+        long count = 0;
+        long fileSize = 0;
+        
+        public TransferProgressMonitor()
+        {
+        }
 
+        @Override
+        public void init(int op, String src, String dest, long fileSize)
+        {
+            this.fileSize = fileSize;
+            this.count = 0;
+            steno.info("Initialise file transfer: src = \"" + src + "\", dst = \"" + dest + "\", fileSize = " + Long.toString(fileSize));
+        }
+
+        @Override
+        public boolean count(long count)
+        {
+          steno.info("Transfer progress: count = " + Long.toString(count) + " of " + Long.toString(fileSize));
+          updateProgress((float) count, (float) fileSize);
+          return !isCancelled();
+        }
+        
+        @Override
+        public void end(){
+        }
+    }
+    private static final String PRIVATE_KEY = "automaker-root.ssh";
+    private static final int[] pp1 = {81, 86, 10, 93, 51, 78, 87, 120, 117};
+    private static final int[] pp2 = {-14, 155, 66, 138, 31, 189, 11, 231, 3};
+    private static final String USER = "pi";
+           
     private Printer printerToUse = null;
     private String gcodeFileToPrint = null;
     private String printJobID = null;
-    private final Stenographer steno = StenographerFactory.
-            getStenographer(this.getClass().getName());
+    private final Stenographer steno = StenographerFactory.getStenographer(this.getClass().getName());
     private IntegerProperty linesInFile = null;
     private boolean printUsingSDCard = true;
     private boolean dontInitiatePrint = false;
@@ -77,6 +119,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
     @Override
     protected GCodePrintResult call() throws Exception
     {
+        long startTime = System.currentTimeMillis();
         GCodePrintResult result = new GCodePrintResult();
         result.setPrintJobID(printJobID);
 
@@ -85,8 +128,6 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         updateTitle("GCode Print ID:" + printJobID);
         File gcodeFile = new File(gcodeFileToPrint);
         Optional<PrinterType> printerType = Optional.of(printerToUse.findPrinterType());
-        FileReader gcodeReader = null;
-        Scanner scanner = null;
         numberOfLines = GCodeMacros.countLinesInMacroFile(gcodeFile, ";", printerType);
         linesInFile.setValue(numberOfLines);
 
@@ -94,8 +135,9 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                 + startFromSequenceNumber);
 
         boolean errorTransferringStats = false;
-
-        if (printerToUse.getCommandInterface() instanceof RoboxRemoteCommandInterface)
+        boolean printerIsRemote = (printerToUse.getCommandInterface() instanceof RoboxRemoteCommandInterface);
+        
+        if (printerIsRemote)
         {
             //We're talking to a remote printer
             //Send the statistics if they exist
@@ -113,75 +155,90 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
         if (!errorTransferringStats)
         {
-            //Note that FileReader is used, not File, since File is not Closeable
-            try
-            {
-                gcodeReader = new FileReader(gcodeFile);
-                scanner = new Scanner(gcodeReader);
+            updateMessage("Transferring GCode");
 
-                if (printUsingSDCard && startFromSequenceNumber == 0)
-                {
-                    printerToUse.initialiseDataFileSend(printJobID, thisJobCanBeReprinted);
-                }
-
-                printerToUse.resetDataFileSequenceNumber();
-                printerToUse.setDataFileSequenceNumberStartPoint(startFromSequenceNumber);
-
-                updateMessage("Transferring data");
-
-                lineCounter = 0;
-
-                while (scanner.hasNextLine() && !isCancelled())
-                {
-                    String line = scanner.nextLine();
-                    line = line.trim();
-
-                    if (GCodeMacros.isMacroExecutionDirective(line))
-                    {
-                        //Put in contents of macro
-                        List<String> macroLines = GCodeMacros.getMacroContents(line,
-                                Optional.of(printerToUse.findPrinterType()),
-                                printerToUse.headProperty().get().typeCodeProperty().get(),
-                                false, false, false);
-                        for (String macroLine : macroLines)
-                        {
-                            outputLine(macroLine);
-                        }
-                    } else
-                    {
-                        outputLine(line);
-                    }
-
-                    if (lineCounter < numberOfLines)
-                    {
-                        updateProgress((float) lineCounter, (float) numberOfLines);
-                    }
-                }
-                gotToEndOK = true;
-            } catch (FileNotFoundException ex)
-            {
-                steno.error("Couldn't open gcode file " + gcodeFileToPrint + ": " + ex);
-            } catch (RoboxCommsException ex)
-            {
-                steno.error("Error during print operation - abandoning transfer of " + printJobID + " " + ex.
-                        getMessage());
-                updateMessage("Printing error");
-            } finally
-            {
-                if (scanner != null)
-                {
-                    scanner.close();
-                }
-
-                if (gcodeReader != null)
-                {
-                    gcodeReader.close();
-                }
-            }
+            if (printerIsRemote && !gcodeFile.getParent().endsWith("Macro") && printUsingSDCard && startFromSequenceNumber == 0)
+                gotToEndOK = transferToRemotePrinter(gcodeFile);
+            else
+                gotToEndOK = transferToPrinter(gcodeFile);
         }
+
+        long endTime = System.currentTimeMillis();
+        steno.info("Print transfer took " + Long.toString(endTime - startTime) + "ms");
 
         result.setSuccess(gotToEndOK);
         return result;
+    }
+
+    private boolean transferToPrinter(File gcodeFile) throws Exception
+    {
+        FileReader gcodeReader = null;
+        Scanner scanner = null;
+        boolean gotToEndOK = false;
+        //Note that FileReader is used, not File, since File is not Closeable
+        try
+        {
+            gcodeReader = new FileReader(gcodeFile);
+            scanner = new Scanner(gcodeReader);
+
+            if (printUsingSDCard && startFromSequenceNumber == 0)
+            {
+                printerToUse.initialiseDataFileSend(printJobID, thisJobCanBeReprinted);
+            }
+
+            printerToUse.resetDataFileSequenceNumber();
+            printerToUse.setDataFileSequenceNumberStartPoint(startFromSequenceNumber);
+
+            lineCounter = 0;
+
+            while (scanner.hasNextLine() && !isCancelled())
+            {
+                String line = scanner.nextLine();
+                line = line.trim();
+
+                if (GCodeMacros.isMacroExecutionDirective(line))
+                {
+                    //Put in contents of macro
+                    List<String> macroLines = GCodeMacros.getMacroContents(line,
+                            Optional.of(printerToUse.findPrinterType()),
+                            printerToUse.headProperty().get().typeCodeProperty().get(),
+                            false, false, false);
+                    for (String macroLine : macroLines)
+                    {
+                        outputLine(macroLine);
+                    }
+                } else
+                {
+                    outputLine(line);
+                }
+
+                if (lineCounter < numberOfLines)
+                {
+                    updateProgress((float) lineCounter, (float) numberOfLines);
+                }
+            }
+            gotToEndOK = true;
+        } catch (FileNotFoundException ex)
+        {
+            steno.error("Couldn't open gcode file " + gcodeFileToPrint + ": " + ex);
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Error during print operation - abandoning transfer of " + printJobID + " " + ex.
+                    getMessage());
+            updateMessage("Printing error");
+        } finally
+        {
+            if (scanner != null)
+            {
+                scanner.close();
+            }
+
+            if (gcodeReader != null)
+            {
+                gcodeReader.close();
+            }
+        }
+        return gotToEndOK;
     }
 
     private void outputLine(String line) throws RoboxCommsException, DatafileSendNotInitialised
@@ -211,5 +268,67 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             lineCounter++;
         }
     }
+    
+    private boolean transferToRemotePrinter(File gcodeFile)
+    {
+        // Use sftp to transfer file to remote printer.
+        // Note: this does NOT expand macros, which has to
+        // be done on the remote printer.
+        boolean transferredOK = false;
+        try
+        {
+            JSch jsch = new JSch();
+            steno.info("Connecting to SFTP service");
+            RoboxRemoteCommandInterface remoteCI = (RoboxRemoteCommandInterface)printerToUse.getCommandInterface();
+            RemoteDetectedPrinter remoteDevice = (RemoteDetectedPrinter)remoteCI.getPrinterHandle();
+            String hostAddress = remoteDevice.getServerPrinterIsAttachedTo().getServerIP();
+            String pp = "";
+            for (int i = 0; i < 9; ++i)
+                pp += Character.toString((char)((i % 2) == 0 ? pp1[i] + pp2[i] : pp2[i] - pp1[i]));
+            jsch.addIdentity(BaseConfiguration.getApplicationKeyDirectory() + PRIVATE_KEY, pp);
+            Session session = jsch.getSession(USER, hostAddress, 22);
+            java.util.Properties config = new java.util.Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
+            session.connect();
+            steno.info("Connected to host \"" + hostAddress + "\"");
+
+            SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor();
+            ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+            
+            steno.info("Transferring GCode");
+            SftpATTRS attrs = null;
+            String jobDirectory = BaseConfiguration.getRemotePrintJobDirectory() + printJobID;
+            try
+            {
+                attrs = channelSftp.stat(jobDirectory);
+            }
+            catch (Exception e)
+            {
+                steno.info("Job directory \"" + jobDirectory + "\" not found");
+            }
+
+            if (attrs == null)
+            {
+                steno.info("Creating job directory \"" + jobDirectory + "\"");
+                channelSftp.mkdir(jobDirectory);
+            }
+            channelSftp.put(gcodeFile.getCanonicalPath(),
+                            jobDirectory + "/" + gcodeFile.getName(),
+                            monitor);
+
+            steno.info("Transferred GCode");
+            remoteCI.startPrintJob(printJobID);
+            transferredOK = true;
+        }
+        catch (SftpException | JSchException | RoboxCommsException | IOException ex)
+        {
+            steno.error("Failed to transfer print job gcode \"" + gcodeFile + "\" to remote printer.");
+        }
+
+        return transferredOK;
+    }
+
 
 }
