@@ -85,6 +85,11 @@ public class BaseConfiguration
     private static String filamentFileDirectory = null;
     private static String userFilamentFileDirectory = null;
 
+    private static String applicationKeyDirectory = null;
+    public static final String applicationKeyPath = "Key";
+
+    private static final String remotePrintJobDirectory = "/home/pi/CEL Root/PrintJobs/";
+
     private static MachineType machineType = null;
 
     private static boolean autoRepairHeads = true;
@@ -373,6 +378,16 @@ public class BaseConfiguration
         return printerFileDirectory;
     }
 
+    public static String getApplicationKeyDirectory()
+    {
+        if (applicationKeyDirectory == null)
+        {
+            applicationKeyDirectory = applicationInstallDirectory + applicationKeyPath + '/';
+        }
+
+        return applicationKeyDirectory;
+    }
+
     public static String getExternalStaticDirectory() {
         loadConfigurationInstance();
         try
@@ -384,6 +399,10 @@ public class BaseConfiguration
             steno.info("No external static directory specified");
             return null;
         }
+    }
+    
+    public static String getRemotePrintJobDirectory() {
+        return remotePrintJobDirectory;
     }
 
     public static boolean isAutoRepairHeads()

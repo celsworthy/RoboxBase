@@ -139,4 +139,9 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     {
         remoteClient.overrideFilament(printerHandle.getConnectionHandle(), reelNumber, filament);
     }
+    
+    public void startPrintJob(String printJobID) throws RoboxCommsException
+    {
+        remoteClient.startPrintJob(printerHandle.getConnectionHandle(), printJobID);
+    }
 }

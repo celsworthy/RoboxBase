@@ -110,7 +110,7 @@ public final class Movement implements Renderable
         isZSet = false;
         z = 0.0;
     }
-    
+
     /**
      *
      * @return
