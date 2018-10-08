@@ -4832,16 +4832,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     suitablePrintJob.setdVolume(stats.getdVolumeUsed());
                     suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
                     suitablePrintJobs.add(suitablePrintJob);
+//                    if (suitablePrintJobs.size() == 10)
+//                        break;
                 }
-            }
-        }
-
-        if (suitablePrintJobs.size() > 10)
-        {
-            int maxIndex = suitablePrintJobs.size() - 1;
-            for (int index = maxIndex; index >= 10; index--)
-            {
-                suitablePrintJobs.remove(index);
             }
         }
 
