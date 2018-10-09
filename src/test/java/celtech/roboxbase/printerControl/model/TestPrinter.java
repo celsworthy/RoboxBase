@@ -1237,4 +1237,9 @@ public class TestPrinter implements Printer
     public void setPrinterConnection(PrinterConnection printerConnection) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    @Override
+    public void tidyProjectDirectories() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
