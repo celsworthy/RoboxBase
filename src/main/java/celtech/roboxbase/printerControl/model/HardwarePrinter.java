@@ -142,6 +142,7 @@ import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -150,6 +151,7 @@ import libertysystems.stenographer.StenographerFactory;
 public final class HardwarePrinter implements Printer, ErrorConsumer
 {
     private static final String ROOT_APPLICATION_SHORT_NAME = "Root";
+    private static final int MAX_RETAINED_PRINT_JOBS = 32;
     
     private final Stenographer steno = StenographerFactory.getStenographer(
             HardwarePrinter.class.getName());
@@ -4822,23 +4824,95 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                 if (material1RequirementsMet && material2RequirementsMet)
                 {
-                    //Yay - this one is suitable
-                    SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
-                    suitablePrintJob.setPrintJobID(stats.getPrintJobID());
-                    suitablePrintJob.setPrintJobName(stats.getProjectName());
-                    suitablePrintJob.setPrintProfileName(stats.getProfileName());
-                    suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
-                    suitablePrintJob.seteVolume(stats.geteVolumeUsed());
-                    suitablePrintJob.setdVolume(stats.getdVolumeUsed());
-                    suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
-                    suitablePrintJobs.add(suitablePrintJob);
-//                    if (suitablePrintJobs.size() == 10)
-//                        break;
+                    if (suitablePrintJobs.size() < MAX_RETAINED_PRINT_JOBS)
+                    {
+                        //Yay - this one is suitable
+                        SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
+                        suitablePrintJob.setPrintJobID(stats.getPrintJobID());
+                        suitablePrintJob.setPrintJobName(stats.getProjectName());
+                        suitablePrintJob.setPrintProfileName(stats.getProfileName());
+                        suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
+                        suitablePrintJob.seteVolume(stats.geteVolumeUsed());
+                        suitablePrintJob.setdVolume(stats.getdVolumeUsed());
+                        suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
+                        suitablePrintJobs.add(suitablePrintJob);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
         }
 
         return suitablePrintJobs;
+    }
+
+    @Override
+    public void tidyProjectDirectories()
+    {
+        BaseLookup.getTaskExecutor().runOnBackgroundThread(() -> {
+            List<PrintJobStatistics> orderedStats = new ArrayList<>();
+            List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+            
+            File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
+            for (File printJobDir : printSpoolDir.listFiles())
+            {
+                if (printJobDir.isDirectory())
+                {
+                    PrintJob pj = new PrintJob(printJobDir.getName());
+                    File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
+                    File statistics = new File(pj.getStatisticsFileLocation());
+                    
+                    boolean directoryValid = false;
+                    if (roboxisedGCode.exists() && statistics.exists())
+                    {
+                        //Valid files - does it work for us?
+                        try
+                        {
+                            PrintJobStatistics stats = pj.getStatistics();
+                            orderedStats.add(stats);
+                            directoryValid = true;
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        }
+                    }
+                    if (!directoryValid)
+                    {
+                        try
+                        {
+                            // Delete the invalid directory.
+                            FileUtils.deleteDirectory(printJobDir);
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to delete invalid project directory \"" + printJobDir.getName() + "\"", ex);
+                        }
+                    }
+                }
+            }
+            
+            orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
+            //Make sure the newest are at the top
+            Collections.reverse(orderedStats);
+            
+            if (orderedStats.size() > MAX_RETAINED_PRINT_JOBS)
+            {
+                // Delete the older projects as there are more than the max number to retain.
+                for (int index = MAX_RETAINED_PRINT_JOBS; index < orderedStats.size(); ++index)
+                {
+                    File printJobDir = new File(BaseConfiguration.getPrintSpoolDirectory() + File.separator + orderedStats.get(index).getPrintJobID());
+                    try
+                    {
+                        FileUtils.deleteDirectory(printJobDir);
+                    } catch (IOException ex)
+                    {
+                        steno.exception("Failed to delete project directory " + printJobDir, ex);
+                    }
+                }
+            }
+        });
     }
 
     @Override

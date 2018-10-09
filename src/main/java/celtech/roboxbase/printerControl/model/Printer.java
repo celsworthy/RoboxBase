@@ -580,6 +580,8 @@ public interface Printer extends RoboxResponseConsumer
     public CommandInterface getCommandInterface();
 
     public List<SuitablePrintJob> listJobsReprintableByMe();
+    
+    public void tidyProjectDirectories();
 
     public boolean reprintJob(String printJobID);
 
