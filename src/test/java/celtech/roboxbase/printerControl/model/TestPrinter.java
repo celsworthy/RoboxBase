@@ -1227,7 +1227,7 @@ public class TestPrinter implements Printer
     }
 
     @Override
-    public void tidyProjectDirectories() {
+    public void tidyPrintJobDirectories() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
