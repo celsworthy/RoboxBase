@@ -4859,7 +4859,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void tidyProjectDirectories()
+    public void tidyPrintJobDirectories()
     {
         BaseLookup.getTaskExecutor().runOnBackgroundThread(() -> {
             List<PrintJobStatistics> orderedStats = new ArrayList<>();
