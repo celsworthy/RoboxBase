@@ -405,14 +405,6 @@ public abstract class SlicerConfigWriter {
         
         String listString = unformattedString.trim();
         
-        if(listString.charAt(listString.length() - 1) == ',') {
-            listString = listString.substring(0, listString.length() - 1);
-        }
-        
-        if(listString.charAt(0) == ',') {
-            listString = listString.substring(1);
-        }
-        
         return "[" + listString + "]";
     }
     
