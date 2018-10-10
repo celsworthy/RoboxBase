@@ -1,5 +1,6 @@
 package celtech.roboxbase.appManager;
 
+import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -52,6 +53,20 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     {
         outputNotification("Reset serial number query");
         return RoboxResetIDResult.RESET_NOT_DONE;
+    }
+    
+    @Override
+    public Boolean showSignInDialogue() 
+    {
+        outputNotification("Sign in dialogue display");
+        return false;
+    }
+    
+    @Override
+    public LicenseCheckResult showRegisterPrinterDialogue() 
+    {
+        outputNotification("Register printer dialogue display");
+        return LicenseCheckResult.STILL_CHECKING;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package celtech.roboxbase.appManager;
 
+import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -40,6 +41,10 @@ public interface SystemNotificationManager
     boolean askUserToUpdateFirmware();
 
     RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID);
+    
+    Boolean showSignInDialogue();
+    
+    LicenseCheckResult showRegisterPrinterDialogue();
     
     void processErrorPacketFromPrinter(FirmwareError error, Printer printer);
 

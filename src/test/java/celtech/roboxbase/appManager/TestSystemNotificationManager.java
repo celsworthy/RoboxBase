@@ -1,5 +1,6 @@
 package celtech.roboxbase.appManager;
 
+import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -28,6 +29,18 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     public RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID)
     {
         return RoboxResetIDResult.RESET_NOT_DONE;
+    }
+    
+    @Override
+    public Boolean showSignInDialogue() 
+    {    
+        return false;
+    }
+    
+    @Override
+    public LicenseCheckResult showRegisterPrinterDialogue() 
+    {    
+        return LicenseCheckResult.STILL_CHECKING;
     }
 
     @Override
