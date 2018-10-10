@@ -1044,8 +1044,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle0Temperature = decimalFloatFormatter.parse(nozzle0TemperatureString).
-                        intValue();
+                this.nozzle0Temperature = Math.round(decimalFloatFormatter.parse(nozzle0TemperatureString).
+                        floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle temperature - " + nozzle0TemperatureString);
@@ -1057,8 +1057,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle0TargetTemperature = decimalFloatFormatter.parse(
-                        nozzle0TargetTemperatureString).intValue();
+                this.nozzle0TargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        nozzle0TargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle target temperature - "
@@ -1072,8 +1072,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle0FirstLayerTargetTemperature = decimalFloatFormatter.parse(
-                        nozzle0FirstLayerTargetTemperatureString).intValue();
+                this.nozzle0FirstLayerTargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        nozzle0FirstLayerTargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle first layer target temperature - "
@@ -1092,8 +1092,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle1Temperature = decimalFloatFormatter.parse(nozzle1TemperatureString).
-                        intValue();
+                this.nozzle1Temperature = Math.round(decimalFloatFormatter.parse(nozzle1TemperatureString).
+                        floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle temperature - " + nozzle1TemperatureString);
@@ -1105,8 +1105,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle1TargetTemperature = decimalFloatFormatter.parse(
-                        nozzle1TargetTemperatureString).intValue();
+                this.nozzle1TargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        nozzle1TargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle target temperature - "
@@ -1120,8 +1120,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.nozzle1FirstLayerTargetTemperature = decimalFloatFormatter.parse(
-                        nozzle1FirstLayerTargetTemperatureString).intValue();
+                this.nozzle1FirstLayerTargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        nozzle1FirstLayerTargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse nozzle first layer target temperature - "
@@ -1138,7 +1138,7 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.bedTemperature = decimalFloatFormatter.parse(bedTemperatureString).intValue();
+                this.bedTemperature = Math.round(decimalFloatFormatter.parse(bedTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse bed temperature - " + bedTemperatureString);
@@ -1150,8 +1150,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.bedTargetTemperature = decimalFloatFormatter.parse(bedTargetTemperatureString).
-                        intValue();
+                this.bedTargetTemperature = Math.round(decimalFloatFormatter.parse(bedTargetTemperatureString).
+                        floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse bed target temperature - " + bedTargetTemperatureString);
@@ -1164,8 +1164,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.bedFirstLayerTargetTemperature = decimalFloatFormatter.parse(
-                        bedFirstLayerTargetTemperatureString).intValue();
+                this.bedFirstLayerTargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        bedFirstLayerTargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse bed first layer target temperature - "
@@ -1181,8 +1181,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.ambientTemperature = decimalFloatFormatter.parse(ambientTemperatureString).
-                        intValue();
+                this.ambientTemperature = Math.round(decimalFloatFormatter.parse(ambientTemperatureString).
+                        floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse ambient temperature - " + ambientTemperatureString);
@@ -1194,8 +1194,8 @@ public class StatusResponse extends RoboxRxPacket
 
             try
             {
-                this.ambientTargetTemperature = decimalFloatFormatter.parse(
-                        ambientTargetTemperatureString).intValue();
+                this.ambientTargetTemperature = Math.round(decimalFloatFormatter.parse(
+                        ambientTargetTemperatureString).floatValue());
             } catch (ParseException ex)
             {
                 steno.error("Couldn't parse ambient target temperature - "
@@ -1280,7 +1280,7 @@ public class StatusResponse extends RoboxRxPacket
                 String nozzleInUseString = new String(byteData, byteOffset, 1, charsetToUse);
                 try
                 {
-                    this.nozzleInUse = decimalFloatFormatter.parse(nozzleInUseString).intValue();
+                    this.nozzleInUse = Math.round(decimalFloatFormatter.parse(nozzleInUseString).floatValue());
                 } catch (ParseException ex)
                 {
                     steno.error("Couldn't parse nozzle in use - " + nozzleInUseString);
