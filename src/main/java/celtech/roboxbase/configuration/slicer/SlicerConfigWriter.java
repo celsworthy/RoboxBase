@@ -404,7 +404,7 @@ public abstract class SlicerConfigWriter {
         }
         
         String listString = unformattedString.trim();
-        
+
         return "[" + listString + "]";
     }
     
