@@ -1,5 +1,6 @@
 package celtech.roboxbase.licensing;
 
+import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -38,8 +39,10 @@ public class LicenseManager {
     
     private static final String END_DATE_KEY = "END_DATE";
     private static final String PRINTER_ID_KEY = "PRINTER_ID";
+    private static final String LICENSE_TYPE_KEY = "LICENSE_TYPE";
     
     public LicenseCheckResult checkEncryptedLicenseFileValid(File encryptedLicenseFile, boolean cacheFile) {
+        STENO.trace("Begining check of encrypted license file");
         
         boolean licenseFileValid;
         String encryptedText = "";
@@ -54,8 +57,7 @@ public class LicenseManager {
             }
             encryptedText = stringBuilder.toString();
         } catch (IOException ex) {
-            STENO.error("Unexpected exception while trying to read license file");
-            STENO.error(ex.getMessage());    
+            STENO.exception("Unexpected exception while trying to read license file", ex);
         }
         
         String licenseText = decrypt(encryptedText, KEY_TO_THE_CRYPT);
@@ -63,6 +65,7 @@ public class LicenseManager {
         
         String licenseEndDate = "";
         List<String> printerIds = new ArrayList<>();
+        LicenseType licenseType = LicenseType.AUTOMAKER_FREE;
         
         for (String licenseLine : licenseInfo) {
             String[] lineInfo = licenseLine.split(":");
@@ -76,6 +79,12 @@ public class LicenseManager {
                 case PRINTER_ID_KEY:
                     printerIds.add(licenseInfoValue);
                     break;
+                case LICENSE_TYPE_KEY:
+                    if(licenseInfoValue.equals(LicenseType.AUTOMAKER_FREE.toString())) {
+                        licenseType = LicenseType.AUTOMAKER_FREE;
+                    } else if(licenseInfoValue.equals(LicenseType.AUTOMAKER_PRO.toString())) {
+                        licenseType = LicenseType.AUTOMAKER_PRO;
+                    }
             }
         }
         
@@ -93,6 +102,9 @@ public class LicenseManager {
             if(cacheFile) {
                 cacheLicenseFile(encryptedLicenseFile);
             }
+            
+            enableApplicationFeaturesBasedOnLicenseType(licenseType);
+            
             return LicenseCheckResult.LICENSE_VALID;
         }
         
@@ -159,9 +171,9 @@ public class LicenseManager {
         File cachedLicense = tryAndGetCachedLicenseFile();
         try {
             Files.copy(encryptedLicenseFile.toPath(), cachedLicense.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            STENO.debug("License file cached");
         } catch (IOException ex) {
-            STENO.error("Exception when caching license file.");
-            STENO.error(ex.getMessage());
+            STENO.exception("Exception when caching license file", ex);
         }
     }
     
@@ -174,11 +186,29 @@ public class LicenseManager {
     
     private File tryAndGetCachedLicenseFile() {
         File licenseDir = new File(BaseConfiguration.getApplicationStorageDirectory() 
-                + BaseConfiguration.LICERNSE_SUB_PATH);
+                + BaseConfiguration.LICENSE_SUB_PATH);
         if(!licenseDir.exists()) {
+            STENO.debug("License directory does not exist. Creating license directory here: " + licenseDir.getPath());
             licenseDir.mkdir();
         }
         File cachedLicense = new File(licenseDir.getPath() + "/automaker.lic");
         return cachedLicense;
+    }
+    
+    /**
+     * Enable and disable application features based on the type of license
+     * 
+     * @param licenseType 
+     */
+    private void enableApplicationFeaturesBasedOnLicenseType(LicenseType licenseType) {
+        if(licenseType.equals(LicenseType.AUTOMAKER_PRO)) {
+            STENO.info("License type of Automaker Pro, enabling associated features");
+            BaseConfiguration.enableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
+            BaseConfiguration.enableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+        } else if(licenseType.equals(LicenseType.AUTOMAKER_FREE)) {
+            STENO.info("License type of Automaker Free, enabling standard features");
+            BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
+            BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+        }
     }
 }

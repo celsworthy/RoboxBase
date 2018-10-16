@@ -415,7 +415,7 @@ public abstract class CommandInterface extends Thread
                     LicenseCheckResult licenseCheckResult = licenseManager.checkCachedLicenseFile();
                     
                     if(licenseCheckResult == LicenseCheckResult.NO_CACHED_LICENSE) {
-                        licenseCheckResult = BaseLookup.getSystemNotificationHandler().showRegisterPrinterDialogue();
+                        licenseCheckResult = BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
                     }
                     
                     switch(licenseCheckResult) {

@@ -63,7 +63,7 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
     
     @Override
-    public LicenseCheckResult showRegisterPrinterDialogue() 
+    public LicenseCheckResult showSelectLicenseDialogue() 
     {
         outputNotification("Register printer dialogue display");
         return LicenseCheckResult.STILL_CHECKING;

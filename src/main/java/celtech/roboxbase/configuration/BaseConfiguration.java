@@ -16,7 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import libertysystems.configuration.ConfigNotLoadedException;
@@ -127,7 +129,7 @@ public class BaseConfiguration
     public static final String macroFileExtension = ".gcode";
     public static final String macroFileSubpath = "Macros/";
 
-    public static final String LICERNSE_SUB_PATH = "License/";
+    public static final String LICENSE_SUB_PATH = "License/";
     
     private static String printProfileFileDirectory = null;
     private static String userPrintProfileFileDirectory = null;
@@ -145,6 +147,7 @@ public class BaseConfiguration
     private static final String fileMemoryItem = "FileMemory";
 
     private static final Set<ApplicationFeature> applicationFeatures = new HashSet();
+    private static final List<ApplicationFeatureListener> APPLICATION_FEATURE_LISTENERS = new ArrayList<>();
 
     public static void initialise(Class classToCheck)
     {
@@ -775,11 +778,13 @@ public class BaseConfiguration
     public static void enableApplicationFeature(ApplicationFeature feature)
     {
         applicationFeatures.add(feature);
+        APPLICATION_FEATURE_LISTENERS.forEach(listener -> listener.onFeatureEnabled(feature));
     }
 
     public static void disableApplicationFeature(ApplicationFeature feature)
     {
         applicationFeatures.remove(feature);
+        APPLICATION_FEATURE_LISTENERS.forEach(listener -> listener.onFeatureDisabled(feature));
     }
 
     public static boolean isApplicationFeatureEnabled(ApplicationFeature feature)
@@ -879,6 +884,21 @@ public class BaseConfiguration
                 }
             }
         }
+    }
+    
+    public static void addApplicationFeatureListener(ApplicationFeatureListener applicationFeatureListener) {
+        APPLICATION_FEATURE_LISTENERS.add(applicationFeatureListener);
+    }
+    
+    public static void removeApplicationFeatureListener(ApplicationFeatureListener applicationFeatureListener) {
+        APPLICATION_FEATURE_LISTENERS.remove(applicationFeatureListener);
+    }
+    
+    public static interface ApplicationFeatureListener {
+        
+        public void onFeatureEnabled(ApplicationFeature applicationFeature);
+        
+        public void onFeatureDisabled(ApplicationFeature applicationFeature);
     }
 
 }

@@ -9,10 +9,10 @@ import org.killbill.billing.client.KillBillClientException;
  */
 public class KillbillAccountServiceTest {
     
-    KillbillAccountService killbillAccountService = new KillbillAccountService();
-    
-    @Test
-    public void testCreateAccount() throws KillBillClientException {
-        killbillAccountService.createAccount("thing", "thing@thing.com");
-    }
+//    KillbillAccountService killbillAccountService = new KillbillAccountService();
+//    
+//    @Test
+//    public void testCreateAccount() throws KillBillClientException {
+//        killbillAccountService.createAccount("thing", "thing@thing.com");
+//    }
 }

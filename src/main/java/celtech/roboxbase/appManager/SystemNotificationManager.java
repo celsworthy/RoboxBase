@@ -44,7 +44,7 @@ public interface SystemNotificationManager
     
     Boolean showSignInDialogue();
     
-    LicenseCheckResult showRegisterPrinterDialogue();
+    LicenseCheckResult showSelectLicenseDialogue();
     
     void processErrorPacketFromPrinter(FirmwareError error, Printer printer);
 
