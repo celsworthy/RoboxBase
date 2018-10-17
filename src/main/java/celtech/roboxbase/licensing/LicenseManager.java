@@ -2,9 +2,11 @@ package celtech.roboxbase.licensing;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.printerControl.model.PrinterListChangesListener;
+import celtech.roboxbase.printerControl.model.Reel;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -18,6 +20,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javafx.collections.ObservableList;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -35,17 +38,90 @@ public class LicenseManager {
     
     private static final Stenographer STENO = StenographerFactory.getStenographer(LicenseManager.class.getName());
     
+    private static LicenseManager instance;
+    
     private static final String KEY_TO_THE_CRYPT = "4893AF234EEF124326DDE98ED93284BB";
     
     private static final String END_DATE_KEY = "END_DATE";
     private static final String PRINTER_ID_KEY = "PRINTER_ID";
     private static final String LICENSE_TYPE_KEY = "LICENSE_TYPE";
     
-    public LicenseCheckResult checkEncryptedLicenseFileValid(File encryptedLicenseFile, boolean cacheFile) {
-        STENO.trace("Begining check of encrypted license file");
-        
+    private static final List<LicenseChangeListener> LICENSE_CHANGE_LISTENERS = new ArrayList<>();
+    
+    /**
+     * Class is singleton
+     * Do not allow instantiation outside of class.
+     */
+    private LicenseManager() {
+        BaseLookup.getPrinterListChangesNotifier().addListener(new LicenseValidator());
+    }
+    
+    public static LicenseManager getInstance() {
+        if(instance == null) {
+            instance = new LicenseManager();
+        }
+        return instance;
+    }
+    
+    private void validateLicense() {
         boolean licenseFileValid;
-        String encryptedText = "";
+        Optional<License> potentialLicence = readCachedLicenseFile();
+        if(potentialLicence.isPresent()) {
+            licenseFileValid = checkLicense(potentialLicence.get());
+        } else {
+            licenseFileValid = BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
+        }
+        
+        // What to do if license is not valid? Generate free license?
+    }
+    
+    public boolean checkEncryptedLicenseFileValid(File encryptedLicenseFile) {
+        boolean licenseFileValid = false;
+        Optional<License> potentialLicense = readLicenseFile(encryptedLicenseFile);
+        if(potentialLicense.isPresent()) {
+            licenseFileValid = checkLicense(potentialLicense.get());
+            
+            if(licenseFileValid) {
+                cacheLicenseFile(encryptedLicenseFile);
+            }
+        }
+        
+        return licenseFileValid;
+    }
+    
+    public Optional<License> readCachedLicenseFile() {
+        File licenseFile = tryAndGetCachedLicenseFile();
+        if(licenseFile.exists()) {
+            STENO.debug("Reading cached license file");
+            return readLicenseFile(licenseFile);
+        }
+        
+        STENO.debug("There is no cached license");
+        return Optional.empty();
+    }
+    
+    private boolean checkLicense(License license) {
+        boolean licenseStillInDate = license.checkLicenseActive();
+
+        ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
+        //True if the list of registered printers on the license matches any that are connected.
+        boolean printerIdMatch = printers.stream().anyMatch(
+                (printer) -> (license.containsPrinterId(printer.getPrinterIdentity().toString())));
+
+        boolean licenseFileValid = printerIdMatch && licenseStillInDate;
+
+        if(licenseFileValid) {
+            enableApplicationFeaturesBasedOnLicenseType(license.getLicenseType());
+            LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenseChange(license));
+        }
+        
+        return licenseFileValid;
+    }
+    
+    private Optional<License> readLicenseFile(File encryptedLicenseFile) {
+        STENO.trace("Begining read of encrypted license file");
+        
+        String encryptedText;
         
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(encryptedLicenseFile))) {
             StringBuilder stringBuilder = new StringBuilder();
@@ -58,12 +134,13 @@ public class LicenseManager {
             encryptedText = stringBuilder.toString();
         } catch (IOException ex) {
             STENO.exception("Unexpected exception while trying to read license file", ex);
+            return Optional.empty();
         }
         
         String licenseText = decrypt(encryptedText, KEY_TO_THE_CRYPT);
         String[] licenseInfo = licenseText.split("\\r?\\n");
         
-        String licenseEndDate = "";
+        String licenseEndDateString = "";
         List<String> printerIds = new ArrayList<>();
         LicenseType licenseType = LicenseType.AUTOMAKER_FREE;
         
@@ -74,7 +151,7 @@ public class LicenseManager {
             
             switch(licenseInfoKey) {
                 case END_DATE_KEY:
-                    licenseEndDate = licenseInfoValue;
+                    licenseEndDateString = licenseInfoValue;
                     break;
                 case PRINTER_ID_KEY:
                     printerIds.add(licenseInfoValue);
@@ -88,36 +165,11 @@ public class LicenseManager {
             }
         }
         
-        boolean licenseStillInDate = checkLicenseActive(licenseEndDate);
+        LocalDate licenseEndDate = parseDate(licenseEndDateString);
         
-        ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
-        
-        //True if the list of registered printers on the license matches any that are connected.
-        boolean printerIdMatch = printers.stream().anyMatch(
-                (printer) -> (printerIds.contains(printer.getPrinterIdentity().toString())));
-        
-        licenseFileValid = printerIdMatch && licenseStillInDate;
-        
-        if(licenseFileValid) {
-            if(cacheFile) {
-                cacheLicenseFile(encryptedLicenseFile);
-            }
-            
-            enableApplicationFeaturesBasedOnLicenseType(licenseType);
-            
-            return LicenseCheckResult.LICENSE_VALID;
-        }
-        
-        return LicenseCheckResult.LICENSE_NOT_VALID;
-    }
-    
-    public LicenseCheckResult checkCachedLicenseFile() {
-        File licenseFile = tryAndGetCachedLicenseFile();
-        if(licenseFile.exists()) {
-            return checkEncryptedLicenseFileValid(licenseFile, false);
-        }
-        
-        return LicenseCheckResult.NO_CACHED_LICENSE;
+        License license = new License(licenseType, licenseEndDate, printerIds);
+        STENO.debug("License file read with type of: " + license.getLicenseType());
+        return Optional.of(license);
     }
     
     // TODO: Move this to a shared class
@@ -177,11 +229,10 @@ public class LicenseManager {
         }
     }
     
-    private boolean checkLicenseActive(String endDate) {
+    private LocalDate parseDate(String date) {
         DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE;
-        LocalDate localDate = LocalDate.now();
-        LocalDate licenseEndDate = LocalDate.parse(endDate, dtf);
-        return localDate.isBefore(licenseEndDate);
+        LocalDate parsedDate = LocalDate.parse(date, dtf);
+        return parsedDate;
     }
     
     private File tryAndGetCachedLicenseFile() {
@@ -210,5 +261,58 @@ public class LicenseManager {
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
         }
+    }
+    
+    public void addLicenseChangeListener(LicenseChangeListener licenseChangeListener) {
+        LICENSE_CHANGE_LISTENERS.add(licenseChangeListener);
+    }
+    
+    public void removeLicenseChangeListener(LicenseChangeListener licenseChangeListener) {
+        LICENSE_CHANGE_LISTENERS.remove(licenseChangeListener);
+    }
+        
+    /**
+     * Interface for a listener that is used when the license has changed
+     */
+    public static interface LicenseChangeListener {
+    
+        /**
+         * Called when the license has been changed
+         * 
+         * @param license the new license
+         */
+        void onLicenseChange(License license);
+    }
+
+    private class LicenseValidator implements PrinterListChangesListener {
+        
+        @Override
+        public void whenPrinterAdded(Printer printer) {
+            validateLicense();
+        }
+
+        @Override
+        public void whenPrinterRemoved(Printer printer) {}
+
+        @Override
+        public void whenHeadAdded(Printer printer) {}
+
+        @Override
+        public void whenHeadRemoved(Printer printer, Head head) {}
+
+        @Override
+        public void whenReelAdded(Printer printer, int reelIndex) {}
+
+        @Override
+        public void whenReelRemoved(Printer printer, Reel reel, int reelIndex) {}
+
+        @Override
+        public void whenReelChanged(Printer printer, Reel reel) {}
+
+        @Override
+        public void whenExtruderAdded(Printer printer, int extruderIndex) {}
+
+        @Override
+        public void whenExtruderRemoved(Printer printer, int extruderIndex) {}
     }
 }
