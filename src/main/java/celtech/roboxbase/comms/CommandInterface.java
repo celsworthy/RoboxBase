@@ -23,12 +23,16 @@ import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.licensing.License;
 import celtech.roboxbase.licensing.LicenseManager;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
 import celtech.roboxbase.services.firmware.FirmwareLoadService;
 import celtech.roboxbase.utils.PrinterUtils;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
 import libertysystems.configuration.ConfigItemIsAnArray;
@@ -395,7 +399,7 @@ public abstract class CommandInterface extends Thread
                         CoreMemory.getInstance().setLastPrinterSerial(printerIDToUse);
                         CoreMemory.getInstance().setLastPrinterFirmwareVersion(firmwareVersionInUse);
 
-                        commsState = RoboxCommsState.CHECKING_LICENSE;
+                        commsState = RoboxCommsState.CONNECTED;
                     } catch (RoboxCommsException ex)
                     {
                         if (printerFriendlyName != null)
@@ -409,26 +413,6 @@ public abstract class CommandInterface extends Thread
                         shutdown();
                     }
 
-                    break;
-                case CHECKING_LICENSE:
-                    LicenseManager licenseManager = new LicenseManager();
-                    LicenseCheckResult licenseCheckResult = licenseManager.checkCachedLicenseFile();
-                    
-                    if(licenseCheckResult == LicenseCheckResult.NO_CACHED_LICENSE) {
-                        licenseCheckResult = BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
-                    }
-                    
-                    switch(licenseCheckResult) {
-                        case LICENSE_VALID:
-                            steno.info("License key valid");
-                            commsState = RoboxCommsState.CONNECTED;
-                            break;
-                        case LICENSE_NOT_VALID:
-                        case STILL_CHECKING:
-                        default:
-                            break;
-                    }
-                    
                     break;
                 case CONNECTED:
                     try

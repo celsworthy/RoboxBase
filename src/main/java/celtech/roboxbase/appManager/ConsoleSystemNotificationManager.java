@@ -1,6 +1,5 @@
 package celtech.roboxbase.appManager;
 
-import celtech.roboxbase.comms.LicenseCheckResult;
 import celtech.roboxbase.comms.RoboxResetIDResult;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.comms.rx.FirmwareError;
@@ -63,10 +62,10 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
     
     @Override
-    public LicenseCheckResult showSelectLicenseDialogue() 
+    public boolean showSelectLicenseDialogue() 
     {
         outputNotification("Register printer dialogue display");
-        return LicenseCheckResult.STILL_CHECKING;
+        return false;
     }
 
     @Override
