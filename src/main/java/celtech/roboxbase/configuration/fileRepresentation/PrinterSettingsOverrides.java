@@ -174,6 +174,17 @@ public class PrinterSettingsOverrides
             profileCopy.addOrOverride("numberOfPerimeters", "1");
         }
 
+        // Overrides what is on profile. Unless AS_PROFILE is selected.
+        if(printSupportTypeOverride.get().equals(SupportType.MATERIAL_1)) {
+            profileCopy.addOrOverride("supportNozzle", "1");
+            profileCopy.addOrOverride("supportInterfaceNozzle", "1");
+            profileCopy.addOrOverride("raftBrimNozzle", "1");
+        } else if (printSupportTypeOverride.get().equals(SupportType.MATERIAL_2)) {
+            profileCopy.addOrOverride("supportNozzle", "0");
+            profileCopy.addOrOverride("supportInterfaceNozzle", "0");
+            profileCopy.addOrOverride("raftBrimNozzle", "0");
+        }
+        
         return profileCopy;
     }
 

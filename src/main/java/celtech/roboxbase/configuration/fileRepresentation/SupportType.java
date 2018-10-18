@@ -10,7 +10,11 @@ public enum SupportType {
     /**
      * Use material 2 as support. Implies all objects printed with material 1.
      */
-    MATERIAL_2("supportType.material2", 1);
+    MATERIAL_2("supportType.material2", 1),
+    /**
+     * Use the material options specified in the profile.
+     */
+    AS_PROFILE("supportType.profile", 0);
 
     private final String description;
     private final int extruderNumber;
