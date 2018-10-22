@@ -10,15 +10,18 @@ import java.util.List;
  */
 public class License {
     
+    private final String owner;
+    
     private final LicenseType licenseType;
     
     private final LocalDate endDate;
     
     private final List<String> printerIds;
     
-    public License(LicenseType licenseType, LocalDate endDate, List<String> printerIds) {
+    public License(LicenseType licenseType, LocalDate endDate, String owner, List<String> printerIds) {
         this.licenseType = licenseType;
         this.endDate = endDate;
+        this.owner = owner;
         this.printerIds = printerIds;
     }
     
@@ -38,6 +41,10 @@ public class License {
             return "AutoMaker Free";
         } 
     }
+    
+    public String getOwner() {
+        return owner;
+    }
 
     public LicenseType getLicenseType() {
         return licenseType;
@@ -51,8 +58,25 @@ public class License {
         return printerIds;
     }
     
+    public String toShortString() {
+        return getFriendlyLicenseType() + " - Expires: " + endDate;
+    }
+    
+    private String buildPrinterIdsString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Associated Printer IDs:");
+        printerIds.forEach(id -> {
+            stringBuilder.append("\n");
+            stringBuilder.append(id);
+        });
+        return stringBuilder.toString();
+    }
+    
     @Override
     public String toString() {
-        return getFriendlyLicenseType() + " - Expires: " + endDate.toString();
+        return "License issued to: " + owner + "\n"
+                + "License type: " + getFriendlyLicenseType() + "\n"
+                + "Expires: " + endDate + "\n"
+                + buildPrinterIdsString();
     }
 }

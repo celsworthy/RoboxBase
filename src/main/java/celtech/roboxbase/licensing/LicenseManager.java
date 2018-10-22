@@ -42,6 +42,7 @@ public class LicenseManager {
     
     private static final String KEY_TO_THE_CRYPT = "4893AF234EEF124326DDE98ED93284BB";
     
+    private static final String OWNER_KEY = "OWNER";
     private static final String END_DATE_KEY = "END_DATE";
     private static final String PRINTER_ID_KEY = "PRINTER_ID";
     private static final String LICENSE_TYPE_KEY = "LICENSE_TYPE";
@@ -63,62 +64,97 @@ public class LicenseManager {
         return instance;
     }
     
-    private void validateLicense() {
-        boolean licenseFileValid;
+    private boolean validateLicense() {
         Optional<License> potentialLicence = readCachedLicenseFile();
         if(potentialLicence.isPresent()) {
-            licenseFileValid = checkLicense(potentialLicence.get());
-        } else {
-            licenseFileValid = BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
+            return validateLicense(potentialLicence.get(), true);
         }
+        
+        return BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
         
         // What to do if license is not valid? Generate free license?
     }
     
-    public boolean checkEncryptedLicenseFileValid(File encryptedLicenseFile) {
-        boolean licenseFileValid = false;
-        Optional<License> potentialLicense = readLicenseFile(encryptedLicenseFile);
-        if(potentialLicense.isPresent()) {
-            licenseFileValid = checkLicense(potentialLicense.get());
-            
-            if(licenseFileValid) {
-                cacheLicenseFile(encryptedLicenseFile);
+    public boolean validateLicense(License license, boolean activateLicense) {
+        if(licenseContainsAConnectedPrinter(license)) {
+            if (isLicenseFreeVersion(license) || license.checkLicenseActive()) {
+                if(activateLicense) {
+                    enableApplicationFeaturesBasedOnLicenseType(license.getLicenseType());
+                    LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenseChange(license));
+                }
+                return true;
             }
         }
         
+        return false;
+    }
+    
+    public boolean checkEncryptedLicenseFileValid(File encryptedLicenseFile, boolean cacheFile, boolean activateLicense) {
+        boolean licenseFileValid = false;
+        Optional<License> potentialLicense = readEncryptedLicenseFile(encryptedLicenseFile);
+        if(potentialLicense.isPresent()) {
+            licenseFileValid = validateLicense(potentialLicense.get(), activateLicense);
+        }
+        
+        if(licenseFileValid && cacheFile) {
+            cacheLicenseFile(encryptedLicenseFile);
+        }
+
         return licenseFileValid;
     }
     
+    
+    /**
+     * If a cached License file exists it will return as an Optional,
+     * if not an empty Optional is returned
+     * 
+     * @return 
+     */
     public Optional<License> readCachedLicenseFile() {
         File licenseFile = tryAndGetCachedLicenseFile();
         if(licenseFile.exists()) {
             STENO.debug("Reading cached license file");
-            return readLicenseFile(licenseFile);
+            return readEncryptedLicenseFile(licenseFile);
         }
         
         STENO.debug("There is no cached license");
         return Optional.empty();
     }
     
-    private boolean checkLicense(License license) {
-        boolean licenseStillInDate = license.checkLicenseActive();
-
-        ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
-        //True if the list of registered printers on the license matches any that are connected.
-        boolean printerIdMatch = printers.stream().anyMatch(
-                (printer) -> (license.containsPrinterId(printer.getPrinterIdentity().toString())));
-
-        boolean licenseFileValid = printerIdMatch && licenseStillInDate;
-
-        if(licenseFileValid) {
-            enableApplicationFeaturesBasedOnLicenseType(license.getLicenseType());
-            LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenseChange(license));
+    /**
+     * Takes a file and copies it into APPDATA as a License file
+     * 
+     * @param encryptedLicenseFile file to be cached
+     */
+    private void cacheLicenseFile(File encryptedLicenseFile) {
+        File cachedLicense = tryAndGetCachedLicenseFile();
+        try {
+            Files.copy(encryptedLicenseFile.toPath(), cachedLicense.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            STENO.debug("License file cached");
+        } catch (IOException ex) {
+            STENO.exception("Exception when caching license file", ex);
         }
-        
-        return licenseFileValid;
     }
     
-    private Optional<License> readLicenseFile(File encryptedLicenseFile) {
+    /**
+     * Try and find a cached license file. Method will create License directory in 
+     * APPDATA if it doesn't already exist. Will return a file with a full path ending
+     * /License/automaker.lic although the File may not exist.
+     * 
+     * @return License File that may not exist
+     */
+    private File tryAndGetCachedLicenseFile() {
+        File licenseDir = new File(BaseConfiguration.getApplicationStorageDirectory() 
+                + BaseConfiguration.LICENSE_SUB_PATH);
+        if(!licenseDir.exists()) {
+            STENO.debug("License directory does not exist. Creating license directory here: " + licenseDir.getPath());
+            licenseDir.mkdir();
+        }
+        File cachedLicense = new File(licenseDir.getPath() + "/automaker.lic");
+        return cachedLicense;
+    }
+    
+    public Optional<License> readEncryptedLicenseFile(File encryptedLicenseFile) {
         STENO.trace("Begining read of encrypted license file");
         
         String encryptedText;
@@ -140,6 +176,7 @@ public class LicenseManager {
         String licenseText = decrypt(encryptedText, KEY_TO_THE_CRYPT);
         String[] licenseInfo = licenseText.split("\\r?\\n");
         
+        String owner = "";
         String licenseEndDateString = "";
         List<String> printerIds = new ArrayList<>();
         LicenseType licenseType = LicenseType.AUTOMAKER_FREE;
@@ -150,6 +187,9 @@ public class LicenseManager {
             String licenseInfoValue = lineInfo[1];
             
             switch(licenseInfoKey) {
+                case OWNER_KEY:
+                    owner = licenseInfoValue;
+                    break;
                 case END_DATE_KEY:
                     licenseEndDateString = licenseInfoValue;
                     break;
@@ -167,7 +207,7 @@ public class LicenseManager {
         
         LocalDate licenseEndDate = parseDate(licenseEndDateString);
         
-        License license = new License(licenseType, licenseEndDate, printerIds);
+        License license = new License(licenseType, licenseEndDate, owner, printerIds);
         STENO.debug("License file read with type of: " + license.getLicenseType());
         return Optional.of(license);
     }
@@ -218,32 +258,41 @@ public class LicenseManager {
             throw new IllegalStateException("Unexpected exception during decryption", e);
         }
     }
-    
-    private void cacheLicenseFile(File encryptedLicenseFile) {
-        File cachedLicense = tryAndGetCachedLicenseFile();
-        try {
-            Files.copy(encryptedLicenseFile.toPath(), cachedLicense.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            STENO.debug("License file cached");
-        } catch (IOException ex) {
-            STENO.exception("Exception when caching license file", ex);
-        }
-    }
-    
+        
+    /**
+     * Turn a date String in the form of yyyy-MM-dd into a {@link LocalDate}
+     *
+     * @param date date in the form of a String
+     * @return
+     */
     private LocalDate parseDate(String date) {
         DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE;
         LocalDate parsedDate = LocalDate.parse(date, dtf);
         return parsedDate;
     }
     
-    private File tryAndGetCachedLicenseFile() {
-        File licenseDir = new File(BaseConfiguration.getApplicationStorageDirectory() 
-                + BaseConfiguration.LICENSE_SUB_PATH);
-        if(!licenseDir.exists()) {
-            STENO.debug("License directory does not exist. Creating license directory here: " + licenseDir.getPath());
-            licenseDir.mkdir();
-        }
-        File cachedLicense = new File(licenseDir.getPath() + "/automaker.lic");
-        return cachedLicense;
+    /**
+     * Check if the a license contains the id of a connected printer
+     * 
+     * @param license
+     * @return 
+     */
+    private boolean licenseContainsAConnectedPrinter(License license) {
+        ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
+        //True if the list of registered printers on the license matches any that are connected.
+        boolean printerIdMatch = printers.stream().anyMatch(
+                (printer) -> (license.containsPrinterId(printer.getPrinterIdentity().toString())));
+        return printerIdMatch;
+    }
+    
+    /**
+     * Check if the license is a free license
+     * 
+     * @param license
+     * @return 
+     */
+    private boolean isLicenseFreeVersion(License license) {
+        return license.getLicenseType() == LicenseType.AUTOMAKER_FREE;
     }
     
     /**
@@ -284,6 +333,9 @@ public class LicenseManager {
         void onLicenseChange(License license);
     }
 
+    /**
+     * Listener to validate license when a printer is connected
+     */
     private class LicenseValidator implements PrinterListChangesListener {
         
         @Override
