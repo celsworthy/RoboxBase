@@ -404,8 +404,12 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 idResponse.setModel("RBX01");
             }
             // this dummy year marks this printer as a dummy printer
+            idResponse.setWeekOfManufacture("00");
             idResponse.setYearOfManufacture(dummyYear);
+            idResponse.setPoNumber("0000000");
+            idResponse.setSerialNumber("0000");
             idResponse.setPrinterFriendlyName(printerName);
+            idResponse.setCheckByte("7");
             idResponse.setPrinterColour(Color.web("#FF0082").toString());
             response = (RoboxRxPacket) idResponse;
         } else if (messageToWrite instanceof StatusRequest)
