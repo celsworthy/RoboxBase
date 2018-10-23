@@ -90,63 +90,68 @@ public class CommandHistory {
     public void dumpHistory()
     {
         completeSave();
-        int nCommands = (cchEnd + size - cchStart) % size;
-        steno.passthrough("Dump of the last " + nCommands + " commands sent to the printer");
-        for (int index = 0; index < nCommands; ++index)
+        if (cchEnd != cchStart)
         {
-            CommandAndResponse car = circularCommandHistory[index % size];
-            StringBuilder output = new StringBuilder();
-            output.append("[");
-            output.append(index + 1);
-            output.append("] =======================================\n");
-            if (car.command != null)
+            int nCommands = (cchEnd + size - cchStart) % size;
+            steno.passthrough("Dump of the last " + nCommands + " commands sent to the printer");
+            for (int index = 0; index < nCommands; ++index)
             {
-                output.append("Command code: ");
-                output.append(String.format("0x%02X", car.command.getPacketType().getCommandByte()));
+                CommandAndResponse car = circularCommandHistory[index % size];
+                StringBuilder output = new StringBuilder();
+                output.append("[");
+                output.append(index + 1);
+                output.append("] =======================================\n");
+                if (car.command != null)
+                {
+                    output.append("Command code: ");
+                    output.append(String.format("0x%02X", car.command.getPacketType().getCommandByte()));
+                    output.append(" : ");
+                    output.append(car.command.getPacketType().toString());
+                    output.append(" -> ");
+                    output.append(car.command.getPacketType().getExpectedResponse().toString());
+                    output.append("\n");
+                    if (car.command.getMessagePayload() != null)
+                    {
+                        output.append("Payload: \"");
+                        output.append(car.command.getMessagePayload());
+                        output.append("\"\n");
+                    }
+                }
+                output.append("Response code = ");
+                output.append(String.format("0x%02X", car.responseCode));
                 output.append(" : ");
-                output.append(car.command.getPacketType().toString());
-                output.append(" -> ");
-                output.append(car.command.getPacketType().getExpectedResponse().toString());
+                RxPacketTypeEnum rxPacketType = RxPacketTypeEnum.getEnumForCommand(car.responseCode);
+                if (rxPacketType != null)
+                    output.append(rxPacketType.toString());
+                else
+                    output.append("<UNKNOWN>");
                 output.append("\n");
-                if (car.command.getMessagePayload() != null)
+                if (car.responsePacket != null)
                 {
                     output.append("Payload: \"");
-                    output.append(car.command.getMessagePayload());
+                    output.append(car.responsePacket.getMessagePayload());
                     output.append("\"\n");
                 }
+                else if (car.rawResponse != null)
+                {
+                    output.append("Raw response = \n");
+                    for (int bIndex = 0; bIndex < car.rawResponse.length; ++bIndex)
+                        output.append(String.format("0x%02X ", car.rawResponse[bIndex]));
+                    output.append("\n");
+                }
+                if (car.excess != null)
+                {
+                    output.append("Excess = \n");
+                    for (int eIndex = 0; eIndex < car.excess.length; ++eIndex)
+                        output.append(String.format("0x%02X ", car.excess[eIndex]));
+                    output.append("\n");
+                }
+                output.append("-----------------------------------------\n");
+
+                steno.passthrough(output.toString());
             }
-            output.append("Response code = ");
-            output.append(String.format("0x%02X", car.responseCode));
-            output.append(" : ");
-            RxPacketTypeEnum rxPacketType = RxPacketTypeEnum.getEnumForCommand(car.responseCode);
-            if (rxPacketType != null)
-                output.append(rxPacketType.toString());
-            else
-                output.append("<UNKNOWN>");
-            output.append("\n");
-            if (car.responsePacket != null)
-            {
-                output.append("Payload: \"");
-                output.append(car.responsePacket.getMessagePayload());
-                output.append("\"\n");
-            }
-            else if (car.rawResponse != null)
-            {
-                output.append("Raw response = \n");
-                for (int bIndex = 0; bIndex < car.rawResponse.length; ++bIndex)
-                    output.append(String.format("0x%02X ", car.rawResponse[bIndex]));
-                output.append("\n");
-            }
-            if (car.excess != null)
-            {
-                output.append("Excess = \n");
-                for (int eIndex = 0; eIndex < car.excess.length; ++eIndex)
-                    output.append(String.format("0x%02X ", car.excess[eIndex]));
-                output.append("\n");
-            }
-            output.append("-----------------------------------------\n");
-            
-            steno.passthrough(output.toString());
+            // Clear history so it is not dumped again.
+            cchStart = cchEnd;
         }
     }   
 }

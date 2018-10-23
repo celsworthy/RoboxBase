@@ -1,5 +1,6 @@
 package celtech.roboxbase.services.printing;
 
+import celtech.roboxbase.comms.DetectedServer;
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
@@ -38,9 +39,11 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
     {
         long count = 0;
         long fileSize = 0;
+        DetectedServer server;
         
-        public TransferProgressMonitor()
+        public TransferProgressMonitor(DetectedServer server)
         {
+            this.server = server;
         }
 
         @Override
@@ -48,14 +51,18 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         {
             this.fileSize = fileSize;
             this.count = 0;
-            steno.info("Initialise file transfer: src = \"" + src + "\", dst = \"" + dest + "\", fileSize = " + Long.toString(fileSize));
+            if (server != null)
+                server.resetPollCount();
+            steno.debug("Initialise file transfer: src = \"" + src + "\", dst = \"" + dest + "\", fileSize = " + Long.toString(fileSize));
         }
 
         @Override
         public boolean count(long count)
         {
-          steno.info("Transfer progress: count = " + Long.toString(count) + " of " + Long.toString(fileSize));
+          steno.debug("Transfer progress: count = " + Long.toString(count) + " of " + Long.toString(fileSize));
           updateProgress((float) count, (float) fileSize);
+          if (server != null)
+                server.resetPollCount();
           return !isCancelled();
         }
         
@@ -141,7 +148,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         {
             //We're talking to a remote printer
             //Send the statistics if they exist
-            if (printJobStatistics != null)
+            if (!gcodeFile.getParent().endsWith("Macros") && printJobStatistics != null)
             {
                 try
                 {
@@ -157,7 +164,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         {
             updateMessage("Transferring GCode");
 
-            if (printerIsRemote && !gcodeFile.getParent().endsWith("Macro") && printUsingSDCard && startFromSequenceNumber == 0)
+            if (printerIsRemote && !gcodeFile.getParent().endsWith("Macros") && printUsingSDCard && startFromSequenceNumber == 0)
                 gotToEndOK = transferToRemotePrinter(gcodeFile);
             else
                 gotToEndOK = transferToPrinter(gcodeFile);
@@ -291,9 +298,9 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             config.put("StrictHostKeyChecking", "no");
             session.setConfig(config);
             session.connect();
-            steno.info("Connected to host \"" + hostAddress + "\"");
+            steno.debug("Connected to host \"" + hostAddress + "\"");
 
-            SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor();
+            SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor(remoteDevice.getServerPrinterIsAttachedTo());
             ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
             channelSftp.connect();
             
@@ -311,7 +318,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
 
             if (attrs == null)
             {
-                steno.info("Creating job directory \"" + jobDirectory + "\"");
+                steno.debug("Creating job directory \"" + jobDirectory + "\"");
                 channelSftp.mkdir(jobDirectory);
             }
             channelSftp.put(gcodeFile.getCanonicalPath(),
@@ -324,11 +331,9 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         }
         catch (SftpException | JSchException | RoboxCommsException | IOException ex)
         {
-            steno.error("Failed to transfer print job gcode \"" + gcodeFile + "\" to remote printer.");
+            steno.exception("Failed to transfer print job gcode \"" + gcodeFile + "\" to remote printer.", ex);
         }
 
         return transferredOK;
     }
-
-
 }
