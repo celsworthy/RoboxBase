@@ -75,7 +75,7 @@ public final class DetectedServer
     @JsonIgnore
     public static final int connectTimeOutLong = 2000;
     @JsonIgnore
-    public static final int maxAllowedPollCount = 5;
+    public static final int maxAllowedPollCount = 8;
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
@@ -130,6 +130,11 @@ public final class DetectedServer
     public int getPollCount()
     {
         return pollCount;
+    }
+
+    public void resetPollCount()
+    {
+        pollCount = 0;
     }
 
     public boolean maxPollCountExceeded()
@@ -375,6 +380,7 @@ public final class DetectedServer
 
             if (responseCode == 200)
             {
+                pollCount = 0; // Contact! Zero the poll count;
                 int availChars = con.getInputStream().available();
                 byte[] inputData = new byte[availChars];
                 con.getInputStream().read(inputData, 0, availChars);
@@ -386,7 +392,6 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    pollCount = 0; // Successful contact, so zero the poll count;
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
@@ -397,18 +402,18 @@ public final class DetectedServer
                 }
             } else
             {
-                disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
+                //disconnect();
             }
         } catch (java.net.SocketTimeoutException stex)
         {
             long t2 = System.currentTimeMillis();
-            steno.error("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
-            disconnect();
+            steno.warning("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            //disconnect();
         }
         catch (IOException ex)
         {
-            steno.error("Error whilst asking who are you @ " + address.getHostAddress());
+            steno.exception("Error whilst asking who are you @ " + address.getHostAddress(), ex);
             disconnect();
         }
         return gotAResponse;

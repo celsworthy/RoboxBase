@@ -212,4 +212,19 @@ public class RemoteClient implements LowLevelInterface
             throw new RoboxCommsException(message);
         }
     }
+
+    public void cancelPrint(String printerID, boolean safetyOn) throws RoboxCommsException
+    {
+        try
+        {
+            String jsonified = "\"" + mapper.writeValueAsString(safetyOn) + "\""; // Not sure why this needs to be in quotes, but it doesn't work without.
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/cancel/", jsonified, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to cancel print on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
 }

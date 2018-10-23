@@ -12,6 +12,7 @@ import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.utils.tasks.Cancellable;
 
 /**
  *
@@ -125,6 +126,21 @@ public class RoboxRemoteCommandInterface extends CommandInterface
         }
     }
     
+    public boolean cancelPrint(boolean safetyOn)
+    {
+        boolean success = true;
+        try
+        {
+            remoteClient.cancelPrint(printerHandle.getConnectionHandle(), safetyOn);
+        }
+        catch (RoboxCommsException ex)
+        {
+            success = false;
+        }
+        
+        return success;
+    }
+
     public void sendStatistics(PrintJobStatistics printJobStatistics) throws RoboxCommsException
     {
         remoteClient.sendStatistics(printerHandle.getConnectionHandle(), printJobStatistics);

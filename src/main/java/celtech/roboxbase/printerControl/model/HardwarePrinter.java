@@ -896,32 +896,40 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private boolean doAbortActivity(Cancellable cancellable, boolean safetyFeaturesRequired)
     {
         boolean success = false;
-
+        
         printEngine.stopAllServices();
-
-        switchBedHeaterOff();
-        switchAllNozzleHeatersOff();
-
-        RoboxTxPacket abortPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.ABORT_PRINT);
-        try
+        if (getCommandInterface() instanceof RoboxRemoteCommandInterface)
         {
-            AckResponse response = (AckResponse) commandInterface.writeToPrinter(abortPacket);
-        } catch (RoboxCommsException ex)
-        {
-            steno.error("Couldn't send abort command to printer");
+            ((RoboxRemoteCommandInterface)getCommandInterface()).cancelPrint(safetyFeaturesRequired);
         }
-        PrinterUtils.waitOnBusy(this, cancellable);
+        else
+        {
 
-        try
-        {
-            printEngine.runMacroPrintJob(Macro.CANCEL_PRINT, true, false, safetyFeaturesRequired);
-            PrinterUtils.waitOnMacroFinished(this, cancellable);
-            success = true;
-        } catch (MacroPrintException ex)
-        {
-            steno.error("Failed to run abort macro: " + ex.getMessage());
+            switchBedHeaterOff();
+            switchAllNozzleHeatersOff();
+
+            RoboxTxPacket abortPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.ABORT_PRINT);
+            try
+            {
+                steno.info("Sending abort packet");
+                AckResponse response = (AckResponse) commandInterface.writeToPrinter(abortPacket);
+                steno.info("Response = " + response.toString());
+            } catch (RoboxCommsException ex)
+            {
+                steno.error("Couldn't send abort command to printer");
+            }
+            PrinterUtils.waitOnBusy(this, cancellable);
+
+            try
+            {
+                printEngine.runMacroPrintJob(Macro.CANCEL_PRINT, true, false, safetyFeaturesRequired);
+                PrinterUtils.waitOnMacroFinished(this, cancellable);
+                success = true;
+            } catch (MacroPrintException ex)
+            {
+                steno.error("Failed to run abort macro: " + ex.getMessage());
+            }
         }
-
         return success;
     }
 
@@ -1915,10 +1923,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void sendDataFileChunk(String hexDigits, boolean lastPacket, boolean appendCRLF) throws DatafileSendNotInitialised, RoboxCommsException
     {
-//        if (lastPacket == true)
-//        {
-//            steno.info("Got last packet");
-//        }
         boolean dataIngested = false;
 
         if (appendCRLF)
@@ -1957,8 +1961,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
              */
             if (dataIngested && lastPacket)
             {
-                steno.trace("Final complete chunk:" + outputBuffer.toString() + " seq:"
-                        + dataFileSequenceNumber);
+                steno.trace("Final complete chunk seq:"
+                        + dataFileSequenceNumber + ":\n\"" + outputBuffer.toString() + "\"");
                 AckResponse response = transmitDataFileEnd(outputBuffer.toString(),
                         dataFileSequenceNumber);
                 if (response.isError())
