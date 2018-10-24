@@ -783,6 +783,7 @@ public class PrintEngine implements ControllableService
             transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
             transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
             transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+            transferGCodeToPrinterService.setThisCanBeReprinted(false);
             transferGCodeToPrinterService.start();
             acceptedPrintRequest = true;
         } catch (IOException ex)
@@ -887,10 +888,11 @@ public class PrintEngine implements ControllableService
                 + printUUID + File.separator + printUUID
                 + BaseConfiguration.gcodeTempFileExtension;
 
+        PrintJobStatistics printJobStatistics = null;
         if (printJobName != null)
         {
             PrintJob printJob = new PrintJob(printUUID);
-            PrintJobStatistics printJobStatistics = new PrintJobStatistics();
+            printJobStatistics = new PrintJobStatistics();
             printJobStatistics.setProjectName(printJobName);
             try
             {
@@ -903,6 +905,7 @@ public class PrintEngine implements ControllableService
 
         File src = new File(filename);
         File dest = new File(printjobFilename);
+        final PrintJobStatistics pjs = printJobStatistics;
         Optional<PrinterType> printerType = Optional.of(associatedPrinter.findPrinterType());
         try
         {
@@ -916,6 +919,8 @@ public class PrintEngine implements ControllableService
                 transferGCodeToPrinterService.setCurrentPrintJobID(printUUID);
                 transferGCodeToPrinterService.setModelFileToPrint(printjobFilename);
                 transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
+                transferGCodeToPrinterService.setPrintJobStatistics(pjs);
+                transferGCodeToPrinterService.setThisCanBeReprinted(false);
                 transferGCodeToPrinterService.dontInitiatePrint(dontInitiatePrint);
                 transferGCodeToPrinterService.start();
                 consideringPrintRequest = false;
@@ -1036,9 +1041,7 @@ public class PrintEngine implements ControllableService
         {
             int numberOfLines = GCodeMacros.countLinesInMacroFile(printjobFile, ";", printerType);
             linesInPrintingFile.set(numberOfLines);
-            steno.
-                    info("Print service is in state:" + transferGCodeToPrinterService.stateProperty().
-                            get().name());
+            steno.info("Print service is in state:" + transferGCodeToPrinterService.stateProperty().get().name());
             if (transferGCodeToPrinterService.isRunning())
             {
                 transferGCodeToPrinterService.cancel();

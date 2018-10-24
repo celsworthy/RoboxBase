@@ -57,8 +57,9 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         }
 
         @Override
-        public boolean count(long count)
+        public boolean count(long increment)
         {
+          count += increment;
           steno.debug("Transfer progress: count = " + Long.toString(count) + " of " + Long.toString(fileSize));
           updateProgress((float) count, (float) fileSize);
           if (server != null)
@@ -164,7 +165,10 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         {
             updateMessage("Transferring GCode");
 
-            if (printerIsRemote && !gcodeFile.getParent().endsWith("Macros") && printUsingSDCard && startFromSequenceNumber == 0)
+            if (printerIsRemote &&
+                !gcodeFile.getParent().endsWith("Macros") &&
+                printUsingSDCard &&
+                startFromSequenceNumber == 0)
                 gotToEndOK = transferToRemotePrinter(gcodeFile);
             else
                 gotToEndOK = transferToPrinter(gcodeFile);
@@ -321,12 +325,17 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                 steno.debug("Creating job directory \"" + jobDirectory + "\"");
                 channelSftp.mkdir(jobDirectory);
             }
+            String remoteFileName = jobDirectory + "/" + gcodeFile.getName();
             channelSftp.put(gcodeFile.getCanonicalPath(),
-                            jobDirectory + "/" + gcodeFile.getName(),
+                            remoteFileName,
                             monitor);
 
             steno.info("Transferred GCode");
-            remoteCI.startPrintJob(printJobID);
+            if (thisJobCanBeReprinted && printJobStatistics != null)
+                remoteCI.startPrintJob(printJobID);
+            else
+                remoteCI.printGCodeFile(remoteFileName);
+            
             transferredOK = true;
         }
         catch (SftpException | JSchException | RoboxCommsException | IOException ex)
