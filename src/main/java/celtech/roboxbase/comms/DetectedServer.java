@@ -392,8 +392,6 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    steno.info(address.getHostAddress().toString() + " \"" + name.getValue() + "\" " + version.getValue());
-                    
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
