@@ -160,4 +160,10 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     {
         remoteClient.startPrintJob(printerHandle.getConnectionHandle(), printJobID);
     }
+
+    public void printGCodeFile(String remoteFileName) throws RoboxCommsException
+    {
+        remoteClient.printGCodeFile(printerHandle.getConnectionHandle(), remoteFileName);
+    }
+
 }

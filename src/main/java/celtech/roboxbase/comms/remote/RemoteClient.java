@@ -213,6 +213,22 @@ public class RemoteClient implements LowLevelInterface
         }
     }
 
+    public void printGCodeFile(String printerID, String remoteFileName) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/printGCodeFile", remoteFileName, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to print GCode file \"" +
+                             remoteFileName +
+                             "\" on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
+
     public void cancelPrint(String printerID, boolean safetyOn) throws RoboxCommsException
     {
         try
