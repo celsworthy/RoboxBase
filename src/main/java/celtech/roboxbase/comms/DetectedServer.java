@@ -141,7 +141,7 @@ public final class DetectedServer
     {
         if (pollCount > maxAllowedPollCount)
         {
-            steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
+            steno.warning("Maximum poll count of \"" + getDisplayName() + "\" exceeded! Count = " + Integer.toString(pollCount));
             return true;
         }
         else
@@ -152,7 +152,7 @@ public final class DetectedServer
     public boolean incrementPollCount()
     {
         ++pollCount;
-        steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
+        steno.info("Incrementing poll count of \"" + getDisplayName() + "\" to " + Integer.toString(pollCount));
         return maxPollCountExceeded();
     }
 
@@ -169,6 +169,11 @@ public final class DetectedServer
     public String getName()
     {
         return name.get();
+    }
+    
+    public String getDisplayName()
+    {
+        return getName()+ "@" + getServerIP();
     }
 
     public void setName(String name)
@@ -343,7 +348,7 @@ public final class DetectedServer
 
     public void disconnect()
     {
-        steno.info("Disconnecting " + name.get());
+        steno.info("Disconnecting \"" + getDisplayName() + "\"");
         setServerStatus(ServerStatus.NOT_CONNECTED);
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         
