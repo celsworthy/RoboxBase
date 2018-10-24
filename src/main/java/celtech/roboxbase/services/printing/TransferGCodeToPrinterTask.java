@@ -317,12 +317,12 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             }
             catch (Exception e)
             {
-                steno.info("Job directory \"" + jobDirectory + "\" not found");
+                steno.debug("Job directory \"" + jobDirectory + "\" not found");
             }
 
             if (attrs == null)
             {
-                steno.debug("Creating job directory \"" + jobDirectory + "\"");
+                steno.info("Creating job directory \"" + jobDirectory + "\"");
                 channelSftp.mkdir(jobDirectory);
             }
             String remoteFileName = jobDirectory + "/" + gcodeFile.getName();
