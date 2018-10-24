@@ -118,7 +118,7 @@ public final class DetectedServer
         // This is the only public way to create a DetectedServer. It is synchronized so that
         // it can be called by multiple threads.
         return knownServerList.stream()
-                              .filter(s -> s.getAddress() == address)
+                              .filter(s -> s.getAddress().equals(address))
                               .findAny()
                               .orElseGet(() -> {
                                                    DetectedServer ds = new DetectedServer(address);
@@ -392,6 +392,8 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
+                    steno.info(address.getHostAddress().toString() + " \"" + name.getValue() + "\" " + version.getValue());
+                    
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
