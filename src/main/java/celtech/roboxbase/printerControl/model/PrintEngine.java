@@ -515,7 +515,7 @@ public class PrintEngine implements ControllableService
                     }
                 } catch (RoboxCommsException | IOException rex)
                 {
-                    steno.error("Failed to get statistics from remote server and persist");
+                    steno.debug("Failed to retrieve statistics from remote server");
                 }
             }
         }
