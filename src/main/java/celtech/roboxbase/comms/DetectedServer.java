@@ -171,6 +171,7 @@ public final class DetectedServer
         return name.get();
     }
     
+    @JsonIgnore
     public String getDisplayName()
     {
         return getName()+ "@" + getServerIP();
