@@ -58,7 +58,11 @@ public interface Printer extends RoboxResponseConsumer
     public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty();
 
     public void setPrinterEdition(PrinterEdition printerEdition);
+    
+    public ReadOnlyObjectProperty<PrinterConnection> printerConnectionProperty();
 
+    public void setPrinterConnection(PrinterConnection printerConnection);
+    
     //Returns Width, Depth and Height centre point
     public Point3D getPrintVolumeCentre();
 
@@ -81,7 +85,7 @@ public interface Printer extends RoboxResponseConsumer
      * Print
      */
     public ReadOnlyBooleanProperty canPrintProperty();
-
+    
     /*
      * Can open or close a nozzle
      */
