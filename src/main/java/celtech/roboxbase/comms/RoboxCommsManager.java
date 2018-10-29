@@ -3,10 +3,16 @@ package celtech.roboxbase.comms;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
+import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.printerControl.model.PrinterConnection;
+import celtech.roboxbase.printerControl.model.PrinterException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -14,6 +20,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -23,6 +30,7 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 {
+    public static final String CUSTOM_CONNECTION_HANDLE = "OfflinePrinterConnection";
 
     private static RoboxCommsManager instance = null;
 
@@ -37,9 +45,11 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     private boolean suppressPrinterIDChecks = false;
     private int sleepBetweenStatusChecksMS = 1000;
 
-    private String dummyPrinterPort = "DummyPrinterPort";
-
+    private final String dummyPrinterPort = "DummyPrinterPort";
     private int dummyPrinterCounter = 0;
+    private String dummyPrinterName = "DP 0";
+    private String dummyPrinterHeadType = "RBX01-SM";
+    private PrinterType dummyPrinterType = PrinterType.ROBOX;
 
     private final SerialDeviceDetector usbSerialDeviceDetector;
     private final RemotePrinterDetector remotePrinterDetector;
@@ -192,6 +202,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                         this, detectedPrinter, suppressPrinterIDChecks,
                         sleepBetweenStatusChecksMS), filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
+                newPrinter.setPrinterConnection(PrinterConnection.LOCAL);
                 break;
             case ROBOX_REMOTE:
                 RoboxRemoteCommandInterface commandInterface = new RoboxRemoteCommandInterface(
@@ -200,16 +211,25 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
                 newPrinter = new HardwarePrinter(this, commandInterface, filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
+                newPrinter.setPrinterConnection(PrinterConnection.REMOTE);
                 break;
             case DUMMY:
                 DummyPrinterCommandInterface dummyCommandInterface = new DummyPrinterCommandInterface(this,
                         detectedPrinter,
                         suppressPrinterIDChecks,
                         sleepBetweenStatusChecksMS,
-                        "DP "
-                        + dummyPrinterCounter);
+                        dummyPrinterName,
+                        dummyPrinterType.getTypeCode());
+                dummyCommandInterface.setupHead(dummyPrinterHeadType);
                 newPrinter = new HardwarePrinter(this, dummyCommandInterface, filamentLoadedGetter,
                         doNotCheckForPresenceOfHead);
+                if(detectedPrinter.getConnectionHandle().equals(CUSTOM_CONNECTION_HANDLE)) 
+                {
+                    newPrinter.setPrinterConnection(PrinterConnection.OFFLINE);
+                } else 
+                {
+                    newPrinter.setPrinterConnection(PrinterConnection.DUMMY);
+                }
                 break;
             default:
                 steno.error("Don't know how to handle connected printer: " + detectedPrinter);
@@ -339,10 +359,11 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         }
     }
 
-    public void addDummyPrinter()
+    public void addDummyPrinter(boolean isCustomPrinter)
     {
         dummyPrinterCounter++;
-        String actualPrinterPort = dummyPrinterPort + " " + dummyPrinterCounter;
+        String actualPrinterPort = isCustomPrinter ? CUSTOM_CONNECTION_HANDLE : dummyPrinterPort + " " + dummyPrinterCounter;
+        dummyPrinterName = isCustomPrinter ? BaseLookup.i18n("preferences.customPrinter") : "DP " + dummyPrinterCounter;
         DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.DUMMY,
                 actualPrinterPort);
         assessCandidatePrinter(printerHandle);
@@ -352,6 +373,16 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     {
         disconnected(printerHandle);
     }
+    
+    public void removeAllDummyPrinters() {
+        getDummyPrinterHandles().forEach(this::removeDummyPrinter);
+    }
+    
+    public Optional<DetectedDevice> getDummyPrinter(String printerConnectionHandle) {
+        return getDummyPrinterHandles().stream()
+                .filter(printerHandle -> printerHandle.getConnectionHandle().equals(printerConnectionHandle))
+                .findFirst();
+    }
 
     public List<Printer> getDummyPrinters()
     {
@@ -360,6 +391,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                              .filter(p -> p.getKey().getConnectionType() == DeviceDetector.PrinterConnectionType.DUMMY)
                              .map(e -> e.getValue())
                              .collect(Collectors.toList()); 
+    }
+    
+    private List<DetectedDevice> getDummyPrinterHandles() {
+        return activePrinters.keySet()
+                .stream()
+                .filter(printerHandle -> printerHandle.getConnectionType() == DeviceDetector.PrinterConnectionType.DUMMY)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -393,5 +431,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     public BooleanBinding tooManyRoboxAttachedProperty()
     {
         return tooManyRoboxAttachedProperty;
+    }
+    
+    public void setDummyPrinterHeadType(String dummyPrinterHeadType) {
+        this.dummyPrinterHeadType = dummyPrinterHeadType;
+    }
+    
+    public void setDummyPrinterType(PrinterType dummyPrinterType) {
+        this.dummyPrinterType = dummyPrinterType;
     }
 }

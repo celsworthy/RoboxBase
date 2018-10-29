@@ -266,6 +266,11 @@ public class PrinterIDResponse extends RoboxRxPacket
     {
         this.printerFriendlyName = printerFriendlyName;
     }
+    
+    @JsonIgnore
+    public void setCheckByte(String checkByte) {
+        this.checkByte = checkByte;
+    }
 
     @Override
     public int packetLength(float requiredFirmwareVersion)
@@ -357,6 +362,8 @@ public class PrinterIDResponse extends RoboxRxPacket
             {
                 steno.error("Error whilst testing validity of printer identity \"" + stringToChecksum + "\"");
             }
+        } else if (yearOfManufacture.equals("1901DUMMY$") && checkByte.length() == 2) {
+            return true;
         }
         return valid;
     }

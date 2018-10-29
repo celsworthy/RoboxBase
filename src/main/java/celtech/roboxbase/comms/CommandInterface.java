@@ -2,6 +2,7 @@ package celtech.roboxbase.comms;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.appManager.SystemNotificationManager;
 import celtech.roboxbase.comms.async.AsyncWriteThread;
 import celtech.roboxbase.comms.async.CommandPacket;
 import celtech.roboxbase.comms.exceptions.PortNotFoundException;
@@ -22,11 +23,16 @@ import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
+import celtech.roboxbase.licensing.License;
+import celtech.roboxbase.licensing.LicenseManager;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.services.firmware.FirmwareLoadResult;
 import celtech.roboxbase.services.firmware.FirmwareLoadService;
 import celtech.roboxbase.utils.PrinterUtils;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
 import libertysystems.configuration.ConfigItemIsAnArray;
@@ -408,7 +414,6 @@ public abstract class CommandInterface extends Thread
                     }
 
                     break;
-
                 case CONNECTED:
                     try
                     {
@@ -447,6 +452,7 @@ public abstract class CommandInterface extends Thread
                     {
                         steno.debug("Comms interrupted");
                     }
+                    
                     break;
 
                 case DISCONNECTED:

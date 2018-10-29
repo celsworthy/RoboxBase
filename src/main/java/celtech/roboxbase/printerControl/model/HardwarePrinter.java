@@ -24,7 +24,6 @@ import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.comms.rx.ReelEEPROMDataResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
-import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.ACK_WITH_ERRORS;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.FIRMWARE_RESPONSE;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.HEAD_EEPROM_DATA;
@@ -174,6 +173,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final BooleanProperty mustPurgeHead = new SimpleBooleanProperty(false);
     private final BooleanProperty canInitiateNewState = new SimpleBooleanProperty(false);
     private final BooleanProperty canPrint = new SimpleBooleanProperty(false);
+    private final BooleanProperty canOnlySaveToFile = new SimpleBooleanProperty(false);
     private final BooleanProperty canOpenCloseNozzle = new SimpleBooleanProperty(false);
     private final BooleanProperty canPause = new SimpleBooleanProperty(false);
     private final BooleanProperty canResume = new SimpleBooleanProperty(false);
@@ -204,6 +204,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final ObservableMap<Integer, Reel> reels = FXCollections.observableHashMap();
     private final ObservableMap<Integer, Filament> effectiveFilaments = FXCollections.observableHashMap();
     private final ObservableList<Extruder> extruders = FXCollections.observableArrayList();
+    
+    private final ObjectProperty<PrinterConnection> printerConnection = new SimpleObjectProperty();
 
     private ObjectProperty<EEPROMState> lastHeadEEPROMState = new SimpleObjectProperty<>(EEPROMState.NOT_PRESENT);
     private final int maxNumberOfReels = 2;
@@ -396,7 +398,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canPrint.bind(head.isNotNull()
                 .and(printerStatus.isEqualTo(PrinterStatus.IDLE))
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
-
+        
         canOpenCloseNozzle.set(false);
         canCalibrateNozzleOpening.set(false);
         canCalibrateNozzleHeight.set(false);
@@ -563,6 +565,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void setPrinterEdition(PrinterEdition printerEdition)
     {
         this.printerEdition.set(printerEdition);
+    }
+    
+    @Override
+    public ReadOnlyObjectProperty<PrinterConnection> printerConnectionProperty() 
+    {
+        return printerConnection;
+    }
+    
+    @Override
+    public void setPrinterConnection(PrinterConnection printerConnection) 
+    {
+        this.printerConnection.set(printerConnection);
     }
 
     @Override

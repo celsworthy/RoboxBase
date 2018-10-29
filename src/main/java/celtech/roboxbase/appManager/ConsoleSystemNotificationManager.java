@@ -53,6 +53,20 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
         outputNotification("Reset serial number query");
         return RoboxResetIDResult.RESET_NOT_DONE;
     }
+    
+    @Override
+    public Boolean showSignInDialogue() 
+    {
+        outputNotification("Sign in dialogue display");
+        return false;
+    }
+    
+    @Override
+    public boolean showSelectLicenseDialogue() 
+    {
+        outputNotification("Register printer dialogue display");
+        return false;
+    }
 
     @Override
     public void processErrorPacketFromPrinter(FirmwareError error, Printer printer)

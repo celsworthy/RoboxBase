@@ -53,14 +53,24 @@ import libertysystems.stenographer.StenographerFactory;
 public class DummyPrinterCommandInterface extends CommandInterface
 {
 
-    private Stenographer steno = StenographerFactory.getStenographer(
+    private static final Stenographer STENO = StenographerFactory.getStenographer(
             DummyPrinterCommandInterface.class.getName());
 
+    private static final String SM_HEAD = "RBX01-SM";
+    private static final String S2_HEAD = "RBX01-S2";
+    private static final String DM_HEAD = "RBX01-DM";
+    private static final String SX_HEAD = "RBXDV-S1";
+    
+    private static final String FILAMENT_BLACK = "RBX-ABS-BK091";
+    
     public static final String dummyYear = "1901DUMMY$";
 
     public static final String defaultRoboxAttachCommand = "DEFAULT";
     public static final String defaultRoboxAttachCommand2 = "DEFAULS";
     public static final String defaultRoboxAttachCommand3 = "DEFAULT3";
+    
+    private final String printerModel;
+    
     private final String attachHeadCommand = "ATTACH HEAD ";
     private final String detachHeadCommand = "DETACH HEAD";
     private final String attachReelCommand = "ATTACH REEL ";
@@ -99,27 +109,31 @@ public class DummyPrinterCommandInterface extends CommandInterface
     HeaterMode bedHeaterMode = HeaterMode.OFF;
     protected int currentBedTemperature = ROOM_TEMPERATURE;
     protected int bedTargetTemperature = 30;
-
+    
     private FilamentContainer filamentContainer;
 
     public DummyPrinterCommandInterface(PrinterStatusConsumer controlInterface,
             DetectedDevice printerHandle,
-            boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks, String printerName)
+            boolean suppressPrinterIDChecks, 
+            int sleepBetweenStatusChecks, 
+            String printerName,
+            String printerModel)
     {
         super(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks, true);
         this.setName(printerName);
         this.printerName = printerName;
+        this.printerModel = printerModel;
         filamentContainer = FilamentContainer.getInstance();
 
         currentStatus.setsdCardPresent(true);
     }
 
     public DummyPrinterCommandInterface(PrinterStatusConsumer controlInterface,
-            DetectedDevice printerHandle,
-            boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
+            DetectedDevice printerHandle, boolean suppressPrinterIDChecks, 
+            int sleepBetweenStatusChecks)
     {
         this(controlInterface, printerHandle, suppressPrinterIDChecks, sleepBetweenStatusChecks,
-                "Dummy Printer");
+                "Dummy Printer", "RBX01");
         filamentContainer = FilamentContainer.getInstance();
     }
 
@@ -236,14 +250,37 @@ public class DummyPrinterCommandInterface extends CommandInterface
     @Override
     protected boolean connectToPrinterImpl()
     {
-        steno.info("Dummy printer connected");
+        STENO.info("Dummy printer connected");
         return true;
     }
 
     @Override
     protected void disconnectPrinterImpl()
     {
-        steno.info("Dummy printer disconnected");
+        STENO.info("Dummy printer disconnected");
+    }
+    
+    public void setupHead(String headName) {
+        detachExtruder(0);
+        detachExtruder(1);
+        detachReel(0);
+        detachReel(1);
+        
+        switch(headName) {
+            case SM_HEAD:
+            case S2_HEAD:
+            case SX_HEAD:
+                attachExtruder(0);
+                break;
+            case DM_HEAD:
+                attachExtruder(0);
+                attachExtruder(1);
+                break;
+            default:
+                STENO.warning("Attempted to attach head of: " + headName + " onto dummy printer");
+        }
+        
+        attachHead(headName);
     }
 
     private boolean attachHead(String headName)
@@ -387,7 +424,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
         {
             FirmwareResponse firmwareResponse = (FirmwareResponse) RoboxRxPacketFactory.
                     createPacket(RxPacketTypeEnum.FIRMWARE_RESPONSE);
-            firmwareResponse.setFirmwareRevision("r741");
+            firmwareResponse.setFirmwareRevision("r" + requiredFirmwareVersionString);
             response = (RoboxRxPacket) firmwareResponse;
         } else if (messageToWrite instanceof ReadPrinterID)
         {
@@ -396,17 +433,15 @@ public class DummyPrinterCommandInterface extends CommandInterface
             idResponse.setEdition("KS");
             // Every other dummy printer is a RoboxPro
             char lastDigitOfName = printerName.charAt(printerName.length() - 1);
-            if ("02468".contains(lastDigitOfName + ""))
-            {
-                idResponse.setModel("RBX10");
-            } else
-            {
-                idResponse.setModel("RBX01");
-            }
+            idResponse.setModel(printerModel);
             // this dummy year marks this printer as a dummy printer
+            idResponse.setWeekOfManufacture("00");
             idResponse.setYearOfManufacture(dummyYear);
+            idResponse.setPoNumber("0000000");
+            idResponse.setSerialNumber("0000");
             idResponse.setPrinterFriendlyName(printerName);
-            idResponse.setPrinterColour(Color.web("#FF0082").toString());
+            idResponse.setCheckByte("00");
+            idResponse.setPrinterColour(Color.web("#000000").toString());
             response = (RoboxRxPacket) idResponse;
         } else if (messageToWrite instanceof StatusRequest)
         {
@@ -414,7 +449,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             response = currentStatus;
         } else if (messageToWrite instanceof AbortPrint)
         {
-            steno.debug("ABORT print");
+            STENO.debug("ABORT print");
             printJobLineNo = 0;
             printJobID = NOTHING_PRINTING_JOB_ID;
             currentStatus.setPrintJobLineNumber(printJobLineNo);
@@ -581,52 +616,52 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 if (messageData.substring(6).length() > 0)
                 {
                     nozzleTargetTemperatureS = Integer.parseInt(messageData.substring(6));
-                    steno.debug("set S temp to " + nozzleTargetTemperatureS);
+                    STENO.debug("set S temp to " + nozzleTargetTemperatureS);
 
                     if (nozzleTargetTemperatureS == 0)
                     {
                         nozzleHeaterModeS = HeaterMode.OFF;
-                        steno.debug("set heater mode off for S");
+                        STENO.debug("set heater mode off for S");
                     }
                 } else
                 {
                     nozzleHeaterModeS = HeaterMode.NORMAL;
-                    steno.debug("set heater mode S to normal");
+                    STENO.debug("set heater mode S to normal");
                 }
             } else if (messageData.startsWith("M104 T"))
             {
                 if (messageData.substring(6).length() > 0)
                 {
                     nozzleTargetTemperatureT = Integer.parseInt(messageData.substring(6));
-                    steno.debug("set T temp to " + nozzleTargetTemperatureT);
+                    STENO.debug("set T temp to " + nozzleTargetTemperatureT);
 
                     if (nozzleTargetTemperatureT == 0)
                     {
                         nozzleHeaterModeT = HeaterMode.OFF;
-                        steno.debug("set heater mode off for T");
+                        STENO.debug("set heater mode off for T");
                     }
                 } else
                 {
                     nozzleHeaterModeT = HeaterMode.NORMAL;
-                    steno.debug("set heater mode T to normal");
+                    STENO.debug("set heater mode T to normal");
                 }
             } else if (messageData.startsWith("M104"))
             {
                 nozzleHeaterModeS = HeaterMode.NORMAL;
-                steno.debug("set heater mode S to normal");
+                STENO.debug("set heater mode S to normal");
             } else if (messageData.startsWith("M140 S") || messageData.startsWith("M139 S"))
             {
                 bedTargetTemperature = Integer.parseInt(messageData.substring(6));
-                steno.debug("set bed target temp to " + bedTargetTemperature);
+                STENO.debug("set bed target temp to " + bedTargetTemperature);
                 if (bedTargetTemperature == 0)
                 {
                     bedHeaterMode = HeaterMode.OFF;
-                    steno.debug("set bed heater mode off");
+                    STENO.debug("set bed heater mode off");
                 }
             } else if (messageData.startsWith("M140") || messageData.startsWith("M139"))
             {
                 bedHeaterMode = HeaterMode.NORMAL;
-                steno.debug("set bed heater mode normal");
+                STENO.debug("set bed heater mode normal");
             } else if (messageData.startsWith("M113"))
             {
                 // ZDelta
@@ -643,7 +678,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     }
                 } catch (IllegalArgumentException ex)
                 {
-                    steno.info("Dummy printer didn't understand error " + errorString);
+                    STENO.info("Dummy printer didn't understand error " + errorString);
                 }
             } else if (messageData.startsWith("M121"))
             {
@@ -789,7 +824,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     false,
                     true);
             attachedReels[0].updateContents(f);
-            steno.debug(reelWriteMessage.toString());
+            STENO.debug(reelWriteMessage.toString());
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
         } else if (messageToWrite instanceof WriteReel1EEPROM)
@@ -813,7 +848,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
                     false,
                     true);
             attachedReels[1].updateContents(f);
-            steno.debug(reelWriteMessage.toString());
+            STENO.debug(reelWriteMessage.toString());
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
         } else if (messageToWrite instanceof PausePrint)
@@ -835,14 +870,14 @@ public class DummyPrinterCommandInterface extends CommandInterface
             printJobID = messageToWrite.getMessagePayload();
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
-            steno.debug("Got start of print file - job " + printJobID);
+            STENO.debug("Got start of print file - job " + printJobID);
         } else if (messageToWrite instanceof SendDataFileStart)
         {
             linesInCurrentPrintJob = 0;
             printJobID = messageToWrite.getMessagePayload();
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
-            steno.debug("Got start of data file - job " + printJobID);
+            STENO.debug("Got start of data file - job " + printJobID);
         } else if (messageToWrite instanceof SendDataFileChunk)
         {
             String payload = messageToWrite.getMessagePayload();
@@ -850,7 +885,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             linesInCurrentPrintJob += onlyCommas.length();
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
-            steno.debug("Got data file chunk");
+            STENO.debug("Got data file chunk");
         } else if (messageToWrite instanceof SendDataFileEnd)
         {
             String payload = messageToWrite.getMessagePayload();
@@ -858,15 +893,15 @@ public class DummyPrinterCommandInterface extends CommandInterface
             linesInCurrentPrintJob += onlyCommas.length();
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
-            steno.debug("Got end of data file");
+            STENO.debug("Got end of data file");
         } else if (messageToWrite instanceof InitiatePrint)
         {
             printJobID = messageToWrite.getMessagePayload();
-            steno.debug("Dummy printer asked to initiate print " + printJobID);
+            STENO.debug("Dummy printer asked to initiate print " + printJobID);
             currentStatus.setRunningPrintJobID(printJobID);
             response = RoboxRxPacketFactory.createPacket(messageToWrite.getPacketType().
                     getExpectedResponse());
-            steno.debug("Asked to initiate print " + printJobID);
+            STENO.debug("Asked to initiate print " + printJobID);
         } else if (messageToWrite instanceof AbortPrint)
         {
             currentStatus.setRunningPrintJobID(null);

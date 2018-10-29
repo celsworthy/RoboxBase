@@ -29,6 +29,18 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     {
         return RoboxResetIDResult.RESET_NOT_DONE;
     }
+    
+    @Override
+    public Boolean showSignInDialogue() 
+    {    
+        return false;
+    }
+    
+    @Override
+    public boolean showSelectLicenseDialogue() 
+    {    
+        return false;
+    }
 
     @Override
     public void processErrorPacketFromPrinter(FirmwareError response, Printer printer)

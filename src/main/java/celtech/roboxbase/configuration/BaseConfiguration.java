@@ -127,6 +127,8 @@ public class BaseConfiguration
     public static final String macroFileExtension = ".gcode";
     public static final String macroFileSubpath = "Macros/";
 
+    public static final String LICENSE_SUB_PATH = "License/";
+    
     private static String printProfileFileDirectory = null;
     private static String userPrintProfileFileDirectory = null;
     public static final String printProfileDirectoryPath = "PrintProfiles";
@@ -878,5 +880,4 @@ public class BaseConfiguration
             }
         }
     }
-
 }
