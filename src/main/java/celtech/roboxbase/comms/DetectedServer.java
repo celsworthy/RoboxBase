@@ -8,10 +8,12 @@ import celtech.roboxbase.comms.remote.types.SerializableFilament;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -80,6 +82,8 @@ public final class DetectedServer
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
+    @JsonIgnore
+    private static final String SHUTDOWN_SYSTEM_COMMAND = "/api/admin/shutdown";
     @JsonIgnore
     private static final String SAVE_FILAMENT_COMMAND = "/api/admin/saveFilament";
     @JsonIgnore
@@ -641,46 +645,114 @@ public final class DetectedServer
                 .isEquals();
     }
 
+    private class TransferProgressMonitor implements SftpProgressMonitor
+    {
+        long count = 0;
+        long fileSize = 0;
+        DetectedServer server;
+        PercentProgressReceiver progressReceiver;
+        
+        public TransferProgressMonitor(DetectedServer server, PercentProgressReceiver progressReceiver)
+        {
+            this.server = server;
+            this.progressReceiver = progressReceiver;
+        }
+
+        @Override
+        public void init(int op, String src, String dest, long fileSize)
+        {
+            this.fileSize = fileSize;
+            this.count = 0;
+
+            server.resetPollCount();
+            steno.debug("Initialise file transfer: src = \"" + src + "\", dst = \"" + dest + "\", fileSize = " + Long.toString(fileSize));
+        }
+
+        @Override
+        public boolean count(long increment)
+        {
+          count += increment;
+          float percentageDone = 50.0f;
+          if (fileSize > 0)
+            percentageDone = 25.0f + (75.0f * (float) count / (float) fileSize);
+          progressReceiver.updateProgressPercent(percentageDone);
+
+          server.resetPollCount();
+          steno.debug("Transfer progress: " + Float.toString(percentageDone) + "%");
+          return true;
+        }
+        
+        @Override
+        public void end(){
+        }
+    }
+    
     public boolean upgradeRootSoftware(String path, String filename, PercentProgressReceiver progressReceiver)
     {
         boolean success = false;
-        String charset = "UTF-8";
-        String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + UPDATE_SYSTEM_COMMAND;
-
-        try
+        
+        // First try SFTP;
+        TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
+        SFTPUtils sftpHelper = new SFTPUtils(address.getHostAddress());
+        File localFile = new File(path + filename);
+        if (sftpHelper.transferToRemotePrinter(localFile, "/tmp", filename, monitor))
         {
-            long t1 = System.currentTimeMillis();
-            MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
-
-            File rootSoftwareFile = new File(path + filename);
-            steno.info("upgradeRootSoftware: uploading file " + path + filename);
-                                      
-            // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
-            // being removed.
-            multipart.addFilePart("name", rootSoftwareFile,
-                                  (double pp) -> 
-                                  {
-                                      pollCount = 0;
-                                      progressReceiver.updateProgressPercent(pp);
-                                  });
-            long t2 = System.currentTimeMillis();
-            steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
-            
-            List<String> response = multipart.finish();
-            disconnect();
-            
-            // Disconnecting here does not clear the user interface, so also set the poll count to force the user interface to clear.
-            pollCount = maxAllowedPollCount + 1;
-            
-            long t3 = System.currentTimeMillis();            
-            steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
-            
-            success = true;
-        } catch (IOException ex)
-        {
-            steno.error("Failure during write of root software: " + ex.getMessage());
+            try
+            {
+                postData(SHUTDOWN_SYSTEM_COMMAND, null);
+                success = true;
+            }
+            catch (java.net.SocketTimeoutException stex)
+            {
+                success = true;
+            }
+            catch (IOException ex)
+            {
+                steno.error("Failed to shutdown remote server: " + ex.getMessage());
+            }
         }
+        
+        if (!success)
+        {
+            // Try http POST
+            String charset = "UTF-8";
+            String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + UPDATE_SYSTEM_COMMAND;
 
+            try
+            {
+                long t1 = System.currentTimeMillis();
+                MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
+
+                File rootSoftwareFile = new File(path + filename);
+                steno.info("upgradeRootSoftware: uploading file " + path + filename);
+
+                // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
+                // being removed.
+                multipart.addFilePart("name", rootSoftwareFile,
+                                      (double pp) -> 
+                                      {
+                                          pollCount = 0;
+                                          progressReceiver.updateProgressPercent(pp);
+                                      });
+                long t2 = System.currentTimeMillis();
+                steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
+
+                List<String> response = multipart.finish();
+                disconnect();
+
+                // Disconnecting here does not clear the user interface, so also set the poll count to force the user interface to clear.
+                pollCount = maxAllowedPollCount + 1;
+
+                long t3 = System.currentTimeMillis();            
+                steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
+
+                success = true;
+            } catch (IOException ex)
+            {
+                steno.error("Failure during write of root software: " + ex.getMessage());
+            }
+        }
+        
         return success;
     }
 

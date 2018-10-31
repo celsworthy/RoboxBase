@@ -1157,10 +1157,28 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void purgeMaterial(boolean requireNozzle0, boolean requireNozzle1, boolean safetyFeaturesRequired, boolean blockUntilFinished,
             Cancellable cancellable) throws PrinterException
     {
-        Macro macro = Macro.PURGE_MATERIAL;
+        boolean nozzle0Required = false;
+        boolean nozzle1Required = false;
+        
+        // Prevent trying to purge second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
+        {
+            nozzle0Required = requireNozzle0;
+            if (head.getNozzles().size() > 1 &&
+                head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                nozzle1Required = requireNozzle1;
+            }
+        }
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            Macro macro = Macro.PURGE_MATERIAL;
 
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
-                blockUntilFinished, cancellable, requireNozzle0, requireNozzle1, safetyFeaturesRequired);
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
+                blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1169,13 +1187,32 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             int nozzleNumber,
             boolean safetyFeaturesRequired) throws PrinterException
     {
-        Macro macro = Macro.MINI_PURGE;
-        boolean requireNozzle0 = nozzleNumber == 0;
-        boolean requireNozzle1 = nozzleNumber == 1;
-
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
+        boolean requireNozzle0 = false;
+        boolean requireNozzle1 = false;
+        
+        // Prevent trying to purge second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
+        {
+            if (nozzleNumber == 0)
+            {
+                requireNozzle0 = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1 &&
+                       head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                requireNozzle1 = true;
+            }
+        }
+        
+        if (requireNozzle0 || requireNozzle1)
+        {
+            Macro macro = Macro.MINI_PURGE;
+    
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
                 blockUntilFinished, cancellable,
                 requireNozzle0, requireNozzle1, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1226,15 +1263,26 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         boolean nozzle0Required = false;
         boolean nozzle1Required = false;
 
-        if (nozzleNumber == 0)
+        // Prevent trying to eject second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
         {
-            nozzle0Required = true;
-        } else
-        {
-            nozzle1Required = true;
+            if (nozzleNumber == 0)
+            {
+                nozzle0Required = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1 &&
+                       head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                nozzle1Required = true;
+            }
         }
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.EJECT_STUCK_MATERIAL,
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.EJECT_STUCK_MATERIAL,
                 blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1243,8 +1291,25 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         boolean nozzle0Required = nozzleNumber == 0;
         boolean nozzle1Required = nozzleNumber == 1;
 
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.CLEAN_NOZZLE,
-                blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        // Do nothing if there is no head, or the head does not have valves, or does not have the specified nozzle.
+        Head head = headProperty().get();
+        if (head != null && head.valveTypeProperty().get() == Head.ValveType.FITTED)
+        {
+            if (nozzleNumber == 0)
+            {
+                nozzle0Required = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1)
+            {
+                nozzle1Required = true;
+            }
+        }
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.CLEAN_NOZZLE,
+                    blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override

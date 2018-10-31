@@ -285,64 +285,12 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         // Use sftp to transfer file to remote printer.
         // Note: this does NOT expand macros, which has to
         // be done on the remote printer.
-        boolean transferredOK = false;
-        try
-        {
-            JSch jsch = new JSch();
-            steno.info("Connecting to SFTP service");
-            RoboxRemoteCommandInterface remoteCI = (RoboxRemoteCommandInterface)printerToUse.getCommandInterface();
-            RemoteDetectedPrinter remoteDevice = (RemoteDetectedPrinter)remoteCI.getPrinterHandle();
-            String hostAddress = remoteDevice.getServerPrinterIsAttachedTo().getServerIP();
-            String pp = "";
-            for (int i = 0; i < 9; ++i)
-                pp += Character.toString((char)((i % 2) == 0 ? pp1[i] + pp2[i] : pp2[i] - pp1[i]));
-            jsch.addIdentity(BaseConfiguration.getApplicationKeyDirectory() + PRIVATE_KEY, pp);
-            Session session = jsch.getSession(USER, hostAddress, 22);
-            java.util.Properties config = new java.util.Properties();
-            config.put("StrictHostKeyChecking", "no");
-            session.setConfig(config);
-            session.connect();
-            steno.debug("Connected to host \"" + hostAddress + "\"");
-
-            SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor(remoteDevice.getServerPrinterIsAttachedTo());
-            ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
-            channelSftp.connect();
+        RoboxRemoteCommandInterface remoteCI = (RoboxRemoteCommandInterface)printerToUse.getCommandInterface();
+        RemoteDetectedPrinter remoteDevice = (RemoteDetectedPrinter)remoteCI.getPrinterHandle();
+        String hostAddress = remoteDevice.getServerPrinterIsAttachedTo().getServerIP();
             
-            steno.info("Transferring GCode");
-            SftpATTRS attrs = null;
-            String jobDirectory = BaseConfiguration.getRemotePrintJobDirectory() + printJobID;
-            try
-            {
-                attrs = channelSftp.stat(jobDirectory);
-            }
-            catch (Exception e)
-            {
-                steno.debug("Job directory \"" + jobDirectory + "\" not found");
-            }
-
-            if (attrs == null)
-            {
-                steno.info("Creating job directory \"" + jobDirectory + "\"");
-                channelSftp.mkdir(jobDirectory);
-            }
-            String remoteFileName = jobDirectory + "/" + gcodeFile.getName();
-            channelSftp.put(gcodeFile.getCanonicalPath(),
-                            remoteFileName,
-                            monitor);
-
-            steno.info("Transferred GCode");
-            if (thisJobCanBeReprinted && printJobStatistics != null)
-                remoteCI.startPrintJob(printJobID);
-            else
-                remoteCI.printGCodeFile(remoteFileName);
-            
-            transferredOK = true;
-        }
-        catch (SftpException | JSchException | RoboxCommsException | IOException ex)
-        {
-            steno.exception("Failed to transfer print job gcode \"" + gcodeFile + "\" to remote printer.", ex);
-        }
-
-        return transferredOK;
+        SFTPUtils sftpHelper = new SFTPUtils(hostAddress);
+        SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor(remoteDevice.getServerPrinterIsAttachedTo());
+        return sftpHelper.transferToRemotePrinter(gcodeFile, BaseConfiguration.getRemotePrintJobDirectory() + printJobID, gcodeFile.getName(), monitor);
     }
 }
