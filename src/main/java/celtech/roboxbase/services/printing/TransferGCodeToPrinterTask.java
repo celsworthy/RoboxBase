@@ -285,12 +285,34 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         // Use sftp to transfer file to remote printer.
         // Note: this does NOT expand macros, which has to
         // be done on the remote printer.
+        boolean transferredOK = false;
         RoboxRemoteCommandInterface remoteCI = (RoboxRemoteCommandInterface)printerToUse.getCommandInterface();
         RemoteDetectedPrinter remoteDevice = (RemoteDetectedPrinter)remoteCI.getPrinterHandle();
         String hostAddress = remoteDevice.getServerPrinterIsAttachedTo().getServerIP();
             
         SFTPUtils sftpHelper = new SFTPUtils(hostAddress);
         SftpProgressMonitor monitor = new TransferGCodeToPrinterTask.TransferProgressMonitor(remoteDevice.getServerPrinterIsAttachedTo());
-        return sftpHelper.transferToRemotePrinter(gcodeFile, BaseConfiguration.getRemotePrintJobDirectory() + printJobID, gcodeFile.getName(), monitor);
+        String remoteDirectory = BaseConfiguration.getRemotePrintJobDirectory() + printJobID;
+        if (sftpHelper.transferToRemotePrinter(gcodeFile, remoteDirectory, gcodeFile.getName(), monitor))
+        {
+            try
+            {
+                steno.info("Transferred GCode");
+                if (thisJobCanBeReprinted && printJobStatistics != null)
+                    remoteCI.startPrintJob(printJobID);
+                else
+                    remoteCI.printGCodeFile(remoteDirectory + "" + gcodeFile.getName());
+                transferredOK = true;
+            }
+            catch (RoboxCommsException ex)
+            {
+                if (thisJobCanBeReprinted && printJobStatistics != null)
+                    steno.exception("Failed to start remote print job\"" + printJobID + "\".", ex);
+                else
+                    steno.exception("Failed to start remote print of file \"" + gcodeFile.getName() + "\".", ex);
+            }
+        }
+        
+        return transferredOK;
     }
 }

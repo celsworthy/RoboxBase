@@ -252,7 +252,7 @@ public class BaseLookup
         steno.debug("Starting AutoMaker - loading resources...");
 
         applicationLocale = appLocale;
-        
+
         LanguageData languageData = new LanguageData();
         availableLocales = languageData.getAvailableLocales();
 
