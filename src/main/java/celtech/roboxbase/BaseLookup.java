@@ -249,18 +249,21 @@ public class BaseLookup
     {
         StenographerFactory.changeAllLogLevels(logLevel);
 
-        steno.debug("Starting AutoMaker - loading resources...");
+        steno.info("Starting AutoMaker - loading resources...");
 
+        steno.info("Using locale - " + appLocale.toLanguageTag());
         applicationLocale = appLocale;
 
+        steno.info("Creating language data object ...");
         LanguageData languageData = new LanguageData();
+        steno.info("Getting available locales ...");
         availableLocales = languageData.getAvailableLocales();
 
+        steno.info("Getting resource bundle ...");
         i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
-        steno.info("Using locale - " + appLocale.toLanguageTag());
 
         printerListChangesNotifier = new PrinterListChangesNotifier(BaseLookup.getConnectedPrinters());
 
