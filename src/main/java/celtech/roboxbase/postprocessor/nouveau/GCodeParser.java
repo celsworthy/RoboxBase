@@ -43,7 +43,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     
     final static Stenographer STENO = StenographerFactory.getStenographer(CuraGCodeParser.class.getName());
     LayerNode thisLayer = new LayerNode();
-    float feedrateInForce = -1;
+    double feedrateInForce = -1;
     int currentLineNumber = 0;
     double currentLayerHeight = 0;
     Var<Integer> currentObject = new Var<>(-1);
@@ -63,11 +63,11 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
         this.currentLineNumber = startingLineNumber;
     }
 
-    public void setFeedrateInForce(float feedrate) {
+    public void setFeedrateInForce(double feedrate) {
         this.feedrateInForce = feedrate;
     }
 
-    public float getFeedrateInForce() {
+    public double getFeedrateInForce() {
         return feedrateInForce;
     }
 
@@ -80,24 +80,25 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     }
     
     void validateXPosition(double value) {
-        if (value > printVolumeWidth
-                || value < 0) {
+        if (printVolumeWidth > 0
+                && (value > printVolumeWidth || value < 0)) {
             throw new ParserInputException("X value outside bed: " + value);
         }
     }
 
     //Inbound Y translates to Z
     void validateYPosition(double value) {
-        if (value > printVolumeDepth
-                || value < 0) {
+        if (printVolumeDepth > 0
+                && (value > printVolumeDepth || value < 0)) {
             throw new ParserInputException("Y value outside bed: " + value);
         }
     }
 
     //Inbound Z translates to -Y
     void validateZPosition(double value) {
-        if (value > (printVolumeHeight + printVolumeHeightTolerance)
-                || value < 0) {
+        if (printVolumeHeight > 0 && 
+                (value > (printVolumeHeight + printVolumeHeightTolerance)
+                    || value < 0)) {
             throw new ParserInputException("Z value outside bed: " + value);
         }
     }
@@ -138,11 +139,13 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     {
         ObjectSectionActionClass objectSectionAction = new ObjectSectionActionClass();
         Var<Integer> objectNumber = new Var<>(0);
+		Var<String> commentText = new Var<>();
 
         return Sequence(
                 Sequence('T', OneOrMore(Digit()),
                         objectNumber.set(Integer.valueOf(match())),
                         currentObject.set(Integer.valueOf(match())),
+						Optional(Comment(commentText)),
                         Newline()
                 ),
                 objectSectionAction,
@@ -488,6 +491,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
         Var<Integer> sValue = new Var<>();
         Var<Boolean> tPresent = new Var<>();
         Var<Integer> tValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
         return Sequence(Sequence(
                         'M', OneToThreeDigits(),
@@ -516,6 +520,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                                 )
                         )
                 ),
+                Optional(Comment(commentText)),
                 Newline(),
                 new Action()
                 {
@@ -541,6 +546,11 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                             node.setTNumber(tValue.get());
                         }
 
+                        if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+                        }
+
                         node.setGCodeLineNumber(++currentLineNumber);
 
                         context.getValueStack().push(node);
@@ -554,6 +564,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     Rule GCodeDirective()
     {
         Var<Integer> gcodeValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
         return Sequence('G', OneOrTwoDigits(),
                 gcodeValue.set(Integer.valueOf(match())),
@@ -565,6 +576,10 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                     {
                         GCodeDirectiveNode node = new GCodeDirectiveNode();
                         node.setGValue(gcodeValue.get());
+                        if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+                        }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
@@ -576,25 +591,36 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     // G1 F1800 E-0.50000
     Rule RetractDirective()
     {
-        Var<Float> dValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Float> fValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> fValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
         return Sequence("G1 ",
                 Optional(
-                        Feedrate(fValue)
+                    Sequence("F", FloatingPointNumber(),
+                            fValue.set(Double.valueOf(match())),
+                            Optional(' ')
+                    )
                 ),
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", NegativeFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", NegativeFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
+                // Potentially this will allow two feedrates on the line, which strictly should be illegal.
+                Optional(Sequence("F", FloatingPointNumber(),
+                            fValue.set(Double.valueOf(match())),
+                            Optional(' ')
+                        )
+                ), // The feedrate is after the extrusion in Slic3r
+                Optional(Comment(commentText)),
                 Newline(),
                 new Action()
                 {
@@ -614,6 +640,15 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
+                        else
+                        {
+                            node.getFeedrate().setFeedRate_mmPerMin(feedrateInForce);
+                        }
+                        if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+                        }
+
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
@@ -626,25 +661,37 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     // G1 F1800 E0.50000
     Rule UnretractDirective()
     {
-        Var<Float> dValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Float> fValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<Double> fValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
         return Sequence("G1 ",
                 Optional(
-                        Feedrate(fValue)
+                    Sequence("F", FloatingPointNumber(),
+                            fValue.set(Double.valueOf(match())),
+                            Optional(' ')
+                    )
                 ),
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' '))
                         )
                 ),
+                // Potentially this will allow two feedrates on the line, which strictly should be illegal.
+                Optional(
+                    Sequence("F", FloatingPointNumber(),
+                            fValue.set(Double.valueOf(match())),
+                            Optional(' ')
+                    )
+                ),
+                Optional(Comment(commentText)),
                 Newline(),
                 new Action()
                 {
@@ -665,6 +712,15 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
                         }
+                        else
+                        {
+                            node.getFeedrate().setFeedRate_mmPerMin(feedrateInForce);
+                        }
+                            
+                        if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+                        }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
@@ -677,10 +733,10 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule TravelDirective()
     {
-        Var<Float> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
-
+        
         return Sequence(FirstOf("G0 ","G1 "),
                 Optional(
                         Feedrate(fValue)
@@ -688,13 +744,18 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                 OneOrMore(
                         FirstOf(
                                 Sequence("X", 
-                                        FloatingPointOrIntegerNumber(),
+                                        FloatingPointNumber(),
                                         xValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("Y", 
-                                        FloatingPointOrIntegerNumber(),
+                                        FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
+                                        Optional(' ')
+                                ),
+                                Sequence("F", 
+                                        FloatingPointNumber(),
+                                        fValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
@@ -710,6 +771,10 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         if (fValue.isSet())
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
+                        }
+                        else
+                        {
+                            node.getFeedrate().setFeedRate_mmPerMin(feedrateInForce);
                         }
 
                         if (xValue.isSet())
@@ -737,44 +802,57 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     // G1 F840 X88.700 Y44.153 E5.93294
     Rule ExtrusionDirective()
     {
-        Var<Float> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
-        Var<Float> eValue = new Var<>();
-        Var<Float> dValue = new Var<>();
+        Var<Double> dValue = new Var<>();
+        Var<Double> eValue = new Var<>();
+        Var<String> commentText = new Var<>();
 
         return Sequence("G1 ",
-                Optional(
-                        Feedrate(fValue)
-                ),
-                Optional(
-                        Sequence("X", 
-                                FloatingPointOrIntegerNumber(),
-                                xValue.set(Double.valueOf(match())),
-                                ' ',
-                                "Y", 
-                                FloatingPointOrIntegerNumber(),
-                                yValue.set(Double.valueOf(match())),
-                                Optional(' '),
-                                Optional(Sequence(
-                                                "Z", FloatingPointNumber(),
-                                                zValue.set(Double.valueOf(match())),
-                                                Optional(' ')))
-                        )
+                ZeroOrMore(
+                    FirstOf(
+                            Sequence("X", 
+                                            FloatingPointNumber(),
+                                            xValue.set(Double.valueOf(match())),
+                                            Optional(' ')
+                            ),
+                            Sequence("Y", 
+                                            FloatingPointNumber(),
+                                            yValue.set(Double.valueOf(match())),
+                                            Optional(' ')
+                            ),
+                            Sequence("Z", 
+                                            FloatingPointNumber(),
+                                            zValue.set(Double.valueOf(match())),
+                                            Optional(' ')
+                            ),
+                            Sequence("F", FloatingPointNumber(),
+                                    fValue.set(Double.valueOf(match())),
+                                    Optional(' ')
+                            )
+                    )
                 ),
                 OneOrMore(
                         FirstOf(
                                 Sequence("D", PositiveFloatingPointNumber(),
-                                        dValue.set(Float.valueOf(match())),
+                                        dValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 ),
                                 Sequence("E", PositiveFloatingPointNumber(),
-                                        eValue.set(Float.valueOf(match())),
+                                        eValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
                 ),
+				Optional(
+                    Sequence("F", FloatingPointNumber(),
+                        fValue.set(Double.valueOf(match())),
+                        Optional(' ')
+                    )
+                ),
+
                 Newline(),
                 new Action()
                 {
@@ -815,6 +893,11 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             node.getExtrusion().setE(eValue.get());
                         }
+						
+						if (commentText.isSet())
+                        {
+                            node.setCommentText(commentText.get());
+						}
 
                         node.setGCodeLineNumber(++currentLineNumber);
 
@@ -832,30 +915,38 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     // G0 F12000 X88.302 Y42.421 Z1.020
     Rule LayerChangeDirective()
     {
-        Var<Float> fValue = new Var<>();
+        Var<Double> fValue = new Var<>();
         Var<Double> xValue = new Var<>();
         Var<Double> yValue = new Var<>();
         Var<Double> zValue = new Var<>();
 
-        return Sequence("G0 ",
-                Optional(
-                        Feedrate(fValue)
+        return Sequence(
+                FirstOf("G0 ", "G1 "),
+                    ZeroOrMore(
+                    FirstOf(
+                            Sequence("X", FloatingPointNumber(),
+                                    xValue.set(Double.valueOf(match())),
+                                    Optional(' ')
+                            ),
+                            Sequence("Y", FloatingPointNumber(),
+                                    yValue.set(Double.valueOf(match())),
+                                    Optional(' ')
+                            ),
+                            Sequence("F", FloatingPointNumber(),
+                                    fValue.set(Double.valueOf(match())),
+                                    Optional(' ')
+                            )
+                    )
                 ),
-                ZeroOrMore(
-                        FirstOf(
-                                Sequence("X", FloatingPointOrIntegerNumber(),
-                                        xValue.set(Double.valueOf(match())),
-                                        Optional(' ')
-                                ),
-                                Sequence("Y", FloatingPointOrIntegerNumber(),
-                                        yValue.set(Double.valueOf(match())),
-                                        Optional(' ')
-                                )
-                        )
-                ),
-                Sequence("Z", FloatingPointOrIntegerNumber(),
+                Sequence("Z", FloatingPointNumber(),
                         zValue.set(Double.valueOf(match())),
                         Optional(' ')
+                ),
+                Optional(
+                    Sequence("F", FloatingPointNumber(),
+                        fValue.set(Double.valueOf(match())),
+                        Optional(' ')
+                    )
                 ),
                 Newline(),
                 new Action()
@@ -864,10 +955,13 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                     public boolean run(Context context)
                     {
                         LayerChangeDirectiveNode node = new LayerChangeDirectiveNode();
-
                         if (fValue.isSet())
                         {
                             node.getFeedrate().setFeedRate_mmPerMin(fValue.get());
+                        }
+						else
+                        {
+                            node.getFeedrate().setFeedRate_mmPerMin(feedrateInForce);
                         }
 
                         if (xValue.isSet())
@@ -960,48 +1054,49 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     @SuppressSubnodes
     Rule FloatingPointNumber()
     {
-        return FirstOf(
-                NegativeFloatingPointNumber(),
-                PositiveFloatingPointNumber()
-        );
+        return Sequence(
+                    Optional(
+                            FirstOf(Ch('+'), Ch('-'))),
+                    UnsignedFloatingPointNumber()
+                );
+    }
+    
+    @SuppressSubnodes
+    Rule UnsignedFloatingPointNumber()
+    {
+        //Positive double e.g. 1.23
+        return Sequence(
+                OneOrMore(Digit()),
+                Optional(
+                    Sequence(
+                        Ch('.'),
+                        OneOrMore(Digit()))));
     }
 
     @SuppressSubnodes
     Rule PositiveFloatingPointNumber()
     {
-        //Positive float e.g. 1.23
+        //Positive double e.g. 1.23
         return Sequence(
-                OneOrMore(Digit()),
-                Ch('.'),
-                OneOrMore(Digit()));
+                Optional(Ch('+')),
+                UnsignedFloatingPointNumber());
     }
 
     @SuppressSubnodes
     Rule NegativeFloatingPointNumber()
     {
-        //Negative float e.g. -1.23
+        //Negative double e.g. -1.23
         return Sequence(
                 Ch('-'),
-                OneOrMore(Digit()),
-                Ch('.'),
-                OneOrMore(Digit()));
+                UnsignedFloatingPointNumber());
     }
     
     @SuppressSubnodes
-    Rule FloatingPointOrIntegerNumber()
+    Rule Feedrate(Var<Double> feedrate)
     {
         return FirstOf(
-                FloatingPointNumber(),
-                IntegerNumber()
-        );
-    }
-
-    @SuppressSubnodes
-    Rule Feedrate(Var<Float> feedrate)
-    {
-        return FirstOf(
-                Sequence('F', FloatingPointOrIntegerNumber(),
-                        feedrate.set(Float.valueOf(match())),
+                Sequence('F', FloatingPointNumber(),
+                        feedrate.set(Double.valueOf(match())),
                         Optional(' '),
                         new Action()
                         {

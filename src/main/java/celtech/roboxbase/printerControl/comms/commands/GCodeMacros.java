@@ -294,15 +294,18 @@ public class GCodeMacros
 
     private static boolean existsMacrosForPrinterType(File macroDirectory,
             String macroName, Optional<PrinterType> typeCode) {
-        File subDirectory = new File(macroDirectory.getAbsolutePath() + File.separator
-                + typeCode.get().getTypeCode());
-        if (subDirectory.exists())
+        if (typeCode.isPresent())
         {
-            FilenameFilter filterForMacrosWithCorrectBase = new FilenameStartsWithFilter(macroName);
-            String[] matchingMacroFilenames = subDirectory.list(filterForMacrosWithCorrectBase);
-            return matchingMacroFilenames.length > 0;
+            File subDirectory = new File(macroDirectory.getAbsolutePath() + File.separator
+                    + typeCode.get().getTypeCode());
+            if (subDirectory.exists())
+            {
+                FilenameFilter filterForMacrosWithCorrectBase = new FilenameStartsWithFilter(macroName);
+                String[] matchingMacroFilenames = subDirectory.list(filterForMacrosWithCorrectBase);
+                return matchingMacroFilenames.length > 0;
+            }
         }
-            return false;
+        return false;
     }
 
     /**

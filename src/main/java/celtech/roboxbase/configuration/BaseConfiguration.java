@@ -93,7 +93,7 @@ public class BaseConfiguration
 
     private static Properties installationProperties = null;
     private static String applicationVersion = null;
-	private static String applicationLocale = null;
+    private static String applicationLocale = null;
     private static LogLevel applicationLogLevel = null;
     private static String applicationTitleAndVersion = null;
 
@@ -449,8 +449,8 @@ public class BaseConfiguration
 
         return applicationVersion;
     }
-	
-	public static String getApplicationLocale()
+
+    public static String getApplicationLocale()
     {
         if (installationProperties == null)
         {
@@ -652,7 +652,7 @@ public class BaseConfiguration
         String userSlicerPrintProfileDirectory = getUserFilamentDirectory();
         
         if(slicerType == SlicerType.Cura) {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
         } else if(slicerType == SlicerType.Cura3) {
             userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura3FilePath;
         }
@@ -660,18 +660,6 @@ public class BaseConfiguration
         File dirHandle = new File(userSlicerPrintProfileDirectory);
         if (!dirHandle.exists()) {
             dirHandle.mkdirs();
-            
-            // We also need to create the head directories here
-            String applicationPrintProfileDirectory = getApplicationPrintProfileDirectoryForSlicer(slicerType);
-            File appDirHandle = new File(applicationPrintProfileDirectory);
-            File[] headDirs = appDirHandle.listFiles(file -> {return file.isDirectory();});
-            for(File headDir : headDirs) {
-                String userPrintProfileHeadDirectory = userSlicerPrintProfileDirectory + headDir.getName() + "/";
-                File headDirHandle = new File(userPrintProfileHeadDirectory);
-                if(!headDirHandle.exists()) {
-                    headDirHandle.mkdir();
-                }
-            }
         }
         
         return userSlicerPrintProfileDirectory;

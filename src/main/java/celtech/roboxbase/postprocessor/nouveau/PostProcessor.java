@@ -585,7 +585,7 @@ public class PostProcessor
             } else
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
-                float lastFeedrate = gcodeParser.getFeedrateInForce();
+                double lastFeedrate = gcodeParser.getFeedrateInForce();
                 int lastLineNumber = gcodeParser.getCurrentLineNumber();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
@@ -653,7 +653,7 @@ public class PostProcessor
     {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
 
-        float lastFeedrate = -1;
+        double lastFeedrate = -1;
 
         SectionNode lastSectionNode = null;
         ToolSelectNode lastToolSelectNode = null;

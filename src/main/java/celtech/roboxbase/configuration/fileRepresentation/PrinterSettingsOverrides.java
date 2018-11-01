@@ -71,6 +71,23 @@ public class PrinterSettingsOverrides
 
     }
 
+    // A clone without copying the dataChanged property.
+    public PrinterSettingsOverrides duplicate()
+    {
+        PrinterSettingsOverrides copy = new PrinterSettingsOverrides();
+        copy.customSettingsName.set(this.customSettingsName.get());
+        copy.printQuality.set(this.printQuality.get());
+        copy.printSupportOverride.set(this.printSupportOverride.get());
+        copy.printSupportGapEnabledOverride.set(this.printSupportGapEnabledOverride.get());
+        copy.printSupportTypeOverride.set(this.printSupportTypeOverride.get());
+        copy.brimOverride = this.brimOverride;
+        copy.fillDensityOverride = this.fillDensityOverride;
+        copy.raftOverride = this.raftOverride;
+        copy.spiralPrintOverride = this.spiralPrintOverride;
+        
+        return copy;
+    }
+
     private void toggleDataChanged()
     {
         dataChanged.set(dataChanged.not().get());
