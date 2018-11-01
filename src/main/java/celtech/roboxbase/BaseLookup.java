@@ -249,25 +249,19 @@ public class BaseLookup
     {
         StenographerFactory.changeAllLogLevels(logLevel);
 
-        steno.info("Starting AutoMaker - loading resources...");
-
-        steno.info("Using locale - " + appLocale.toLanguageTag());
         applicationLocale = appLocale;
-
+        steno.info("Starting AutoMaker - loading resources for locale " + applicationLocale);
         i18nbundle = null;
+        availableLocales = null;
         try
         {
-            steno.info("Creating language data object ...");
             LanguageData languageData = new LanguageData();
-            steno.info("Getting available locales ...");
             availableLocales = languageData.getAvailableLocales();
-
-            steno.info("Getting resource bundle ...");
             i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
         }
         catch (Exception ex)
         {
-            steno.exception("Failed to load language resources", ex);
+            steno.error("Failed to load language resources: " + ex.getMessage());
             i18nbundle = null;
             availableLocales = null;
         }
@@ -275,12 +269,10 @@ public class BaseLookup
         if (i18nbundle == null)
         {
             applicationLocale = Locale.ENGLISH;
-            steno.info("Creating language data object ...");
-            LanguageData languageData = new LanguageData();
-            steno.info("Getting available locales ...");
-            availableLocales = languageData.getAvailableLocales();
+            steno.debug("Loading resources for fallback locale " + applicationLocale);
 
-            steno.info("Getting resource bundle ...");
+            LanguageData languageData = new LanguageData();
+            availableLocales = languageData.getAvailableLocales();
             i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
         }
 
