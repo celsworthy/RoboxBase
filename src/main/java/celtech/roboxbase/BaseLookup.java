@@ -254,13 +254,35 @@ public class BaseLookup
         steno.info("Using locale - " + appLocale.toLanguageTag());
         applicationLocale = appLocale;
 
-        steno.info("Creating language data object ...");
-        LanguageData languageData = new LanguageData();
-        steno.info("Getting available locales ...");
-        availableLocales = languageData.getAvailableLocales();
+        i18nbundle = null;
+        try
+        {
+            steno.info("Creating language data object ...");
+            LanguageData languageData = new LanguageData();
+            steno.info("Getting available locales ...");
+            availableLocales = languageData.getAvailableLocales();
 
-        steno.info("Getting resource bundle ...");
-        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+            steno.info("Getting resource bundle ...");
+            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+        }
+        catch (Exception ex)
+        {
+            steno.exception("Failed to load language resources", ex);
+            i18nbundle = null;
+            availableLocales = null;
+        }
+
+        if (i18nbundle == null)
+        {
+            applicationLocale = Locale.ENGLISH;
+            steno.info("Creating language data object ...");
+            LanguageData languageData = new LanguageData();
+            steno.info("Getting available locales ...");
+            availableLocales = languageData.getAvailableLocales();
+
+            steno.info("Getting resource bundle ...");
+            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+        }
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
