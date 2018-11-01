@@ -266,9 +266,9 @@ public class PrinterIDResponse extends RoboxRxPacket
     {
         this.printerFriendlyName = printerFriendlyName;
     }
-    
-    @JsonIgnore
-    public void setCheckByte(String checkByte) {
+
+    public void setCheckByte(String checkByte) 
+    {
         this.checkByte = checkByte;
     }
 

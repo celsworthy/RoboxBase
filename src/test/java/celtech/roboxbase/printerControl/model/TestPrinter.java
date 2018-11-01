@@ -1225,4 +1225,14 @@ public class TestPrinter implements Printer
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public ReadOnlyObjectProperty<PrinterConnection> printerConnectionProperty() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setPrinterConnection(PrinterConnection printerConnection) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
