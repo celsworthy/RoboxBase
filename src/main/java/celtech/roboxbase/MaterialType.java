@@ -89,15 +89,15 @@ public enum MaterialType
     /**
      * Polyether Ether Ketone
      */
-    PEEK("PEK", 1.30),   
+    PEK("PEEK", 1.30),   
     /**
      * Polyether Ketone Ketone
      */
-    PEKK("PKK", 1.27),   
+    PKK("PEKK", 1.27),   
     /**
      * Polyphenylsulfone
      */
-    PSF("PPSF", 1.29),   
+    PSF("PPSU", 1.29),   
     /**
      * Polyphenylene Sulfide
      */
@@ -113,7 +113,7 @@ public enum MaterialType
     /**
      * Polyvinylidene Fluoride
      */
-    PVDF("PVD", 1.78),   
+    PVD("PVDF", 1.78),   
     /**
      * Thermoplastic Co-Polyester
      */

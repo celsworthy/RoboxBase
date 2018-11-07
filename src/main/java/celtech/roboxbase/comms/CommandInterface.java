@@ -35,6 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
+import javafx.scene.paint.Color;
 import libertysystems.configuration.ConfigItemIsAnArray;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
@@ -333,7 +334,8 @@ public abstract class CommandInterface extends Thread
                                 break;
                             }
                         }
-
+                        if (!(this instanceof RoboxRemoteCommandInterface))
+                            printerToUse.setAmbientLEDColour(Color.web(lastPrinterIDResponse.getPrinterColour()));
                     } catch (PrinterException ex)
                     {
                         steno.error("Error whilst checking printer ID");

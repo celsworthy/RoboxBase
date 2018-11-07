@@ -2435,6 +2435,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeIDCmd);
             PrinterIDResponse idResponse = (PrinterIDResponse) commandInterface.writeToPrinter(
                     RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
         } catch (RoboxCommsException ex)
         {
             steno.error("Comms exception whilst writing printer colour " + ex.getMessage());
@@ -2672,6 +2673,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeIDCmd);
             PrinterIDResponse idResponse = (PrinterIDResponse) commandInterface.writeToPrinter(
                     RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
         } catch (RoboxCommsException ex)
         {
             steno.error("Comms exception whilst writing printer id checksum " + ex.
@@ -4259,22 +4261,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
-
-                    //Update the LED colour if we're dealing with a local printer
-                    if (!(commandInterface instanceof RoboxRemoteCommandInterface))
-                    {
-                        if (idResponse.isValid() && idResponse.getPrinterColour() != null)
-                        {
-                            try
-                            {
-                                setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
-
-                            } catch (PrinterException ex)
-                            {
-                                steno.warning("Couldn't set printer LED colour");
-                            }
-                        }
-                    }
                     break;
 
                 case REEL_0_EEPROM_DATA:
@@ -4845,17 +4831,25 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
 
+        steno.debug("Getting suitable print jobs");
         File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
         for (File printJobDir : printSpoolDir.listFiles())
         {
+            steno.debug("Checking file: " + printJobDir.getName());
             if (printJobDir.isDirectory())
             {
                 PrintJob pj = new PrintJob(printJobDir.getName());
                 File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
                 File statistics = new File(pj.getStatisticsFileLocation());
                 
+                if (roboxisedGCode.exists())
+                    steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
+                if (statistics.exists())
+                    steno.debug("Has statistics " + statistics.getName());
                 if (roboxisedGCode.exists() && statistics.exists())
                 {
+                    steno.debug("Adding stats to list");
+
                     //Valid files - does it work for us?
                     try
                     {
@@ -4875,7 +4869,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         for (PrintJobStatistics stats : orderedStats)
         {
+            steno.debug("Checking job " +  stats.getPrintJobID());
             HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
+            steno.debug("    job printed with head type" +  printedWithHeadType.toString());
+            if (headProperty().get() == null)
+                steno.debug("    head is null");
+            if (headProperty().get() != null && headProperty().get().headTypeProperty().get() != printedWithHeadType)
+                steno.debug("    headTypeProperty ( " +  headProperty().get().headTypeProperty().get().toString() + ") != printedWithHeadType");
             if (headProperty().get() != null && headProperty().get().headTypeProperty().get() == printedWithHeadType)
             {
                 //The head type matches
@@ -4889,6 +4889,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         material1RequirementsMet = false;
                     }
                 }
+                if (material1RequirementsMet)
+                    steno.debug("material1RequirementsMet = true");
+                else
+                    steno.debug("material1RequirementsMet = false");
 
                 boolean material2RequirementsMet = true;
                 if (stats.getRequiresMaterial2())
@@ -4901,10 +4905,16 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     }
                 }
 
+                if (material2RequirementsMet)
+                    steno.debug("material2RequirementsMet = true");
+                else
+                    steno.debug("material2RequirementsMet = false");
+
                 if (material1RequirementsMet && material2RequirementsMet)
                 {
                     if (suitablePrintJobs.size() < MAX_RETAINED_PRINT_JOBS)
                     {
+                        steno.debug("Adding to suitable print jobs.");
                         //Yay - this one is suitable
                         SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
                         suitablePrintJob.setPrintJobID(stats.getPrintJobID());
@@ -4918,6 +4928,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     }
                     else
                     {
+                        steno.debug("Suitable job - but too many jobs.");
                         break;
                     }
                 }
