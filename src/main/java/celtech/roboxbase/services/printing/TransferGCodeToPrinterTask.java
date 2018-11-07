@@ -301,7 +301,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
                 if (thisJobCanBeReprinted && printJobStatistics != null)
                     remoteCI.startPrintJob(printJobID);
                 else
-                    remoteCI.printGCodeFile(remoteDirectory + "" + gcodeFile.getName());
+                    remoteCI.printGCodeFile(remoteDirectory + "/" + gcodeFile.getName());
                 transferredOK = true;
             }
             catch (RoboxCommsException ex)

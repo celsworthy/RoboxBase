@@ -203,14 +203,6 @@ public class LanguageFileUTF8Control extends Control
         }
     }
 
-     @Override
-    public Locale getFallbackLocale(String baseName,
-                                    Locale locale)
-    {
-        // Always fallback to English.
-        return locale.equals(Locale.ENGLISH) ? null : Locale.ENGLISH;
-    }
-    
     @Override
     public List<String> getFormats(String baseName)
     {
