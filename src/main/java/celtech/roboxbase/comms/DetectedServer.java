@@ -786,10 +786,6 @@ public final class DetectedServer
                 steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
 
                 List<String> response = multipart.finish();
-                disconnect();
-
-                // Disconnecting here does not clear the user interface, so also set the poll count to force the user interface to clear.
-                pollCount = maxAllowedPollCount + 1;
 
                 long t3 = System.currentTimeMillis();            
                 steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
@@ -799,6 +795,12 @@ public final class DetectedServer
             {
                 steno.error("Failure during write of root software: " + ex.getMessage());
             }
+        }
+
+        if (success)
+        {
+            // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
+            pollCount = maxAllowedPollCount + 1;
         }
         
         return success;
