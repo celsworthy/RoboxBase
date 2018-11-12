@@ -12,7 +12,13 @@ import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +45,38 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public final class DetectedServer
 {
+    // Jackson deserializer, so that DetectedServer.createDetectedServer() is used to create
+    // new servers, thus ensuring the integrity of the known server list.
+    public static class DetectedServerDeserializer extends StdDeserializer<DetectedServer> {
+     
+        public DetectedServerDeserializer() {
+            this(null);
+        }
+
+        public DetectedServerDeserializer(Class<?> vc) {
+            super(vc);
+        }
+
+        @Override
+        public DetectedServer deserialize(JsonParser jp, DeserializationContext dc) throws IOException, JsonProcessingException
+        {
+            ObjectCodec codec = jp.getCodec();
+            JsonNode node = codec.readTree(jp);
+
+            String addressText = node.get("address").asText();
+            InetAddress address = InetAddress.getByName(addressText);
+
+            DetectedServer server = DetectedServer.createDetectedServer(address);
+            
+            server.serverIP.set(addressText);
+            server.setName(node.get("name").asText());
+            server.setVersion(node.get("version").asText());
+            server.setPin(node.get("pin").asText());
+            server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
+            
+            return server;
+        }
+    }
 
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
@@ -311,6 +349,10 @@ public final class DetectedServer
         boolean success = false;
 
         steno.info("Connecting " + name.get());
+        steno.debug("Status = " + serverStatus.get());
+        if (serverIP.get().equalsIgnoreCase("192.168.1.74"))
+            steno.debug("Serve is Pern");
+            
 
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
@@ -320,6 +362,7 @@ public final class DetectedServer
                 if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()) &&
                     !(BaseConfiguration.getApplicationVersion().startsWith("tadev") && version.get().startsWith("tadev"))) // Debug hack to allow mismatching development versions to operate.
                 {
+                    steno.debug("Setting status to WRONG_VERSION");
                     setServerStatus(ServerStatus.WRONG_VERSION);
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
                 } else
@@ -328,21 +371,26 @@ public final class DetectedServer
                     int response = getData(LIST_PRINTERS_COMMAND);
                     if (response == 200)
                     {
+                        steno.debug("Setting status to CONNECTED");
                         setServerStatus(ServerStatus.CONNECTED);
                         CoreMemory.getInstance().activateRoboxRoot(this);
                         success = true;
                     } else if (response == 401)
                     {
+                        steno.debug("Setting status to WRONG_PIN");
                         setServerStatus(ServerStatus.WRONG_PIN);
                         CoreMemory.getInstance().deactivateRoboxRoot(this);
                     } else
                     {
+                        
+                        steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
                         setServerStatus(ServerStatus.NOT_CONNECTED);
                         CoreMemory.getInstance().deactivateRoboxRoot(this);
                     }
                 }
             } catch (IOException ex)
             {
+                steno.debug("Caught exception " + ex.toString() + "- setting status to NOT_CONNECTED");
                 setServerStatus(ServerStatus.NOT_CONNECTED);
                 CoreMemory.getInstance().deactivateRoboxRoot(this);
             }
