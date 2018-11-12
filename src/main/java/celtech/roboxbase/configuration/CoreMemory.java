@@ -2,8 +2,10 @@ package celtech.roboxbase.configuration;
 
 import celtech.roboxbase.comms.DetectedServer;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +19,6 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class CoreMemory
 {
-
     private final Stenographer steno = StenographerFactory.getStenographer(CoreMemory.class.getName());
     private static final String ACTIVE_ROBOX_ROOT_KEY = "ActiveRoots";
     private static final String LAST_PRINTER_SERIAL_KEY = "LastPrinterSerial";
@@ -31,6 +32,9 @@ public class CoreMemory
 
     private CoreMemory()
     {
+        SimpleModule module = new SimpleModule("DetectedServerDeserializer", new Version(1, 0, 0, null, null, null));
+        module.addDeserializer(DetectedServer.class, new DetectedServer.DetectedServerDeserializer());
+        mapper.registerModule(module);
     }
 
     public static CoreMemory getInstance()
