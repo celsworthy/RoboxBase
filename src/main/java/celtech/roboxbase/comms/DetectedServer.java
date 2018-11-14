@@ -747,8 +747,8 @@ public final class DetectedServer
         {
             try
             {
-                postData(SHUTDOWN_SYSTEM_COMMAND, null);
-                success = true;
+                int rc = postData(SHUTDOWN_SYSTEM_COMMAND, null);
+                success = (rc == 200);
             }
             catch (java.net.SocketTimeoutException stex)
             {
