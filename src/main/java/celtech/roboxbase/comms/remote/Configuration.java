@@ -12,7 +12,7 @@ public class Configuration
     /**
      * Admin API
      */
-    public static final String adminAPIService = "/admin";
+  public static final String adminAPIService = "/admin";
     public static final String shutdown = "/shutdown";
 
     /**
