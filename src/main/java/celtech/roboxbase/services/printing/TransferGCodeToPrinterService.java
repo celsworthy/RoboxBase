@@ -178,6 +178,15 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
                 || stateProperty().get() == State.READY)
         {
             super.reset();
+            printerToUse = null;
+            modelFileToPrint.setValue("");
+            currentPrintJobID.setValue("");
+            linesInGCodeFile.setValue(0);
+            printUsingSDCard = true;
+            startFromSequenceNumber = 0;
+            canBeReprinted = true;
+            dontInitiatePrint = false;
+            printJobStatistics = null;
         }
     }
 

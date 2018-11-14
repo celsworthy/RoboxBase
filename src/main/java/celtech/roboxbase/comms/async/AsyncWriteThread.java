@@ -210,6 +210,7 @@ public class AsyncWriteThread extends Thread
                 steno.info("Connection lost - " + getName());
             } catch (RoboxCommsException | InterruptedException ex)
             {
+                commandInterface.dumpCommandHistory();
                 steno.exception("Unexpected error during write", ex);
             } finally
             {

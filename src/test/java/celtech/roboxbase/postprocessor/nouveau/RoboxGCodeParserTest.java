@@ -68,7 +68,7 @@ public class RoboxGCodeParserTest
         assertTrue(result.valueStack.peek(0) instanceof RetractNode);
         assertEquals(-0.5, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((RetractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(1800, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
+        assertEquals(1800, ((RetractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
     }
 
     @Test
@@ -270,7 +270,7 @@ public class RoboxGCodeParserTest
         assertEquals(0, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getMovement().getZ(), 0.001);
         assertEquals(0.09495, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getExtrusion().getE(), 0.001);
         assertEquals(0, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getExtrusion().getD(), 0.0001);
-        assertEquals(1140, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
+        assertEquals(1140, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
         assertEquals(commentText, ((ExtrusionNode) inputData1Result.valueStack.peek(0)).getCommentText());
 
         gcodeParser.resetLayer();
@@ -304,7 +304,7 @@ public class RoboxGCodeParserTest
         assertEquals(85.372, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getMovement().getX(), 0.001);
         assertEquals(65.599, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getMovement().getY(), 0.001);
         assertEquals(0.3, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getMovement().getZ(), 0.001);
-        assertEquals(12000, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
+        assertEquals(12000, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
         assertEquals(commentText, ((LayerChangeDirectiveNode) result.valueStack.peek(0)).getCommentText());
     }
     
@@ -326,7 +326,7 @@ public class RoboxGCodeParserTest
         assertFalse(((UnretractNode) result.valueStack.peek(0)).getExtrusion().isEInUse());
         assertTrue(((UnretractNode) result.valueStack.peek(0)).getExtrusion().isDInUse());
         assertEquals(0.3, ((UnretractNode) result.valueStack.peek(0)).getExtrusion().getD(), 0.001);
-        assertEquals(150, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin(), 0.001);
+        assertEquals(150, ((UnretractNode) result.valueStack.peek(0)).getFeedrate().getFeedRate_mmPerMin());
         assertEquals(commentText, ((UnretractNode) result.valueStack.peek(0)).getCommentText());
     }
 }

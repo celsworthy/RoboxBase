@@ -196,4 +196,51 @@ public class RemoteClient implements LowLevelInterface
             throw new RoboxCommsException("Failed to override filament on remote printer" + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
         }
     }
+    
+    public void startPrintJob(String printerID, String printJobID) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/reprintJob", printJobID, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to start print job \"" +
+                             printJobID +
+                             "\" on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
+
+    public void printGCodeFile(String printerID, String remoteFileName) throws RoboxCommsException
+    {
+        try
+        {
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/printGCodeFile", remoteFileName, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to print GCode file \"" +
+                             remoteFileName +
+                             "\" on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
+
+    public void cancelPrint(String printerID, boolean safetyOn) throws RoboxCommsException
+    {
+        try
+        {
+            String jsonified = "\"" + mapper.writeValueAsString(safetyOn) + "\""; // Not sure why this needs to be in quotes, but it doesn't work without.
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/cancel/", jsonified, null);
+        } catch (IOException ex)
+        {
+            String message = "Failed to cancel print on remote printer " +
+                             remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP();
+            steno.error(message);
+            throw new RoboxCommsException(message);
+        }
+    }
 }

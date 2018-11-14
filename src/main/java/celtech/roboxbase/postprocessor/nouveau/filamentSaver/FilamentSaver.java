@@ -11,7 +11,6 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithO
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -101,17 +100,16 @@ public class FilamentSaver
                     {
                         double targetTimeAfterStart = Math.max(0, toolSelect.getStartTimeFromStartOfPrint_secs().get() - heatUpTime_secs);
 
-                        Optional<FoundHeatUpNode> optionalFoundNodeToHeatAfter = findNodeToHeatAfter(allLayerPostProcessResults, layerCounter, toolSelect, targetTimeAfterStart);
+                        FoundHeatUpNode foundNodeToHeatAfter = findNodeToHeatAfter(allLayerPostProcessResults, layerCounter, toolSelect, targetTimeAfterStart);
 
-                        if (layerCounter == 1 && optionalFoundNodeToHeatAfter.isPresent()
-                                && optionalFoundNodeToHeatAfter.get().foundInLayer == 0)
+                        if (layerCounter == 1
+                                && foundNodeToHeatAfter.foundInLayer == 0)
                         {
                             needToSwitchToSubsequentLayerTemps[thisToolNumber] = true;
                         }
 
-                        if (optionalFoundNodeToHeatAfter.isPresent())
+                        if (foundNodeToHeatAfter != null)
                         {
-                            FoundHeatUpNode foundNodeToHeatAfter = optionalFoundNodeToHeatAfter.get();
                             int mValue = (foundNodeToHeatAfter.getFoundInLayer() == 0) ? layer0MValue : otherLayerMValue;
                             MCodeNode heaterOnNode = generateHeaterOnNode(thisToolNumber, mValue);
                             heaterOnNode.appendCommentText("Switch on in " + heatUpTime_secs + " seconds");
@@ -222,17 +220,17 @@ public class FilamentSaver
         return heaterOnNode;
     }
 
-    private Optional<FoundHeatUpNode> findNodeToHeatAfter(
+    private FoundHeatUpNode findNodeToHeatAfter(
             List<LayerPostProcessResult> allLayerPostProcessResults,
             final int startingLayer,
             ToolSelectNode toolSelect,
             double targetTimeAfterStart)
     {
-        Optional<FoundHeatUpNode> foundNode = Optional.empty();
+        FoundHeatUpNode foundNode = null;
 
         int layerCounter = startingLayer;
 
-        while (!foundNode.isPresent()
+        while (foundNode == null
                 && layerCounter >= 0)
         {
             GCodeEventNode startingNode = null;
@@ -261,7 +259,7 @@ public class FilamentSaver
                         && nodeUnderConsideration.getFinishTimeFromStartOfPrint_secs().isPresent()
                         && nodeUnderConsideration.getFinishTimeFromStartOfPrint_secs().get() < targetTimeAfterStart)
                 {
-                    foundNode = Optional.of(new FoundHeatUpNode(layerCounter, nodeUnderConsideration));
+                    foundNode = new FoundHeatUpNode(layerCounter, nodeUnderConsideration);
                     break;
                 }
             }

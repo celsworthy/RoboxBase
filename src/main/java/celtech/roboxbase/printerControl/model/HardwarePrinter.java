@@ -142,6 +142,7 @@ import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -150,6 +151,7 @@ import libertysystems.stenographer.StenographerFactory;
 public final class HardwarePrinter implements Printer, ErrorConsumer
 {
     private static final String ROOT_APPLICATION_SHORT_NAME = "Root";
+    private static final int MAX_RETAINED_PRINT_JOBS = 32;
     
     private final Stenographer steno = StenographerFactory.getStenographer(
             HardwarePrinter.class.getName());
@@ -879,32 +881,40 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private boolean doAbortActivity(Cancellable cancellable, boolean safetyFeaturesRequired)
     {
         boolean success = false;
-
+        
         printEngine.stopAllServices();
-
-        switchBedHeaterOff();
-        switchAllNozzleHeatersOff();
-
-        RoboxTxPacket abortPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.ABORT_PRINT);
-        try
+        if (getCommandInterface() instanceof RoboxRemoteCommandInterface)
         {
-            AckResponse response = (AckResponse) commandInterface.writeToPrinter(abortPacket);
-        } catch (RoboxCommsException ex)
-        {
-            steno.error("Couldn't send abort command to printer");
+            ((RoboxRemoteCommandInterface)getCommandInterface()).cancelPrint(safetyFeaturesRequired);
         }
-        PrinterUtils.waitOnBusy(this, cancellable);
+        else
+        {
 
-        try
-        {
-            printEngine.runMacroPrintJob(Macro.CANCEL_PRINT, true, false, safetyFeaturesRequired);
-            PrinterUtils.waitOnMacroFinished(this, cancellable);
-            success = true;
-        } catch (MacroPrintException ex)
-        {
-            steno.error("Failed to run abort macro: " + ex.getMessage());
+            switchBedHeaterOff();
+            switchAllNozzleHeatersOff();
+
+            RoboxTxPacket abortPacket = RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.ABORT_PRINT);
+            try
+            {
+                steno.info("Sending abort packet");
+                AckResponse response = (AckResponse) commandInterface.writeToPrinter(abortPacket);
+                steno.info("Response = " + response.toString());
+            } catch (RoboxCommsException ex)
+            {
+                steno.error("Couldn't send abort command to printer");
+            }
+            PrinterUtils.waitOnBusy(this, cancellable);
+
+            try
+            {
+                printEngine.runMacroPrintJob(Macro.CANCEL_PRINT, true, false, safetyFeaturesRequired);
+                PrinterUtils.waitOnMacroFinished(this, cancellable);
+                success = true;
+            } catch (MacroPrintException ex)
+            {
+                steno.error("Failed to run abort macro: " + ex.getMessage());
+            }
         }
-
         return success;
     }
 
@@ -1132,10 +1142,28 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void purgeMaterial(boolean requireNozzle0, boolean requireNozzle1, boolean safetyFeaturesRequired, boolean blockUntilFinished,
             Cancellable cancellable) throws PrinterException
     {
-        Macro macro = Macro.PURGE_MATERIAL;
+        boolean nozzle0Required = false;
+        boolean nozzle1Required = false;
+        
+        // Prevent trying to purge second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
+        {
+            nozzle0Required = requireNozzle0;
+            if (head.getNozzles().size() > 1 &&
+                head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                nozzle1Required = requireNozzle1;
+            }
+        }
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            Macro macro = Macro.PURGE_MATERIAL;
 
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
-                blockUntilFinished, cancellable, requireNozzle0, requireNozzle1, safetyFeaturesRequired);
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
+                blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1144,13 +1172,32 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             int nozzleNumber,
             boolean safetyFeaturesRequired) throws PrinterException
     {
-        Macro macro = Macro.MINI_PURGE;
-        boolean requireNozzle0 = nozzleNumber == 0;
-        boolean requireNozzle1 = nozzleNumber == 1;
-
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
+        boolean requireNozzle0 = false;
+        boolean requireNozzle1 = false;
+        
+        // Prevent trying to purge second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
+        {
+            if (nozzleNumber == 0)
+            {
+                requireNozzle0 = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1 &&
+                       head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                requireNozzle1 = true;
+            }
+        }
+        
+        if (requireNozzle0 || requireNozzle1)
+        {
+            Macro macro = Macro.MINI_PURGE;
+    
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(macro,
                 blockUntilFinished, cancellable,
                 requireNozzle0, requireNozzle1, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1201,15 +1248,26 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         boolean nozzle0Required = false;
         boolean nozzle1Required = false;
 
-        if (nozzleNumber == 0)
+        // Prevent trying to eject second material on a single material head, as it can damage it.
+        Head head = headProperty().get();
+        if (head != null)
         {
-            nozzle0Required = true;
-        } else
-        {
-            nozzle1Required = true;
+            if (nozzleNumber == 0)
+            {
+                nozzle0Required = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1 &&
+                       head.headTypeProperty().get() == Head.HeadType.DUAL_MATERIAL_HEAD)
+            {
+                nozzle1Required = true;
+            }
         }
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.EJECT_STUCK_MATERIAL,
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.EJECT_STUCK_MATERIAL,
                 blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1218,8 +1276,25 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         boolean nozzle0Required = nozzleNumber == 0;
         boolean nozzle1Required = nozzleNumber == 1;
 
-        executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.CLEAN_NOZZLE,
-                blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        // Do nothing if there is no head, or the head does not have valves, or does not have the specified nozzle.
+        Head head = headProperty().get();
+        if (head != null && head.valveTypeProperty().get() == Head.ValveType.FITTED)
+        {
+            if (nozzleNumber == 0)
+            {
+                nozzle0Required = true;
+            } else if (nozzleNumber == 1 &&
+                       head.getNozzles().size() > 1)
+            {
+                nozzle1Required = true;
+            }
+        }
+        
+        if (nozzle0Required || nozzle1Required)
+        {
+            executeMacroWithoutPurgeCheckAndWaitIfRequired(Macro.CLEAN_NOZZLE,
+                    blockUntilFinished, cancellable, nozzle0Required, nozzle1Required, safetyFeaturesRequired);
+        }
     }
 
     @Override
@@ -1898,10 +1973,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void sendDataFileChunk(String hexDigits, boolean lastPacket, boolean appendCRLF) throws DatafileSendNotInitialised, RoboxCommsException
     {
-//        if (lastPacket == true)
-//        {
-//            steno.info("Got last packet");
-//        }
         boolean dataIngested = false;
 
         if (appendCRLF)
@@ -1940,8 +2011,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
              */
             if (dataIngested && lastPacket)
             {
-                steno.trace("Final complete chunk:" + outputBuffer.toString() + " seq:"
-                        + dataFileSequenceNumber);
+                steno.trace("Final complete chunk seq:"
+                        + dataFileSequenceNumber + ":\n\"" + outputBuffer.toString() + "\"");
                 AckResponse response = transmitDataFileEnd(outputBuffer.toString(),
                         dataFileSequenceNumber);
                 if (response.isError())
@@ -2354,6 +2425,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeIDCmd);
             PrinterIDResponse idResponse = (PrinterIDResponse) commandInterface.writeToPrinter(
                     RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
         } catch (RoboxCommsException ex)
         {
             steno.error("Comms exception whilst writing printer colour " + ex.getMessage());
@@ -2591,6 +2663,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             AckResponse response = (AckResponse) commandInterface.writeToPrinter(writeIDCmd);
             PrinterIDResponse idResponse = (PrinterIDResponse) commandInterface.writeToPrinter(
                     RoboxTxPacketFactory.createPacket(TxPacketTypeEnum.READ_PRINTER_ID));
+            setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
         } catch (RoboxCommsException ex)
         {
             steno.error("Comms exception whilst writing printer id checksum " + ex.
@@ -4178,22 +4251,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
-
-                    //Update the LED colour if we're dealing with a local printer
-                    if (!(commandInterface instanceof RoboxRemoteCommandInterface))
-                    {
-                        if (idResponse.isValid() && idResponse.getPrinterColour() != null)
-                        {
-                            try
-                            {
-                                setAmbientLEDColour(Color.web(idResponse.getPrinterColour()));
-
-                            } catch (PrinterException ex)
-                            {
-                                steno.warning("Couldn't set printer LED colour");
-                            }
-                        }
-                    }
                     break;
 
                 case REEL_0_EEPROM_DATA:
@@ -4764,17 +4821,25 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
 
+        steno.debug("Getting suitable print jobs");
         File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
         for (File printJobDir : printSpoolDir.listFiles())
         {
+            steno.debug("Checking file: " + printJobDir.getName());
             if (printJobDir.isDirectory())
             {
                 PrintJob pj = new PrintJob(printJobDir.getName());
                 File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
                 File statistics = new File(pj.getStatisticsFileLocation());
                 
+                if (roboxisedGCode.exists())
+                    steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
+                if (statistics.exists())
+                    steno.debug("Has statistics " + statistics.getName());
                 if (roboxisedGCode.exists() && statistics.exists())
                 {
+                    steno.debug("Adding stats to list");
+
                     //Valid files - does it work for us?
                     try
                     {
@@ -4794,7 +4859,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         for (PrintJobStatistics stats : orderedStats)
         {
+            steno.debug("Checking job " +  stats.getPrintJobID());
             HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
+            steno.debug("    job printed with head type" +  printedWithHeadType.toString());
+            if (headProperty().get() == null)
+                steno.debug("    head is null");
+            if (headProperty().get() != null && headProperty().get().headTypeProperty().get() != printedWithHeadType)
+                steno.debug("    headTypeProperty ( " +  headProperty().get().headTypeProperty().get().toString() + ") != printedWithHeadType");
             if (headProperty().get() != null && headProperty().get().headTypeProperty().get() == printedWithHeadType)
             {
                 //The head type matches
@@ -4808,6 +4879,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         material1RequirementsMet = false;
                     }
                 }
+                if (material1RequirementsMet)
+                    steno.debug("material1RequirementsMet = true");
+                else
+                    steno.debug("material1RequirementsMet = false");
 
                 boolean material2RequirementsMet = true;
                 if (stats.getRequiresMaterial2())
@@ -4820,32 +4895,104 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     }
                 }
 
+                if (material2RequirementsMet)
+                    steno.debug("material2RequirementsMet = true");
+                else
+                    steno.debug("material2RequirementsMet = false");
+
                 if (material1RequirementsMet && material2RequirementsMet)
                 {
-                    //Yay - this one is suitable
-                    SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
-                    suitablePrintJob.setPrintJobID(stats.getPrintJobID());
-                    suitablePrintJob.setPrintJobName(stats.getProjectName());
-                    suitablePrintJob.setPrintProfileName(stats.getProfileName());
-                    suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
-                    suitablePrintJob.seteVolume(stats.geteVolumeUsed());
-                    suitablePrintJob.setdVolume(stats.getdVolumeUsed());
-                    suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
-                    suitablePrintJobs.add(suitablePrintJob);
+                    if (suitablePrintJobs.size() < MAX_RETAINED_PRINT_JOBS)
+                    {
+                        steno.debug("Adding to suitable print jobs.");
+                        //Yay - this one is suitable
+                        SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
+                        suitablePrintJob.setPrintJobID(stats.getPrintJobID());
+                        suitablePrintJob.setPrintJobName(stats.getProjectName());
+                        suitablePrintJob.setPrintProfileName(stats.getProfileName());
+                        suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
+                        suitablePrintJob.seteVolume(stats.geteVolumeUsed());
+                        suitablePrintJob.setdVolume(stats.getdVolumeUsed());
+                        suitablePrintJob.setCreationDate(dateFormat.format(stats.getCreationDate()));
+                        suitablePrintJobs.add(suitablePrintJob);
+                    }
+                    else
+                    {
+                        steno.debug("Suitable job - but too many jobs.");
+                        break;
+                    }
                 }
             }
         }
 
-        if (suitablePrintJobs.size() > 10)
-        {
-            int maxIndex = suitablePrintJobs.size() - 1;
-            for (int index = maxIndex; index >= 10; index--)
-            {
-                suitablePrintJobs.remove(index);
-            }
-        }
-
         return suitablePrintJobs;
+    }
+
+    @Override
+    public void tidyPrintJobDirectories()
+    {
+        BaseLookup.getTaskExecutor().runOnBackgroundThread(() -> {
+            List<PrintJobStatistics> orderedStats = new ArrayList<>();
+            List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+            
+            File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
+            for (File printJobDir : printSpoolDir.listFiles())
+            {
+                if (printJobDir.isDirectory())
+                {
+                    PrintJob pj = new PrintJob(printJobDir.getName());
+                    File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
+                    File statistics = new File(pj.getStatisticsFileLocation());
+                    
+                    boolean directoryValid = false;
+                    if (roboxisedGCode.exists() && statistics.exists())
+                    {
+                        //Valid files - does it work for us?
+                        try
+                        {
+                            PrintJobStatistics stats = pj.getStatistics();
+                            orderedStats.add(stats);
+                            directoryValid = true;
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        }
+                    }
+                    if (!directoryValid)
+                    {
+                        try
+                        {
+                            // Delete the invalid directory.
+                            FileUtils.deleteDirectory(printJobDir);
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to delete invalid project directory \"" + printJobDir.getName() + "\"", ex);
+                        }
+                    }
+                }
+            }
+            
+            orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
+            //Make sure the newest are at the top
+            Collections.reverse(orderedStats);
+            
+            if (orderedStats.size() > MAX_RETAINED_PRINT_JOBS)
+            {
+                // Delete the older projects as there are more than the max number to retain.
+                for (int index = MAX_RETAINED_PRINT_JOBS; index < orderedStats.size(); ++index)
+                {
+                    File printJobDir = new File(BaseConfiguration.getPrintSpoolDirectory() + File.separator + orderedStats.get(index).getPrintJobID());
+                    try
+                    {
+                        FileUtils.deleteDirectory(printJobDir);
+                    } catch (IOException ex)
+                    {
+                        steno.exception("Failed to delete project directory " + printJobDir, ex);
+                    }
+                }
+            }
+        });
     }
 
     @Override

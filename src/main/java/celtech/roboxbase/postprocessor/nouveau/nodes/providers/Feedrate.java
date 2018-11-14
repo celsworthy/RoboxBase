@@ -7,7 +7,7 @@ package celtech.roboxbase.postprocessor.nouveau.nodes.providers;
 public final class Feedrate implements Renderable
 {
     private boolean isFeedRateSet = false;
-    private float feedRate_mmPerMin = 0;
+    private int feedRate_mmPerMin = 0;
     private double feedRate_mmPerSec = 0;
     
     public boolean isFeedrateSet()
@@ -20,7 +20,7 @@ public final class Feedrate implements Renderable
      *
      * @return
      */
-    public float getFeedRate_mmPerMin()
+    public int getFeedRate_mmPerMin()
     {
         return feedRate_mmPerMin;
     }
@@ -39,7 +39,7 @@ public final class Feedrate implements Renderable
      *
      * @param feedRate_mmPerMin
      */
-    public void setFeedRate_mmPerMin(float feedRate_mmPerMin)
+    public void setFeedRate_mmPerMin(int feedRate_mmPerMin)
     {
         isFeedRateSet = true;
         this.feedRate_mmPerMin = feedRate_mmPerMin;

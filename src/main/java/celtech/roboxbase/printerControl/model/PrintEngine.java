@@ -9,10 +9,10 @@ import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
-import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
@@ -209,7 +209,6 @@ public class PrintEngine implements ControllableService
                 postProcessorService.setPrinterToUse(
                         result.getPrinterToUse());
                 postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
-                postProcessorService.setSlicerType(result.getPrintableMeshes().getDefaultSlicerType());
                 postProcessorService.start();
 
                 if (macroBeingRun.get() == null)
@@ -545,7 +544,7 @@ public class PrintEngine implements ControllableService
                     }
                 } catch (RoboxCommsException | IOException rex)
                 {
-                    steno.error("Failed to get statistics from remote server and persist");
+                    steno.debug("Failed to retrieve statistics from remote server");
                 }
             }
         }
@@ -643,7 +642,7 @@ public class PrintEngine implements ControllableService
 
     private boolean printFromScratch(boolean acceptedPrintRequest, PrintableMeshes printableMeshes)
     {
-        RoboxProfile settingsToUse = new RoboxProfile(printableMeshes.getSettings());
+        SlicerParametersFile settingsToUse = printableMeshes.getSettings().clone();
 
         //Create the print job directory
         String printUUID = SystemUtils.generate16DigitID();
@@ -667,7 +666,15 @@ public class PrintEngine implements ControllableService
             }
         }
 
-        SlicerType slicerTypeToUse = printableMeshes.getDefaultSlicerType();
+        //Write out the slicer config
+        SlicerType slicerTypeToUse = null;
+        if (settingsToUse.getSlicerOverride() != null)
+        {
+            slicerTypeToUse = settingsToUse.getSlicerOverride();
+        } else
+        {
+            slicerTypeToUse = printableMeshes.getDefaultSlicerType();
+        }
 
         SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
                 slicerTypeToUse);
@@ -676,21 +683,25 @@ public class PrintEngine implements ControllableService
         // This is a hack to force the fan speed to 100% when using PLA
         if (associatedPrinter.reelsProperty().containsKey(0))
         {
-            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA)
+            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA
+                    && SlicerParametersContainer.applicationProfileListContainsProfile(settingsToUse.
+                            getProfileName()))
             {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                settingsToUse.setEnableCooling(true);
+                settingsToUse.setMinFanSpeed_percent(100);
+                settingsToUse.setMaxFanSpeed_percent(100);
             }
         }
 
         if (associatedPrinter.reelsProperty().containsKey(1))
         {
-            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA)
+            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA
+                    && SlicerParametersContainer.applicationProfileListContainsProfile(settingsToUse.
+                            getProfileName()))
             {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                settingsToUse.setEnableCooling(true);
+                settingsToUse.setMinFanSpeed_percent(100);
+                settingsToUse.setMaxFanSpeed_percent(100);
             }
         }
         // End of hack
@@ -702,9 +713,9 @@ public class PrintEngine implements ControllableService
                 || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
                 && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
         {
-            settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
-            settingsToUse.addOrOverride("interfaceLayers", "1");
+            settingsToUse.setRaftBaseLinewidth_mm(1.250f);
+            settingsToUse.setRaftAirGapLayer0_mm(0.285f);
+            settingsToUse.setInterfaceLayers(1);
         }
 
         if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.NORMAL
@@ -713,7 +724,7 @@ public class PrintEngine implements ControllableService
                 || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
                 && associatedPrinter.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
         {
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
+            settingsToUse.setRaftAirGapLayer0_mm(0.4f);
         }
         // End of hack
 
@@ -735,19 +746,12 @@ public class PrintEngine implements ControllableService
 
         configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
                 (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
-        
-        String configFileDest = printJobDirectoryName
+        configWriter.generateConfigForSlicer(settingsToUse,
+                printJobDirectoryName
                 + File.separator
                 + printUUID
-                + BaseConfiguration.printProfileFileExtension;
-        
-        configWriter.generateConfigForSlicer(settingsToUse, configFileDest);
+                + BaseConfiguration.printProfileFileExtension);
 
-        if(slicerTypeToUse == SlicerType.Cura3) {
-            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
-            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest);
-        }
-        
         slicerService.reset();
         slicerService.setPrintJobUUID(printUUID);
         slicerService.setPrinterToUse(associatedPrinter);
@@ -779,6 +783,7 @@ public class PrintEngine implements ControllableService
             transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
             transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
             transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+            transferGCodeToPrinterService.setThisCanBeReprinted(false);
             transferGCodeToPrinterService.start();
             acceptedPrintRequest = true;
         } catch (IOException ex)
@@ -883,10 +888,11 @@ public class PrintEngine implements ControllableService
                 + printUUID + File.separator + printUUID
                 + BaseConfiguration.gcodeTempFileExtension;
 
+        PrintJobStatistics printJobStatistics = null;
         if (printJobName != null)
         {
             PrintJob printJob = new PrintJob(printUUID);
-            PrintJobStatistics printJobStatistics = new PrintJobStatistics();
+            printJobStatistics = new PrintJobStatistics();
             printJobStatistics.setProjectName(printJobName);
             try
             {
@@ -899,6 +905,7 @@ public class PrintEngine implements ControllableService
 
         File src = new File(filename);
         File dest = new File(printjobFilename);
+        final PrintJobStatistics pjs = printJobStatistics;
         Optional<PrinterType> printerType = Optional.of(associatedPrinter.findPrinterType());
         try
         {
@@ -912,6 +919,8 @@ public class PrintEngine implements ControllableService
                 transferGCodeToPrinterService.setCurrentPrintJobID(printUUID);
                 transferGCodeToPrinterService.setModelFileToPrint(printjobFilename);
                 transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
+                transferGCodeToPrinterService.setPrintJobStatistics(pjs);
+                transferGCodeToPrinterService.setThisCanBeReprinted(false);
                 transferGCodeToPrinterService.dontInitiatePrint(dontInitiatePrint);
                 transferGCodeToPrinterService.start();
                 consideringPrintRequest = false;
@@ -1032,9 +1041,7 @@ public class PrintEngine implements ControllableService
         {
             int numberOfLines = GCodeMacros.countLinesInMacroFile(printjobFile, ";", printerType);
             linesInPrintingFile.set(numberOfLines);
-            steno.
-                    info("Print service is in state:" + transferGCodeToPrinterService.stateProperty().
-                            get().name());
+            steno.info("Print service is in state:" + transferGCodeToPrinterService.stateProperty().get().name());
             if (transferGCodeToPrinterService.isRunning())
             {
                 transferGCodeToPrinterService.cancel();

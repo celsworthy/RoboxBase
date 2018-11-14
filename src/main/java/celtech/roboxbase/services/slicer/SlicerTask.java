@@ -28,7 +28,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 {
 
-    private static final Stenographer STENO = StenographerFactory.getStenographer(SlicerTask.class.
+    private final Stenographer steno = StenographerFactory.getStenographer(SlicerTask.class.
             getName());
     private String printJobUUID = null;
     private final PrintableMeshes printableMeshes;
@@ -70,7 +70,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             return null;
         }
 
-        STENO.debug("slice " + printableMeshes.getSettings().getName());
+        steno.debug("slice " + printableMeshes.getSettings().getProfileName());
         updateTitle("Slicer");
         updateMessage("Preparing model for conversion");
         updateProgress(0.0, 100.0);
@@ -80,7 +80,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 printJobDirectory,
                 printerToUse,
                 this,
-                STENO
+                steno
         );
     }
 
@@ -96,6 +96,10 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         timeUtils.timerStart(uuidString, slicerTimerName);
 
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
+        if (printableMeshes.getSettings().getSlicerOverride() != null)
+        {
+            slicerType = printableMeshes.getSettings().getSlicerOverride();
+        }
 
         MeshFileOutputConverter outputConverter = null;
 
@@ -124,7 +128,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
-        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), printableMeshes.getExtruderForModel(), centreOfPrintedObject, progressReceiver, steno);
+        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), centreOfPrintedObject, progressReceiver, steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
         steno.debug("Slicer Timer Report");
@@ -139,7 +143,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             String printJobDirectory,
             SlicerType slicerType,
             List<String> createdMeshFiles,
-            List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
             Stenographer steno)
@@ -149,8 +152,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
 
         String configFile = printJobUUID + BaseConfiguration.printProfileFileExtension;
-        String jsonSettingsFile = BaseConfiguration.getApplicationStorageDirectory() + "fdmprinter_robox.def.json";
-        
+
         MachineType machineType = BaseConfiguration.getMachineType();
         ArrayList<String> commands = new ArrayList<>();
 
@@ -163,11 +165,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String combinedConfigSection = "";
         String verboseOutputCommand = "";
         String progressOutputCommand = "";
-        String modelFileCommand = "";
-        String extruderTrainCommand = "";
-        
-        // Used for cura 3 to override th default settings
-        String sOverrideOptions = "";
 
         switch (slicerType)
         {
@@ -189,18 +186,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 configLoadCommand = "-c";
                 progressOutputCommand = "-p";
                 combinedConfigSection = configLoadCommand + " \"" + configFile + "\"";
-                break;
-            case Cura3:
-                windowsSlicerCommand = "\"" + BaseConfiguration.
-                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\" slice";
-                macSlicerCommand = "Cura/CuraEngine";
-                linuxSlicerCommand = "Cura/CuraEngine";
-                verboseOutputCommand = "-v";
-                configLoadCommand = "-j";
-                progressOutputCommand = "-p";
-                modelFileCommand = " -l";
-                extruderTrainCommand = " -e";
-                combinedConfigSection = configLoadCommand + " \"" + jsonSettingsFile + "\"";
                 break;
         }
 
@@ -247,7 +232,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + progressOutputCommand
                         + " "
                         + combinedConfigSection
-                        + sOverrideOptions
                         + " -o "
                         + "\"" + tempGcodeFilename + "\"";
 
@@ -260,18 +244,12 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ());
                 }
 
-                int previousExtruder = -1;
-                for (int i = 0; i < createdMeshFiles.size(); i++)
+//                windowsPrintCommand += " *.stl";
+                for (String fileName : createdMeshFiles)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
-                        windowsPrintCommand += extruderTrainCommand + extrudersForMeshes.get(i);
-                    }
-                    windowsPrintCommand += modelFileCommand;
                     windowsPrintCommand += " \"";
-                    windowsPrintCommand += createdMeshFiles.get(i);
+                    windowsPrintCommand += fileName;
                     windowsPrintCommand += "\"";
-                    
-                    previousExtruder = extrudersForMeshes.get(i);
                 }
                 windowsPrintCommand += " && popd\"";
                 steno.debug(windowsPrintCommand);

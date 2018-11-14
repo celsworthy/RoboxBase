@@ -1,7 +1,7 @@
 package celtech.roboxbase.configuration.slicer;
 
-import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Locale;
@@ -13,18 +13,19 @@ import java.util.Locale;
 public class Slic3rConfigWriter extends SlicerConfigWriter
 {
 
-    public Slic3rConfigWriter() {
+    public Slic3rConfigWriter()
+    {
         super();
         slicerType = SlicerType.Slic3r;
-        PRINT_PROFILE_SETTINGS_CONTAINER.getDefaultPrintProfileSettingsForSlicer(slicerType).getAllSettings()
-                .forEach(setting -> printProfileSettingsMap.put(setting.getId(), setting));
     }
 
     @Override
-    void bringDataInBounds(RoboxProfile profileData) {
-        if (profileData.getSpecificSettingAsString("fillPattern").equals("line")
-            && profileData.getSpecificFloatSetting("fillDensity_normalised") >= 0.99f) {
-            profileData.addOrOverride("fillDensity_normalised", "0.99");
+    void bringDataInBounds(SlicerParametersFile profileData)
+    {
+        if (profileData.getFillPattern() == FillPattern.LINE
+            && profileData.getFillDensity_normalised() >= 0.99f)
+        {
+            profileData.setFillDensity_normalised(.99f);
         }
     }
 
@@ -60,7 +61,13 @@ public class Slic3rConfigWriter extends SlicerConfigWriter
     }
 
     @Override
-    protected void outputLine(FileWriter writer, String variableName, Enum value) throws IOException
+    protected void outputLine(FileWriter writer, String variableName, FillPattern value) throws IOException
+    {
+        writer.append(variableName + " = " + value.name().toLowerCase() + "\n");
+    }
+
+    @Override
+    protected void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException
     {
         writer.append(variableName + " = " + value.name().toLowerCase() + "\n");
     }

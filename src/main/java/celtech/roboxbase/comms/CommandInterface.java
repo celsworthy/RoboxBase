@@ -29,6 +29,7 @@ import celtech.roboxbase.services.firmware.FirmwareLoadService;
 import celtech.roboxbase.utils.PrinterUtils;
 import javafx.application.Platform;
 import javafx.concurrent.WorkerStateEvent;
+import javafx.scene.paint.Color;
 import libertysystems.configuration.ConfigItemIsAnArray;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
@@ -327,7 +328,8 @@ public abstract class CommandInterface extends Thread
                                 break;
                             }
                         }
-
+                        if (!(this instanceof RoboxRemoteCommandInterface))
+                            printerToUse.setAmbientLEDColour(Color.web(lastPrinterIDResponse.getPrinterColour()));
                     } catch (PrinterException ex)
                     {
                         steno.error("Error whilst checking printer ID");
@@ -631,6 +633,11 @@ public abstract class CommandInterface extends Thread
     }
 
     public void clearError(FirmwareError error)
+    {
+        // Nothing to do by default.
+    }
+    
+    public void dumpCommandHistory()
     {
         // Nothing to do by default.
     }

@@ -8,10 +8,18 @@ import celtech.roboxbase.comms.remote.types.SerializableFilament;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -37,6 +45,38 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public final class DetectedServer
 {
+    // Jackson deserializer, so that DetectedServer.createDetectedServer() is used to create
+    // new servers, thus ensuring the integrity of the known server list.
+    public static class DetectedServerDeserializer extends StdDeserializer<DetectedServer> {
+     
+        public DetectedServerDeserializer() {
+            this(null);
+        }
+
+        public DetectedServerDeserializer(Class<?> vc) {
+            super(vc);
+        }
+
+        @Override
+        public DetectedServer deserialize(JsonParser jp, DeserializationContext dc) throws IOException, JsonProcessingException
+        {
+            ObjectCodec codec = jp.getCodec();
+            JsonNode node = codec.readTree(jp);
+
+            String addressText = node.get("address").asText();
+            InetAddress address = InetAddress.getByName(addressText);
+
+            DetectedServer server = DetectedServer.createDetectedServer(address);
+            
+            server.serverIP.set(addressText);
+            server.setName(node.get("name").asText());
+            server.setVersion(node.get("version").asText());
+            server.setPin(node.get("pin").asText());
+            server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
+            
+            return server;
+        }
+    }
 
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
@@ -75,11 +115,13 @@ public final class DetectedServer
     @JsonIgnore
     public static final int connectTimeOutLong = 2000;
     @JsonIgnore
-    public static final int maxAllowedPollCount = 5;
+    public static final int maxAllowedPollCount = 8;
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
+    @JsonIgnore
+    private static final String SHUTDOWN_SYSTEM_COMMAND = "/api/admin/shutdown";
     @JsonIgnore
     private static final String SAVE_FILAMENT_COMMAND = "/api/admin/saveFilament";
     @JsonIgnore
@@ -118,7 +160,7 @@ public final class DetectedServer
         // This is the only public way to create a DetectedServer. It is synchronized so that
         // it can be called by multiple threads.
         return knownServerList.stream()
-                              .filter(s -> s.getAddress() == address)
+                              .filter(s -> s.getAddress().equals(address))
                               .findAny()
                               .orElseGet(() -> {
                                                    DetectedServer ds = new DetectedServer(address);
@@ -132,11 +174,16 @@ public final class DetectedServer
         return pollCount;
     }
 
+    public void resetPollCount()
+    {
+        pollCount = 0;
+    }
+
     public boolean maxPollCountExceeded()
     {
         if (pollCount > maxAllowedPollCount)
         {
-            steno.warning("Maximum poll count of " + getName() + " exceeded! Count = " + Integer.toString(pollCount));
+            steno.warning("Maximum poll count of \"" + getDisplayName() + "\" exceeded! Count = " + Integer.toString(pollCount));
             return true;
         }
         else
@@ -147,7 +194,7 @@ public final class DetectedServer
     public boolean incrementPollCount()
     {
         ++pollCount;
-        steno.info("Incrementing poll count of " + getName() + " to " + Integer.toString(pollCount));
+        steno.info("Incrementing poll count of \"" + getDisplayName() + "\" to " + Integer.toString(pollCount));
         return maxPollCountExceeded();
     }
 
@@ -164,6 +211,12 @@ public final class DetectedServer
     public String getName()
     {
         return name.get();
+    }
+    
+    @JsonIgnore
+    public String getDisplayName()
+    {
+        return getName()+ "@" + getServerIP();
     }
 
     public void setName(String name)
@@ -296,6 +349,10 @@ public final class DetectedServer
         boolean success = false;
 
         steno.info("Connecting " + name.get());
+        steno.debug("Status = " + serverStatus.get());
+        if (serverIP.get().equalsIgnoreCase("192.168.1.74"))
+            steno.debug("Serve is Pern");
+            
 
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
@@ -305,6 +362,7 @@ public final class DetectedServer
                 if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()) &&
                     !(BaseConfiguration.getApplicationVersion().startsWith("tadev") && version.get().startsWith("tadev"))) // Debug hack to allow mismatching development versions to operate.
                 {
+                    steno.debug("Setting status to WRONG_VERSION");
                     setServerStatus(ServerStatus.WRONG_VERSION);
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
                 } else
@@ -313,21 +371,26 @@ public final class DetectedServer
                     int response = getData(LIST_PRINTERS_COMMAND);
                     if (response == 200)
                     {
+                        steno.debug("Setting status to CONNECTED");
                         setServerStatus(ServerStatus.CONNECTED);
                         CoreMemory.getInstance().activateRoboxRoot(this);
                         success = true;
                     } else if (response == 401)
                     {
+                        steno.debug("Setting status to WRONG_PIN");
                         setServerStatus(ServerStatus.WRONG_PIN);
                         CoreMemory.getInstance().deactivateRoboxRoot(this);
                     } else
                     {
+                        
+                        steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
                         setServerStatus(ServerStatus.NOT_CONNECTED);
                         CoreMemory.getInstance().deactivateRoboxRoot(this);
                     }
                 }
             } catch (IOException ex)
             {
+                steno.debug("Caught exception " + ex.toString() + "- setting status to NOT_CONNECTED");
                 setServerStatus(ServerStatus.NOT_CONNECTED);
                 CoreMemory.getInstance().deactivateRoboxRoot(this);
             }
@@ -338,7 +401,7 @@ public final class DetectedServer
 
     public void disconnect()
     {
-        steno.info("Disconnecting " + name.get());
+        steno.info("Disconnecting \"" + getDisplayName() + "\"");
         setServerStatus(ServerStatus.NOT_CONNECTED);
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         
@@ -375,6 +438,7 @@ public final class DetectedServer
 
             if (responseCode == 200)
             {
+                pollCount = 0; // Contact! Zero the poll count;
                 int availChars = con.getInputStream().available();
                 byte[] inputData = new byte[availChars];
                 con.getInputStream().read(inputData, 0, availChars);
@@ -386,7 +450,6 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    pollCount = 0; // Successful contact, so zero the poll count;
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
@@ -397,18 +460,18 @@ public final class DetectedServer
                 }
             } else
             {
-                disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
+                //disconnect();
             }
         } catch (java.net.SocketTimeoutException stex)
         {
             long t2 = System.currentTimeMillis();
-            steno.error("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
-            disconnect();
+            steno.warning("Timeout whilst asking who are you @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            //disconnect();
         }
         catch (IOException ex)
         {
-            steno.error("Error whilst asking who are you @ " + address.getHostAddress());
+            steno.exception("Error whilst asking who are you @ " + address.getHostAddress(), ex);
             disconnect();
         }
         return gotAResponse;
@@ -630,46 +693,116 @@ public final class DetectedServer
                 .isEquals();
     }
 
+    private class TransferProgressMonitor implements SftpProgressMonitor
+    {
+        long count = 0;
+        long fileSize = 0;
+        DetectedServer server;
+        PercentProgressReceiver progressReceiver;
+        
+        public TransferProgressMonitor(DetectedServer server, PercentProgressReceiver progressReceiver)
+        {
+            this.server = server;
+            this.progressReceiver = progressReceiver;
+        }
+
+        @Override
+        public void init(int op, String src, String dest, long fileSize)
+        {
+            this.fileSize = fileSize;
+            this.count = 0;
+
+            server.resetPollCount();
+            steno.debug("Initialise file transfer: src = \"" + src + "\", dst = \"" + dest + "\", fileSize = " + Long.toString(fileSize));
+        }
+
+        @Override
+        public boolean count(long increment)
+        {
+          count += increment;
+          float percentageDone = 50.0f;
+          if (fileSize > 0)
+            percentageDone = 25.0f + (75.0f * (float) count / (float) fileSize);
+          progressReceiver.updateProgressPercent(percentageDone);
+
+          server.resetPollCount();
+          steno.debug("Transfer progress: " + Float.toString(percentageDone) + "%");
+          return true;
+        }
+        
+        @Override
+        public void end(){
+        }
+    }
+    
     public boolean upgradeRootSoftware(String path, String filename, PercentProgressReceiver progressReceiver)
     {
         boolean success = false;
-        String charset = "UTF-8";
-        String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + UPDATE_SYSTEM_COMMAND;
-
-        try
+        
+        // First try SFTP;
+        TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
+        SFTPUtils sftpHelper = new SFTPUtils(address.getHostAddress());
+        File localFile = new File(path + filename);
+        if (sftpHelper.transferToRemotePrinter(localFile, "/tmp", filename, monitor))
         {
-            long t1 = System.currentTimeMillis();
-            MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
-
-            File rootSoftwareFile = new File(path + filename);
-            steno.info("upgradeRootSoftware: uploading file " + path + filename);
-                                      
-            // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
-            // being removed.
-            multipart.addFilePart("name", rootSoftwareFile,
-                                  (double pp) -> 
-                                  {
-                                      pollCount = 0;
-                                      progressReceiver.updateProgressPercent(pp);
-                                  });
-            long t2 = System.currentTimeMillis();
-            steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
-            
-            List<String> response = multipart.finish();
-            disconnect();
-            
-            // Disconnecting here does not clear the user interface, so also set the poll count to force the user interface to clear.
-            pollCount = maxAllowedPollCount + 1;
-            
-            long t3 = System.currentTimeMillis();            
-            steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
-            
-            success = true;
-        } catch (IOException ex)
+            try
+            {
+                postData(SHUTDOWN_SYSTEM_COMMAND, null);
+                success = true;
+            }
+            catch (java.net.SocketTimeoutException stex)
+            {
+                success = true;
+            }
+            catch (IOException ex)
+            {
+                steno.error("Failed to shutdown remote server: " + ex.getMessage());
+            }
+        }
+        
+        if (!success)
         {
-            steno.error("Failure during write of root software: " + ex.getMessage());
+            // Try http POST
+            String charset = "UTF-8";
+            String requestURL = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + UPDATE_SYSTEM_COMMAND;
+
+            try
+            {
+                long t1 = System.currentTimeMillis();
+                MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
+
+                File rootSoftwareFile = new File(path + filename);
+                steno.info("upgradeRootSoftware: uploading file " + path + filename);
+
+                // Awkward lambda is to update the last response time whenever the progress bar is updated. This should prevent the server from
+                // being removed.
+                multipart.addFilePart("name", rootSoftwareFile,
+                                      (double pp) -> 
+                                      {
+                                          pollCount = 0;
+                                          progressReceiver.updateProgressPercent(pp);
+                                      });
+                long t2 = System.currentTimeMillis();
+                steno.debug("upgradeRootSoftware: time to do multipart.addFilePartLong() = " + Long.toString(t2 - t1));
+
+                List<String> response = multipart.finish();
+
+                long t3 = System.currentTimeMillis();            
+                steno.debug("upgradeRootSoftware: time to do multipart.finish() = " + Long.toString(t3 - t2) + ", total time = " + Long.toString(t3 - t1));
+
+                success = true;
+            } catch (IOException ex)
+            {
+                steno.error("Failure during write of root software: " + ex.getMessage());
+            }
         }
 
+        if (success)
+        {
+            // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
+            pollCount = maxAllowedPollCount + 1;
+        }
+        
         return success;
     }
 

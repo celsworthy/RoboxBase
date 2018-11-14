@@ -8,6 +8,8 @@ import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.exceptions.UnableToGenerateRoboxPacketException;
 import celtech.roboxbase.comms.exceptions.UnknownPacketTypeException;
 import celtech.roboxbase.comms.remote.LowLevelInterfaceException;
+import celtech.roboxbase.comms.rx.AckResponse;
+import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
 import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
@@ -24,6 +26,8 @@ public class HardwareCommandInterface extends CommandInterface
     private boolean stillWaitingForStatus = false;
     private final SerialPortManager serialPortManager;
 
+    private final CommandHistory commandHistory = new CommandHistory(100);
+    
     public HardwareCommandInterface(PrinterStatusConsumer controlInterface,
             DetectedDevice printerHandle,
             boolean suppressPrinterIDChecks, int sleepBetweenStatusChecks)
@@ -77,12 +81,15 @@ public class HardwareCommandInterface extends CommandInterface
                 serialPortManager.writeAndWaitForData(outputBuffer);
 
                 byte[] respCommand = serialPortManager.readSerialPort(1);
+                
+                commandHistory.beginSave(messageToWrite, respCommand[0]);
 
                 RxPacketTypeEnum packetType = RxPacketTypeEnum.getEnumForCommand(respCommand[0]);
                 if (packetType != null)
                 {
                     if (packetType != messageToWrite.getPacketType().getExpectedResponse())
                     {
+                        commandHistory.dumpHistory();
                         throw new InvalidResponseFromPrinterException(
                                 "Expected response of type "
                                 + messageToWrite.getPacketType().getExpectedResponse().name()
@@ -136,11 +143,25 @@ public class HardwareCommandInterface extends CommandInterface
                     }
 
                     inputBuffer[0] = respCommand[0];
+                    commandHistory.appendRawResponse(inputBuffer, storage);
 
                     try
                     {
                         receivedPacket = RoboxRxPacketFactory.createPacket(inputBuffer, firmwareVersionInUse);
 //                        steno.trace("Got packet of type " + receivedPacket.getPacketType().name());
+                        commandHistory.appendResponsePacket(receivedPacket);
+                        if (receivedPacket.getPacketType() == RxPacketTypeEnum.ACK_WITH_ERRORS)
+                        {
+                            AckResponse ackResponse = (AckResponse) receivedPacket;
+                            if (ackResponse.isError() && 
+                                ackResponse.getFirmwareErrors()
+                                           .stream()
+                                           .anyMatch(e -> e == FirmwareError.CHUNK_SEQUENCE ||
+                                                          e == FirmwareError.BAD_COMMAND))
+                            {
+                                commandHistory.dumpHistory();
+                            }
+                        }
 
                         if (!dontPublishResult)
                         {
@@ -148,14 +169,17 @@ public class HardwareCommandInterface extends CommandInterface
                         }
                     } catch (InvalidCommandByteException ex)
                     {
-                        steno.error("Command byte of " + String.format("0x%02X", inputBuffer[0])
+                         commandHistory.dumpHistory();
+                         steno.error("Command byte of " + String.format("0x%02X", inputBuffer[0])
                                 + " is invalid.");
                     } catch (UnknownPacketTypeException ex)
                     {
+                        commandHistory.dumpHistory();
                         steno.error("Packet type unknown for command byte "
                                 + String.format("0x%02X", inputBuffer[0]) + " is invalid.");
                     } catch (UnableToGenerateRoboxPacketException ex)
                     {
+                        commandHistory.dumpHistory();
                         steno.error("A packet that appeared to be of type " + packetType.name()
                                 + " could not be unpacked.");
                     }
@@ -164,6 +188,7 @@ public class HardwareCommandInterface extends CommandInterface
                     // Attempt to drain the crud from the input
                     // There shouldn't be anything here but just in case...
                     byte[] storage = serialPortManager.readAllDataOnBuffer();
+                    commandHistory.appendRawResponse(null, storage);
 
                     try
                     {
@@ -179,12 +204,14 @@ public class HardwareCommandInterface extends CommandInterface
 //                    InvalidResponseFromPrinterException exception = new InvalidResponseFromPrinterException("Invalid response - got: " + received);
 //                    throw exception;
                 }
+                commandHistory.completeSave();
             } catch (LowLevelInterfaceException ex)
             {
                 actionOnCommsFailure();
             }
         } else
         {
+            commandHistory.dumpHistory();
             throw new RoboxCommsException("Invalid state for writing data");
         }
 //        steno.debug("Command Interface send - completed " + messageToWrite.getPacketType());
@@ -195,6 +222,7 @@ public class HardwareCommandInterface extends CommandInterface
     {
         //If we get an exception then abort and treat
         steno.debug("Error during write to printer");
+        commandHistory.dumpHistory();
         shutdown();
         throw new ConnectionLostException();
     }
@@ -212,5 +240,11 @@ public class HardwareCommandInterface extends CommandInterface
     public void setSleepBetweenStatusChecks(int sleepMillis)
     {
         sleepBetweenStatusChecks = sleepMillis;
+    }
+    
+    @Override
+    public void dumpCommandHistory()
+    {
+       commandHistory.dumpHistory();
     }
 }

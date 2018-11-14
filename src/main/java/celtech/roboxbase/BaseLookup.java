@@ -220,7 +220,7 @@ public class BaseLookup
             }
         }
         
-		return appLocale;
+        return appLocale;
     }
 
     public static void setupDefaultValues()
@@ -249,18 +249,35 @@ public class BaseLookup
     {
         StenographerFactory.changeAllLogLevels(logLevel);
 
-        steno.debug("Starting AutoMaker - loading resources...");
-
         applicationLocale = appLocale;
-        
-        LanguageData languageData = new LanguageData();
-        availableLocales = languageData.getAvailableLocales();
+        steno.info("Starting AutoMaker - loading resources for locale " + applicationLocale);
+        i18nbundle = null;
+        availableLocales = null;
+        try
+        {
+            LanguageData languageData = new LanguageData();
+            availableLocales = languageData.getAvailableLocales();
+            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+        }
+        catch (Exception ex)
+        {
+            steno.error("Failed to load language resources: " + ex.getMessage());
+            i18nbundle = null;
+            availableLocales = null;
+        }
 
-        i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+        if (i18nbundle == null)
+        {
+            applicationLocale = Locale.ENGLISH;
+            steno.debug("Loading resources for fallback locale " + applicationLocale);
+
+            LanguageData languageData = new LanguageData();
+            availableLocales = languageData.getAvailableLocales();
+            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
+        }
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());
-        steno.info("Using locale - " + appLocale.toLanguageTag());
 
         printerListChangesNotifier = new PrinterListChangesNotifier(BaseLookup.getConnectedPrinters());
 

@@ -1,8 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.configuration.RoboxProfile;
-import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.datafileaccessors.RoboxProfileSettingsContainer;
+import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.configuration.slicer.NozzleParameters;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.mockito.Mock;
 
 /**
  *
@@ -27,7 +25,7 @@ import org.mockito.Mock;
  */
 public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
 {
-    
+
 //    @Test
 //    public void testInsertOpenNodes()
 //    {
@@ -661,15 +659,17 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
-        Optional<RoboxProfile> optionalRoboxProfile = RoboxProfileSettingsContainer.getInstance().getRoboxProfileWithName("Draft", SlicerType.Cura, "RBX01-DM");
-        RoboxProfile roboxProfile = optionalRoboxProfile.get();
-        
+        SlicerParametersFile paramFile = SlicerParametersContainer.getSettings("Draft", "RBX01-DM");
+        List<Integer> extrudersForModel = new ArrayList<>();
+        extrudersForModel.add(0);
+        extrudersForModel.add(1);
+
         List<NozzleProxy> nozzleProxies = new ArrayList<>();
         for (int nozzleIndex = 0;
-                nozzleIndex < roboxProfile.getNozzleParameters()
+                nozzleIndex < paramFile.getNozzleParameters()
                 .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(roboxProfile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(paramFile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
@@ -677,7 +677,7 @@ public class UtilityMethodsTest extends BaseEnvironmentConfiguredTest
         NodeManagementUtilities nmu = new NodeManagementUtilities(ppFeatures, nozzleProxies);
 
         UtilityMethods utilityMethods = new UtilityMethods(ppFeatures,
-                roboxProfile,
+                paramFile,
                 "RBX01-DM",
                 nmu,
                 null

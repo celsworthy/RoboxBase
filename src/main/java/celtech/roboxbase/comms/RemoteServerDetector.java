@@ -149,17 +149,18 @@ public class RemoteServerDetector
 
                 if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                 {
-                    //steno.info("searchForServers got response from address " + inboundAddress.getAddress());
+                    steno.debug("searchForServers got response from address " + inboundAddress.getAddress());
                     DetectedServer newServer = DetectedServer.createDetectedServer(inboundAddress.getAddress());
                     if (newServer.whoAreYou())
                     {
+                        steno.debug("Adding server " + inboundAddress.getAddress() + " to newly discovered server list.");
                         newlyDiscoveredServers.add(newServer);
                     }
                 } else if (receivedData.equals(RemoteDiscovery.discoverHostsMessage))
                 {
                     // FIXME On Macs, it seems to receive the discoverHostsMessage (twice) as well as the iAmHereMessage.
                     // Don't know why.
-                    steno.debug("Received ?Ello from address " + inboundAddress.getAddress());
+                    steno.debug("Received \"" + RemoteDiscovery.discoverHostsMessage + "\" from address " + inboundAddress.getAddress());
                 }
                 else
                 {

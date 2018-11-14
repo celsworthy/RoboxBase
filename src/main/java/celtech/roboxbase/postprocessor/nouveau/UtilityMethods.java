@@ -1,8 +1,8 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NoPerimeterToCloseOverException;
@@ -45,12 +45,12 @@ public class UtilityMethods
     private final PostProcessorFeatureSet ppFeatureSet;
     private final NodeManagementUtilities nodeManagementUtilities;
     private final CloseLogic closeLogic;
-    private final RoboxProfile settings;
+    private final SlicerParametersFile settings;
     private final CameraTriggerManager cameraTriggerManager;
     private final CameraTriggerData cameraTriggerData;
 
     public UtilityMethods(final PostProcessorFeatureSet ppFeatureSet,
-            RoboxProfile settings,
+            SlicerParametersFile settings,
             String headType,
             NodeManagementUtilities nodeManagementUtilities,
             CameraTriggerData cameraTriggerData)
@@ -445,7 +445,7 @@ public class UtilityMethods
                 nozzleOpen = true;
 
                 opensInThisTool++;
-                if (opensInThisTool > settings.getSpecificIntSetting("maxClosesBeforeNozzleReselect"))
+                if (opensInThisTool > settings.getMaxClosesBeforeNozzleReselect())
                 {
                     toolReselectsToAdd.put((ExtrusionNode) layerEvent, lastToolNumber);
                     opensInThisTool = 0;

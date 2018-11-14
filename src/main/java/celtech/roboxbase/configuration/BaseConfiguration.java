@@ -49,7 +49,6 @@ public class BaseConfiguration
      * CONSTANTS
      */
     public static final float filamentDiameterToYieldVolumetricExtrusion = 1.1283791670955125738961589031215f;
-    public static final float filamentDiameter = 1.75f;
     public static final int maxPermittedTempDifferenceForPurge = 15;
 
     private static String applicationName = null;
@@ -85,6 +84,11 @@ public class BaseConfiguration
     private static String filamentFileDirectory = null;
     private static String userFilamentFileDirectory = null;
 
+    private static String applicationKeyDirectory = null;
+    public static final String applicationKeyPath = "Key";
+
+    private static final String remotePrintJobDirectory = "/home/pi/CEL Root/PrintJobs/";
+
     private static MachineType machineType = null;
 
     private static boolean autoRepairHeads = true;
@@ -93,7 +97,7 @@ public class BaseConfiguration
 
     private static Properties installationProperties = null;
     private static String applicationVersion = null;
-	private static String applicationLocale = null;
+    private static String applicationLocale = null;
     private static LogLevel applicationLogLevel = null;
     private static String applicationTitleAndVersion = null;
 
@@ -113,8 +117,6 @@ public class BaseConfiguration
 
     public static final String gcodePostProcessedFileHandle = "_robox";
     public static final String printProfileFileExtension = ".roboxprofile";
-    public static final String curaFilePath = "Cura/";
-    public static final String cura3FilePath = "Cura3/";
 
     public static final String customSettingsProfileName = "Custom";
 
@@ -132,9 +134,6 @@ public class BaseConfiguration
     public static final String printProfileDirectoryPath = "PrintProfiles";
     public static final int maxPrintSpoolFiles = 20;
 
-    private static String printProfileSettingsFileLocation = null;
-    private static final String printProfileSettingsFileName = "print_profile_settings.json";
-    
     private static String applicationLanguageRaw = null;
 
     private static CoreMemory coreMemory = null;
@@ -371,6 +370,16 @@ public class BaseConfiguration
         return printerFileDirectory;
     }
 
+    public static String getApplicationKeyDirectory()
+    {
+        if (applicationKeyDirectory == null)
+        {
+            applicationKeyDirectory = applicationInstallDirectory + applicationKeyPath + '/';
+        }
+
+        return applicationKeyDirectory;
+    }
+
     public static String getExternalStaticDirectory() {
         loadConfigurationInstance();
         try
@@ -382,6 +391,10 @@ public class BaseConfiguration
             steno.info("No external static directory specified");
             return null;
         }
+    }
+    
+    public static String getRemotePrintJobDirectory() {
+        return remotePrintJobDirectory;
     }
 
     public static boolean isAutoRepairHeads()
@@ -447,8 +460,8 @@ public class BaseConfiguration
 
         return applicationVersion;
     }
-	
-	public static String getApplicationLocale()
+
+    public static String getApplicationLocale()
     {
         if (installationProperties == null)
         {
@@ -634,38 +647,6 @@ public class BaseConfiguration
         }
 
         return userPrintProfileFileDirectory;
-    }
-    
-    public static String getApplicationPrintProfileDirectoryForSlicer(SlicerType slicerType) {
-        if(slicerType == SlicerType.Cura) {
-            return getApplicationPrintProfileDirectory() + curaFilePath;
-        } else if(slicerType == SlicerType.Cura3) {
-            return getApplicationPrintProfileDirectory() + cura3FilePath;
-        }
-        
-        return getApplicationPrintProfileDirectory();
-    }
-    
-    public static String getUserPrintProfileDirectoryForSlicer(SlicerType slicerType) {
-        String userSlicerPrintProfileDirectory = getUserFilamentDirectory();
-        
-        if(slicerType == SlicerType.Cura) {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
-        } else if(slicerType == SlicerType.Cura3) {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura3FilePath;
-        }
-         
-        File dirHandle = new File(userSlicerPrintProfileDirectory);
-        if (!dirHandle.exists()) {
-            dirHandle.mkdirs();
-        }
-        
-        return userSlicerPrintProfileDirectory;
-    }
-    
-    public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)
-    {
-        return printProfileSettingsFileLocation = getApplicationPrintProfileDirectoryForSlicer(slicerType) + printProfileSettingsFileName;
     }
 
     public static String getUserTempDirectory()

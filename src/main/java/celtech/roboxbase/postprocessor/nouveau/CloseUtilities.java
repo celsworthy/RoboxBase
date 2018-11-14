@@ -1,6 +1,6 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
 import celtech.roboxbase.utils.Math.MathUtils;
@@ -21,10 +21,10 @@ public class CloseUtilities
     private final float maxDistanceFromEndPoint;
     private final int maxNumberOfIntersectionsToConsider;
 
-    public CloseUtilities(RoboxProfile settings, String headType)
+    public CloseUtilities(SlicerParametersFile settings, String headType)
     {
-        maxNumberOfIntersectionsToConsider = settings.getSpecificIntSetting("numberOfPerimeters");
-        maxDistanceFromEndPoint = settings.getSpecificFloatSetting("perimeterExtrusionWidth_mm")
+        maxNumberOfIntersectionsToConsider = settings.getNumberOfPerimeters();
+        maxDistanceFromEndPoint = settings.getPerimeterExtrusionWidth_mm()
                 * 1.01f * maxNumberOfIntersectionsToConsider;
     }
 
