@@ -42,6 +42,8 @@ public class PrinterSettingsOverrides
     private final ObjectProperty<SupportType> printSupportTypeOverride = new SimpleObjectProperty<>(SupportType.MATERIAL_1);
     private boolean raftOverride = false;
     private boolean spiralPrintOverride = false;
+    
+    private boolean fillDensityChanged = false;
 
     public PrinterSettingsOverrides()
     {
@@ -310,5 +312,13 @@ public class PrinterSettingsOverrides
             this.spiralPrintOverride = spiralPrintOverride;
             toggleDataChanged();
         }
+    }
+
+    public boolean isFillDensityChanged() {
+        return fillDensityChanged;
+    }
+
+    public void setFillDensityChanged(boolean fillDensityChanged) {
+        this.fillDensityChanged = fillDensityChanged;
     }
 }

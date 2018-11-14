@@ -7,7 +7,6 @@ import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
-import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.postProcessor.GCodePostProcessingResult;
@@ -16,17 +15,14 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.ProgressReceiver;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerTask;
-import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
-import java.util.Arrays;
 import java.util.function.Supplier;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
-import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -50,7 +46,8 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
     /**
      *
      * @param printerToUse
-     * @param meshesToUse
+     * @param meshSupplier
+     * @param gCodeDirectoryName
      * 
      */
     public void initialise(Printer printerToUse,
