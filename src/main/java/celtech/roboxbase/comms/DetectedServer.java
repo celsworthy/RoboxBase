@@ -800,6 +800,7 @@ public final class DetectedServer
         if (success)
         {
             // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
+            disconnect();
             pollCount = maxAllowedPollCount + 1;
         }
         
