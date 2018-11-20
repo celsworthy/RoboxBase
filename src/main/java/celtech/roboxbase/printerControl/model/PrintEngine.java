@@ -1,20 +1,12 @@
 package celtech.roboxbase.printerControl.model;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.MaterialType;
-import celtech.roboxbase.appManager.NotificationType;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
-import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Macro;
-import celtech.roboxbase.configuration.RoboxProfile;
-import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
-import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
-import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
-import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.PrintQueueStatus;
@@ -30,13 +22,13 @@ import celtech.roboxbase.services.postProcessor.PostProcessorService;
 import celtech.roboxbase.services.printing.GCodePrintResult;
 import celtech.roboxbase.services.printing.TransferGCodeToPrinterService;
 import celtech.roboxbase.services.slicer.AbstractSlicerService;
-import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
-import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.SystemUtils;
-import celtech.roboxbase.utils.models.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableProject;
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,6 +38,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Stream;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -92,10 +85,10 @@ public class PrintEngine implements ControllableService
     /*
      * 
      */
-    private EventHandler<WorkerStateEvent> scheduledSliceEventHandler = null;
-    private EventHandler<WorkerStateEvent> cancelSliceEventHandler = null;
-    private EventHandler<WorkerStateEvent> failedSliceEventHandler = null;
-    private EventHandler<WorkerStateEvent> succeededSliceEventHandler = null;
+//    private EventHandler<WorkerStateEvent> scheduledSliceEventHandler = null;
+//    private EventHandler<WorkerStateEvent> cancelSliceEventHandler = null;
+//    private EventHandler<WorkerStateEvent> failedSliceEventHandler = null;
+//    private EventHandler<WorkerStateEvent> succeededSliceEventHandler = null;
 
     private EventHandler<WorkerStateEvent> scheduledGCodePostProcessEventHandler = null;
     private EventHandler<WorkerStateEvent> cancelGCodePostProcessEventHandler = null;
@@ -166,73 +159,73 @@ public class PrintEngine implements ControllableService
         this.associatedPrinter = associatedPrinter;
         cameraTriggerManager = new CameraTriggerManager(associatedPrinter);
 
-        cancelSliceEventHandler = (WorkerStateEvent t) ->
-        {
-            steno.info(t.getSource().getTitle() + " has been cancelled");
-            try
-            {
-                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-            } catch (PrinterException ex)
-            {
-                steno.error("Couldn't abort on slice cancel");
-            }
-        };
+//        cancelSliceEventHandler = (WorkerStateEvent t) ->
+//        {
+//            steno.info(t.getSource().getTitle() + " has been cancelled");
+//            try
+//            {
+//                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//            } catch (PrinterException ex)
+//            {
+//                steno.error("Couldn't abort on slice cancel");
+//            }
+//        };
 
-        failedSliceEventHandler = (WorkerStateEvent t) ->
-        {
-            steno.info(t.getSource().getTitle() + " has failed");
-            if (macroBeingRun.get() == null)
-            {
-                BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
-                        "notification.sliceFailed"), BaseLookup.i18n(
-                                "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
-            }
-            try
-            {
-                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-            } catch (PrinterException ex)
-            {
-                steno.error("Couldn't abort on slice fail");
-            }
-        };
+//        failedSliceEventHandler = (WorkerStateEvent t) ->
+//        {
+//            steno.info(t.getSource().getTitle() + " has failed");
+//            if (macroBeingRun.get() == null)
+//            {
+//                BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
+//                        "notification.sliceFailed"), BaseLookup.i18n(
+//                                "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
+//            }
+//            try
+//            {
+//                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//            } catch (PrinterException ex)
+//            {
+//                steno.error("Couldn't abort on slice fail");
+//            }
+//        };
 
-        succeededSliceEventHandler = (WorkerStateEvent t) ->
-        {
-            SliceResult result = (SliceResult) (t.getSource().getValue());
-
-            if (result.isSuccess())
-            {
-                steno.info(t.getSource().getTitle() + " has succeeded");
-                postProcessorService.reset();
-                postProcessorService.setPrintJobUUID(
-                        result.getPrintJobUUID());
-                postProcessorService.setPrinterToUse(
-                        result.getPrinterToUse());
-                postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
-                postProcessorService.setSlicerType(result.getPrintableMeshes().getDefaultSlicerType());
-                postProcessorService.start();
-
-                if (macroBeingRun.get() == null)
-                {
-                    BaseLookup.getSystemNotificationHandler().showSliceSuccessfulNotification();
-                }
-            } else
-            {
-                if (macroBeingRun.get() == null)
-                {
-                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
-                            "notification.sliceFailed"), BaseLookup.i18n(
-                                    "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
-                }
-                try
-                {
-                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-                } catch (PrinterException ex)
-                {
-                    steno.error("Couldn't abort on slice fail");
-                }
-            }
-        };
+//        succeededSliceEventHandler = (WorkerStateEvent t) ->
+//        {
+//            SliceResult result = (SliceResult) (t.getSource().getValue());
+//
+//            if (result.isSuccess())
+//            {
+//                steno.info(t.getSource().getTitle() + " has succeeded");
+//                postProcessorService.reset();
+//                postProcessorService.setPrintJobUUID(
+//                        result.getPrintJobUUID());
+//                postProcessorService.setPrinterToUse(
+//                        result.getPrinterToUse());
+//                postProcessorService.setPrintableMeshes(result.getPrintableMeshes());
+//                postProcessorService.setSlicerType(result.getPrintableMeshes().getDefaultSlicerType());
+//                postProcessorService.start();
+//
+//                if (macroBeingRun.get() == null)
+//                {
+//                    BaseLookup.getSystemNotificationHandler().showSliceSuccessfulNotification();
+//                }
+//            } else
+//            {
+//                if (macroBeingRun.get() == null)
+//                {
+//                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(BaseLookup.i18n(
+//                            "notification.sliceFailed"), BaseLookup.i18n(
+//                                    "notification.slicerFailure.dismiss"), NotificationType.CAUTION);
+//                }
+//                try
+//                {
+//                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//                } catch (PrinterException ex)
+//                {
+//                    steno.error("Couldn't abort on slice fail");
+//                }
+//            }
+//        };
 
         cancelGCodePostProcessEventHandler = (WorkerStateEvent t) ->
         {
@@ -417,12 +410,12 @@ public class PrintEngine implements ControllableService
             }
         };
 
-        slicerService.setOnScheduled(scheduledSliceEventHandler);
-        slicerService.setOnCancelled(cancelSliceEventHandler);
-
-        slicerService.setOnFailed(failedSliceEventHandler);
-
-        slicerService.setOnSucceeded(succeededSliceEventHandler);
+//        slicerService.setOnScheduled(scheduledSliceEventHandler);
+//        slicerService.setOnCancelled(cancelSliceEventHandler);
+//
+//        slicerService.setOnFailed(failedSliceEventHandler);
+//
+//        slicerService.setOnSucceeded(succeededSliceEventHandler);
 
         postProcessorService.setOnCancelled(
                 cancelGCodePostProcessEventHandler);
@@ -564,86 +557,142 @@ public class PrintEngine implements ControllableService
         stopAllServices();
     }
 
-    public synchronized boolean printProject(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired)
+    public synchronized void printProject(PrintableProject printableProject, boolean safetyFeaturesRequired)
     {
-        boolean acceptedPrintRequest = false;
+//        boolean acceptedPrintRequest = false;
         canDisconnectDuringPrint = true;
         etcAvailable.set(false);
 
-        cameraIsEnabled = printableMeshes.isCameraEnabled();
+        cameraIsEnabled = printableProject.isCameraEnabled();
 
         if (cameraIsEnabled)
         {
-            cameraTriggerManager.setTriggerData(printableMeshes.getCameraTriggerData());
-            cameraTriggerData = printableMeshes.getCameraTriggerData();
+            cameraTriggerManager.setTriggerData(printableProject.getCameraTriggerData());
+            cameraTriggerData = printableProject.getCameraTriggerData();
         }
 
         if (associatedPrinter.printerStatusProperty().get() == PrinterStatus.IDLE)
         {
-            boolean printFromScratchRequired = false;
-
-            if (printableMeshes.getRequiredPrintJobID() != null
-                    && !printableMeshes.getRequiredPrintJobID().equals(""))
-            {
-                String jobUUID = printableMeshes.getRequiredPrintJobID();
-                PrintJob printJob = new PrintJob(jobUUID);
-
-                //Reprint the last job
-                //Is it still on the printer?
-                try
-                {
-                    ListFilesResponse listFilesResponse = associatedPrinter.
-                            transmitListFiles();
-                    if (listFilesResponse.getPrintJobIDs().contains(jobUUID))
-                    {
-                        acceptedPrintRequest = reprintDirectFromPrinter(printJob);
-                    } else
-                    {
-                        //Need to send the file to the printer
-                        //Is it still on disk?
-
-                        if (printJob.roboxisedFileExists())
-                        {
-                            acceptedPrintRequest = reprintFileFromDisk(printJob);
-                        } else
-                        {
-                            printFromScratchRequired = true;
-                            steno.error(
-                                    "Print job " + jobUUID
-                                    + " not found on printer or disk - going ahead with print from scratch");
-                        }
-                    }
-
-                    try
-                    {
-                        makeETCCalculator(printJob.getStatistics(), associatedPrinter);
-                    } catch (IOException ex)
-                    {
-                        etcAvailable.set(false);
-                    }
-                } catch (RoboxCommsException ex)
-                {
-                    printFromScratchRequired = true;
-                    steno.error(
-                            "Error whilst attempting to list files on printer - going ahead with print from scratch");
-                }
-            } else
-            {
-                printFromScratchRequired = true;
-            }
-
-            if (printFromScratchRequired)
-            {
-                acceptedPrintRequest = printFromScratch(acceptedPrintRequest, printableMeshes);
-            }
+            printFromProject(printableProject);
         }
+//            boolean printFromScratchRequired = false;
+//
+//            if (printableMeshes.getRequiredPrintJobID() != null
+//                    && !printableMeshes.getRequiredPrintJobID().equals(""))
+//            {
+//                String jobUUID = printableMeshes.getRequiredPrintJobID();
+//                PrintJob printJob = new PrintJob(jobUUID);
+//
+//                //Reprint the last job
+//                //Is it still on the printer?
+//                try
+//                {
+//                    ListFilesResponse listFilesResponse = associatedPrinter.
+//                            transmitListFiles();
+//                    if (listFilesResponse.getPrintJobIDs().contains(jobUUID))
+//                    {
+//                        acceptedPrintRequest = reprintDirectFromPrinter(printJob);
+//                    } else
+//                    {
+//                        //Need to send the file to the printer
+//                        //Is it still on disk?
+//
+//                        if (printJob.roboxisedFileExists())
+//                        {
+//                            acceptedPrintRequest = reprintFileFromDisk(printJob);
+//                        } else
+//                        {
+//                            printFromScratchRequired = true;
+//                            steno.error(
+//                                    "Print job " + jobUUID
+//                                    + " not found on printer or disk - going ahead with print from scratch");
+//                        }
+//                    }
+//
+//                    try
+//                    {
+//                        makeETCCalculator(printJob.getStatistics(), associatedPrinter);
+//                    } catch (IOException ex)
+//                    {
+//                        etcAvailable.set(false);
+//                    }
+//                } catch (RoboxCommsException ex)
+//                {
+//                    printFromScratchRequired = true;
+//                    steno.error(
+//                            "Error whilst attempting to list files on printer - going ahead with print from scratch");
+//                }
+//            } else
+//            {
+//                printFromScratchRequired = true;
+//            }
+//
+//            if (printFromScratchRequired)
+//            {
+//                acceptedPrintRequest = printFromScratch(acceptedPrintRequest);
+//            }
+//        }
 
-        return acceptedPrintRequest;
+//        return acceptedPrintRequest;
     }
 
-    private boolean printFromScratch(boolean acceptedPrintRequest, PrintableMeshes printableMeshes)
+    protected void printFromProject(PrintableProject printableProject) {
+        String slicedFilesLocation = printableProject.getProjectLocation()
+                + File.separator
+                + printableProject.getPrintQuality();
+           
+        String jobUUID = SystemUtils.generate16DigitID();
+        String printJobDirectoryName = BaseConfiguration.getPrintSpoolDirectory() + jobUUID;
+        printableProject.setJobUUID(jobUUID);
+        
+        try {
+            FileUtils.copyDirectory(new File(slicedFilesLocation), new File(printJobDirectoryName));
+        } catch (IOException ex) {
+            steno.exception("Error when copying sliced project into print job directory", ex);
+        }
+        
+        renameFilesInPrintJob(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
+        
+        deleteOldPrintJobDirectories();
+        
+        PrintJob newPrintJob = new PrintJob(jobUUID);
+        reprintFileFromDisk(newPrintJob);
+    }
+    
+    private void renameFilesInPrintJob(String jobUUID, String printJobDirectory, String printQuality) {
+        File printJobDir = new File(printJobDirectory);
+        Stream.of(printJobDir.listFiles()).forEach(file -> {
+            try {
+                String originalFile = file.getPath();
+                if(originalFile.contains(printQuality)) {
+                    String newFile = originalFile.replace(printQuality, jobUUID);
+                    Files.move(new File(originalFile), new File(newFile));
+                }
+            } catch (IOException ex) {
+                steno.exception("Error when renaiming files for print job: " + jobUUID, ex);
+            }
+        });
+    }
+    
+    private void deleteOldPrintJobDirectories() {
+        File printSpoolDirectory = new File(BaseConfiguration.getPrintSpoolDirectory());
+        File[] filesOnDisk = printSpoolDirectory.listFiles();
+        
+        if (filesOnDisk.length > BaseConfiguration.maxPrintSpoolFiles) {
+            int filesToDelete = filesOnDisk.length - BaseConfiguration.maxPrintSpoolFiles;
+            
+            Arrays.sort(filesOnDisk, (File f1, File f2) -> Long.valueOf(
+                    f1.lastModified()).compareTo(f2.lastModified()));
+            
+            for (int i = 0; i < filesToDelete; i++) {
+                FileUtils.deleteQuietly(filesOnDisk[i]);
+            }
+        }
+    }
+    
+    private boolean printFromScratch(boolean acceptedPrintRequest)
     {
-        RoboxProfile settingsToUse = new RoboxProfile(printableMeshes.getSettings());
+//        RoboxProfile settingsToUse = new RoboxProfile(printableMeshes.getSettings());
 
         //Create the print job directory
         String printUUID = SystemUtils.generate16DigitID();
@@ -651,108 +700,92 @@ public class PrintEngine implements ControllableService
                 getPrintSpoolDirectory() + printUUID;
         File printJobDirectory = new File(printJobDirectoryName);
         printJobDirectory.mkdirs();
-        //Erase old print job directories
-        File printSpoolDirectory = new File(
-                BaseConfiguration.getPrintSpoolDirectory());
-        File[] filesOnDisk = printSpoolDirectory.listFiles();
-        if (filesOnDisk.length > BaseConfiguration.maxPrintSpoolFiles)
-        {
-            int filesToDelete = filesOnDisk.length
-                    - BaseConfiguration.maxPrintSpoolFiles;
-            Arrays.sort(filesOnDisk, (File f1, File f2) -> Long.valueOf(
-                    f1.lastModified()).compareTo(f2.lastModified()));
-            for (int i = 0; i < filesToDelete; i++)
-            {
-                FileUtils.deleteQuietly(filesOnDisk[i]);
-            }
-        }
-
-        SlicerType slicerTypeToUse = printableMeshes.getDefaultSlicerType();
-
-        SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
-                slicerTypeToUse);
-
-        //TODO material-dependent profiles
-        // This is a hack to force the fan speed to 100% when using PLA
-        if (associatedPrinter.reelsProperty().containsKey(0))
-        {
-            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA)
-            {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
-            }
-        }
-
-        if (associatedPrinter.reelsProperty().containsKey(1))
-        {
-            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA)
-            {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
-            }
-        }
-        // End of hack
-
-        // Hack to change raft related settings for Draft ABS prints
-        if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.DRAFT
-                && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
-                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
-                || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
-                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
-        {
-            settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
-            settingsToUse.addOrOverride("interfaceLayers", "1");
-        }
-
-        if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.NORMAL
-                && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
-                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
-                || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
-                && associatedPrinter.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
-        {
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
-        }
-        // End of hack
-
-        // Overwrite the settings 
-        PrintableMeshes actualMeshesToPrint = new PrintableMeshes(
-                printableMeshes.getMeshesForProcessing(),
-                printableMeshes.getUsedExtruders(),
-                printableMeshes.getExtruderForModel(),
-                printableMeshes.getProjectName(),
-                printableMeshes.getRequiredPrintJobID(),
-                settingsToUse,
-                printableMeshes.getPrintOverrides(),
-                printableMeshes.getPrintQuality(),
-                printableMeshes.getDefaultSlicerType(),
-                printableMeshes.getCentreOfPrintedObject(),
-                printableMeshes.isSafetyFeaturesRequired(),
-                printableMeshes.isCameraEnabled(),
-                printableMeshes.getCameraTriggerData());
-
-        configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
-                (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
+//        SlicerType slicerTypeToUse = printableMeshes.getDefaultSlicerType();
+//
+//        SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
+//                slicerTypeToUse);
+//
+//        //TODO material-dependent profiles
+//        // This is a hack to force the fan speed to 100% when using PLA
+//        if (associatedPrinter.reelsProperty().containsKey(0))
+//        {
+//            if (associatedPrinter.reelsProperty().get(0).material.get() == MaterialType.PLA)
+//            {
+//                settingsToUse.addOrOverride("enableCooling", "true");
+//                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+//                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+//            }
+//        }
+//
+//        if (associatedPrinter.reelsProperty().containsKey(1))
+//        {
+//            if (associatedPrinter.reelsProperty().get(1).material.get() == MaterialType.PLA)
+//            {
+//                settingsToUse.addOrOverride("enableCooling", "true");
+//                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+//                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+//            }
+//        }
+//        // End of hack
+//
+//        // Hack to change raft related settings for Draft ABS prints
+//        if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.DRAFT
+//                && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
+//                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
+//                || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
+//                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
+//        {
+//            settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
+//            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
+//            settingsToUse.addOrOverride("interfaceLayers", "1");
+//        }
+//
+//        if (printableMeshes.getPrintQuality() == PrintQualityEnumeration.NORMAL
+//                && ((associatedPrinter.effectiveFilamentsProperty().get(0) != null
+//                && associatedPrinter.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
+//                || (associatedPrinter.effectiveFilamentsProperty().get(1) != null
+//                && associatedPrinter.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
+//        {
+//            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
+//        }
+//        // End of hack
+//
+//        // Overwrite the settings 
+//        PrintableMeshes actualMeshesToPrint = new PrintableMeshes(
+//                printableMeshes.getMeshesForProcessing(),
+//                printableMeshes.getUsedExtruders(),
+//                printableMeshes.getExtruderForModel(),
+//                printableMeshes.getProjectName(),
+//                printableMeshes.getRequiredPrintJobID(),
+//                settingsToUse,
+//                printableMeshes.getPrintOverrides(),
+//                printableMeshes.getPrintQuality(),
+//                printableMeshes.getDefaultSlicerType(),
+//                printableMeshes.getCentreOfPrintedObject(),
+//                printableMeshes.isSafetyFeaturesRequired(),
+//                printableMeshes.isCameraEnabled(),
+//                printableMeshes.getCameraTriggerData());
+//
+//        configWriter.setPrintCentre((float) (printableMeshes.getCentreOfPrintedObject().getX()),
+//                (float) (printableMeshes.getCentreOfPrintedObject().getZ()));
+//        
+//        String configFileDest = printJobDirectoryName
+//                + File.separator
+//                + printUUID
+//                + BaseConfiguration.printProfileFileExtension;
+//        
+//        configWriter.generateConfigForSlicer(settingsToUse, configFileDest);
+//
+//        if(slicerTypeToUse == SlicerType.Cura3) {
+//            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
+//            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest, printJobDirectoryName + File.separator);
+//        }
         
-        String configFileDest = printJobDirectoryName
-                + File.separator
-                + printUUID
-                + BaseConfiguration.printProfileFileExtension;
-        
-        configWriter.generateConfigForSlicer(settingsToUse, configFileDest);
-
-        if(slicerTypeToUse == SlicerType.Cura3) {
-            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(associatedPrinter, printableMeshes);
-            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileDest, printJobDirectoryName + File.separator);
-        }
-        
-        slicerService.reset();
-        slicerService.setPrintJobUUID(printUUID);
-        slicerService.setPrinterToUse(associatedPrinter);
-        slicerService.setPrintableMeshes(actualMeshesToPrint);
-        slicerService.start();
+//        slicerService.reset();
+//        slicerService.setPrintJobUUID(printUUID);
+//        slicerService.setPrinterToUse(associatedPrinter);
+//        slicerService.setPrintableMeshes(actualMeshesToPrint);
+//        slicerService.start();
 
         // Do we need to slice?
         acceptedPrintRequest = true;
@@ -786,6 +819,18 @@ public class PrintEngine implements ControllableService
             steno.error("Couldn't get job statistics for job " + jobUUID);
         }
         return acceptedPrintRequest;
+    }
+    
+    /**
+     * Create a readable name for the print job, consisting of the project name and a timestamp.
+     * 
+     * @param projectName the name of the current project
+     * @return 
+     */
+    private String constructPrintJobName(String projectName) {
+        String timeStamp = new SimpleDateFormat("yyyy-MM-dd'_'HH-mm-ss").format(new Date());
+        String printJobName = projectName + "_" + timeStamp;
+        return printJobName;
     }
 
     protected boolean reprintFileFromDisk(PrintJob printJob)

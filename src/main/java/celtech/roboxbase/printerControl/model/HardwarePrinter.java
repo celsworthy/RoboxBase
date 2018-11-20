@@ -77,15 +77,15 @@ import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionAc
 import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightTransitions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightActions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningTransitions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightActions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeActions;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
@@ -98,7 +98,7 @@ import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.SystemUtils;
-import celtech.roboxbase.utils.models.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableProject;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
@@ -1995,13 +1995,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         }
     }
 
-    /**
-     *
-     * @param printableMeshes
-     * @throws celtech.roboxbase.printerControl.model.PrinterException
-     */
     @Override
-    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException
+    public void printProject(PrintableProject printableProject, boolean safetyFeaturesRequired) throws PrinterException
     {
         Filament filament0 = effectiveFilamentsProperty().get(0);
         Filament filament1 = effectiveFilamentsProperty().get(1);
@@ -2014,8 +2009,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         double bedTarget = 0;
         double ambientTarget = 0;
 
-        List<Boolean> usedExtruders = printableMeshes.getUsedExtruders();
-
+        List<Boolean> usedExtruders = printableProject.getUsedExtruders();
+        
         boolean needToOverrideTempsForReel0 = false;
         if (filament0 != FilamentContainer.UNKNOWN_FILAMENT)
         {
@@ -2165,7 +2160,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             steno.error("Error whilst sending preheat commands");
         }
 
-        printEngine.printProject(printableMeshes, safetyFeaturesRequired);
+        printEngine.printProject(printableProject, safetyFeaturesRequired);
     }
 
     @Override
