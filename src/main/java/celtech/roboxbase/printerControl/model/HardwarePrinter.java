@@ -90,6 +90,7 @@ import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndY
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeActions;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeTransitions;
+import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
@@ -1996,7 +1997,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public void printProject(PrintableProject printableProject, boolean safetyFeaturesRequired) throws PrinterException
+    public void printProject(PrintableProject printableProject, Optional<GCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired) throws PrinterException
     {
         Filament filament0 = effectiveFilamentsProperty().get(0);
         Filament filament1 = effectiveFilamentsProperty().get(1);
@@ -2160,7 +2161,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             steno.error("Error whilst sending preheat commands");
         }
 
-        printEngine.printProject(printableProject, safetyFeaturesRequired);
+        printEngine.printProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
     }
 
     @Override
