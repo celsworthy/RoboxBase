@@ -12,10 +12,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -27,17 +25,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.codec.binary.Base64;
@@ -183,28 +175,27 @@ public class LicenseManager {
     public Optional<License> readEncryptedLicenseFile(File encryptedLicenseFile) {
         STENO.trace("Begining read of encrypted license file");
         
-        String encryptedKey;
-        String encryptedText;
+        String licenseText;
         
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(encryptedLicenseFile))) {
             StringBuilder stringBuilder = new StringBuilder();
-            encryptedKey = bufferedReader.readLine();
             String line = bufferedReader.readLine();
+            PublicKey publicKey = getPublic(publicKeyPath);
             while(line != null) {
-                stringBuilder.append(line);
+                stringBuilder.append(decryptLine(line, publicKey));
                 stringBuilder.append("\n");
                 line = bufferedReader.readLine();
             }
-            encryptedText = stringBuilder.toString();
+            licenseText = stringBuilder.toString();
         } catch (IOException ex) {
             STENO.exception("Unexpected exception while trying to read license file", ex);
             return Optional.empty();
         }
         
-        byte[] decryptedKey = decryptKey(encryptedKey, getPublic(publicKeyPath));
-        SecretKey symmetricKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
+        //byte[] decryptedKey = decryptKey(encryptedKey, getPublic(publicKeyPath));
+        //SecretKey symmetricKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
 
-        String licenseText = decryptText(encryptedText, symmetricKey);
+        //String licenseText = decryptText(encryptedText, symmetricKey);
         
         if(licenseText == null) {
             return Optional.empty();
@@ -247,12 +238,29 @@ public class LicenseManager {
         return Optional.of(license);
     }
     
-    private byte[] decryptKey(String encryptedKey, PublicKey key) {
+//    private byte[] decryptKey(String encryptedKey, PublicKey key) {
+//        try {
+//            Cipher cipher = Cipher.getInstance("RSA");
+//            cipher.init(Cipher.DECRYPT_MODE, key);
+//            return cipher.doFinal(Base64.decodeBase64(encryptedKey));
+//        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex) {
+//            STENO.exception("Error when obtaining cipher instance.", ex);
+//        } catch (InvalidKeyException ex) {
+//            STENO.exception("Error occured when decrypting license.", ex);
+//        }
+//        return null;
+//    }
+    
+    private String decryptLine(String encryptedLine, PublicKey key) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            return cipher.doFinal(Base64.decodeBase64(encryptedKey));
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex) {
+            return new String(cipher.doFinal(Base64.decodeBase64(encryptedLine)), "UTF-8");
+        } catch (NoSuchAlgorithmException 
+                | NoSuchPaddingException 
+                | IllegalBlockSizeException 
+                | BadPaddingException 
+                | UnsupportedEncodingException ex) {
             STENO.exception("Error when obtaining cipher instance.", ex);
         } catch (InvalidKeyException ex) {
             STENO.exception("Error occured when decrypting license.", ex);
@@ -260,39 +268,39 @@ public class LicenseManager {
         return null;
     }
     
-    private static String decryptText(final String ivAndEncryptedMessageBase64, final SecretKey symmetricKey) {
-
-        final byte[] ivAndEncryptedMessage = DatatypeConverter
-                .parseBase64Binary(ivAndEncryptedMessageBase64);
-        try 
-        {
-            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            final int blockSize = cipher.getBlockSize();
-
-            // retrieve random IV from start of the received message
-            final byte[] ivData = new byte[blockSize];
-            System.arraycopy(ivAndEncryptedMessage, 0, ivData, 0, blockSize);
-            final IvParameterSpec iv = new IvParameterSpec(ivData);
-
-            // retrieve the encrypted message itself
-            final byte[] encryptedMessage = new byte[ivAndEncryptedMessage.length
-                    - blockSize];
-            System.arraycopy(ivAndEncryptedMessage, blockSize,
-                    encryptedMessage, 0, encryptedMessage.length);
-
-            cipher.init(Cipher.DECRYPT_MODE, symmetricKey, iv);
-
-            final byte[] encodedMessage = cipher.doFinal(encryptedMessage);
-
-            // concatenate IV and encrypted message
-            final String message = new String(encodedMessage, Charset.forName("UTF-8"));
-
-            return message;
-        } catch (GeneralSecurityException ex) {
-            STENO.exception("Error occured during decryption of license file.", ex);
-            return null;
-        }
-    }
+//    private static String decryptText(final String ivAndEncryptedMessageBase64, final SecretKey symmetricKey) {
+//
+//        final byte[] ivAndEncryptedMessage = DatatypeConverter
+//                .parseBase64Binary(ivAndEncryptedMessageBase64);
+//        try 
+//        {
+//            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+//            final int blockSize = cipher.getBlockSize();
+//
+//            // retrieve random IV from start of the received message
+//            final byte[] ivData = new byte[blockSize];
+//            System.arraycopy(ivAndEncryptedMessage, 0, ivData, 0, blockSize);
+//            final IvParameterSpec iv = new IvParameterSpec(ivData);
+//
+//            // retrieve the encrypted message itself
+//            final byte[] encryptedMessage = new byte[ivAndEncryptedMessage.length
+//                    - blockSize];
+//            System.arraycopy(ivAndEncryptedMessage, blockSize,
+//                    encryptedMessage, 0, encryptedMessage.length);
+//
+//            cipher.init(Cipher.DECRYPT_MODE, symmetricKey, iv);
+//
+//            final byte[] encodedMessage = cipher.doFinal(encryptedMessage);
+//
+//            // concatenate IV and encrypted message
+//            final String message = new String(encodedMessage, Charset.forName("UTF-8"));
+//
+//            return message;
+//        } catch (GeneralSecurityException ex) {
+//            STENO.exception("Error occured during decryption of license file.", ex);
+//            return null;
+//        }
+//    }
         
     /**
      * Turn a date String in the form of yyyy-MM-dd into a {@link LocalDate}
