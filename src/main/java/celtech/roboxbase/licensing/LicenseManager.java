@@ -7,10 +7,12 @@ import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesListener;
 import celtech.roboxbase.printerControl.model.Reel;
+import com.google.common.io.ByteStreams;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -52,14 +54,11 @@ public class LicenseManager {
     
     private static final List<LicenseChangeListener> LICENSE_CHANGE_LISTENERS = new ArrayList<>();
     
-    private final String publicKeyPath;
-    
     /**
      * Class is singleton
      * Do not allow instantiation outside of class.
      */
     private LicenseManager() {
-        this.publicKeyPath = getClass().getResource("/celtech/resources/keys/publicKey").getPath();
         BaseLookup.getPrinterListChangesNotifier().addListener(new LicenseValidator());
     }
     
@@ -160,9 +159,10 @@ public class LicenseManager {
         return cachedLicense;
     }
     
-    private PublicKey getPublic(String filename) {
+    private PublicKey getPublic() {
         try {
-            byte[] keyBytes = Files.readAllBytes(new File(filename).toPath());
+            InputStream in = getClass().getResourceAsStream("/celtech/resources/keys/publicKey");
+            byte[] keyBytes = ByteStreams.toByteArray(in);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             return kf.generatePublic(spec);
@@ -180,7 +180,7 @@ public class LicenseManager {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(encryptedLicenseFile))) {
             StringBuilder stringBuilder = new StringBuilder();
             String line = bufferedReader.readLine();
-            PublicKey publicKey = getPublic(publicKeyPath);
+            PublicKey publicKey = getPublic();
             while(line != null) {
                 stringBuilder.append(decryptLine(line, publicKey));
                 stringBuilder.append("\n");
