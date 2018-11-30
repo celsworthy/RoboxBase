@@ -17,6 +17,7 @@ import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerTask;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
+import java.io.IOException;
 import java.util.function.Supplier;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -62,7 +63,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
     }
 
     @Override
-    protected GCodeGeneratorResult call() throws Exception
+    protected GCodeGeneratorResult call()
     {
         GCodeGeneratorResult result = new GCodeGeneratorResult();
         try {
@@ -84,7 +85,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
             String slicerOutputFileName = printJob.getGCodeFileLocation();
             String postProcOutputFileName = printJob.getRoboxisedFileLocation();
 
-            SliceResult slicerResult = SlicerTask.doSlicing(meshesToPrint.getSettings().getName(),
+            SliceResult slicerResult = SlicerTask.doSlicing(meshesToPrint.getPrintQuality().getFriendlyName(),
                                                             meshesToPrint,
                                                             gCodeDirectoryName,
                                                             printerToUse,
@@ -103,7 +104,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
                 DoubleProperty progress = new SimpleDoubleProperty();
                 progress.addListener((n, ov, nv) -> this.updateProgress(60.0 + 0.4 * nv.doubleValue(), 100.0));
                 GCodePostProcessingResult postProcessingResult = PostProcessorTask.doPostProcessing(
-                    meshesToPrint.getSettings().getName(),
+                    meshesToPrint.getPrintQuality().getFriendlyName(),
                     meshesToPrint,
                     gCodeDirectoryName,
                     printerToUse,
@@ -114,9 +115,9 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
             updateMessage("Done");
             updateProgress(100.0, 100.0);
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
-            steno.error("Exception - " + ex);
+            steno.exception("There was an exception", ex);
         }
         return result;
     }
@@ -130,50 +131,52 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
         SlicerConfigWriter configWriter = SlicerConfigWriterFactory.getConfigWriter(
                 slicerTypeToUse);
 
-        // This is a hack to force the fan speed to 100% when using PLA
-        if (printerToUse.reelsProperty().containsKey(0))
-        {
-            if (printerToUse.reelsProperty().get(0).materialProperty().get() == MaterialType.PLA)
+        if(printerToUse != null) {
+            // This is a hack to force the fan speed to 100% when using PLA
+            if (printerToUse.reelsProperty().containsKey(0))
             {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                if (printerToUse.reelsProperty().get(0).materialProperty().get() == MaterialType.PLA)
+                {
+                    settingsToUse.addOrOverride("enableCooling", "true");
+                    settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+                    settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                }
             }
-        }
 
-        if (printerToUse.reelsProperty().containsKey(1))
-        {
-            if (printerToUse.reelsProperty().get(1).materialProperty().get() == MaterialType.PLA)
+            if (printerToUse.reelsProperty().containsKey(1))
             {
-                settingsToUse.addOrOverride("enableCooling", "true");
-                settingsToUse.addOrOverride("minFanSpeed_percent", "100");
-                settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                if (printerToUse.reelsProperty().get(1).materialProperty().get() == MaterialType.PLA)
+                {
+                    settingsToUse.addOrOverride("enableCooling", "true");
+                    settingsToUse.addOrOverride("minFanSpeed_percent", "100");
+                    settingsToUse.addOrOverride("maxFanSpeed_percent", "100");
+                }
             }
-        }
-        // End of hack
+            // End of hack
 
-        // Hack to change raft related settings for Draft ABS prints
-        if (meshesToUse.getPrintQuality() == PrintQualityEnumeration.DRAFT
-                && ((printerToUse.effectiveFilamentsProperty().get(0) != null
-                && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
-                || (printerToUse.effectiveFilamentsProperty().get(1) != null
-                && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
-        {
-            settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
-            settingsToUse.addOrOverride("interfaceLayers", "1");
-        }
+            // Hack to change raft related settings for Draft ABS prints
+            if (meshesToUse.getPrintQuality() == PrintQualityEnumeration.DRAFT
+                    && ((printerToUse.effectiveFilamentsProperty().get(0) != null
+                    && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
+                    || (printerToUse.effectiveFilamentsProperty().get(1) != null
+                    && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)))
+            {
+                settingsToUse.addOrOverride("raftBaseLinewidth_mm", "1.250");
+                settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.285");
+                settingsToUse.addOrOverride("interfaceLayers", "1");
+            }
 
-        // Hack to change raft related settings for Normal ABS prints
-        if (meshesToUse.getPrintQuality() == PrintQualityEnumeration.NORMAL
-                && ((printerToUse.effectiveFilamentsProperty().get(0) != null
-                && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
-                || (printerToUse.effectiveFilamentsProperty().get(1) != null
-                && printerToUse.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
-        {
-            settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
+            // Hack to change raft related settings for Normal ABS prints
+            if (meshesToUse.getPrintQuality() == PrintQualityEnumeration.NORMAL
+                    && ((printerToUse.effectiveFilamentsProperty().get(0) != null
+                    && printerToUse.effectiveFilamentsProperty().get(0).getMaterial() == MaterialType.ABS)
+                    || (printerToUse.effectiveFilamentsProperty().get(1) != null
+                    && printerToUse.effectiveFilamentsProperty().get(1).getMaterial() == MaterialType.ABS)))
+            {
+                settingsToUse.addOrOverride("raftAirGapLayer0_mm", "0.4");
+            }
+            // End of hack
         }
-        // End of hack
 
         // Create a new set of meshes with the updated settings. 
         meshesToPrint = new PrintableMeshes(
@@ -196,7 +199,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
         
         String configFileName = gCodeDirectoryName
                 + File.separator
-                + meshesToUse.getRequiredPrintJobID()
+                + meshesToUse.getPrintQuality()
                 + BaseConfiguration.printProfileFileExtension;
 
         configWriter.generateConfigForSlicer(settingsToUse, configFileName);
