@@ -268,7 +268,7 @@ public class TimeAndVolumeCalc
                         && !(node instanceof SkirtSectionNode)
                         && !(node instanceof MCodeNode))
                 {
-                    steno.debug("Not possible to calculate time for: " + node.getClass().getName() + " : " + node.toString());
+                    steno.trace("Not possible to calculate time for: " + node.getClass().getName() + " : " + node.toString());
                 }
 
                 //Store the per-layer duration data
@@ -636,7 +636,7 @@ public class TimeAndVolumeCalc
                         && !(node instanceof UnretractNode)
                         && !(node instanceof ToolReselectNode))
                 {
-                    steno.debug("Not possible to calculate time for: " + node.getClass().getName() + " : " + node.toString());
+                    steno.trace("Not possible to calculate time for: " + node.getClass().getName() + " : " + node.toString());
                 }
 
                 //Store the per-layer duration data
