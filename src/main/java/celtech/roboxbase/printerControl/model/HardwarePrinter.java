@@ -176,7 +176,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final BooleanProperty mustPurgeHead = new SimpleBooleanProperty(false);
     private final BooleanProperty canInitiateNewState = new SimpleBooleanProperty(false);
     private final BooleanProperty canPrint = new SimpleBooleanProperty(false);
-    private final BooleanProperty canOnlySaveToFile = new SimpleBooleanProperty(false);
     private final BooleanProperty canOpenCloseNozzle = new SimpleBooleanProperty(false);
     private final BooleanProperty canPause = new SimpleBooleanProperty(false);
     private final BooleanProperty canResume = new SimpleBooleanProperty(false);
