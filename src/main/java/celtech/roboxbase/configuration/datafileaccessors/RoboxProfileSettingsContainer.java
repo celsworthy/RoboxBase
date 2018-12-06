@@ -260,6 +260,13 @@ public class RoboxProfileSettingsContainer {
     private RoboxProfile saveUserProfile(String profileName, SlicerType slicerType, 
             Map<String, List<PrintProfileSetting>> settingsToWrite, String headType) {
         String headDirPath = BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType) + "/" + headType;
+        
+        // If the head directory does not exist we must first create it
+        File userPrintProfileHeadDir = new File(headDirPath);
+        if(!userPrintProfileHeadDir.exists()) {
+            userPrintProfileHeadDir.mkdir();
+        }
+        
         String profileFilePath = headDirPath + "/" + profileName + BaseConfiguration.printProfileFileExtension;
         File file = new File(profileFilePath);
         if(file.exists()) {
