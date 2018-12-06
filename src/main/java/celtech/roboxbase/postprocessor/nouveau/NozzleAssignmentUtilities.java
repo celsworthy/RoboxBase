@@ -111,7 +111,7 @@ public class NozzleAssignmentUtilities
                         // Don't change anything if we're in task-based selection as this always uses extruder E
                         switch (postProcessingMode)
                         {
-                            case LEAVE_TOOL_CHANGES_ALONE:
+                            case LEAVE_TOOL_CHANGES_ALONE_DUAL:
                             case SUPPORT_IN_FIRST_MATERIAL:
                             case SUPPORT_IN_SECOND_MATERIAL:
                                 switch (toolSelectNode.getToolNumber())
@@ -321,7 +321,8 @@ public class NozzleAssignmentUtilities
                                 || (sectionUnderConsideration instanceof SkirtSectionNode)))
                         {
                             requiredToolNumber = (postProcessingMode == PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL) ? 1 : 0;
-                        } else if (postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE) 
+                        } else if (postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL
+                                || postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE) 
                         {
                             requiredToolNumber = objectReferenceNumber;
                         }

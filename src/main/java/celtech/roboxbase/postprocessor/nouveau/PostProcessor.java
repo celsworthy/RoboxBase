@@ -179,7 +179,11 @@ public class PostProcessor
             }
         } else if (slicerType == SlicerType.Cura3) 
         {
-            postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE;
+            if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
+            } else {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
+            }
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
