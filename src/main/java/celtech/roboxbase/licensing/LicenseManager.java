@@ -348,10 +348,12 @@ public class LicenseManager {
             STENO.info("License type of Automaker Pro, enabling associated features");
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+            BaseConfiguration.enableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
         } else if(licenseType.equals(LicenseType.AUTOMAKER_FREE)) {
             STENO.info("License type of Automaker Free, enabling standard features");
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+            BaseConfiguration.disableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
         }
     }
     
