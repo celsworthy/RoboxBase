@@ -598,10 +598,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
 
         return Sequence("G1 ",
                 Optional(
-                    Sequence("F", FloatingPointNumber(),
-                            fValue.set(Double.valueOf(match())),
-                            Optional(' ')
-                    )
+                    Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
@@ -615,10 +612,8 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         )
                 ),
                 // Potentially this will allow two feedrates on the line, which strictly should be illegal.
-                Optional(Sequence("F", FloatingPointNumber(),
-                            fValue.set(Double.valueOf(match())),
-                            Optional(' ')
-                        )
+                Optional(
+                        Feedrate(fValue)
                 ), // The feedrate is after the extrusion in Slic3r
                 Optional(Comment(commentText)),
                 Newline(),
@@ -668,10 +663,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
 
         return Sequence("G1 ",
                 Optional(
-                    Sequence("F", FloatingPointNumber(),
-                            fValue.set(Double.valueOf(match())),
-                            Optional(' ')
-                    )
+                    Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
@@ -686,10 +678,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                 ),
                 // Potentially this will allow two feedrates on the line, which strictly should be illegal.
                 Optional(
-                    Sequence("F", FloatingPointNumber(),
-                            fValue.set(Double.valueOf(match())),
-                            Optional(' ')
-                    )
+                    Feedrate(fValue)
                 ),
                 Optional(Comment(commentText)),
                 Newline(),
@@ -739,7 +728,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
         
         return Sequence(FirstOf("G0 ","G1 "),
                 Optional(
-                        Feedrate(fValue)
+                    Feedrate(fValue)
                 ),
                 OneOrMore(
                         FirstOf(
@@ -751,11 +740,6 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                                 Sequence("Y", 
                                         FloatingPointNumber(),
                                         yValue.set(Double.valueOf(match())),
-                                        Optional(' ')
-                                ),
-                                Sequence("F", 
-                                        FloatingPointNumber(),
-                                        fValue.set(Double.valueOf(match())),
                                         Optional(' ')
                                 )
                         )
@@ -811,6 +795,9 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
         Var<String> commentText = new Var<>();
 
         return Sequence("G1 ",
+                Optional(
+                    Feedrate(fValue)
+                ),
                 ZeroOrMore(
                     FirstOf(
                             Sequence("X", 
@@ -827,10 +814,6 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                                             FloatingPointNumber(),
                                             zValue.set(Double.valueOf(match())),
                                             Optional(' ')
-                            ),
-                            Sequence("F", FloatingPointNumber(),
-                                    fValue.set(Double.valueOf(match())),
-                                    Optional(' ')
                             )
                     )
                 ),
@@ -846,11 +829,8 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                                 )
                         )
                 ),
-				Optional(
-                    Sequence("F", FloatingPointNumber(),
-                        fValue.set(Double.valueOf(match())),
-                        Optional(' ')
-                    )
+		Optional(
+                        Feedrate(fValue)
                 ),
 
                 Newline(),
@@ -922,31 +902,27 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
 
         return Sequence(
                 FirstOf("G0 ", "G1 "),
-                    ZeroOrMore(
-                    FirstOf(
-                            Sequence("X", FloatingPointNumber(),
-                                    xValue.set(Double.valueOf(match())),
-                                    Optional(' ')
-                            ),
-                            Sequence("Y", FloatingPointNumber(),
-                                    yValue.set(Double.valueOf(match())),
-                                    Optional(' ')
-                            ),
-                            Sequence("F", FloatingPointNumber(),
-                                    fValue.set(Double.valueOf(match())),
-                                    Optional(' ')
-                            )
-                    )
+                Optional(
+                    Feedrate(fValue)
+                ),
+                ZeroOrMore(
+                FirstOf(
+                        Sequence("X", FloatingPointNumber(),
+                                xValue.set(Double.valueOf(match())),
+                                Optional(' ')
+                        ),
+                        Sequence("Y", FloatingPointNumber(),
+                                yValue.set(Double.valueOf(match())),
+                                Optional(' ')
+                        )
+                )
                 ),
                 Sequence("Z", FloatingPointNumber(),
                         zValue.set(Double.valueOf(match())),
                         Optional(' ')
                 ),
                 Optional(
-                    Sequence("F", FloatingPointNumber(),
-                        fValue.set(Double.valueOf(match())),
-                        Optional(' ')
-                    )
+                    Feedrate(fValue)
                 ),
                 Newline(),
                 new Action()
