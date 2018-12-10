@@ -80,7 +80,7 @@ public class PrintProfileSettingsContainer {
         return changedValuesMap;
     }
     
-    private static void loadPrintProfileSettingsFile() {
+    public static void loadPrintProfileSettingsFile() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         
