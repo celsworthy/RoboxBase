@@ -57,6 +57,7 @@ public class BaseConfiguration
 
     private static Configuration configuration = null;
     private static String applicationInstallDirectory = null;
+    private static String celInstallDirectory = null;
 
     private static String commonApplicationDirectory = null;
 
@@ -348,11 +349,23 @@ public class BaseConfiguration
         return applicationInstallDirectory;
     }
 
+    public static String getCELInstallDirectory()
+    {
+        if (celInstallDirectory == null)
+        {
+            File p = new File(applicationInstallDirectory);
+            celInstallDirectory = p.getParent() + File.separator;
+        }
+
+        return celInstallDirectory;
+    }
+
     public static String getCommonApplicationDirectory()
     {
         if (commonApplicationDirectory == null)
         {
-            commonApplicationDirectory = applicationInstallDirectory + "../Common/";
+            File p = new File(applicationInstallDirectory);
+            commonApplicationDirectory = getCELInstallDirectory() + "Common" + File.separator;
         }
 
         return commonApplicationDirectory;
@@ -776,7 +789,12 @@ public class BaseConfiguration
 
     public static String getBinariesDirectory()
     {
-        return BaseConfiguration.getCommonApplicationDirectory() + "bin/";
+        return BaseConfiguration.getCommonApplicationDirectory() + "bin" + File.separator;
+    }
+
+    public static String getGCodePreviewDirectory()
+    {
+        return BaseConfiguration.getCommonApplicationDirectory() + "GCodePreview" + File.separator;
     }
 
     public static void enableApplicationFeature(ApplicationFeature feature)
