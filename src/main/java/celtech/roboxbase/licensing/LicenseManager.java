@@ -3,10 +3,7 @@ package celtech.roboxbase.licensing;
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.printerControl.model.PrinterListChangesListener;
-import celtech.roboxbase.printerControl.model.Reel;
 import com.google.common.io.ByteStreams;
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,12 +42,13 @@ public class LicenseManager {
     private static final Stenographer STENO = StenographerFactory.getStenographer(LicenseManager.class.getName());
     
     private static LicenseManager instance;
-    //private static final String KEY_TO_THE_CRYPT = "4893AF234EEF124326DDE98ED93284BB";
     
     private static final String OWNER_KEY = "OWNER";
     private static final String END_DATE_KEY = "END_DATE";
     private static final String PRINTER_ID_KEY = "PRINTER_ID";
     private static final String LICENSE_TYPE_KEY = "LICENSE_TYPE";
+    
+    private static final int FIFTEEN_DAYS = 15;
     
     private static final List<LicenseChangeListener> LICENSE_CHANGE_LISTENERS = new ArrayList<>();
     
@@ -58,9 +56,7 @@ public class LicenseManager {
      * Class is singleton
      * Do not allow instantiation outside of class.
      */
-    private LicenseManager() {
-        BaseLookup.getPrinterListChangesNotifier().addListener(new LicenseValidator());
-    }
+    private LicenseManager() {}
     
     public static LicenseManager getInstance() {
         if(instance == null) {
@@ -69,7 +65,7 @@ public class LicenseManager {
         return instance;
     }
     
-    private boolean validateLicense() {
+    public boolean validateLicense() {
         Optional<License> potentialLicence = readCachedLicenseFile();
         if(potentialLicence.isPresent()) {
             return validateLicense(potentialLicence.get(), true);
@@ -81,7 +77,15 @@ public class LicenseManager {
     }
     
     public boolean validateLicense(License license, boolean activateLicense) {
-        if(licenseContainsAConnectedPrinter(license)) {
+        NoHardwareLicenseTimer noHardwareLicenseTimer = NoHardwareLicenseTimer.getInstance();
+        boolean isLicenseWithoutHardwareAllowed = noHardwareLicenseTimer.hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
+        boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
+        
+        if(isAssociatedPrinterConnected) {
+            noHardwareLicenseTimer.resetNoHardwareLicenseTimer();
+        }
+        
+        if(isAssociatedPrinterConnected || isLicenseWithoutHardwareAllowed) {
             if (isLicenseFreeVersion(license) || license.checkLicenseActive()) {
                 if(activateLicense) {
                     enableApplicationFeaturesBasedOnLicenseType(license.getLicenseType());
@@ -192,11 +196,6 @@ public class LicenseManager {
             return Optional.empty();
         }
         
-        //byte[] decryptedKey = decryptKey(encryptedKey, getPublic(publicKeyPath));
-        //SecretKey symmetricKey = new SecretKeySpec(decryptedKey, 0, decryptedKey.length, "AES");
-
-        //String licenseText = decryptText(encryptedText, symmetricKey);
-        
         if(licenseText == null) {
             return Optional.empty();
         }
@@ -238,19 +237,6 @@ public class LicenseManager {
         return Optional.of(license);
     }
     
-//    private byte[] decryptKey(String encryptedKey, PublicKey key) {
-//        try {
-//            Cipher cipher = Cipher.getInstance("RSA");
-//            cipher.init(Cipher.DECRYPT_MODE, key);
-//            return cipher.doFinal(Base64.decodeBase64(encryptedKey));
-//        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex) {
-//            STENO.exception("Error when obtaining cipher instance.", ex);
-//        } catch (InvalidKeyException ex) {
-//            STENO.exception("Error occured when decrypting license.", ex);
-//        }
-//        return null;
-//    }
-    
     private String decryptLine(String encryptedLine, PublicKey key) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -267,40 +253,6 @@ public class LicenseManager {
         }
         return null;
     }
-    
-//    private static String decryptText(final String ivAndEncryptedMessageBase64, final SecretKey symmetricKey) {
-//
-//        final byte[] ivAndEncryptedMessage = DatatypeConverter
-//                .parseBase64Binary(ivAndEncryptedMessageBase64);
-//        try 
-//        {
-//            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-//            final int blockSize = cipher.getBlockSize();
-//
-//            // retrieve random IV from start of the received message
-//            final byte[] ivData = new byte[blockSize];
-//            System.arraycopy(ivAndEncryptedMessage, 0, ivData, 0, blockSize);
-//            final IvParameterSpec iv = new IvParameterSpec(ivData);
-//
-//            // retrieve the encrypted message itself
-//            final byte[] encryptedMessage = new byte[ivAndEncryptedMessage.length
-//                    - blockSize];
-//            System.arraycopy(ivAndEncryptedMessage, blockSize,
-//                    encryptedMessage, 0, encryptedMessage.length);
-//
-//            cipher.init(Cipher.DECRYPT_MODE, symmetricKey, iv);
-//
-//            final byte[] encodedMessage = cipher.doFinal(encryptedMessage);
-//
-//            // concatenate IV and encrypted message
-//            final String message = new String(encodedMessage, Charset.forName("UTF-8"));
-//
-//            return message;
-//        } catch (GeneralSecurityException ex) {
-//            STENO.exception("Error occured during decryption of license file.", ex);
-//            return null;
-//        }
-//    }
         
     /**
      * Turn a date String in the form of yyyy-MM-dd into a {@link LocalDate}
@@ -315,12 +267,12 @@ public class LicenseManager {
     }
     
     /**
-     * Check if the a license contains the id of a connected printer
+     * Check if the license contains the id of a connected printer
      * 
      * @param license
      * @return 
      */
-    private boolean licenseContainsAConnectedPrinter(License license) {
+    private boolean doesLicenseContainAConnectedPrinter(License license) {
         ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
         //True if the list of registered printers on the license matches any that are connected.
         boolean printerIdMatch = printers.stream().anyMatch(
@@ -349,11 +301,13 @@ public class LicenseManager {
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
+            BaseConfiguration.enableApplicationFeature(ApplicationFeature.PRO_SPLASH_SCREEN);
         } else if(licenseType.equals(LicenseType.AUTOMAKER_FREE)) {
             STENO.info("License type of Automaker Free, enabling standard features");
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
+            BaseConfiguration.disableApplicationFeature(ApplicationFeature.PRO_SPLASH_SCREEN);
         }
     }
     
@@ -376,40 +330,5 @@ public class LicenseManager {
          * @param license the new license
          */
         void onLicenseChange(License license);
-    }
-
-    /**
-     * Listener to validate license when a printer is connected
-     */
-    private class LicenseValidator implements PrinterListChangesListener {
-        
-        @Override
-        public void whenPrinterAdded(Printer printer) {
-            validateLicense();
-        }
-
-        @Override
-        public void whenPrinterRemoved(Printer printer) {}
-
-        @Override
-        public void whenHeadAdded(Printer printer) {}
-
-        @Override
-        public void whenHeadRemoved(Printer printer, Head head) {}
-
-        @Override
-        public void whenReelAdded(Printer printer, int reelIndex) {}
-
-        @Override
-        public void whenReelRemoved(Printer printer, Reel reel, int reelIndex) {}
-
-        @Override
-        public void whenReelChanged(Printer printer, Reel reel) {}
-
-        @Override
-        public void whenExtruderAdded(Printer printer, int extruderIndex) {}
-
-        @Override
-        public void whenExtruderRemoved(Printer printer, int extruderIndex) {}
     }
 }
