@@ -792,9 +792,9 @@ public class BaseConfiguration
         return BaseConfiguration.getCommonApplicationDirectory() + "bin" + File.separator;
     }
 
-    public static String getGCodePreviewDirectory()
+    public static String getGCodeViewerDirectory()
     {
-        return BaseConfiguration.getCommonApplicationDirectory() + "GCodePreview" + File.separator;
+        return BaseConfiguration.getCommonApplicationDirectory() + "GCodeViewer" + File.separator;
     }
 
     public static void enableApplicationFeature(ApplicationFeature feature)
