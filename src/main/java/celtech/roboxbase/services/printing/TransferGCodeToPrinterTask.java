@@ -10,17 +10,10 @@ import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.SystemUtils;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpATTRS;
-import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -298,10 +291,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             try
             {
                 steno.info("Transferred GCode");
-                if (thisJobCanBeReprinted && printJobStatistics != null)
-                    remoteCI.startPrintJob(printJobID);
-                else
-                    remoteCI.printGCodeFile(remoteDirectory + "/" + gcodeFile.getName());
+                remoteCI.startPrintJob(printJobID);
                 transferredOK = true;
             }
             catch (RoboxCommsException ex)

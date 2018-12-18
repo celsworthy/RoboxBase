@@ -566,11 +566,18 @@ public class PrintEngine implements ControllableService
         
         try {
             FileUtils.copyDirectory(new File(slicedFilesLocation), new File(printJobDirectoryName));
+        
+            renameFilesInPrintJob(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
+            String statisticsFileLocation = printJobDirectoryName 
+                    + File.separator 
+                    + jobUUID 
+                    + BaseConfiguration.statisticsFileExtension;
+            PrintJobStatistics statistics = PrintJobStatistics.importStatisticsFromGCodeFile(statisticsFileLocation);
+            statistics.setPrintJobID(jobUUID);
+            statistics.writeStatisticsToFile(statisticsFileLocation);
         } catch (IOException ex) {
             steno.exception("Error when copying sliced project into print job directory", ex);
         }
-        
-        renameFilesInPrintJob(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
         
         deleteOldPrintJobDirectories();
         
