@@ -38,7 +38,11 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     
     @Override
     public void showConnectLicensedPrinterDialog() {}
-
+    
+    @Override
+    public void showPurchaseLicenseDialog() {
+    }
+    
     @Override
     public void processErrorPacketFromPrinter(FirmwareError response, Printer printer)
     {

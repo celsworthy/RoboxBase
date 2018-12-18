@@ -45,6 +45,8 @@ public interface SystemNotificationManager
     
     void showConnectLicensedPrinterDialog();
     
+    void showPurchaseLicenseDialog();
+    
     void processErrorPacketFromPrinter(FirmwareError error, Printer printer);
 
     void showCalibrationDialogue();
