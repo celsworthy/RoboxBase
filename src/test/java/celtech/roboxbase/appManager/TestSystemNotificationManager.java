@@ -31,10 +31,13 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     }
     
     @Override
-    public boolean showSelectLicenseDialogue() 
+    public boolean showSelectLicenseDialog() 
     {    
         return false;
     }
+    
+    @Override
+    public void showConnectLicensedPrinterDialog() {}
 
     @Override
     public void processErrorPacketFromPrinter(FirmwareError response, Printer printer)

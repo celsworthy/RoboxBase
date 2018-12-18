@@ -55,10 +55,16 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
     
     @Override
-    public boolean showSelectLicenseDialogue() 
+    public boolean showSelectLicenseDialog() 
     {
-        outputNotification("Register printer dialogue display");
+        outputNotification("Register printer dialog display");
         return false;
+    }
+    
+    @Override
+    public void showConnectLicensedPrinterDialog() 
+    {
+        outputNotification("Connect licensed printer dialog display");
     }
 
     @Override

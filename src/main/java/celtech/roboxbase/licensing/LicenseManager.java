@@ -65,21 +65,25 @@ public class LicenseManager {
         return instance;
     }
     
-    public boolean validateLicense() {
+    public boolean validateLicense(boolean canDisplayDialogs) {
         Optional<License> potentialLicence = readCachedLicenseFile();
         if(potentialLicence.isPresent()) {
-            return validateLicense(potentialLicence.get(), true);
+            return validateLicense(potentialLicence.get(), true, canDisplayDialogs);
         }
         
-        return BaseLookup.getSystemNotificationHandler().showSelectLicenseDialogue();
+        return BaseLookup.getSystemNotificationHandler().showSelectLicenseDialog();
         
         // What to do if license is not valid? Generate free license?
     }
     
-    public boolean validateLicense(License license, boolean activateLicense) {
+    public boolean validateLicense(License license, boolean activateLicense, boolean canDisplayDialogs) {
         NoHardwareLicenseTimer noHardwareLicenseTimer = NoHardwareLicenseTimer.getInstance();
         boolean isLicenseWithoutHardwareAllowed = noHardwareLicenseTimer.hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
         boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
+        
+        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) {
+            BaseLookup.getSystemNotificationHandler().showConnectLicensedPrinterDialog();
+        }
         
         if(isAssociatedPrinterConnected) {
             noHardwareLicenseTimer.resetNoHardwareLicenseTimer();
@@ -102,7 +106,7 @@ public class LicenseManager {
         boolean licenseFileValid = false;
         Optional<License> potentialLicense = readEncryptedLicenseFile(encryptedLicenseFile);
         if(potentialLicense.isPresent()) {
-            licenseFileValid = validateLicense(potentialLicense.get(), activateLicense);
+            licenseFileValid = validateLicense(potentialLicense.get(), activateLicense, false);
         }
         
         if(licenseFileValid && cacheFile) {
