@@ -81,7 +81,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
                 return result;
             }
             updateMessage("Slicing ...");
-            PrintJob printJob = new PrintJob(meshesToPrint.getSettings().getName(), gCodeDirectoryName);
+            PrintJob printJob = new PrintJob(meshesToPrint.getPrintQuality().getFriendlyName(), gCodeDirectoryName);
             String slicerOutputFileName = printJob.getGCodeFileLocation();
             String postProcOutputFileName = printJob.getRoboxisedFileLocation();
 
