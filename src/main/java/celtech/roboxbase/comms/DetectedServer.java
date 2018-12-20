@@ -1,8 +1,8 @@
 package celtech.roboxbase.comms;
 
 import celtech.roboxbase.comms.remote.Configuration;
-import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
+import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.remote.types.SerializableFilament;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -28,12 +28,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -88,7 +92,8 @@ public final class DetectedServer
     private final StringProperty version = new SimpleStringProperty("");
     private final StringProperty pin = new SimpleStringProperty("1111");
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
-
+    private ListProperty<String> colours = new SimpleListProperty<>();
+    
     private List<DetectedDevice> detectedDevices = new ArrayList();
 
     @JsonIgnore
@@ -271,6 +276,26 @@ public final class DetectedServer
         return version;
     }
 
+    public List<String> getColours() 
+    {
+        return colours.get();
+    }
+
+    public void setColours(List<String> colours) 
+    {
+        
+        if (!colours.equals(this.colours))
+        {
+            this.colours.setAll(colours);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+    
+    public ListProperty coloursProperty() 
+    {
+        return colours;
+    }
+
     public ServerStatus getServerStatus()
     {
         //steno.info("ServerStatus of " + getName() + " == " + this.serverStatus.get().name());
@@ -450,6 +475,8 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
+                    ObservableList<String> observableList = FXCollections.observableArrayList(response.getPrinterColours());
+                    colours = new SimpleListProperty<>(observableList);
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
