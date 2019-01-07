@@ -628,15 +628,18 @@ public class PrintEngine implements ControllableService
             PrintJobStatistics printJobStatistics = printJob.getStatistics();
             linesInPrintingFile.set(printJobStatistics.getNumberOfLines());
 
-            steno.info("Respooling job " + jobUUID + " to printer from line " + startFromLineNumber);
-            transferGCodeToPrinterService.reset();
-            transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
-            transferGCodeToPrinterService.setStartFromSequenceNumber(startFromLineNumber);
-            transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
-            transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
-            transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
-            transferGCodeToPrinterService.setThisCanBeReprinted(false);
-            transferGCodeToPrinterService.start();
+            BaseLookup.getTaskExecutor().runOnGUIThread(() ->
+            {
+                steno.info("Respooling job " + jobUUID + " to printer from line " + startFromLineNumber);
+                transferGCodeToPrinterService.reset();
+                transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
+                transferGCodeToPrinterService.setStartFromSequenceNumber(startFromLineNumber);
+                transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
+                transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
+                transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+                transferGCodeToPrinterService.setThisCanBeReprinted(false);
+                transferGCodeToPrinterService.start();
+            });
             acceptedPrintRequest = true;
         } catch (IOException ex)
         {
