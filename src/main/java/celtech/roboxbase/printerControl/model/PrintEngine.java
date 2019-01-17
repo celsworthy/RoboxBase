@@ -24,9 +24,9 @@ import celtech.roboxbase.services.printing.GCodePrintResult;
 import celtech.roboxbase.services.printing.TransferGCodeToPrinterService;
 import celtech.roboxbase.services.slicer.AbstractSlicerService;
 import celtech.roboxbase.services.slicer.SlicerService;
+import celtech.roboxbase.utils.PrintJobUtils;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.models.PrintableProject;
-import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.stream.Stream;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -534,7 +533,7 @@ public class PrintEngine implements ControllableService
         stopAllServices();
     }
 
-    public synchronized void printProject(PrintableProject printableProject, Optional<GCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired)
+    public synchronized boolean printProject(PrintableProject printableProject, Optional<GCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired)
     {
         canDisconnectDuringPrint = true;
         etcAvailable.set(false);
@@ -552,7 +551,10 @@ public class PrintEngine implements ControllableService
                 && potentialGCodeGenResult.get().isSuccess())
         {
             printFromProject(printableProject);
+            return true;
         }
+        
+        return false;
     }
 
     protected void printFromProject(PrintableProject printableProject) {
@@ -565,16 +567,8 @@ public class PrintEngine implements ControllableService
         printableProject.setJobUUID(jobUUID);
         
         try {
+            PrintJobUtils.assignPrintJobIdToProject(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
             FileUtils.copyDirectory(new File(slicedFilesLocation), new File(printJobDirectoryName));
-        
-            renameFilesInPrintJob(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
-            String statisticsFileLocation = printJobDirectoryName 
-                    + File.separator 
-                    + jobUUID 
-                    + BaseConfiguration.statisticsFileExtension;
-            PrintJobStatistics statistics = PrintJobStatistics.importStatisticsFromGCodeFile(statisticsFileLocation);
-            statistics.setPrintJobID(jobUUID);
-            statistics.writeStatisticsToFile(statisticsFileLocation);
         } catch (IOException ex) {
             steno.exception("Error when copying sliced project into print job directory", ex);
         }
@@ -583,21 +577,6 @@ public class PrintEngine implements ControllableService
         
         PrintJob newPrintJob = new PrintJob(jobUUID);
         reprintFileFromDisk(newPrintJob);
-    }
-    
-    private void renameFilesInPrintJob(String jobUUID, String printJobDirectory, String printQuality) {
-        File printJobDir = new File(printJobDirectory);
-        Stream.of(printJobDir.listFiles()).forEach(file -> {
-            try {
-                String originalFile = file.getPath();
-                if(originalFile.contains(printQuality)) {
-                    String newFile = originalFile.replace(printQuality, jobUUID);
-                    Files.move(new File(originalFile), new File(newFile));
-                }
-            } catch (IOException ex) {
-                steno.exception("Error when renaiming files for print job: " + jobUUID, ex);
-            }
-        });
     }
     
     private void deleteOldPrintJobDirectories() {

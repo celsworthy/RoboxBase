@@ -15,6 +15,7 @@ import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
@@ -587,9 +588,13 @@ public interface Printer extends RoboxResponseConsumer
 
     public List<SuitablePrintJob> listJobsReprintableByMe();
     
+    public List<SuitablePrintJob> createSuitablePrintJobsFromStatistics(List<PrintJobStatistics> printJobStats);
+    
     public void tidyPrintJobDirectories();
 
     public boolean reprintJob(String printJobID);
+    
+    public boolean printJobFromDirectory(String printJobName, String directoryPath);
 
     // Methods provided to allow a simple, more thread-safe way of accessing the printer info
     public AckResponse getLastErrorResponse();

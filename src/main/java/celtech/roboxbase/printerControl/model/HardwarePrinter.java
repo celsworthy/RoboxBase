@@ -2226,12 +2226,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         try
         {
             transmitDirectGCode(GCodeConstants.goToTargetFirstLayerBedTemperature, false);
+            boolean gCodeGenSuccessful = printEngine.printProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
+            transmitDirectGCode(GCodeConstants.switchBedHeaterOff, false);
         } catch (RoboxCommsException ex)
         {
             steno.error("Error whilst sending preheat commands");
         }
-
-        printEngine.printProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
     }
 
     @Override
@@ -4826,9 +4826,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public List<SuitablePrintJob> listJobsReprintableByMe()
     {
         List<PrintJobStatistics> orderedStats = new ArrayList<>();
-        List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
 
         steno.debug("Getting suitable print jobs");
         File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
@@ -4862,6 +4859,16 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             }
         }
 
+        return createSuitablePrintJobsFromStatistics(orderedStats);
+    }
+
+    @Override
+    public List<SuitablePrintJob> createSuitablePrintJobsFromStatistics(List<PrintJobStatistics> orderedStats) 
+    {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+        
+        List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+        
         orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
         //Make sure the newest are at the top
         Collections.reverse(orderedStats);
@@ -4918,6 +4925,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
                         suitablePrintJob.setPrintJobID(stats.getPrintJobID());
                         suitablePrintJob.setPrintJobName(stats.getProjectName());
+                        suitablePrintJob.setPrintJobPath(stats.getProjectPath());
                         suitablePrintJob.setPrintProfileName(stats.getProfileName());
                         suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
                         suitablePrintJob.seteVolume(stats.geteVolumeUsed());
@@ -5008,6 +5016,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public boolean reprintJob(String printJobID)
     {
         PrintJob printJob = new PrintJob(printJobID);
+        return getPrintEngine().reprintFileFromDisk(printJob);
+    }
+    
+    @Override
+    public boolean printJobFromDirectory(String printJobName, String directoryPath) 
+    {
+        PrintJob printJob = new PrintJob(printJobName, directoryPath);
         return getPrintEngine().reprintFileFromDisk(printJob);
     }
 

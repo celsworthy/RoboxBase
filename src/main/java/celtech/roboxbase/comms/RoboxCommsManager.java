@@ -3,16 +3,16 @@ package celtech.roboxbase.comms;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
+import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterConnection;
-import celtech.roboxbase.printerControl.model.PrinterException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -20,7 +20,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
-import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -32,6 +31,8 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 {
     public static final String CUSTOM_CONNECTION_HANDLE = "OfflinePrinterConnection";
 
+    public static final String MOUNTED_MEDIA_FILE_PATH = "/media";
+    
     private static RoboxCommsManager instance = null;
 
     private boolean keepRunning = true;
@@ -270,6 +271,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             {
                 steno.debug("We have found a new printer " + printerToConnect);
                 assessCandidatePrinter(printerToConnect);
+            }
+            
+            MachineType machineType = BaseConfiguration.getMachineType();
+            if(machineType == MachineType.LINUX_X64 || machineType == MachineType.LINUX_X86) {
+                // check if there are any usb drives mounted
+                File mediaDir = new File(MOUNTED_MEDIA_FILE_PATH);
+                BaseLookup.retainAndAddUSBDirectories(mediaDir.listFiles());
             }
 
             long endOfRunTime = System.currentTimeMillis();

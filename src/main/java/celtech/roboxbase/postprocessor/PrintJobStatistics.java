@@ -15,7 +15,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,7 +53,8 @@ public class PrintJobStatistics
     private Map<Integer, Double> layerNumberToPredictedDuration_FeedrateIndependent;
     private double predictedDuration;
     private int lineNumberOfFirstExtrusion;
-
+    private String projectPath;
+    
     @JsonIgnore
     private Date creationDate;
 
@@ -306,6 +306,16 @@ public class PrintJobStatistics
     public void setLineNumberOfFirstExtrusion(int lineNumberOfFirstExtrusion)
     {
         this.lineNumberOfFirstExtrusion = lineNumberOfFirstExtrusion;
+    }
+
+    public String getProjectPath() 
+    {
+        return projectPath;
+    }
+
+    public void setProjectPath(String projectPath) 
+    {
+        this.projectPath = projectPath;
     }
 
     @JsonIgnore

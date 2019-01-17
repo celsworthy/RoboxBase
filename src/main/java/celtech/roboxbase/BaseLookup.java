@@ -14,6 +14,7 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesNotifier;
 import celtech.roboxbase.utils.tasks.LiveTaskExecutor;
 import celtech.roboxbase.utils.tasks.TaskExecutor;
+import java.io.File;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -48,6 +49,8 @@ public class BaseLookup
     private static final ObservableList<Printer> connectedPrinters = FXCollections.observableArrayList();
     private static final ObservableList<Printer> connectedPrintersUnmodifiable = FXCollections.unmodifiableObservableList(connectedPrinters);
 
+    public static final ObservableList<File> MOUNTED_USB_DIRECTORIES = FXCollections.observableArrayList();
+    
     private static Set<Locale> availableLocales = null;
 
     /**
@@ -190,6 +193,15 @@ public class BaseLookup
     public static ObservableList<Printer> getConnectedPrinters()
     {
         return connectedPrintersUnmodifiable;
+    }
+    
+    public static synchronized void retainAndAddUSBDirectories(File[] usbDirs) {
+        MOUNTED_USB_DIRECTORIES.retainAll(usbDirs);
+        for(File usbDir : usbDirs) {
+            if(!MOUNTED_USB_DIRECTORIES.contains(usbDir)) {
+                MOUNTED_USB_DIRECTORIES.add(usbDir);
+            }
+        }
     }
 
     public static Locale getDefaultApplicationLocale()
