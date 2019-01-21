@@ -71,9 +71,7 @@ public class LicenseManager {
             return validateLicense(potentialLicence.get(), true, canDisplayDialogs);
         }
         
-        return BaseLookup.getSystemNotificationHandler().showSelectLicenseDialog();
-        
-        // What to do if license is not valid? Generate free license?
+        return false;
     }
     
     public boolean validateLicense(License license, boolean activateLicense, boolean canDisplayDialogs) {

@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -71,16 +69,18 @@ public class NoHardwareLicenseTimer {
         if(timerFile.exists()) {
             try {
                 byte[] encryptedDate = FileUtils.readFileToByteArray(timerFile);
-                String unencryptedDateString = unencryptCutOffDate(encryptedDate);
-                LocalDate cutOffDate = LocalDate.parse(unencryptedDateString, DateTimeFormatter.ISO_DATE);
-                return Optional.of(cutOffDate);
+                Optional<String> unencryptedDateString = unencryptCutOffDate(encryptedDate);
+                if(unencryptedDateString.isPresent()) {
+                    LocalDate cutOffDate = LocalDate.parse(unencryptedDateString.get(), DateTimeFormatter.ISO_DATE);
+                    return Optional.of(cutOffDate);
+                }
             } catch (IOException ex) {
                 STENO.exception("Exception when reading timer file", ex);
                 return Optional.empty();
             }
-        } else {
-            return Optional.empty();
         }
+        
+        return Optional.empty();
     }
     
     private boolean saveCutoffDate(LocalDate cutOffDate) {
@@ -121,12 +121,13 @@ public class NoHardwareLicenseTimer {
                     blockSize, encryptedMessage.length);
 
             return ivAndEncryptedMessage;
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("Unexpected exception during encryption", e);
+        } catch (GeneralSecurityException | IOException  e) {
+            STENO.exception("Unexpected exception while encrypting timer file", e);
+            return new byte[0];
         }
     }
     
-    private String unencryptCutOffDate(byte[] encryptedDate) {
+    private Optional<String> unencryptCutOffDate(byte[] encryptedDate) {
         try 
         {
             final Cipher cipher = Cipher.getInstance("AES/GCM/PKCS5Padding");
@@ -149,14 +150,14 @@ public class NoHardwareLicenseTimer {
             // concatenate IV and encrypted message
             final String message = new String(encodedMessage, Charset.forName("UTF-8"));
 
-            return message;
-        } catch (GeneralSecurityException ex) {
+            return Optional.of(message);
+        } catch (GeneralSecurityException | IOException ex) {
             STENO.exception("Error occured during decryption of timer file", ex);
-            return null;
+            return Optional.empty();
         }
     }
     
-    private SecretKey createSecretKeyFromMac() throws NoSuchAlgorithmException {
+    private SecretKey createSecretKeyFromMac() throws NoSuchAlgorithmException, IOException {
         byte[] macAddress = determineMacAddress();
         MessageDigest sha = MessageDigest.getInstance("SHA-1");
         byte[] macAddressKey = sha.digest(macAddress);
@@ -165,18 +166,10 @@ public class NoHardwareLicenseTimer {
         return secretKey;
     }
     
-    private byte[] determineMacAddress() {
-        InetAddress ip;
-	try {	
-            ip = InetAddress.getLocalHost();
-            NetworkInterface network = NetworkInterface.getByInetAddress(ip);
-            return network.getHardwareAddress();	
-	} catch (UnknownHostException e) {	
-            STENO.exception("Unknown host exception when determining MAC address", e);
-	} catch (SocketException e){		
-            STENO.exception("Socket exception when determining MAC address", e);	
-	}
-        
-        return null;
+    private byte[] determineMacAddress() throws IOException {
+        InetAddress ip;	
+        ip = InetAddress.getLocalHost();
+        NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+        return network.getHardwareAddress();	
     }
 }
