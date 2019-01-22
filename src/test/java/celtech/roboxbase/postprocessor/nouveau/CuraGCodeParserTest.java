@@ -740,7 +740,10 @@ public class CuraGCodeParserTest
         assertTrue(layerNode.getChildren().get(4) instanceof ObjectDelineationNode);
 
         ObjectDelineationNode objectNode = (ObjectDelineationNode) layerNode.getChildren().get(4);
-        assertTrue(objectNode.getChildren().get(1) instanceof OrphanSectionNode);
+        // Used to return an OrphanSectionNode. Now it knows what the current section is, so
+        // returns the appropriate section type.
+        // assertTrue(objectNode.getChildren().get(1) instanceof OrphanSectionNode);
+        assertTrue(objectNode.getChildren().get(1) instanceof FillSectionNode);
         assertTrue(objectNode.getChildren().get(2) instanceof OuterPerimeterSectionNode);
     }
 

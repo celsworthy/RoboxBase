@@ -19,11 +19,11 @@ import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.services.ControllableService;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.postProcessor.GCodePostProcessingResult;
-import celtech.roboxbase.services.postProcessor.PostProcessorService;
+//import celtech.roboxbase.services.postProcessor.PostProcessorService;
 import celtech.roboxbase.services.printing.GCodePrintResult;
 import celtech.roboxbase.services.printing.TransferGCodeToPrinterService;
-import celtech.roboxbase.services.slicer.AbstractSlicerService;
-import celtech.roboxbase.services.slicer.SlicerService;
+//import celtech.roboxbase.services.slicer.AbstractSlicerService;
+//import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.PrintJobUtils;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.models.PrintableProject;
@@ -73,8 +73,8 @@ public class PrintEngine implements ControllableService
             PrintEngine.class.getName());
 
     private Printer associatedPrinter = null;
-    public final AbstractSlicerService slicerService = new SlicerService();
-    public final PostProcessorService postProcessorService = new PostProcessorService();
+//    public final AbstractSlicerService slicerService = new SlicerService();
+//    public final PostProcessorService postProcessorService = new PostProcessorService();
     public final TransferGCodeToPrinterService transferGCodeToPrinterService = new TransferGCodeToPrinterService();
     private final IntegerProperty linesInPrintingFile = new SimpleIntegerProperty(0);
 
@@ -90,9 +90,9 @@ public class PrintEngine implements ControllableService
 //    private EventHandler<WorkerStateEvent> succeededSliceEventHandler = null;
 
     private EventHandler<WorkerStateEvent> scheduledGCodePostProcessEventHandler = null;
-    private EventHandler<WorkerStateEvent> cancelGCodePostProcessEventHandler = null;
-    private EventHandler<WorkerStateEvent> failedGCodePostProcessEventHandler = null;
-    private EventHandler<WorkerStateEvent> succeededGCodePostProcessEventHandler = null;
+//    private EventHandler<WorkerStateEvent> cancelGCodePostProcessEventHandler = null;
+//    private EventHandler<WorkerStateEvent> failedGCodePostProcessEventHandler = null;
+//    private EventHandler<WorkerStateEvent> succeededGCodePostProcessEventHandler = null;
 
     private EventHandler<WorkerStateEvent> scheduledPrintEventHandler = null;
     private EventHandler<WorkerStateEvent> cancelPrintEventHandler = null;
@@ -226,74 +226,74 @@ public class PrintEngine implements ControllableService
 //            }
 //        };
 
-        cancelGCodePostProcessEventHandler = (WorkerStateEvent t) ->
-        {
-            steno.info(t.getSource().getTitle() + " has been cancelled");
-            try
-            {
-                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-            } catch (PrinterException ex)
-            {
-                steno.error("Couldn't abort on post process cancel");
-            }
-        };
+//        cancelGCodePostProcessEventHandler = (WorkerStateEvent t) ->
+//        {
+//            steno.info(t.getSource().getTitle() + " has been cancelled");
+//            try
+//            {
+//                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//            } catch (PrinterException ex)
+//            {
+//                steno.error("Couldn't abort on post process cancel");
+//            }
+//        };
 
-        failedGCodePostProcessEventHandler = (WorkerStateEvent t) ->
-        {
-            steno.info(t.getSource().getTitle() + " has failed");
-            try
-            {
-                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-            } catch (PrinterException ex)
-            {
-                steno.error("Couldn't abort on post process fail");
-            }
-        };
+//        failedGCodePostProcessEventHandler = (WorkerStateEvent t) ->
+//        {
+//            steno.info(t.getSource().getTitle() + " has failed");
+//            try
+//            {
+//                associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//            } catch (PrinterException ex)
+//            {
+//                steno.error("Couldn't abort on post process fail");
+//            }
+//        };
 
-        succeededGCodePostProcessEventHandler = (WorkerStateEvent t) ->
-        {
-            GCodePostProcessingResult result = (GCodePostProcessingResult) (t.getSource().
-                    getValue());
-
-            if (result != null
-                    && result.getRoboxiserResult() != null
-                    && result.getRoboxiserResult().isSuccess())
-            {
-                steno.info(t.getSource().getTitle() + " has succeeded");
-                String jobUUID = result.getPrintJobUUID();
-
-                PrintJobStatistics printJobStatistics = result.getRoboxiserResult().
-                        getPrintJobStatistics();
-
-                makeETCCalculator(printJobStatistics, associatedPrinter);
-
-                transferGCodeToPrinterService.reset();
-                transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
-                transferGCodeToPrinterService.setStartFromSequenceNumber(0);
-                transferGCodeToPrinterService.setModelFileToPrint(result.getOutputFilename());
-                transferGCodeToPrinterService.setPrinterToUse(result.getPrinterToUse());
-                transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
-                transferGCodeToPrinterService.start();
-
-                printJobStartTime.set(new Date());
-
-                if (macroBeingRun.get() == null)
-                {
-                    BaseLookup.getSystemNotificationHandler().
-                            showGCodePostProcessSuccessfulNotification();
-                }
-            } else
-            {
-                try
-                {
-                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
-                } catch (PrinterException ex)
-                {
-                    steno.error("Couldn't abort on post process fail");
-                }
-
-            }
-        };
+//        succeededGCodePostProcessEventHandler = (WorkerStateEvent t) ->
+//        {
+//            GCodePostProcessingResult result = (GCodePostProcessingResult) (t.getSource().
+//                    getValue());
+//
+//            if (result != null
+//                   && result.getRoboxiserResult() != null
+//                    && result.getRoboxiserResult().isSuccess())
+//            {
+//                steno.info(t.getSource().getTitle() + " has succeeded");
+//                String jobUUID = result.getPrintJobUUID();
+//
+//                PrintJobStatistics printJobStatistics = result.getRoboxiserResult().
+//                        getPrintJobStatistics();
+//
+//                makeETCCalculator(printJobStatistics, associatedPrinter);
+//
+//                transferGCodeToPrinterService.reset();
+//                transferGCodeToPrinterService.setCurrentPrintJobID(jobUUID);
+//                transferGCodeToPrinterService.setStartFromSequenceNumber(0);
+//                transferGCodeToPrinterService.setModelFileToPrint(result.getOutputFilename());
+//                transferGCodeToPrinterService.setPrinterToUse(result.getPrinterToUse());
+//                transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+//                transferGCodeToPrinterService.start();
+//
+//                printJobStartTime.set(new Date());
+//
+//                if (macroBeingRun.get() == null)
+//                {
+//                    BaseLookup.getSystemNotificationHandler().
+//                            showGCodePostProcessSuccessfulNotification();
+//                }
+//            } else
+//            {
+//                try
+//                {
+//                    associatedPrinter.cancel(null, safetyFeaturesRequiredForCurrentJob);
+//                } catch (PrinterException ex)
+//                {
+//                    steno.error("Couldn't abort on post process fail");
+//                }
+//
+//            }
+//        };
 
         cancelPrintEventHandler = (WorkerStateEvent t) ->
         {
@@ -393,13 +393,13 @@ public class PrintEngine implements ControllableService
 //
 //        slicerService.setOnSucceeded(succeededSliceEventHandler);
 
-        postProcessorService.setOnCancelled(
-                cancelGCodePostProcessEventHandler);
+//        postProcessorService.setOnCancelled(
+//                cancelGCodePostProcessEventHandler);
 
-        postProcessorService.setOnFailed(failedGCodePostProcessEventHandler);
+//        postProcessorService.setOnFailed(failedGCodePostProcessEventHandler);
 
-        postProcessorService.setOnSucceeded(
-                succeededGCodePostProcessEventHandler);
+//        postProcessorService.setOnSucceeded(
+//                succeededGCodePostProcessEventHandler);
 
         transferGCodeToPrinterService.setOnScheduled(scheduledPrintEventHandler);
 
@@ -435,9 +435,10 @@ public class PrintEngine implements ControllableService
             }
         });
 
-        highIntensityCommsInProgress.bind(slicerService.runningProperty()
-                .or(postProcessorService.runningProperty())
-                .or(transferGCodeToPrinterService.runningProperty()));
+//        highIntensityCommsInProgress.bind(slicerService.runningProperty()
+//                .or(postProcessorService.runningProperty())
+//                .or(transferGCodeToPrinterService.runningProperty()));
+        highIntensityCommsInProgress.bind(transferGCodeToPrinterService.runningProperty());
 
         detectAlreadyPrinting();
     }
@@ -962,16 +963,16 @@ public class PrintEngine implements ControllableService
             public Boolean call() throws Exception
             {
                 steno.debug("Shutdown print services...");
-                if (slicerService.isRunning())
-                {
-                    steno.debug("Shutdown slicer service...");
-                    slicerService.cancelRun();
-                }
-                if (postProcessorService.isRunning())
-                {
-                    steno.debug("Shutdown PP...");
-                    postProcessorService.cancelRun();
-                }
+//                if (slicerService.isRunning())
+//                {
+//                    steno.debug("Shutdown slicer service...");
+//                    slicerService.cancelRun();
+//                }
+//                if (postProcessorService.isRunning())
+//                {
+//                    steno.debug("Shutdown PP...");
+//                    postProcessorService.cancelRun();
+//                }
                 if (transferGCodeToPrinterService.isRunning())
                 {
                     steno.debug("Shutdown print service...");

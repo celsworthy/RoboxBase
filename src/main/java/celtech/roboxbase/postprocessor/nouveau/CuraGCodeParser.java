@@ -83,7 +83,7 @@ public class CuraGCodeParser extends GCodeParser
                     )
                     {
                         OrphanObjectDelineationNode node = orphanObjectSectionAction.getNode();
-                        node.setPotentialObjectNumber(currentObject.get());
+                        node.setPotentialObjectNumber(currentObject);
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
