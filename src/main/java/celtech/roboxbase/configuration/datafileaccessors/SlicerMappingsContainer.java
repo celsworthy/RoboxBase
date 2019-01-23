@@ -14,7 +14,7 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author ianhudson
  */
-public class SlicerMappingsContainer
+public final class SlicerMappingsContainer
 {
 
     private static final Stenographer steno = StenographerFactory.getStenographer(SlicerMappingsContainer.class.getName());
@@ -28,7 +28,11 @@ public class SlicerMappingsContainer
     {
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
+        loadSlicerMappingsFile();
+    }
+    
+    public void loadSlicerMappingsFile() 
+    {        
         File slicerMappingsInputFile = new File(BaseConfiguration.getApplicationPrintProfileDirectory() + defaultSlicerMappingsFileName);
         if (!slicerMappingsInputFile.exists())
         {
