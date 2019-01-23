@@ -2,12 +2,14 @@ package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.InnerPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NodeProcessingException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
@@ -56,6 +58,75 @@ public class NodeManagementUtilities
         }
     }
     
+    protected void movePerimeterObjectsToFront(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
+    {
+        System.out.println("movePerimeterObjectsToFront(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+
+        boolean encounteredFillBeforePerimeter = false;
+        GCodeEventNode outerPerimeterParent = null;
+        GCodeEventNode innerPerimeterParent = null;
+        GCodeEventNode fillParent = null;
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+            if (node instanceof OuterPerimeterSectionNode)
+            {
+                if (outerPerimeterParent == null)
+                    outerPerimeterParent = node.getParent().get();
+
+            }
+            else if (node instanceof InnerPerimeterSectionNode)
+            {
+                if (innerPerimeterParent == null)
+                    innerPerimeterParent = node.getParent().get();
+            }
+            else if (node instanceof FillSectionNode)
+            {
+                if (fillParent == null)
+                    fillParent = node.getParent().get();
+                if (outerPerimeterParent == null && innerPerimeterParent == null)
+                    encounteredFillBeforePerimeter = true;
+            }
+        }
+        
+        if (encounteredFillBeforePerimeter)
+        {
+            System.out.println("object containing first fill is before objects containing perimeter");
+           
+            if (outerPerimeterParent != null)
+            {
+                if (outerPerimeterParent != fillParent)
+                {
+                    if (outerPerimeterParent.getParent().get() == fillParent.getParent().get())
+                    {
+                        outerPerimeterParent.removeFromParent();
+                        fillParent.addSiblingBefore(outerPerimeterParent);
+                    }
+                    else
+                    {
+                        System.out.println("Parent of object containing fill is not the same as parent of object containing outer perimeter!");
+                    }
+                }
+                
+                if (innerPerimeterParent != outerPerimeterParent &&
+                    innerPerimeterParent != fillParent)
+                {
+                    if (innerPerimeterParent.getParent().get() == fillParent.getParent().get())
+                    {
+                        innerPerimeterParent.removeFromParent();
+                        fillParent.addSiblingBefore(innerPerimeterParent);
+                    }
+                    else
+                    {
+                        System.out.println("Parent of object containing fill is not the same as parent of object containing inner perimeter!");
+                    }
+                }
+            }
+            System.out.println("... done");
+        }
+    }
+
     protected void rehabilitateUnretractNodes(LayerNode layerNode)
     {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);

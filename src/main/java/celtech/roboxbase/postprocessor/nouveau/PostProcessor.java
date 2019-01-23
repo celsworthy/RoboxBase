@@ -58,6 +58,7 @@ public class PostProcessor
 
     private final Stenographer steno = StenographerFactory.getStenographer(PostProcessor.class.getName());
 
+    private final String movePerimetersTimerName = "ReorderPerimeter";
     private final String unretractTimerName = "Unretract";
     private final String orphanTimerName = "Orphans";
     private final String nozzleControlTimerName = "NozzleControl";
@@ -180,6 +181,7 @@ public class PostProcessor
         } else if (slicerType == SlicerType.Cura3) 
         {
             if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
+                featureSet.enableFeature(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT);
                 postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
             } else {
                 postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
@@ -568,11 +570,12 @@ public class PostProcessor
                         printer.printerConfigurationProperty().get().getPrintVolumeHeight());
             }
 
-            if (lastLayerParseResult
-                    != null)
+            if (lastLayerParseResult != null)
             {
                 gcodeParser.setStartingLineNumber(lastLayerParseResult.getLastLineNumber());
                 gcodeParser.setFeedrateInForce(lastLayerParseResult.getLastFeedrateInForce());
+                gcodeParser.setCurrentObject(lastLayerParseResult.getLastObjectNumber().orElse(-1));
+                gcodeParser.setCurrentSection(lastLayerParseResult.getLastSection());
             }
 
             BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
@@ -591,9 +594,13 @@ public class PostProcessor
                 LayerNode layerNode = gcodeParser.getLayerNode();
                 double lastFeedrate = gcodeParser.getFeedrateInForce();
                 int lastLineNumber = gcodeParser.getCurrentLineNumber();
+                int lastObjectNumber = gcodeParser.getCurrentObject();
+                String lastSection = gcodeParser.getCurrentSection();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
                 parseResultAtEndOfThisLayer.setLastLineNumber(lastLineNumber);
+                parseResultAtEndOfThisLayer.setLastObjectNumber(lastObjectNumber);
+                parseResultAtEndOfThisLayer.setLastSection(lastSection);
             }
         } else
         {
@@ -618,6 +625,13 @@ public class PostProcessor
         nodeManagementUtilities.rehomeOrphanObjects(layerNode, lastLayerParseResult);
         timeUtils.timerStop(this, orphanTimerName);
 
+        if (featureSet.isEnabled(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT))
+        {
+            //timeUtils.timerStart(this, movePerimetersTimerName);
+            //nodeManagementUtilities.movePerimeterObjectsToFront(layerNode, lastLayerParseResult);
+            //timeUtils.timerStop(this, movePerimetersTimerName);
+        }
+        
         int lastObjectNumber = -1;
 
         timeUtils.timerStart(this, nozzleControlTimerName);
@@ -722,6 +736,7 @@ public class PostProcessor
     {
         steno.debug("Post Processor Timer Report");
         steno.debug("============");
+        steno.debug(movePerimetersTimerName + " " + timeUtils.timeTimeSoFar_ms(this, movePerimetersTimerName));
         steno.debug(unretractTimerName + " " + timeUtils.timeTimeSoFar_ms(this, unretractTimerName));
         steno.debug(orphanTimerName + " " + timeUtils.timeTimeSoFar_ms(this, orphanTimerName));
         steno.debug(nozzleControlTimerName + " " + timeUtils.timeTimeSoFar_ms(this, nozzleControlTimerName));

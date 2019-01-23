@@ -12,7 +12,7 @@ import org.parboiled.Rule;
  */
 //@BuildParseTree
 public class Cura3GCodeParser extends GCodeParser {
-
+    
     @Override
     public Rule Layer()
     {
@@ -83,7 +83,7 @@ public class Cura3GCodeParser extends GCodeParser {
                     )
                     {
                         OrphanObjectDelineationNode node = orphanObjectSectionAction.getNode();
-                        node.setPotentialObjectNumber(currentObject.get());
+                        node.setPotentialObjectNumber(currentObject);
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;

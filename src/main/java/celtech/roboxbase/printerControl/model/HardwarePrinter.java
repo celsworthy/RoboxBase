@@ -410,8 +410,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canCancel.bind(
                 pauseStatus.isEqualTo(PauseStatus.PAUSED)
-                        .or(printEngine.postProcessorService.runningProperty())
-                        .or(printEngine.slicerService.runningProperty())
+                        //.or(printEngine.postProcessorService.runningProperty())
+                        //.or(printEngine.slicerService.runningProperty())
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))

@@ -19,6 +19,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.PreambleNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkinSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SkirtSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SupportInterfaceSectionNode;
@@ -46,7 +47,8 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     double feedrateInForce = -1;
     int currentLineNumber = 0;
     double currentLayerHeight = 0;
-    Var<Integer> currentObject = new Var<>(-1);
+    int currentObject = -1;
+    String currentSection = null;
     double printVolumeWidth = 0;
     double printVolumeDepth = 0;
     double printVolumeHeight = 0;
@@ -55,12 +57,28 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     //See ARR-26 and ARR-21
     final double printVolumeHeightTolerance = 0.2;
     
-    public int getCurrentLineNumber() {
-        return currentLineNumber;
+    public int getCurrentObject() {
+        return currentObject;
+    }
+
+    public void setCurrentObject(int objectNumber) {
+        currentObject = objectNumber;
+    }
+
+    public String getCurrentSection() {
+        return currentSection;
+    }
+
+    public void setCurrentSection(String section) {
+        currentSection = section;
     }
 
     public void setStartingLineNumber(int startingLineNumber) {
         this.currentLineNumber = startingLineNumber;
+    }
+
+    public int getCurrentLineNumber() {
+        return currentLineNumber;
     }
 
     public void setFeedrateInForce(double feedrate) {
@@ -144,8 +162,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
         return Sequence(
                 Sequence('T', OneOrMore(Digit()),
                         objectNumber.set(Integer.valueOf(match())),
-                        currentObject.set(Integer.valueOf(match())),
-						Optional(Comment(commentText)),
+                        Optional(Comment(commentText)),
                         Newline()
                 ),
                 objectSectionAction,
@@ -184,7 +201,8 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                     {
                         ObjectDelineationNode node = objectSectionAction.getNode();
                         node.setObjectNumber(objectNumber.get());
-                        node.setGCodeLineNumber(++currentLineNumber);
+                        currentObject = objectNumber.get();
+			node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
                         return true;
                     }
@@ -206,7 +224,48 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                     @Override
                     public boolean run(Context context)
                     {
-                        OrphanSectionNode node = new OrphanSectionNode();
+                        SectionNode node = null;
+                        if (currentSection != null)
+                        {
+                            switch (currentSection)
+                            {
+                                case FillSectionNode.designator:
+                                    node = new FillSectionNode();
+                                    break;
+
+                                case SkinSectionNode.designator:
+                                    node = new SkinSectionNode();
+                                    break;
+
+                                case SupportSectionNode.designator:
+                                    node = new SupportSectionNode();
+                                    break;
+
+                                case SkirtSectionNode.designator:
+                                    node = new SkirtSectionNode();
+                                    break;
+
+                                case SupportInterfaceSectionNode.designator:
+                                    node = new SupportInterfaceSectionNode();
+                                    break;
+
+                                case OuterPerimeterSectionNode.designator:
+                                    node = new OuterPerimeterSectionNode();
+                                    break;
+
+                                case InnerPerimeterSectionNode.designator:
+                                    node = new InnerPerimeterSectionNode();
+                                    break;
+                                
+                                default:
+                                    break;
+                                    
+                            }
+                        }
+                        
+                        if (node == null)
+                            node = new OrphanSectionNode();
+
                         while (context.getValueStack().iterator().hasNext())
                         {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
@@ -239,6 +298,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = FillSectionNode.designator;
                         return true;
                     }
                 }
@@ -265,6 +325,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = SkinSectionNode.designator;
                         return true;
                     }
                 }
@@ -290,6 +351,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = SupportSectionNode.designator;
                         return true;
                     }
                 }
@@ -315,6 +377,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = SkirtSectionNode.designator;
                         return true;
                     }
                 }
@@ -340,6 +403,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = SupportInterfaceSectionNode.designator;
                         return true;
                     }
                 }
@@ -366,6 +430,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         }
                         node.setGCodeLineNumber(++currentLineNumber);
                         context.getValueStack().push(node);
+                        currentSection = OuterPerimeterSectionNode.designator;
                         return true;
                     }
                 }
@@ -392,6 +457,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                             node.addChildAtStart((GCodeEventNode) context.getValueStack().pop());
                         }
                         context.getValueStack().push(node);
+                        currentSection = InnerPerimeterSectionNode.designator;
                         return true;
                     }
                 }
