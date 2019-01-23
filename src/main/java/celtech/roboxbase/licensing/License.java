@@ -25,7 +25,7 @@ public class License {
         this.printerIds = printerIds;
     }
     
-    public boolean checkLicenseActive() {
+    public boolean checkLicenseInDate() {
         LocalDate localDate = LocalDate.now();
         return localDate.isBefore(endDate);
     }
@@ -58,11 +58,13 @@ public class License {
         return printerIds;
     }
     
-    public String toShortString() {
+    public String toShortString() 
+    {
         return getFriendlyLicenseType() + " - Expires: " + endDate;
     }
     
-    private String buildPrinterIdsString() {
+    private String buildPrinterIdsString() 
+    {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Associated Printer IDs:");
         printerIds.forEach(id -> {
@@ -73,7 +75,8 @@ public class License {
     }
     
     @Override
-    public String toString() {
+    public String toString() 
+    {
         return "License issued to: " + owner + "\n"
                 + "License type: " + getFriendlyLicenseType() + "\n"
                 + "Expires: " + endDate + "\n"

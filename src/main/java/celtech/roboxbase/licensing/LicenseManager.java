@@ -34,14 +34,15 @@ import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.codec.binary.Base64;
 
 /**
- *
+ * Singleton class providing methods for validating and caching licenses and in turn
+ * enabling and disabling features in Automaker
+ * 
  * @author George Salter
  */
-public class LicenseManager {
+public class LicenseManager
+{
     
     private static final Stenographer STENO = StenographerFactory.getStenographer(LicenseManager.class.getName());
-    
-    private static LicenseManager instance;
     
     private static final String OWNER_KEY = "OWNER";
     private static final String END_DATE_KEY = "END_DATE";
@@ -58,56 +59,81 @@ public class LicenseManager {
      */
     private LicenseManager() {}
     
-    public static LicenseManager getInstance() {
-        if(instance == null) {
-            instance = new LicenseManager();
-        }
-        return instance;
+    /**
+     * Loaded when first accessed by {@link LicenseManager#getInstance()}  providing a
+     * thread safe way to lazy initialise the singleton.
+     */
+    private static class Holder
+    {
+        private static final LicenseManager INSTANCE = new LicenseManager();
     }
     
-    public boolean validateLicense(boolean canDisplayDialogs) {
+    public static LicenseManager getInstance() 
+    {
+        return Holder.INSTANCE;
+    }
+    
+    public synchronized boolean validateLicense(boolean canDisplayDialogs) 
+    {
         Optional<License> potentialLicence = readCachedLicenseFile();
-        if(potentialLicence.isPresent()) {
+        if(potentialLicence.isPresent()) 
+        {
             return validateLicense(potentialLicence.get(), true, canDisplayDialogs);
         }
         
         return false;
     }
     
-    public boolean validateLicense(License license, boolean activateLicense, boolean canDisplayDialogs) {
-        NoHardwareLicenseTimer noHardwareLicenseTimer = NoHardwareLicenseTimer.getInstance();
-        boolean isLicenseWithoutHardwareAllowed = noHardwareLicenseTimer.hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
-        boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
-        
-        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) {
+    public synchronized boolean validateLicense(License license, boolean activateLicense, boolean canDisplayDialogs) 
+    {
+        boolean isLicenseWithoutHardwareAllowed = NoHardwareLicenseTimer.getInstance().hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
+        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) 
+        {
             BaseLookup.getSystemNotificationHandler().showConnectLicensedPrinterDialog();
         }
         
-        if(isAssociatedPrinterConnected) {
-            noHardwareLicenseTimer.resetNoHardwareLicenseTimer();
+        boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
+        
+        if(isAssociatedPrinterConnected) 
+        {
+            isLicenseWithoutHardwareAllowed = NoHardwareLicenseTimer.getInstance().resetNoHardwareLicenseTimer();
         }
         
-        if(isAssociatedPrinterConnected || isLicenseWithoutHardwareAllowed) {
-            if (isLicenseFreeVersion(license) || license.checkLicenseActive()) {
-                if(activateLicense) {
+        if(license.checkLicenseInDate() || isLicenseFreeVersion(license))
+        {
+            // We have a license that can be activated
+            if(isAssociatedPrinterConnected || isLicenseWithoutHardwareAllowed) 
+            {
+                if(activateLicense)
+                {
                     enableApplicationFeaturesBasedOnLicenseType(license.getLicenseType());
                     LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenseChange(license));
                 }
-                return true;
             }
+            // We have a valid license but it is not active
+            else
+            {
+                enableApplicationFeaturesBasedOnLicenseType(LicenseType.AUTOMAKER_FREE);
+                LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenseChange(license));
+            }
+            
+            return true;
         }
         
         return false;
     }
     
-    public boolean checkEncryptedLicenseFileValid(File encryptedLicenseFile, boolean cacheFile, boolean activateLicense) {
+    public boolean checkEncryptedLicenseFileValid(File encryptedLicenseFile, boolean cacheFile, boolean activateLicense) 
+    {
         boolean licenseFileValid = false;
         Optional<License> potentialLicense = readEncryptedLicenseFile(encryptedLicenseFile);
-        if(potentialLicense.isPresent()) {
+        if(potentialLicense.isPresent()) 
+        {
             licenseFileValid = validateLicense(potentialLicense.get(), activateLicense, false);
         }
         
-        if(licenseFileValid && cacheFile) {
+        if(licenseFileValid && cacheFile) 
+        {
             cacheLicenseFile(encryptedLicenseFile);
         }
 
@@ -122,8 +148,10 @@ public class LicenseManager {
      * @return 
      */
     public Optional<License> readCachedLicenseFile() {
+        
         File licenseFile = tryAndGetCachedLicenseFile();
-        if(licenseFile.exists()) {
+        if(licenseFile.exists()) 
+        {
             STENO.debug("Reading cached license file");
             return readEncryptedLicenseFile(licenseFile);
         }
@@ -137,12 +165,16 @@ public class LicenseManager {
      * 
      * @param encryptedLicenseFile file to be cached
      */
-    private void cacheLicenseFile(File encryptedLicenseFile) {
+    private void cacheLicenseFile(File encryptedLicenseFile) 
+    {
         File cachedLicense = tryAndGetCachedLicenseFile();
-        try {
+        try 
+        {
             Files.copy(encryptedLicenseFile.toPath(), cachedLicense.toPath(), StandardCopyOption.REPLACE_EXISTING);
             STENO.debug("License file cached");
-        } catch (IOException ex) {
+        } 
+        catch (IOException ex) 
+        {
             STENO.exception("Exception when caching license file", ex);
         }
     }
@@ -154,10 +186,12 @@ public class LicenseManager {
      * 
      * @return License File that may not exist
      */
-    private File tryAndGetCachedLicenseFile() {
+    public File tryAndGetCachedLicenseFile() 
+    {
         File licenseDir = new File(BaseConfiguration.getApplicationStorageDirectory() 
                 + BaseConfiguration.LICENSE_SUB_PATH);
-        if(!licenseDir.exists()) {
+        if(!licenseDir.exists()) 
+        {
             STENO.debug("License directory does not exist. Creating license directory here: " + licenseDir.getPath());
             licenseDir.mkdir();
         }
@@ -165,40 +199,49 @@ public class LicenseManager {
         return cachedLicense;
     }
     
-    private PublicKey getPublic() {
-        try {
+    private PublicKey getPublic()
+    {
+        try 
+        {
             InputStream in = getClass().getResourceAsStream("/celtech/resources/keys/publicKey");
             byte[] keyBytes = ByteStreams.toByteArray(in);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             return kf.generatePublic(spec);
-        } catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException ex) {
+        } 
+        catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException ex) 
+        {
             STENO.exception("An error occured when getting the public key", ex);
         }
         return null;
     }
     
-    public Optional<License> readEncryptedLicenseFile(File encryptedLicenseFile) {
+    public Optional<License> readEncryptedLicenseFile(File encryptedLicenseFile) 
+    {
         STENO.trace("Begining read of encrypted license file");
         
         String licenseText;
         
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(encryptedLicenseFile))) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(encryptedLicenseFile))) 
+        {
             StringBuilder stringBuilder = new StringBuilder();
             String line = bufferedReader.readLine();
             PublicKey publicKey = getPublic();
-            while(line != null) {
+            while(line != null) 
+            {
                 stringBuilder.append(decryptLine(line, publicKey));
                 stringBuilder.append("\n");
                 line = bufferedReader.readLine();
             }
             licenseText = stringBuilder.toString();
-        } catch (IOException ex) {
+        } catch (IOException ex)
+        {
             STENO.exception("Unexpected exception while trying to read license file", ex);
             return Optional.empty();
         }
         
-        if(licenseText == null) {
+        if(licenseText == null) 
+        {
             return Optional.empty();
         }
         String[] licenseInfo = licenseText.split("\\r?\\n");
@@ -208,12 +251,14 @@ public class LicenseManager {
         List<String> printerIds = new ArrayList<>();
         LicenseType licenseType = LicenseType.AUTOMAKER_FREE;
         
-        for (String licenseLine : licenseInfo) {
+        for (String licenseLine : licenseInfo) 
+        {
             String[] lineInfo = licenseLine.split(":");
             String licenseInfoKey = lineInfo[0];
             String licenseInfoValue = lineInfo[1];
             
-            switch(licenseInfoKey) {
+            switch(licenseInfoKey) 
+            {
                 case OWNER_KEY:
                     owner = licenseInfoValue;
                     break;
@@ -224,9 +269,12 @@ public class LicenseManager {
                     printerIds.add(licenseInfoValue);
                     break;
                 case LICENSE_TYPE_KEY:
-                    if(licenseInfoValue.equals(LicenseType.AUTOMAKER_FREE.toString())) {
+                    if(licenseInfoValue.equals(LicenseType.AUTOMAKER_FREE.toString()))
+                    {
                         licenseType = LicenseType.AUTOMAKER_FREE;
-                    } else if(licenseInfoValue.equals(LicenseType.AUTOMAKER_PRO.toString())) {
+                    } 
+                    else if(licenseInfoValue.equals(LicenseType.AUTOMAKER_PRO.toString())) 
+                    {
                         licenseType = LicenseType.AUTOMAKER_PRO;
                     }
             }
@@ -239,18 +287,23 @@ public class LicenseManager {
         return Optional.of(license);
     }
     
-    private String decryptLine(String encryptedLine, PublicKey key) {
-        try {
+    private String decryptLine(String encryptedLine, PublicKey key) 
+    {
+        try 
+        {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, key);
             return new String(cipher.doFinal(Base64.decodeBase64(encryptedLine)), "UTF-8");
-        } catch (NoSuchAlgorithmException 
+        } 
+        catch (NoSuchAlgorithmException 
                 | NoSuchPaddingException 
                 | IllegalBlockSizeException 
                 | BadPaddingException 
                 | UnsupportedEncodingException ex) {
             STENO.exception("Error when obtaining cipher instance.", ex);
-        } catch (InvalidKeyException ex) {
+        } 
+        catch (InvalidKeyException ex) 
+        {
             STENO.exception("Error occured when decrypting license.", ex);
         }
         return null;
@@ -262,7 +315,8 @@ public class LicenseManager {
      * @param date date in the form of a String
      * @return
      */
-    private LocalDate parseDate(String date) {
+    private LocalDate parseDate(String date) 
+    {
         DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE;
         LocalDate parsedDate = LocalDate.parse(date, dtf);
         return parsedDate;
@@ -274,7 +328,8 @@ public class LicenseManager {
      * @param license
      * @return 
      */
-    private boolean doesLicenseContainAConnectedPrinter(License license) {
+    private boolean doesLicenseContainAConnectedPrinter(License license) 
+    {
         ObservableList<Printer> printers = BaseLookup.getConnectedPrinters();
         //True if the list of registered printers on the license matches any that are connected.
         boolean printerIdMatch = printers.stream().anyMatch(
@@ -288,7 +343,8 @@ public class LicenseManager {
      * @param license
      * @return 
      */
-    private boolean isLicenseFreeVersion(License license) {
+    private boolean isLicenseFreeVersion(License license) 
+    {
         return license.getLicenseType() == LicenseType.AUTOMAKER_FREE;
     }
     
@@ -297,14 +353,18 @@ public class LicenseManager {
      * 
      * @param licenseType 
      */
-    private void enableApplicationFeaturesBasedOnLicenseType(LicenseType licenseType) {
-        if(licenseType.equals(LicenseType.AUTOMAKER_PRO)) {
+    private void enableApplicationFeaturesBasedOnLicenseType(LicenseType licenseType) 
+    {
+        if(licenseType.equals(LicenseType.AUTOMAKER_PRO)) 
+        {
             STENO.info("License type of Automaker Pro, enabling associated features");
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
             BaseConfiguration.enableApplicationFeature(ApplicationFeature.PRO_SPLASH_SCREEN);
-        } else if(licenseType.equals(LicenseType.AUTOMAKER_FREE)) {
+        } 
+        else if(licenseType.equals(LicenseType.AUTOMAKER_FREE)) 
+        {
             STENO.info("License type of Automaker Free, enabling standard features");
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
             BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
@@ -313,18 +373,21 @@ public class LicenseManager {
         }
     }
     
-    public void addLicenseChangeListener(LicenseChangeListener licenseChangeListener) {
+    public void addLicenseChangeListener(LicenseChangeListener licenseChangeListener) 
+    {
         LICENSE_CHANGE_LISTENERS.add(licenseChangeListener);
     }
     
-    public void removeLicenseChangeListener(LicenseChangeListener licenseChangeListener) {
+    public void removeLicenseChangeListener(LicenseChangeListener licenseChangeListener) 
+    {
         LICENSE_CHANGE_LISTENERS.remove(licenseChangeListener);
     }
         
     /**
      * Interface for a listener that is used when the license has changed
      */
-    public static interface LicenseChangeListener {
+    public static interface LicenseChangeListener 
+    {
     
         /**
          * Called when the license has been changed
