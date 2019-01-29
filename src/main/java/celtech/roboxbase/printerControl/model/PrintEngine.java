@@ -18,12 +18,8 @@ import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.CameraTriggerManager;
 import celtech.roboxbase.services.ControllableService;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
-import celtech.roboxbase.services.postProcessor.GCodePostProcessingResult;
-//import celtech.roboxbase.services.postProcessor.PostProcessorService;
 import celtech.roboxbase.services.printing.GCodePrintResult;
 import celtech.roboxbase.services.printing.TransferGCodeToPrinterService;
-//import celtech.roboxbase.services.slicer.AbstractSlicerService;
-//import celtech.roboxbase.services.slicer.SlicerService;
 import celtech.roboxbase.utils.PrintJobUtils;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.models.PrintableProject;
@@ -568,8 +564,8 @@ public class PrintEngine implements ControllableService
         printableProject.setJobUUID(jobUUID);
         
         try {
-            PrintJobUtils.assignPrintJobIdToProject(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
             FileUtils.copyDirectory(new File(slicedFilesLocation), new File(printJobDirectoryName));
+            PrintJobUtils.assignPrintJobIdToProject(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
         } catch (IOException ex) {
             steno.exception("Error when copying sliced project into print job directory", ex);
         }
