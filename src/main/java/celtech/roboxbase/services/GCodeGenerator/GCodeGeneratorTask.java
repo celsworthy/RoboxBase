@@ -1,5 +1,6 @@
 package celtech.roboxbase.services.gcodegenerator;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.RoboxProfile;
@@ -80,7 +81,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
                 result.setCancelled(true);
                 return result;
             }
-            updateMessage("Slicing ...");
+            updateMessage(BaseLookup.i18n("printerStatus.slicing"));
             PrintJob printJob = new PrintJob(meshesToPrint.getPrintQuality().getFriendlyName(), gCodeDirectoryName);
             String slicerOutputFileName = printJob.getGCodeFileLocation();
             String postProcOutputFileName = printJob.getRoboxisedFileLocation();
@@ -100,7 +101,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
             }
             if (slicerResult.isSuccess())
             {
-                updateMessage("Post processing ...");
+                updateMessage(BaseLookup.i18n("printerStatus.postProcessing"));
                 DoubleProperty progress = new SimpleDoubleProperty();
                 progress.addListener((n, ov, nv) -> this.updateProgress(60.0 + 0.4 * nv.doubleValue(), 100.0));
                 GCodePostProcessingResult postProcessingResult = PostProcessorTask.doPostProcessing(
