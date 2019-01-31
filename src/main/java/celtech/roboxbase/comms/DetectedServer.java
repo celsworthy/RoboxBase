@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
@@ -475,7 +476,13 @@ public final class DetectedServer
                     name.set(response.getName());
                     version.set(response.getServerVersion());
                     serverIP.set(response.getServerIP());
-                    ObservableList<String> observableList = FXCollections.observableArrayList(response.getPrinterColours());
+                    
+                    ObservableList<String> observableList = FXCollections.observableArrayList();
+                    Optional<List<String>> potentialPrinterColours = response.getPrinterColours();
+                    if(potentialPrinterColours.isPresent())
+                    {
+                        observableList = FXCollections.observableArrayList(potentialPrinterColours.get());
+                    }
                     colours = new SimpleListProperty<>(observableList);
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
