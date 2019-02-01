@@ -1,20 +1,25 @@
 package celtech.roboxbase.comms.remote.clear;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Optional;
 
 /**
  *
  * @author ianhudson
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WhoAreYouResponse
 {
 
     private String name;
     private String serverVersion;
     private String serverIP;
-    private Optional<List<String>> printerColours = Optional.empty();
+    
+    @JsonInclude(Include.NON_NULL)
+    private List<String> printerColours;
 
     public WhoAreYouResponse()
     {
@@ -29,7 +34,7 @@ public class WhoAreYouResponse
         this.name = name;
         this.serverVersion = serverVersion;
         this.serverIP = serverIP;
-        this.printerColours = Optional.of(printerColours);
+        this.printerColours = printerColours;
     }
 
     @JsonProperty
@@ -69,13 +74,13 @@ public class WhoAreYouResponse
     }
 
     @JsonProperty
-    public Optional<List<String>> getPrinterColours()
+    public List<String> getPrinterColours()
     {
         return printerColours;
     }
 
     @JsonProperty
-    public void setPrinterColours(Optional<List<String>> printerColours) 
+    public void setPrinterColours(List<String> printerColours) 
     {
         this.printerColours = printerColours;
     }

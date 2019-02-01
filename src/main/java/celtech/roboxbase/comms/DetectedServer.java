@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
@@ -443,7 +442,7 @@ public final class DetectedServer
         boolean gotAResponse = false;
         WhoAreYouResponse response = null;
 
-        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou";
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes";
 
         long t1 = System.currentTimeMillis();
         try
@@ -456,6 +455,7 @@ public final class DetectedServer
 
             //add request header
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+                    //+ BaseConfiguration.getApplicationVersion());
 
             con.setConnectTimeout(connectTimeOutShort);
             con.setReadTimeout(readTimeOutShort);
@@ -478,11 +478,8 @@ public final class DetectedServer
                     serverIP.set(response.getServerIP());
                     
                     ObservableList<String> observableList = FXCollections.observableArrayList();
-                    Optional<List<String>> potentialPrinterColours = response.getPrinterColours();
-                    if(potentialPrinterColours.isPresent())
-                    {
-                        observableList = FXCollections.observableArrayList(potentialPrinterColours.get());
-                    }
+                    List<String> printerColours = response.getPrinterColours();
+                    observableList = FXCollections.observableArrayList(printerColours);
                     colours = new SimpleListProperty<>(observableList);
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
