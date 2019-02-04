@@ -479,7 +479,10 @@ public final class DetectedServer
                     
                     ObservableList<String> observableList = FXCollections.observableArrayList();
                     List<String> printerColours = response.getPrinterColours();
-                    observableList = FXCollections.observableArrayList(printerColours);
+                    if(printerColours != null) 
+                    {
+                        observableList = FXCollections.observableArrayList(printerColours);
+                    }
                     colours = new SimpleListProperty<>(observableList);
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
