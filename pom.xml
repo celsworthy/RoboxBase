@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>celtech.roboxbase</groupId>
-            <artifactId>licence</artifactId>
+            <artifactId>Licence</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>
