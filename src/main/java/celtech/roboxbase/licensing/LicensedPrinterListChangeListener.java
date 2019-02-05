@@ -9,11 +9,11 @@ import celtech.roboxbase.printerControl.model.Reel;
  *
  * @author George Salter
  */
-public class LicensePrinterListChangeListener implements PrinterListChangesListener {
+public class LicensedPrinterListChangeListener implements PrinterListChangesListener {
     
         @Override
         public void whenPrinterAdded(Printer printer) {
-            LicenseManager.getInstance().validateLicense(false);
+            LicenceManager.getInstance().validateLicence(false);
         }
 
         @Override

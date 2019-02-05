@@ -5,16 +5,21 @@
     <artifactId>RoboxBase</artifactId>
     <version>1.2</version>
     <packaging>jar</packaging>
+ 
+    <repositories>
+        <repository>
+            <id>celtechRepo</id>
+            <name>CELTech releases</name>
+            <url>http://build.cel-robox.com:8080/artifactory/libs-release-local</url>
+        </repository>        
+    </repositories>
     
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/java/celtech/resources</directory>
-                <targetPath>celtech/resources</targetPath>
-            </resource>
-        </resources>
-    </build>
     <dependencies>
+        <dependency>
+            <groupId>celtech.roboxbase</groupId>
+            <artifactId>licence</artifactId>
+            <version>1.0</version>
+        </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
@@ -103,12 +108,12 @@
         <repository>
             <id>celtechRepo</id>
             <name>CELTech releases</name>
-            <url>http://54.229.31.30:8080/artifactory/libs-release-local</url>
+            <url>http://build.cel-robox.com:8080/artifactory/libs-release-local</url>
         </repository>        
         <snapshotRepository>
             <id>celtechRepo</id>
             <name>CELTech snapshots</name>
-            <url>http://54.229.31.30:8080/artifactory/libs-snapshot-local</url>
+            <url>http://build.cel-robox.com:8080/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
     
