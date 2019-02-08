@@ -55,13 +55,20 @@ public class LicenceManager
     
     public synchronized boolean validateLicence(boolean canDisplayDialogs) 
     {
+        boolean valid = false;
         Optional<Licence> potentialLicence = readCachedLicenseFile();
         if(potentialLicence.isPresent()) 
         {
-            return validateLicense(potentialLicence.get(), true, canDisplayDialogs);
+            valid = validateLicense(potentialLicence.get(), true, canDisplayDialogs);
+        }
+        else
+        {
+            enableApplicationFeaturesBasedOnLicenseType(LicenceType.AUTOMAKER_FREE);
+            Optional<Licence> licenceOption = Optional.empty();
+            LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(licenceOption));
         }
         
-        return false;
+        return valid;
     }
     
     public synchronized boolean validateLicense(Licence license, boolean activateLicense, boolean canDisplayDialogs) 
@@ -90,14 +97,16 @@ public class LicenceManager
                 if(activateLicense)
                 {
                     enableApplicationFeaturesBasedOnLicenseType(license.getLicenceType());
-                    LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(license));
+                    Optional<Licence> licenceOption = Optional.of(license);
+                    LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(licenceOption));
                 }
             }
             // We have a valid license but it is not active
             else
             {
                 enableApplicationFeaturesBasedOnLicenseType(LicenceType.AUTOMAKER_FREE);
-                LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(license));
+                Optional<Licence> licenceOption = Optional.of(license);
+                LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(licenceOption));
             }
             
             return true;
@@ -239,6 +248,6 @@ public class LicenceManager
          * 
          * @param licence the new licence
          */
-        void onLicenceChange(Licence licence);
+        void onLicenceChange(Optional<Licence> licence);
     }
 }
