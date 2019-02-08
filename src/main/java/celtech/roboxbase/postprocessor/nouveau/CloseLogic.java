@@ -800,6 +800,13 @@ public class CloseLogic
                 throw new NotEnoughAvailableExtrusionException("Not enough extrusion when considering extrusion from start");
             }
         }
+        
+        if(!goingBackwards && nodeToStartCopyingFromIndex == extractedMovements.getInScopeEvents().size() - 1)
+        {
+            // In this case we cannot start from the last in the list (which is the first move in the section)
+            // This is because we need to go back to the previous node (which is the next in the list) to find the travel too point for the nozzle close.
+            nodeToStartCopyingFromIndex--;
+        }
 
         if (extractedMovements.getInScopeEvents().get(nodeToStartCopyingFromIndex) instanceof MovementProvider)
         {
@@ -812,18 +819,27 @@ public class CloseLogic
                     // Need to save the extrusion as we are working backwards, effectively reversing the nodes.
                     // This extrusion will be copied to the previous node etc.
                     previousNodeExtrusion = extrusionInFirstPart.clone();
+                    extrusionInFirstPart.eNotInUse();
+                    extrusionInFirstPart.dNotInUse();
                 } else
                 {
-                    // In the forwards direction we are in front of this nodes extrusion, therefore it is unavailable to use
-                    availableExtrusion -= extrusionInFirstPart.getE();
-                    availableExtrusion -= extrusionInFirstPart.getD();
+//                    // In the forwards direction we are in front of this nodes extrusion, therefore it is unavailable to use
+//                    availableExtrusion -= extrusionInFirstPart.getE();
+//                    availableExtrusion -= extrusionInFirstPart.getD();
                 }
-                
-                extrusionInFirstPart.eNotInUse();
-                extrusionInFirstPart.dNotInUse();
             }
 
-            Movement firstMovement = ((MovementProvider) extractedMovements.getInScopeEvents().get(nodeToStartCopyingFromIndex)).getMovement();
+            Movement firstMovement;
+            
+            if(!goingBackwards)
+            {
+                // Travel to beginning of this extrusion
+                firstMovement = ((MovementProvider) extractedMovements.getInScopeEvents().get(nodeToStartCopyingFromIndex + 1)).getMovement();
+            } else 
+            {
+                firstMovement = ((MovementProvider) extractedMovements.getInScopeEvents().get(nodeToStartCopyingFromIndex)).getMovement();
+            }
+
             //Travel to the start of the intersected extrusion
             travelToStart = new TravelNode();
             travelToStart.getMovement().setX(firstMovement.getX());
@@ -834,10 +850,11 @@ public class CloseLogic
             if (goingBackwards && nodeToStartCopyingFromIndex < extractedMovements.getInScopeEvents().size() - 1)
             {
                 nodeToStartCopyingFromIndex++;
-            } else if (!goingBackwards && nodeToStartCopyingFromIndex > 0)
-            {
-                nodeToStartCopyingFromIndex--;
             }
+//            } else if (!goingBackwards && nodeToStartCopyingFromIndex > 0)
+//            {
+//                nodeToStartCopyingFromIndex--;
+//            }
         }
 
         ExtrusionNode finalCloseNode = null;
@@ -966,7 +983,7 @@ public class CloseLogic
                             //
                             // --->-------->--------->------> Extrusions
                             //    |------------------|        Running total
-                            //    |----------------------|    Required volume to close
+                            // |-------------------------|    Required volume to close
                             //                       |---|    First section
                             //                           |--| Second section
                             
@@ -981,11 +998,11 @@ public class CloseLogic
                             
                             copy.getMovement().setX(firstSegment.getX());
                             copy.getMovement().setY(firstSegment.getY());
+                            runningTotalOfExtrusion += copy.getExtrusion().getE();
                             copy.getExtrusion().setE(0);
                             copy.getExtrusion().setD(0);
                             copy.getNozzlePosition().bNotInUse();
                             copy.appendCommentText("End of copy close segment - " + additionalComment + " " + id);
-                            runningTotalOfExtrusion += copy.getExtrusion().getE();
                             copy.getNozzlePosition().setB(0);
                             //No extrusion during a close
                             copy.getExtrusion().eNotInUse();
@@ -1000,6 +1017,14 @@ public class CloseLogic
                                 remainderSection.getMovement().setY(firstSegment.getY());
                                 remainderSection.getFeedrate().setFeedRate_mmPerMin(extrusionNodeBeingExamined.getFeedrate().getFeedRate_mmPerMin());
                                 extrusionNodeBeingExamined.addSiblingAfter(remainderSection);
+                            } else
+                            {
+                                TravelNode newTravel = new TravelNode();
+                                newTravel.getMovement().setX(firstSegment.getX());
+                                newTravel.getMovement().setY(firstSegment.getY());
+                                newTravel.getFeedrate().setFeedRate_mmPerMin(extrusionNodeBeingExamined.getFeedrate().getFeedRate_mmPerMin());
+                                extrusionNodeBeingExamined.addSiblingBefore(newTravel);
+                                extrusionNodeBeingExamined.getExtrusion().setE(extrusionInSecondSection);
                             }
                             
                             break OUTER;
