@@ -81,12 +81,15 @@ public class Cura3ConfigConvertor {
     
     private void addExtrudersAndDefaults() {
         Head headOnPrinter;
-        if(printer == null || printer.headProperty() == null) {
+        if (printer == null ||
+            printer.headProperty() == null ||
+            printer.headProperty().get() == null) {
             HeadFile defaultHeadData = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
             headOnPrinter = new Head(defaultHeadData);
         } else {
             headOnPrinter = printer.headProperty().get();
         }
+        
         List<Nozzle> nozzles = headOnPrinter.getNozzles();
         for(int i = 0; i < nozzles.size(); i++) {
             String nozzleReference = "noz" + String.valueOf(i + 1);

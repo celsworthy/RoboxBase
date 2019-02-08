@@ -158,6 +158,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String macSlicerCommand = "";
         String linuxSlicerCommand = "";
         String configLoadCommand = "";
+        //The next variable is only required for Cura3
+        String actionCommand = "";
         //The next variable is only required for Slic3r
         String printCenterCommand = "";
         String combinedConfigSection = "";
@@ -192,20 +194,22 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 break;
             case Cura3:
                 windowsSlicerCommand = "\"" + BaseConfiguration.
-                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\" slice";
-                macSlicerCommand = "Cura/CuraEngine";
-                linuxSlicerCommand = "Cura/CuraEngine";
+                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\"";
+                macSlicerCommand = "Cura3/CuraEngine";
+                linuxSlicerCommand = "Cura3/CuraEngine";
+                actionCommand = "slice";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-j";
                 progressOutputCommand = "-p";
-                modelFileCommand = " -l";
-                extruderTrainCommand = " -e";
+                modelFileCommand = "-l";
+                extruderTrainCommand = "-e";
                 combinedConfigSection = configLoadCommand + " \"" + jsonSettingsFile + "\"";
                 break;
         }
 
         steno.debug("Selected slicer is " + slicerType + " : " + Thread.currentThread().getName());
 
+        int previousExtruder = -1;
         switch (machineType)
         {
             case WINDOWS_95:
@@ -216,6 +220,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + printJobDirectory
                         + "\" && "
                         + windowsSlicerCommand
+                        + " "
+                        + actionCommand
                         + " "
                         + verboseOutputCommand
                         + " "
@@ -242,6 +248,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + "\" && "
                         + windowsSlicerCommand
                         + " "
+                        + actionCommand
+                        + " "
                         + verboseOutputCommand
                         + " "
                         + progressOutputCommand
@@ -260,15 +268,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ());
                 }
 
-                int previousExtruder = -1;
+                previousExtruder = -1;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
                     if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
                         // Extruder needs swapping... just because
                         int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
-                        windowsPrintCommand += extruderTrainCommand + extruderNo;
+                        windowsPrintCommand += " " + extruderTrainCommand + extruderNo;
                     }
-                    windowsPrintCommand += modelFileCommand;
+                    windowsPrintCommand += " " + modelFileCommand;
                     windowsPrintCommand += " \"";
                     windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
@@ -282,6 +290,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             case MAC:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + macSlicerCommand);
+                commands.add(actionCommand);
                 if (!verboseOutputCommand.equals(""))
                 {
                     commands.add(verboseOutputCommand);
@@ -290,8 +299,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 {
                     commands.add(progressOutputCommand);
                 }
-                commands.add(configLoadCommand);
-                commands.add(configFile);
+                commands.add(combinedConfigSection);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
                 if (!printCenterCommand.equals(""))
@@ -301,15 +309,26 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + ","
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
-                for (String fileName : createdMeshFiles)
+
+                previousExtruder = -1;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    commands.add(fileName);
+                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                        // Extruder needs swapping... just because
+                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        commands.add(extruderTrainCommand + extruderNo);
+                    }
+                    commands.add(modelFileCommand);
+                    commands.add(createdMeshFiles.get(i));
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
+
                 break;
             case LINUX_X86:
             case LINUX_X64:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + linuxSlicerCommand);
+                commands.add(actionCommand);
                 if (!verboseOutputCommand.equals(""))
                 {
                     commands.add(verboseOutputCommand);
@@ -318,8 +337,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 {
                     commands.add(progressOutputCommand);
                 }
-                commands.add(configLoadCommand);
-                commands.add(configFile);
+                commands.add(combinedConfigSection);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
                 if (!printCenterCommand.equals(""))
@@ -329,9 +347,17 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + ","
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
-                for (String fileName : createdMeshFiles)
+                previousExtruder = -1;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    commands.add(fileName);
+                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                        // Extruder needs swapping... just because
+                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        commands.add(extruderTrainCommand + extruderNo);
+                    }
+                    commands.add(modelFileCommand);
+                    commands.add(createdMeshFiles.get(i));
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
                 break;
             default:
