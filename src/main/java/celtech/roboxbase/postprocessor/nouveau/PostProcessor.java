@@ -180,8 +180,9 @@ public class PostProcessor
             }
         } else if (slicerType == SlicerType.Cura3) 
         {
+            featureSet.enableFeature(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT);
+            
             if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
-                featureSet.enableFeature(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT);
                 postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
             } else {
                 postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
@@ -627,9 +628,9 @@ public class PostProcessor
 
         if (featureSet.isEnabled(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT))
         {
-            //timeUtils.timerStart(this, movePerimetersTimerName);
-            //nodeManagementUtilities.movePerimeterObjectsToFront(layerNode, lastLayerParseResult);
-            //timeUtils.timerStop(this, movePerimetersTimerName);
+            timeUtils.timerStart(this, movePerimetersTimerName);
+            nodeManagementUtilities.movePerimeterObjectsToFront(layerNode, lastLayerParseResult);
+            timeUtils.timerStop(this, movePerimetersTimerName);
         }
         
         int lastObjectNumber = -1;
