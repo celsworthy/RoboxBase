@@ -158,11 +158,11 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String macSlicerCommand = "";
         String linuxSlicerCommand = "";
         String configLoadCommand = "";
+        String configLoadFile = "";
         //The next variable is only required for Cura3
         String actionCommand = "";
         //The next variable is only required for Slic3r
         String printCenterCommand = "";
-        String combinedConfigSection = "";
         String verboseOutputCommand = "";
         String progressOutputCommand = "";
         String modelFileCommand = "";
@@ -179,7 +179,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 macSlicerCommand = "Slic3r.app/Contents/MacOS/slic3r";
                 linuxSlicerCommand = "Slic3r/bin/slic3r";
                 configLoadCommand = "--load";
-                combinedConfigSection = configLoadCommand + " \"" + configFile + "\"";
+                configLoadFile = configFile;
                 printCenterCommand = "--print-center";
                 break;
             case Cura:
@@ -189,8 +189,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 linuxSlicerCommand = "Cura/CuraEngine";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-c";
+                configLoadFile = configFile;
                 progressOutputCommand = "-p";
-                combinedConfigSection = configLoadCommand + " \"" + configFile + "\"";
                 break;
             case Cura3:
                 windowsSlicerCommand = "\"" + BaseConfiguration.
@@ -200,10 +200,10 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 actionCommand = "slice";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-j";
+                configLoadFile = jsonSettingsFile;
                 progressOutputCommand = "-p";
                 modelFileCommand = "-l";
                 extruderTrainCommand = "-e";
-                combinedConfigSection = configLoadCommand + " \"" + jsonSettingsFile + "\"";
                 break;
         }
 
@@ -220,14 +220,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + printJobDirectory
                         + "\" && "
                         + windowsSlicerCommand
-                        + " "
-                        + actionCommand
-                        + " "
-                        + verboseOutputCommand
+                        + " ";
+                if (!actionCommand.isEmpty())
+                    win95PrintCommand += actionCommand + " ";
+                win95PrintCommand += verboseOutputCommand
                         + " "
                         + progressOutputCommand
                         + " "
-                        + combinedConfigSection
+                        + configLoadCommand
+                        + " \"" + configLoadFile + "\""
                         + " -o "
                         + "\"" + tempGcodeFilename + "\"";
                 for (String fileName : createdMeshFiles)
@@ -247,19 +248,21 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + printJobDirectory
                         + "\" && "
                         + windowsSlicerCommand
-                        + " "
-                        + actionCommand
-                        + " "
-                        + verboseOutputCommand
+                        + " ";
+                if (!actionCommand.isEmpty())
+                    windowsPrintCommand += actionCommand + " ";
+                windowsPrintCommand += verboseOutputCommand
                         + " "
                         + progressOutputCommand
                         + " "
-                        + combinedConfigSection
-                        + sOverrideOptions
-                        + " -o "
+                        + configLoadCommand
+                        + " \"" + configLoadFile + "\"";
+                if (!sOverrideOptions.isEmpty())
+                    windowsPrintCommand += sOverrideOptions;
+                 windowsPrintCommand += " -o "
                         + "\"" + tempGcodeFilename + "\"";
 
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     windowsPrintCommand += " " + printCenterCommand;
                     windowsPrintCommand += " "
@@ -290,19 +293,21 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             case MAC:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + macSlicerCommand);
-                commands.add(actionCommand);
-                if (!verboseOutputCommand.equals(""))
+                if (!actionCommand.isEmpty())
+                    commands.add(actionCommand);
+                if (!verboseOutputCommand.isEmpty())
                 {
                     commands.add(verboseOutputCommand);
                 }
-                if (!progressOutputCommand.equals(""))
+                if (!progressOutputCommand.isEmpty())
                 {
                     commands.add(progressOutputCommand);
                 }
-                commands.add(combinedConfigSection);
+                commands.add(configLoadCommand);
+                commands.add(configLoadFile);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     commands.add(printCenterCommand);
                     commands.add(String.format(Locale.UK, "%.3f", centreOfPrintedObject.getX())
@@ -318,7 +323,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         commands.add(extruderTrainCommand + extruderNo);
                     }
-                    commands.add(modelFileCommand);
+                    if (!modelFileCommand.isEmpty())
+                        commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     previousExtruder = extrudersForMeshes.get(i);
                 }
@@ -328,19 +334,21 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             case LINUX_X64:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + linuxSlicerCommand);
-                commands.add(actionCommand);
-                if (!verboseOutputCommand.equals(""))
+                if (!actionCommand.isEmpty())
+                    commands.add(actionCommand);
+                if (!verboseOutputCommand.isEmpty())
                 {
                     commands.add(verboseOutputCommand);
                 }
-                if (!progressOutputCommand.equals(""))
+                if (!progressOutputCommand.isEmpty())
                 {
                     commands.add(progressOutputCommand);
                 }
-                commands.add(combinedConfigSection);
+                commands.add(configLoadCommand);
+                commands.add(configLoadFile);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     commands.add(printCenterCommand);
                     commands.add(String.format(Locale.UK, "%.3f", centreOfPrintedObject.getX())
@@ -355,7 +363,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         commands.add(extruderTrainCommand + extruderNo);
                     }
-                    commands.add(modelFileCommand);
+                    if (!modelFileCommand.isEmpty())
+                        commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     previousExtruder = extrudersForMeshes.get(i);
                 }
@@ -366,13 +375,14 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         if (commands.size() > 0)
         {
-            steno.debug("Slicer command is " + String.join(" ", commands));
+            //steno.debug("Slicer command is " + String.join(" ", commands));
             ProcessBuilder slicerProcessBuilder = new ProcessBuilder(commands);
             if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
             {
                 steno.debug("Set working directory (Non-Windows) to " + printJobDirectory);
                 slicerProcessBuilder.directory(new File(printJobDirectory));
             }
+            steno.info("Slicer command is " + String.join(" ", slicerProcessBuilder.command()));
 
             Process slicerProcess = null;
             try
@@ -401,8 +411,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         break;
                     default:
                         steno.error("Failure when invoking slicer with command line: " + String.join(
-                                " ", commands));
-                        steno.error("Slicer terminated with unknown exit code " + exitStatus);
+                                " ", slicerProcessBuilder.command()));
+                        steno.error("Slicer terminated with exit code " + exitStatus);
                         break;
                 }
             } catch (IOException ex)
