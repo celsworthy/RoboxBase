@@ -79,7 +79,7 @@ class SlicerOutputGobbler extends Thread
                     {
                         setLoadProgress("Slicing complete", 100);
                     }
-                } else if (slicerType == SlicerType.Cura)
+                } else if (slicerType == SlicerType.Cura || slicerType == SlicerType.Cura3)
                 {
                     if (line.startsWith("Progress"))
                     {
@@ -90,12 +90,12 @@ class SlicerOutputGobbler extends Thread
                             int progressInt = 0;
 
                             float workDone = Float.valueOf(lineParts[2]);
-                            float totalWork = slicerType == SlicerType.Cura3 ? parsePercentagePart(lineParts[3]) : Float.valueOf(lineParts[3]);
+                            float totalWork = slicerType == SlicerType.Cura3 ? parseTotalWork(lineParts[3]) : Float.valueOf(lineParts[3]);
 
                             if (task.equalsIgnoreCase("inset"))
                             {
                                 progressInt = (int) ((workDone / totalWork) * 25);
-                            } else if (task.equalsIgnoreCase("skin"))
+                            } else if (task.contains("skin"))
                             {
                                 progressInt = (int) ((workDone / totalWork) * 25) + 25;
                             } else if (task.equalsIgnoreCase("export"))
@@ -122,6 +122,12 @@ class SlicerOutputGobbler extends Thread
         {
             progressReceiver.progressUpdateFromSlicer(loadMessage, percentProgress);
         }
+    }
+    
+    private float parseTotalWork(String workDone)
+    {
+        String[] lineParts = workDone.split(" ");
+        return Float.valueOf(lineParts[0]);
     }
     
     private float parsePercentagePart(String percentagePart) 
