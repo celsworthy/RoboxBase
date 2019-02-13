@@ -43,7 +43,7 @@ public class PrinterSettingsOverrides
     private boolean raftOverride = false;
     private boolean spiralPrintOverride = false;
     
-    private boolean fillDensityChanged = false;
+    private boolean fillDensityChangedByUser = false;
 
     public PrinterSettingsOverrides()
     {
@@ -86,6 +86,7 @@ public class PrinterSettingsOverrides
         copy.fillDensityOverride = this.fillDensityOverride;
         copy.raftOverride = this.raftOverride;
         copy.spiralPrintOverride = this.spiralPrintOverride;
+        copy.fillDensityChangedByUser = this.fillDensityChangedByUser;
         
         return copy;
     }
@@ -172,33 +173,45 @@ public class PrinterSettingsOverrides
      */
     public RoboxProfile applyOverrides(Optional<RoboxProfile> roboxProfile)
     {
-        if(!roboxProfile.isPresent()) {
+        if(!roboxProfile.isPresent()) 
+        {
             return null;
         }
         RoboxProfile profileCopy = new RoboxProfile(roboxProfile.get());
         profileCopy.addOrOverride("brimWidth_mm", String.valueOf(brimOverride));
-        profileCopy.addOrOverride("fillDensity_normalised", String.valueOf(fillDensityOverride));
         profileCopy.addOrOverride("generateSupportMaterial", String.valueOf(printSupportOverride.get()));
         profileCopy.addOrOverride("supportGapEnabled", String.valueOf(printSupportGapEnabledOverride.get()));
         profileCopy.addOrOverride("printRaft", String.valueOf(raftOverride));
         profileCopy.addOrOverride("spiralPrint", String.valueOf(spiralPrintOverride));
-        if(raftOverride) {
+        if (fillDensityChangedByUser)
+        {
+            // Only override the profiles fill density if the value has been changed by the user.
+            profileCopy.addOrOverride("fillDensity_normalised", String.valueOf(fillDensityOverride));
+        }
+        
+        if (raftOverride)
+        {
             profileCopy.addOrOverride("adhesionType", "raft");
         }
-        if(brimOverride > 0) {
+        
+        if (brimOverride > 0) 
+        {
             profileCopy.addOrOverride("adhesionType", "brim");
         }
 
-        if (spiralPrintOverride) {
+        if (spiralPrintOverride)
+        {
             profileCopy.addOrOverride("numberOfPerimeters", "1");
         }
 
         // Overrides what is on profile. Unless AS_PROFILE is selected.
-        if(printSupportTypeOverride.get().equals(SupportType.MATERIAL_1)) {
+        if(printSupportTypeOverride.get().equals(SupportType.MATERIAL_1)) 
+        {
             profileCopy.addOrOverride("supportNozzle", "1");
             profileCopy.addOrOverride("supportInterfaceNozzle", "1");
             profileCopy.addOrOverride("raftBrimNozzle", "1");
-        } else if (printSupportTypeOverride.get().equals(SupportType.MATERIAL_2)) {
+        } else if (printSupportTypeOverride.get().equals(SupportType.MATERIAL_2)) 
+        {
             profileCopy.addOrOverride("supportNozzle", "0");
             profileCopy.addOrOverride("supportInterfaceNozzle", "0");
             profileCopy.addOrOverride("raftBrimNozzle", "0");
@@ -314,11 +327,17 @@ public class PrinterSettingsOverrides
         }
     }
 
-    public boolean isFillDensityChanged() {
-        return fillDensityChanged;
+    public boolean isFillDensityChangedByUser() 
+    {
+        return fillDensityChangedByUser;
     }
 
-    public void setFillDensityChanged(boolean fillDensityChanged) {
-        this.fillDensityChanged = fillDensityChanged;
+    public void setFillDensityChangedByUser(boolean fillDensityChangedByUser) 
+    {
+        if (this.fillDensityChangedByUser != fillDensityChangedByUser)
+        {
+            this.fillDensityChangedByUser = fillDensityChangedByUser;
+            toggleDataChanged();
+        }
     }
 }
