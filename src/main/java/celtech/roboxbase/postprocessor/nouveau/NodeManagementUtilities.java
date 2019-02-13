@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
@@ -30,7 +32,8 @@ import java.util.Optional;
  */
 public class NodeManagementUtilities
 {
-
+    private static final Stenographer STENO = StenographerFactory.getStenographer(NodeManagementUtilities.class.getName());
+    
     private final PostProcessorFeatureSet featureSet;
     private final List<NozzleProxy> nozzleProxies;
 
@@ -60,7 +63,7 @@ public class NodeManagementUtilities
     
     protected void movePerimeterObjectsToFront(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
     {
-        System.out.println("movePerimeterObjectsToFront(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        STENO.trace("movePerimeterObjectsToFront(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
 
         boolean encounteredFillBeforePerimeter = false;
@@ -92,7 +95,7 @@ public class NodeManagementUtilities
         
         if (encounteredFillBeforePerimeter)
         {
-            System.out.println("object containing first fill is before objects containing perimeter");
+            STENO.trace("object containing first fill is before objects containing perimeter");
            
             if (outerPerimeterParent != null)
             {
@@ -105,7 +108,7 @@ public class NodeManagementUtilities
                     }
                     else
                     {
-                        System.out.println("Parent of object containing fill is not the same as parent of object containing outer perimeter!");
+                        STENO.trace("Parent of object containing fill is not the same as parent of object containing outer perimeter!");
                     }
                 }
                 
@@ -119,11 +122,11 @@ public class NodeManagementUtilities
                     }
                     else
                     {
-                        System.out.println("Parent of object containing fill is not the same as parent of object containing inner perimeter!");
+                        STENO.trace("Parent of object containing fill is not the same as parent of object containing inner perimeter!");
                     }
                 }
             }
-            System.out.println("... done");
+            STENO.trace("... done");
         }
     }
 
