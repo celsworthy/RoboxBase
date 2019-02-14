@@ -12,10 +12,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -592,31 +588,14 @@ public class BaseConfiguration
 
         if (configuration != null && userStorageDirectory == null)
         {
-            if (getMachineType() == MachineType.WINDOWS)
-            {
-                String registryValue = WindowsRegistry.currentUser("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Personal");
-
-                if (registryValue != null)
-                {
-                    Path regPath = Paths.get(registryValue);
-                    if (Files.exists(regPath, LinkOption.NOFOLLOW_LINKS))
-                    {
-                        userStorageDirectory = registryValue + "\\"
-                                + getApplicationName() + File.separator;
-                    }
-                }
-            }
-
-            // Other OSes +
-            // Just in case we're on a windows machine and the lookup failed...
             if (userStorageDirectory == null)
             {
                 try
                 {
                     userStorageDirectory = configuration.getFilenameString(
                             applicationConfigComponent, userStorageDirectoryComponent, null)
-                            + getApplicationName() + File.separator;
-                    steno.debug("User storage directory = " + userStorageDirectory);
+                            + getApplicationName() + "/";
+                    steno.info("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {
                     steno.error(
