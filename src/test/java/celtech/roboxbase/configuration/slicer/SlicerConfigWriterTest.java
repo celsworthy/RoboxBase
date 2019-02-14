@@ -4,8 +4,8 @@
 package celtech.roboxbase.configuration.slicer;
 
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerMappingData;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
+import celtech.roboxbase.configuration.fileRepresentation.SlicerMappingData;
 import celtech.roboxbase.configuration.fileRepresentation.SupportType;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
@@ -321,6 +321,7 @@ public class SlicerConfigWriterTest extends BaseEnvironmentConfiguredTest
         PrinterSettingsOverrides printerSettings = new PrinterSettingsOverrides();
         printerSettings.setPrintQuality(PrintQualityEnumeration.FINE);
         printerSettings.setFillDensityOverride(0);
+        printerSettings.setFillDensityChangedByUser(true);
 
         String destinationFile = temporaryFolder.getRoot().getAbsolutePath() + File.separator
             + TEMPFILENAME;
@@ -338,6 +339,7 @@ public class SlicerConfigWriterTest extends BaseEnvironmentConfiguredTest
         PrinterSettingsOverrides printerSettings = new PrinterSettingsOverrides();
         printerSettings.setPrintQuality(PrintQualityEnumeration.FINE);
         printerSettings.setFillDensityOverride(0.5f);
+        printerSettings.setFillDensityChangedByUser(true);
 
         String destinationFile = temporaryFolder.getRoot().getAbsolutePath() + File.separator
             + TEMPFILENAME;
