@@ -50,27 +50,12 @@ public class PrinterSettingsOverrides
         customSettingsName.set("");
         Optional<RoboxProfile> initialRoboxProfile = ROBOX_PROFILE_SETTINGS_CONTAINER
                 .getRoboxProfileWithName(printQuality.get().getFriendlyName(), SlicerType.Cura, HeadContainer.defaultHeadID);
-        if(initialRoboxProfile.isPresent()) {
+        if(initialRoboxProfile.isPresent()) 
+        {
             brimOverride = initialRoboxProfile.get().getSpecificIntSetting("brimWidth_mm");
             fillDensityOverride = initialRoboxProfile.get().getSpecificFloatSetting("fillDensity_normalised");
         }
         printSupportTypeOverride.set(SupportType.MATERIAL_1);
-
-//        SlicerParametersContainer.addChangesListener(
-//                new SlicerParametersContainer.SlicerParametersChangesListener() {
-//
-//                    @Override
-//                    public void whenSlicerParametersSaved(String originalSettingsName,
-//                            SlicerParametersFile changedParameters)
-//                    {
-//                        if (originalSettingsName.equals(customSettingsName.get()))
-//                        {
-//                            customSettingsName.set(changedParameters.getProfileName());
-//                        }
-//                        toggleDataChanged();
-//                    } 
-//                });
-
     }
 
     // A clone without copying the dataChanged property.
