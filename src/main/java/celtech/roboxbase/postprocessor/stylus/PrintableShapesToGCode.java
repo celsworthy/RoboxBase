@@ -15,6 +15,8 @@ import celtech.roboxbase.utils.twod.ShapeToWorldTransformer;
 import com.sun.javafx.geom.Path2D;
 import com.sun.javafx.geom.PathIterator;
 import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.scene.NodeHelper;
+import com.sun.javafx.scene.shape.ShapeHelper;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -69,8 +71,8 @@ public class PrintableShapesToGCode
         if (shapeToProcess instanceof SVGPath)
         {
             SVGPath pathToProcess = (SVGPath) shapeForProcessing.getShape();
-            final Path2D path2D = new Path2D(pathToProcess.impl_configShape());
-            final BaseTransform tx = pathToProcess.impl_getLeafTransform();
+            final Path2D path2D = new Path2D(ShapeHelper.configShape(pathToProcess));
+            final BaseTransform tx = NodeHelper.getLeafTransform(pathToProcess);
 
             PathIterator pathIterator = path2D.getPathIterator(tx, 0.01f);
             float[] pathData = new float[6];
@@ -196,8 +198,8 @@ public class PrintableShapesToGCode
     {
         List<GCodeEventNode> gcodeNodes = new ArrayList<>();
 
-        final Path2D path2D = new Path2D(shape.impl_configShape());
-        final BaseTransform tx = shape.impl_getLeafTransform();
+        final Path2D path2D = new Path2D(ShapeHelper.configShape(shape));
+        final BaseTransform tx = NodeHelper.getLeafTransform(shape);
         PathHelper pathHelper = new PathHelper(path2D, tx, 1.0);
 
         int numberOfSteps = numberOfSegmentsToCreate;
