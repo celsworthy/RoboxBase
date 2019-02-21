@@ -4823,43 +4823,54 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public List<SuitablePrintJob> listJobsReprintableByMe()
+    public List<PrintJobStatistics> listReprintableJobs()
     {
         List<PrintJobStatistics> orderedStats = new ArrayList<>();
-
-        steno.debug("Getting suitable print jobs");
-        File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
-        for (File printJobDir : printSpoolDir.listFiles())
+        try
         {
-            steno.debug("Checking file: " + printJobDir.getName());
-            if (printJobDir.isDirectory())
+            steno.debug("Getting reprintable print jobs");
+            File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
+            for (File printJobDir : printSpoolDir.listFiles())
             {
-                PrintJob pj = new PrintJob(printJobDir.getName());
-                File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
-                File statistics = new File(pj.getStatisticsFileLocation());
-                
-                if (roboxisedGCode.exists())
-                    steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
-                if (statistics.exists())
-                    steno.debug("Has statistics " + statistics.getName());
-                if (roboxisedGCode.exists() && statistics.exists())
+                steno.debug("Checking file: " + printJobDir.getName());
+                if (printJobDir.isDirectory())
                 {
-                    steno.debug("Adding stats to list");
+                    PrintJob pj = new PrintJob(printJobDir.getName());
+                    File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
+                    File statistics = new File(pj.getStatisticsFileLocation());
 
-                    //Valid files - does it work for us?
-                    try
+                    if (roboxisedGCode.exists())
+                        steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
+                    if (statistics.exists())
+                        steno.debug("Has statistics " + statistics.getName());
+                    if (roboxisedGCode.exists() && statistics.exists())
                     {
-                        PrintJobStatistics stats = pj.getStatistics();
-                        orderedStats.add(stats);
-                    } catch (IOException ex)
-                    {
-                        steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        steno.debug("Adding stats to list");
+
+                        //Valid files - does it work for us?
+                        try
+                        {
+                            PrintJobStatistics stats = pj.getStatistics();
+                            orderedStats.add(stats);
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        }
                     }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            steno.exception("Failed to listFiles from " + BaseConfiguration.getPrintSpoolDirectory(), ex);
+        }
+        return orderedStats;
+    }
 
-        return createSuitablePrintJobsFromStatistics(orderedStats);
+    @Override
+    public List<SuitablePrintJob> listJobsReprintableByMe()
+    {
+        return createSuitablePrintJobsFromStatistics(listReprintableJobs());
     }
 
     @Override

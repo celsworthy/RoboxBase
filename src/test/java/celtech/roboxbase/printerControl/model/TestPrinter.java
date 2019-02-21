@@ -1184,6 +1184,12 @@ public class TestPrinter implements Printer
     @Override
     public List<SuitablePrintJob> listJobsReprintableByMe()
     {
+        return createSuitablePrintJobsFromStatistics(listReprintableJobs());
+    }
+
+    @Override
+    public List<PrintJobStatistics> listReprintableJobs()
+    {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
