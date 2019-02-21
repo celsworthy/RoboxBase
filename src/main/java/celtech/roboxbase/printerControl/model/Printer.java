@@ -587,6 +587,8 @@ public interface Printer extends RoboxResponseConsumer
     public CommandInterface getCommandInterface();
 
     public List<SuitablePrintJob> listJobsReprintableByMe();
+
+    public List<PrintJobStatistics> listReprintableJobs();
     
     public List<SuitablePrintJob> createSuitablePrintJobsFromStatistics(List<PrintJobStatistics> printJobStats);
     
