@@ -1,10 +1,12 @@
 package celtech.roboxbase.configuration.profilesettings;
 
+import celtech.roboxbase.BaseLookup;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.util.Pair;
 
 /**
  *
@@ -47,20 +49,6 @@ public class PrintProfileSettings
         settingsToCopy.getHiddenSettings().forEach(setting -> hiddenSettings.add(new PrintProfileSetting(setting)));
     }
     
-    @JsonIgnore
-    public List<PrintProfileSetting> getAllSettingsInSection(String section) {
-        List<PrintProfileSetting> settings = printProfileSettings.get(section);
-        List<PrintProfileSetting> allSettingsList = new ArrayList<>();
-        settings.forEach(setting -> {
-            allSettingsList.add(setting);
-            if(setting.getChildren().isPresent()) {
-                allSettingsList.addAll(setting.getChildren().get());
-            }
-        });
-        
-        return allSettingsList;
-    }
-    
     /**
      * Return a list of all the {@link PrintProfileSetting}s
      * 
@@ -76,6 +64,37 @@ public class PrintProfileSettings
         return allSettings;
     }
 
+    /**
+     * Return a list of pairs of {@link PrintProfileSetting}s and their sections.
+     * This is used when saving profile settings and checking for overriden settings.
+     * We don't need to return the hidden settings as these are not edited within
+     * the print profiles.
+     * 
+     * @return 
+     */
+    @JsonIgnore
+    public List<Pair<PrintProfileSetting, String>> getAllEditableSettingsWithSections()
+    {
+        List<Pair<PrintProfileSetting, String>> settingsAndSections = new ArrayList<>();
+        
+        headerSettings.forEach(setting ->
+        {
+            Pair settingSectionPair = new Pair(setting, BaseLookup.i18n("printProfileSettings.qualitySettings"));
+            settingsAndSections.add(settingSectionPair);
+        });
+        
+        tabs.forEach(tab -> 
+        {
+            tab.getSettings().forEach(setting -> 
+            {
+                Pair settingSectionPair = new Pair(setting, tab.getTabName());
+                settingsAndSections.add(settingSectionPair);
+            });
+        });
+        
+        return settingsAndSections;
+    }
+    
     public List<PrintProfileSetting> getHeaderSettings()
     {
         return headerSettings;

@@ -8,12 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
+import javafx.util.Pair;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -55,28 +55,34 @@ public class PrintProfileSettingsContainer {
     public Map<String, List<PrintProfileSetting>> compareAndGetDifferencesBetweenSettings(PrintProfileSettings originalSettings, PrintProfileSettings newSettings) {
         Map<String, List<PrintProfileSetting>> changedValuesMap = new HashMap<>();
         
-        for(Entry<String, List<PrintProfileSetting>> entry : originalSettings.getPrintProfileSettings().entrySet()) {
-            String settingSection = entry.getKey();
-            List<PrintProfileSetting> originalSettingsList = originalSettings.getAllSettingsInSection(settingSection);
-            List<PrintProfileSetting> newSettingsList = newSettings.getAllSettingsInSection(settingSection);
-            List<PrintProfileSetting> changedSettingsInSection = new ArrayList<>();
+        List<Pair<PrintProfileSetting, String>> originalSettingsList = originalSettings.getAllEditableSettingsWithSections();
+        List<Pair<PrintProfileSetting, String>> newSettingsList = newSettings.getAllEditableSettingsWithSections();
+
+        originalSettingsList.forEach(settingToSection ->
+        {      
+            String sectionTitle = settingToSection.getValue();
+            PrintProfileSetting originalSetting = settingToSection.getKey();
             
-            originalSettingsList.forEach(originalSetting -> {        
-                Optional<PrintProfileSetting> possibleChangedSetting = newSettingsList.stream()
-                        .filter(newSetting -> originalSetting.getId().equals(newSetting.getId()))
-                        .filter(newSetting -> !originalSetting.getValue().equals(newSetting.getValue()))
-                        .findFirst();
-                
-                if(possibleChangedSetting.isPresent()) {
-                    changedSettingsInSection.add(possibleChangedSetting.get());
+            // From the new settings find one with the same id and different vaue from the old setting
+            Optional<PrintProfileSetting> possibleChangedSetting = newSettingsList.stream()
+                    .map(newSettingToSection -> { return newSettingToSection.getKey(); })
+                    .filter(newSetting -> originalSetting.getId().equals(newSetting.getId()))
+                    .filter(newSetting -> !originalSetting.getValue().equals(newSetting.getValue()))
+                    .findFirst();
+
+            // If we have a changed value, add the setting to the map in the correct section
+            if(possibleChangedSetting.isPresent()) 
+            {
+                if (changedValuesMap.containsKey(sectionTitle))
+                {
+                    changedValuesMap.get(sectionTitle).add(possibleChangedSetting.get());
+                } else
+                {
+                    changedValuesMap.put(sectionTitle, Arrays.asList(possibleChangedSetting.get()));
                 }
-            });
-            
-            if(!changedSettingsInSection.isEmpty()) {
-                changedValuesMap.put(settingSection, changedSettingsInSection);
             }
-        }
-        
+        });
+
         return changedValuesMap;
     }
     
