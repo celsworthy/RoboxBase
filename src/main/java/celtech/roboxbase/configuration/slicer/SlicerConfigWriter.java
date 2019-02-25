@@ -2,7 +2,7 @@ package celtech.roboxbase.configuration.slicer;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.PrintProfileSetting;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.PrintProfileSettingsContainer;

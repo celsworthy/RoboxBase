@@ -1,7 +1,7 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.PrintProfileSetting;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import java.io.BufferedReader;
