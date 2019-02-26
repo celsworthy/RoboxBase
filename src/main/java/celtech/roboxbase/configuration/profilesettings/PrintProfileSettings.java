@@ -34,6 +34,11 @@ public class PrintProfileSettings
     private List<PrintProfileSetting> hiddenSettings;
 
     /**
+     * Default constructor for Jackson
+     */
+    public PrintProfileSettings() {}
+    
+    /**
      * Copy constructor
      * 
      * @param settingsToCopy 
