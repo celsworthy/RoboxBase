@@ -30,6 +30,7 @@ public class PrinterIdentity
     protected final StringProperty printerpoNumber = new SimpleStringProperty("");
     protected final StringProperty printerserialNumber = new SimpleStringProperty("");
     protected final StringProperty printercheckByte = new SimpleStringProperty("");
+    protected final StringProperty printerelectronicsVersion = new SimpleStringProperty("");
     protected final StringProperty printerFriendlyName = new SimpleStringProperty("");
     protected final ObjectProperty<Color> printerColour = new SimpleObjectProperty<>();
     protected final StringProperty firmwareVersion = new SimpleStringProperty();
@@ -64,6 +65,7 @@ public class PrinterIdentity
         printerFriendlyName.addListener(stringChangeListener);
         printerUniqueID.addListener(stringChangeListener);
         printercheckByte.addListener(stringChangeListener);
+        printerelectronicsVersion.addListener(stringChangeListener);
         printeredition.addListener(stringChangeListener);
         printermodel.addListener(stringChangeListener);
         printerpoNumber.addListener(stringChangeListener);
@@ -145,6 +147,15 @@ public class PrinterIdentity
      *
      * @return
      */
+    public StringProperty printerelectronicsVersionProperty()
+    {
+        return printerelectronicsVersion;
+    }
+
+    /**
+     *
+     * @return
+     */
     public StringProperty printerFriendlyNameProperty()
     {
         return printerFriendlyName;
@@ -183,13 +194,22 @@ public class PrinterIdentity
      */
     private void updatePrinterUniqueID()
     {
-        printerUniqueID.set(printermodel.get()
+        // To maintain compatibility with older printers,
+        // the electronics version property is not included
+        // if it is missing, or equal to "1".
+        String s = printermodel.get()
                 + printeredition.get()
                 + printerweekOfManufacture.get()
                 + printeryearOfManufacture.get()
                 + printerpoNumber.get()
-                + printerserialNumber.get()
-                + printercheckByte.get());
+                + printerserialNumber.get();
+        if (!printerelectronicsVersionProperty().get().isEmpty() &&
+            !printerelectronicsVersionProperty().get().equals("1")) {
+            s += printerelectronicsVersionProperty().get();
+        }
+        s += printercheckByte.get();
+                
+        printerUniqueID.set(s);
     }
 
     @Override
@@ -200,6 +220,7 @@ public class PrinterIdentity
         clone.printerColour.set(printerColour.get());
         clone.printerFriendlyName.set(printerFriendlyName.get());
         clone.printerUniqueID.set(printerUniqueID.get());
+        clone.printerelectronicsVersion.set(printerelectronicsVersion.get());
         clone.printercheckByte.set(printercheckByte.get());
         clone.printeredition.set(printeredition.get());
         clone.printermodel.set(printermodel.get());
@@ -217,13 +238,19 @@ public class PrinterIdentity
         boolean valid = false;
         if (printermodelProperty().get().startsWith("RBX") && printercheckByteProperty().get().length() == 1)
         {
+            // To maintain compatibility with older printers,
+            // the electronics version property is not included
+            // in the checksum if it is missing, or equal to "1".
             String stringToChecksum = printermodelProperty().get()
                         + printereditionProperty().get()
                         + printerweekOfManufactureProperty().get()
                         + printeryearOfManufactureProperty().get()
                         + printerpoNumberProperty().get()
                         + printerserialNumberProperty().get();
-                
+            if (!printerelectronicsVersionProperty().get().isEmpty() &&
+                !printerelectronicsVersionProperty().get().equals("1")) {
+                stringToChecksum += printerelectronicsVersionProperty().get();
+            }
             try
             {
                 char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
@@ -238,6 +265,9 @@ public class PrinterIdentity
     @Override
     public String toString()
     {
+        // To maintain compatibility with older printers,
+        // the electronics version property is not included
+        // in the string if it is missing, or equal to "1".
         StringBuilder idString = new StringBuilder();
         idString.append(printermodelProperty().get());
         idString.append("-");
@@ -249,6 +279,12 @@ public class PrinterIdentity
         idString.append(printerpoNumberProperty().get());
         idString.append("-");
         idString.append(printerserialNumberProperty().get());
+        if (!printerelectronicsVersionProperty().get().isEmpty() &&
+            !printerelectronicsVersionProperty().get().equals("1")) {
+            
+            idString.append("-");
+            idString.append(printerelectronicsVersionProperty().get());
+        }
         idString.append("-");
         idString.append(printercheckByteProperty().get());
         
