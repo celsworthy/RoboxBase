@@ -307,8 +307,8 @@ public class PrinterIDResponse extends RoboxRxPacket
                 .append(yearOfManufacture)
                 .append(poNumber)
                 .append(serialNumber)
-                .append(electronicsVersion)
                 .append(checkByte)
+                .append(electronicsVersion)
                 .append(printerFriendlyName)
                 .append(printerColour)
                 .toHashCode();
@@ -335,8 +335,8 @@ public class PrinterIDResponse extends RoboxRxPacket
                 .append(yearOfManufacture, rhs.yearOfManufacture)
                 .append(poNumber, rhs.poNumber)
                 .append(serialNumber, rhs.serialNumber)
-                .append(electronicsVersion, rhs.electronicsVersion)
                 .append(checkByte, rhs.checkByte)
+                .append(electronicsVersion, rhs.electronicsVersion)
                 .append(printerFriendlyName, rhs.printerFriendlyName)
                 .append(printerColour, rhs.printerColour)
                 .isEquals();
@@ -360,10 +360,6 @@ public class PrinterIDResponse extends RoboxRxPacket
         idString.append("-");
         idString.append(serialNumber);
         idString.append("-");
-        if (!electronicsVersion.isEmpty() && !electronicsVersion.equals("1")) {
-            idString.append("-");
-            idString.append(electronicsVersion);
-        }
         idString.append(checkByte);
         
         return idString.toString();
@@ -381,9 +377,6 @@ public class PrinterIDResponse extends RoboxRxPacket
                         + yearOfManufacture
                         + poNumber
                         + serialNumber;
-            if (!electronicsVersion.isEmpty() && !electronicsVersion.equals("1")) {
-                stringToChecksum += electronicsVersion;
-            }
 
             try
             {

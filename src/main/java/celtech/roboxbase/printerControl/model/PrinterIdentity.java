@@ -63,9 +63,9 @@ public class PrinterIdentity
         });
 
         printerFriendlyName.addListener(stringChangeListener);
+        printerelectronicsVersion.addListener(stringChangeListener);
         printerUniqueID.addListener(stringChangeListener);
         printercheckByte.addListener(stringChangeListener);
-        printerelectronicsVersion.addListener(stringChangeListener);
         printeredition.addListener(stringChangeListener);
         printermodel.addListener(stringChangeListener);
         printerpoNumber.addListener(stringChangeListener);
@@ -202,12 +202,8 @@ public class PrinterIdentity
                 + printerweekOfManufacture.get()
                 + printeryearOfManufacture.get()
                 + printerpoNumber.get()
-                + printerserialNumber.get();
-        if (!printerelectronicsVersionProperty().get().isEmpty() &&
-            !printerelectronicsVersionProperty().get().equals("1")) {
-            s += printerelectronicsVersionProperty().get();
-        }
-        s += printercheckByte.get();
+                + printerserialNumber.get()
+                + printercheckByte.get();
                 
         printerUniqueID.set(s);
     }
@@ -219,8 +215,8 @@ public class PrinterIdentity
         clone.firmwareVersion.set(firmwareVersion.get());
         clone.printerColour.set(printerColour.get());
         clone.printerFriendlyName.set(printerFriendlyName.get());
-        clone.printerUniqueID.set(printerUniqueID.get());
         clone.printerelectronicsVersion.set(printerelectronicsVersion.get());
+        clone.printerUniqueID.set(printerUniqueID.get());
         clone.printercheckByte.set(printercheckByte.get());
         clone.printeredition.set(printeredition.get());
         clone.printermodel.set(printermodel.get());
@@ -247,10 +243,6 @@ public class PrinterIdentity
                         + printeryearOfManufactureProperty().get()
                         + printerpoNumberProperty().get()
                         + printerserialNumberProperty().get();
-            if (!printerelectronicsVersionProperty().get().isEmpty() &&
-                !printerelectronicsVersionProperty().get().equals("1")) {
-                stringToChecksum += printerelectronicsVersionProperty().get();
-            }
             try
             {
                 char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
@@ -279,15 +271,9 @@ public class PrinterIdentity
         idString.append(printerpoNumberProperty().get());
         idString.append("-");
         idString.append(printerserialNumberProperty().get());
-        if (!printerelectronicsVersionProperty().get().isEmpty() &&
-            !printerelectronicsVersionProperty().get().equals("1")) {
-            
-            idString.append("-");
-            idString.append(printerelectronicsVersionProperty().get());
-        }
         idString.append("-");
         idString.append(printercheckByteProperty().get());
-        
+
         return idString.toString();
     }
 }

@@ -4266,8 +4266,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                             getYearOfManufacture());
                     printerIdentity.printerpoNumber.set(idResponse.getPoNumber());
                     printerIdentity.printerserialNumber.set(idResponse.getSerialNumber());
-                    printerIdentity.printerelectronicsVersion.set(idResponse.getElectronicsVersion());
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
+                    printerIdentity.printerelectronicsVersion.set(idResponse.getElectronicsVersion());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
                     break;
