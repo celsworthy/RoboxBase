@@ -161,6 +161,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             if (printerIsRemote &&
                 !gcodeFile.getParent().endsWith("Macros") &&
                 printUsingSDCard &&
+                printJobStatistics != null &&
                 startFromSequenceNumber == 0)
                 gotToEndOK = transferToRemotePrinter(gcodeFile);
             else
