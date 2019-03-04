@@ -441,6 +441,7 @@ public class DummyPrinterCommandInterface extends CommandInterface
             idResponse.setSerialNumber("0000");
             idResponse.setPrinterFriendlyName(printerName);
             idResponse.setCheckByte("00");
+            idResponse.setElectronicsVersion("");
             idResponse.setPrinterColour(Color.web("#000000").toString());
             response = (RoboxRxPacket) idResponse;
         } else if (messageToWrite instanceof StatusRequest)

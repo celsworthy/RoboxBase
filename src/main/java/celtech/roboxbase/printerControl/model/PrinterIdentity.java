@@ -195,8 +195,7 @@ public class PrinterIdentity
     private void updatePrinterUniqueID()
     {
         // To maintain compatibility with older printers,
-        // the electronics version property is not included
-        // if it is missing, or equal to "1".
+        // the electronics version property is not included.
         String s = printermodel.get()
                 + printeredition.get()
                 + printerweekOfManufacture.get()
