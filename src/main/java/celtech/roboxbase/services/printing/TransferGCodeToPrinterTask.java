@@ -161,7 +161,6 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             if (printerIsRemote &&
                 !gcodeFile.getParent().endsWith("Macros") &&
                 printUsingSDCard &&
-                printJobStatistics != null &&
                 startFromSequenceNumber == 0)
                 gotToEndOK = transferToRemotePrinter(gcodeFile);
             else
@@ -292,7 +291,10 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             try
             {
                 steno.info("Transferred GCode");
-                remoteCI.startPrintJob(printJobID);
+                if (thisJobCanBeReprinted && printJobStatistics != null)
+                    remoteCI.startPrintJob(printJobID);
+                else
+                    remoteCI.printGCodeFile(remoteDirectory + '/' + gcodeFile.getName());
                 transferredOK = true;
             }
             catch (RoboxCommsException ex)
