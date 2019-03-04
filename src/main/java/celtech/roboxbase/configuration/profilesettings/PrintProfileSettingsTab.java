@@ -49,6 +49,18 @@ public class PrintProfileSettingsTab
         tabToCopy.getSettings().forEach(setting -> settings.add(new PrintProfileSetting(setting)));
     }
     
+    /**
+     * This method returns all the settings including any children
+     * 
+     * @return 
+     */
+    public List<PrintProfileSetting> getAllSettings()
+    {
+        List<PrintProfileSetting> allPrintProfileSettings = new ArrayList<>();
+        settings.forEach(setting -> setting.flattened().forEach(flattenedSetting -> allPrintProfileSettings.add(flattenedSetting)));
+        return allPrintProfileSettings;
+    }
+    
     public String getTabName()
     {
         return tabName;

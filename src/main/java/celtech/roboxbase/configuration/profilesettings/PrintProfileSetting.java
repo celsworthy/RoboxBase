@@ -1,11 +1,13 @@
 package celtech.roboxbase.configuration.profilesettings;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -101,6 +103,19 @@ public class PrintProfileSetting
                     .map(profile -> new PrintProfileSetting(profile))
                     .collect(Collectors.toList());
             children = Optional.of(copiedChildren);
+        }
+    }
+    
+    @JsonIgnore
+    public Stream<PrintProfileSetting> flattened()
+    {
+        if(children.isPresent())
+        {
+            return Stream.concat(Stream.of(this),
+                children.get().stream().flatMap(PrintProfileSetting::flattened));
+        } else
+        {
+            return Stream.of(this);
         }
     }
     

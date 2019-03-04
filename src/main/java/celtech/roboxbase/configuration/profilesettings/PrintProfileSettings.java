@@ -65,7 +65,7 @@ public class PrintProfileSettings
         List<PrintProfileSetting> allSettings = new ArrayList<>();
         allSettings.addAll(headerSettings);
         allSettings.addAll(hiddenSettings);
-        tabs.forEach(tab -> allSettings.addAll(tab.getSettings()));     
+        tabs.forEach(tab -> allSettings.addAll(tab.getAllSettings()));     
         return allSettings;
     }
 
@@ -90,7 +90,7 @@ public class PrintProfileSettings
         
         tabs.forEach(tab -> 
         {
-            tab.getSettings().forEach(setting -> 
+            tab.getAllSettings().forEach(setting -> 
             {
                 Pair settingSectionPair = new Pair(setting, tab.getTabName());
                 settingsAndSections.add(settingSectionPair);
