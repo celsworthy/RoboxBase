@@ -4,6 +4,7 @@ import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
+import celtech.roboxbase.configuration.slicer.NozzleParameters;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
@@ -43,9 +44,17 @@ public class OutputUtilities
                         // Get the map to prevent error messages if the setting is not present.
             Map<String, String> settingsMap = settingsProfile.getSettings();
 
-            writer.writeOutput(";\n; Infill Settings\n");
-            writeFloatSetting(writer, settingsMap, "infillLayerThickness");
-            writeFloatSetting(writer, settingsMap, "fillExtrusionWidth_mm");
+            writer.writeOutput(";\n; Settings\n");
+            writeMapSetting(writer, settingsMap, "infillLayerThickness");
+            writeMapSetting(writer, settingsMap, "fillExtrusionWidth_mm");
+            
+            List<NozzleParameters> nozzleParameters = settingsProfile.getNozzleParameters();
+            if (nozzleParameters.size() > 0 && useNozzle0) {
+                writeFloatSetting(writer, "nozzle0_ejectionvolume", nozzleParameters.get(0).getEjectionVolume());
+            }
+            if (nozzleParameters.size() > 1 && useNozzle1) {
+                writeFloatSetting(writer, "nozzle1_ejectionvolume", nozzleParameters.get(1).getEjectionVolume());
+            }
             
             writer.writeOutput(";\n; Pre print gcode\n");
 
@@ -62,14 +71,19 @@ public class OutputUtilities
         }
     }
 
-    private void writeFloatSetting(GCodeOutputWriter writer, Map<String, String> settingsMap, String valueId) throws IOException {
+    private void writeMapSetting(GCodeOutputWriter writer, Map<String, String> settingsMap, String valueId) throws IOException {
         String valueString = settingsMap.getOrDefault(valueId, "").trim();
         if (!valueString.isEmpty()) {
-            float value = Float.valueOf(valueString);
-            if (value > 0.0f)
-                writer.writeOutput(";# " + valueId + " = " + df.format(value) + "\n");
+            writeFloatSetting(writer, valueId, Float.valueOf(valueString));
         }
     }
+
+    private void writeFloatSetting(GCodeOutputWriter writer, String valueId, float value) throws IOException {
+        if (value > 0.0f) {
+            writer.writeOutput(";# " + valueId + " = " + df.format(value) + "\n");
+        }
+    }
+
 
     protected void appendPostPrintFooter(GCodeOutputWriter writer,
             TimeAndVolumeCalcResult timeAndVolumeCalcResult, Optional<PrinterType> typeCode,
