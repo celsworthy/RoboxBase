@@ -1,6 +1,8 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
@@ -12,11 +14,13 @@ import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import celtech.roboxbase.utils.TimeUtils;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,9 +29,10 @@ import java.util.Optional;
  */
 public class OutputUtilities
 {
+    static final DecimalFormat df = new DecimalFormat("#.####");
 
     protected void prependPrePrintHeader(GCodeOutputWriter writer, Optional<PrinterType> typeCode,
-            String headType, boolean useNozzle0, boolean useNozzle1, boolean requireSafetyFeatures)    {
+            String headType, RoboxProfile settingsProfile, boolean useNozzle0, boolean useNozzle1, boolean requireSafetyFeatures)    {
         SimpleDateFormat formatter = new SimpleDateFormat("EEE d MMM y HH:mm:ss", Locale.UK);
         try
         {
@@ -35,7 +40,13 @@ public class OutputUtilities
             writer.writeOutput("; File post-processed by the CEL Tech Roboxiser on "
                     + formatter.format(new Date()) + "\n");
             writer.writeOutput("; " + BaseConfiguration.getTitleAndVersion() + "\n");
+                        // Get the map to prevent error messages if the setting is not present.
+            Map<String, String> settingsMap = settingsProfile.getSettings();
 
+            writer.writeOutput(";\n; Infill Settings\n");
+            writeFloatSetting(writer, settingsMap, "infillLayerThickness");
+            writeFloatSetting(writer, settingsMap, "fillExtrusionWidth_mm");
+            
             writer.writeOutput(";\n; Pre print gcode\n");
 
             for (String macroLine : GCodeMacros.getMacroContents("before_print", typeCode, headType, useNozzle0, useNozzle1, requireSafetyFeatures))
@@ -48,6 +59,15 @@ public class OutputUtilities
         } catch (IOException | MacroLoadException ex)
         {
             throw new RuntimeException("Failed to add pre-print header in post processor - " + ex.getMessage(), ex);
+        }
+    }
+
+    private void writeFloatSetting(GCodeOutputWriter writer, Map<String, String> settingsMap, String valueId) throws IOException {
+        String valueString = settingsMap.getOrDefault(valueId, "").trim();
+        if (!valueString.isEmpty()) {
+            float value = Float.valueOf(valueString);
+            if (value > 0.0f)
+                writer.writeOutput(";# " + valueId + " = " + df.format(value) + "\n");
         }
     }
 

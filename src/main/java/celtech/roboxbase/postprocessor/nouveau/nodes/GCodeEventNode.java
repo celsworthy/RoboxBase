@@ -3,6 +3,7 @@ package celtech.roboxbase.postprocessor.nouveau.nodes;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithOrigin;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithStartPoint;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Comment;
+import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -723,4 +724,28 @@ public abstract class GCodeEventNode
     {
         finishTimeFromStartOfPrint_secs = Optional.of(value);
     }
+    
+    public void dumpTree() 
+    {
+        dumpTreeImpl(0, "");
+    }
+
+    private void dumpTreeImpl(int level, String indent) 
+    {
+        Iterator<GCodeEventNode> cIterator = childIterator();
+        String s = indent + this.getClass().getSimpleName();
+        if (this instanceof Renderable) {
+            s += ": \"" + ((Renderable)this).renderForOutput().trim() + "\""; 
+        }
+        System.out.println(s);
+
+        int nextLevel = level + 1;
+        String nextIdent = indent + "  ";
+        while (cIterator.hasNext())
+        {
+            GCodeEventNode node = cIterator.next();
+            node.dumpTreeImpl(nextLevel, nextIdent);
+        }
+    }
+
 }

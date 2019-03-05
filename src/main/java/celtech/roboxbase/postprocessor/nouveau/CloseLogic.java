@@ -28,6 +28,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.providers.NozzlePositionPro
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.SystemUtils;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,6 +49,7 @@ public class CloseLogic
 
     private final CloseUtilities closeUtilities;
     private final NodeManagementUtilities nodeManagementUtilities;
+    public int layerNumber =-99;
 
     public CloseLogic(RoboxProfile settings,
             PostProcessorFeatureSet featureSet, String headType,
@@ -299,8 +301,8 @@ public class CloseLogic
                     } else
                     {
                         //Not enough volume so partial open
-                    closeResult = partialOpenAndCloseAtEndOfExtrusion(unprioritisedAllFromLastClose, nozzleInUse);
-                }
+                        closeResult = partialOpenAndCloseAtEndOfExtrusion(unprioritisedAllFromLastClose, nozzleInUse);
+                    }
                 }
             } catch (NotEnoughAvailableExtrusionException ex)
             {
@@ -371,16 +373,18 @@ public class CloseLogic
 
     private boolean replaceOpenNozzleWithPartialOpen(
             InScopeEvents inScopeEvents,
-            double partialOpenValue)
+            double partialOpenValue,
+            double idealPartialOpenValue)
     {
         boolean success = false;
+        DecimalFormat df = new DecimalFormat("#.###");
 
         for (GCodeEventNode eventNode : inScopeEvents.getInScopeEvents())
         {
             if (eventNode instanceof NozzleValvePositionNode)
             {
                 NozzleValvePositionNode nozzlePosition = (NozzleValvePositionNode) eventNode;
-                nozzlePosition.setCommentText("Partial open");
+                nozzlePosition.setCommentText("Partial open B" + df.format(idealPartialOpenValue));
                 nozzlePosition.getNozzlePosition().setB(partialOpenValue);
                 nozzlePosition.getNozzlePosition().setPartialOpen(true);
                 success = true;
@@ -395,7 +399,7 @@ public class CloseLogic
             //TODO put replenish in for partial opens
 
             NozzleValvePositionNode nozzlePosition = new NozzleValvePositionNode();
-            nozzlePosition.setCommentText("Partial open");
+            nozzlePosition.setCommentText("Partial open B" + df.format(idealPartialOpenValue));
             nozzlePosition.getNozzlePosition().setB(partialOpenValue);
             nozzlePosition.getNozzlePosition().setPartialOpen(true);
 
@@ -429,12 +433,12 @@ public class CloseLogic
         {
             return closeResult;
         }
-
-        double bValue = Math.min(1, inScopeEvents.getAvailableExtrusion()
+        
+        double idealBValue = Math.min(1, inScopeEvents.getAvailableExtrusion()
                 / nozzleInUse.getNozzleParameters().
                 getEjectionVolume());
 
-        bValue = Math.max(bValue, nozzleInUse.getNozzleParameters().getPartialBMinimum());
+        double bValue = Math.max(idealBValue, nozzleInUse.getNozzleParameters().getPartialBMinimum());
 
         nozzleStartPosition = bValue;
         nozzleCloseOverVolume = inScopeEvents.getAvailableExtrusion();
@@ -443,10 +447,10 @@ public class CloseLogic
         {
             nozzleInUse.setCurrentPosition(nozzleStartPosition);
             closeResult = overwriteClose(inScopeEvents, nozzleInUse, true);
-            replaceOpenNozzleWithPartialOpen(inScopeEvents, bValue);
+            replaceOpenNozzleWithPartialOpen(inScopeEvents, bValue, idealBValue);
         } catch (NotEnoughAvailableExtrusionException ex)
         {
-            steno.error("Got Not Enough Available Extrusion - shouldn't see this");
+            steno.error("Not Got Enough Available Extrusion - shouldn't see this");
         }
 
         closeResult = Optional.of(new CloseResult(nozzleStartPosition, nozzleCloseOverVolume, closeResult.get().getNodeContainingFinalClose()));
@@ -1130,6 +1134,7 @@ public class CloseLogic
             LayerNode thisLayer,
             LayerPostProcessResult lastLayerParseResult)
     {
+        this.layerNumber = thisLayer.getLayerNumber();
         Optional<CloseResult> closeResult = Optional.empty();
 
         boolean processedClose = false;

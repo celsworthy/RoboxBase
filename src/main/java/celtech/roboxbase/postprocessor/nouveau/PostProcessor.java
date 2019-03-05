@@ -354,6 +354,7 @@ public class PostProcessor
                 outputUtilities.prependPrePrintHeader(writer,
                         printerTypeCode,
                         headFile.getTypeCode(),
+                        settingsProfile,
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
                         safetyFeaturesRequired);
