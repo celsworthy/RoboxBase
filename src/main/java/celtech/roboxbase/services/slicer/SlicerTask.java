@@ -167,9 +167,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String progressOutputCommand = "";
         String modelFileCommand = "";
         String extruderTrainCommand = "";
-        
-        // Used for cura 3 to override th default settings
-        String sOverrideOptions = "";
+        String extruderSettingFormat = "-s extruder_nr=\"%d\"";
 
         switch (slicerType)
         {
@@ -209,7 +207,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         steno.debug("Selected slicer is " + slicerType + " : " + Thread.currentThread().getName());
 
-        int previousExtruder = -1;
+        int previousExtruder;
+        int extruderNo;
         switch (machineType)
         {
             case WINDOWS_95:
@@ -257,8 +256,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + " "
                         + configLoadCommand
                         + " \"" + configLoadFile + "\"";
-                if (!sOverrideOptions.isEmpty())
-                    windowsPrintCommand += sOverrideOptions;
                  windowsPrintCommand += " -o "
                         + "\"" + tempGcodeFilename + "\"";
 
@@ -272,17 +269,24 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
+                extruderNo = -1;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                    if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    {
                         // Extruder needs swapping... just because
-                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         windowsPrintCommand += " " + extruderTrainCommand + extruderNo;
                     }
                     windowsPrintCommand += " " + modelFileCommand;
                     windowsPrintCommand += " \"";
                     windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
+                    
+                    if (slicerType == SlicerType.Cura3)
+                    {
+                        windowsPrintCommand += " " + String.format(extruderSettingFormat, extruderNo);
+                    }
                     
                     previousExtruder = extrudersForMeshes.get(i);
                 }
@@ -316,16 +320,25 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
+                extruderNo = -1;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    {
                         // Extruder needs swapping... just because
-                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         commands.add(extruderTrainCommand + extruderNo);
+                        commands.add(String.format(extruderSettingFormat, extruderNo));
                     }
                     if (!modelFileCommand.isEmpty())
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
+                    
+                    if (slicerType == SlicerType.Cura3)
+                    {
+                        commands.add(String.format(extruderSettingFormat, extruderNo));
+                    }
+                    
                     previousExtruder = extrudersForMeshes.get(i);
                 }
 
@@ -356,16 +369,24 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
                 previousExtruder = -1;
+                extruderNo = -1;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) {
+                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i))
+                    {
                         // Extruder needs swapping... just because
-                        int extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         commands.add(extruderTrainCommand + extruderNo);
                     }
                     if (!modelFileCommand.isEmpty())
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
+                    
+                    if (slicerType == SlicerType.Cura3)
+                    {
+                        commands.add(String.format(extruderSettingFormat, extruderNo));
+                    }
+                    
                     previousExtruder = extrudersForMeshes.get(i);
                 }
                 break;
