@@ -1,19 +1,21 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.PrintProfileSetting;
-import celtech.roboxbase.configuration.PrintProfileSettingsWrapper;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSettings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
+import javafx.util.Pair;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -28,8 +30,8 @@ public class PrintProfileSettingsContainer {
     
     private static PrintProfileSettingsContainer instance;
     
-    private static Map<SlicerType, PrintProfileSettingsWrapper> printProfileSettings;
-    private static Map<SlicerType, PrintProfileSettingsWrapper> defaultPrintProfileSettings;
+    private static Map<SlicerType, PrintProfileSettings> printProfileSettings;
+    private static Map<SlicerType, PrintProfileSettings> defaultPrintProfileSettings;
     
     private PrintProfileSettingsContainer() {
         printProfileSettings = new HashMap<>();
@@ -44,43 +46,50 @@ public class PrintProfileSettingsContainer {
         return instance;
     }
     
-    public PrintProfileSettingsWrapper getPrintProfileSettingsForSlicer(SlicerType slicerType) {
+    public PrintProfileSettings getPrintProfileSettingsForSlicer(SlicerType slicerType) {
         return printProfileSettings.get(slicerType);
     }
     
-    public PrintProfileSettingsWrapper getDefaultPrintProfileSettingsForSlicer(SlicerType slicerType) {
+    public PrintProfileSettings getDefaultPrintProfileSettingsForSlicer(SlicerType slicerType) {
         return defaultPrintProfileSettings.get(slicerType);
     }
     
-    public Map<String, List<PrintProfileSetting>> compareAndGetDifferencesBetweenSettings(PrintProfileSettingsWrapper originalSettings, PrintProfileSettingsWrapper newSettings) {
+    public Map<String, List<PrintProfileSetting>> compareAndGetDifferencesBetweenSettings(PrintProfileSettings originalSettings, PrintProfileSettings newSettings) {
         Map<String, List<PrintProfileSetting>> changedValuesMap = new HashMap<>();
         
-        for(Entry<String, List<PrintProfileSetting>> entry : originalSettings.getPrintProfileSettings().entrySet()) {
-            String settingSection = entry.getKey();
-            List<PrintProfileSetting> originalSettingsList = originalSettings.getAllSettingsInSection(settingSection);
-            List<PrintProfileSetting> newSettingsList = newSettings.getAllSettingsInSection(settingSection);
-            List<PrintProfileSetting> changedSettingsInSection = new ArrayList<>();
+        List<Pair<PrintProfileSetting, String>> originalSettingsList = originalSettings.getAllEditableSettingsWithSections();
+        List<Pair<PrintProfileSetting, String>> newSettingsList = newSettings.getAllEditableSettingsWithSections();
+
+        originalSettingsList.forEach(settingToSection ->
+        {      
+            String sectionTitle = BaseLookup.i18n(settingToSection.getValue());
+            PrintProfileSetting originalSetting = settingToSection.getKey();
             
-            originalSettingsList.forEach(originalSetting -> {        
-                Optional<PrintProfileSetting> possibleChangedSetting = newSettingsList.stream()
-                        .filter(newSetting -> originalSetting.getId().equals(newSetting.getId()))
-                        .filter(newSetting -> !originalSetting.getValue().equals(newSetting.getValue()))
-                        .findFirst();
-                
-                if(possibleChangedSetting.isPresent()) {
-                    changedSettingsInSection.add(possibleChangedSetting.get());
+            // From the new settings find one with the same id and different vaue from the old setting
+            Optional<PrintProfileSetting> possibleChangedSetting = newSettingsList.stream()
+                    .map(newSettingToSection -> { return newSettingToSection.getKey(); })
+                    .filter(newSetting -> originalSetting.getId().equals(newSetting.getId()))
+                    .filter(newSetting -> !originalSetting.getValue().equals(newSetting.getValue()))
+                    .findFirst();
+
+            // If we have a changed value, add the setting to the map in the correct section
+            if(possibleChangedSetting.isPresent()) 
+            {
+                if (changedValuesMap.containsKey(sectionTitle))
+                {
+                    changedValuesMap.get(sectionTitle).add(possibleChangedSetting.get());
+                } else
+                {
+                    changedValuesMap.put(sectionTitle, new ArrayList(Arrays.asList(possibleChangedSetting.get())));
                 }
-            });
-            
-            if(!changedSettingsInSection.isEmpty()) {
-                changedValuesMap.put(settingSection, changedSettingsInSection);
             }
-        }
-        
+        });
+
         return changedValuesMap;
     }
     
-    public static void loadPrintProfileSettingsFile() {
+    public static void loadPrintProfileSettingsFile() 
+    {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         
@@ -90,16 +99,18 @@ public class PrintProfileSettingsContainer {
         STENO.debug("File path for cura print profile settings file: " + curaPrintProfileSettingsFile.getAbsolutePath());
         STENO.debug("File path for cura3 print profile settings file: " + cura3PrintProfileSettingsFile.getAbsolutePath());
         
-        try {
-            PrintProfileSettingsWrapper curaPrintProfileSettings = objectMapper.readValue(curaPrintProfileSettingsFile, PrintProfileSettingsWrapper.class);
-            PrintProfileSettingsWrapper cura3PrintProfileSettings = objectMapper.readValue(cura3PrintProfileSettingsFile, PrintProfileSettingsWrapper.class);
+        try 
+        {
+            PrintProfileSettings curaPrintProfileSettings = objectMapper.readValue(curaPrintProfileSettingsFile, PrintProfileSettings.class);
+            PrintProfileSettings cura3PrintProfileSettings = objectMapper.readValue(cura3PrintProfileSettingsFile, PrintProfileSettings.class);
             
             printProfileSettings.put(SlicerType.Cura, curaPrintProfileSettings);
             printProfileSettings.put(SlicerType.Cura3, cura3PrintProfileSettings);
             
-            defaultPrintProfileSettings.put(SlicerType.Cura, curaPrintProfileSettings.copy());
-            defaultPrintProfileSettings.put(SlicerType.Cura3, cura3PrintProfileSettings.copy());
-        } catch (IOException ex) {
+            defaultPrintProfileSettings.put(SlicerType.Cura, new PrintProfileSettings(curaPrintProfileSettings));
+            defaultPrintProfileSettings.put(SlicerType.Cura3, new PrintProfileSettings(cura3PrintProfileSettings));
+        } catch (IOException ex)
+        {
             STENO.error(ex.getMessage());
         }
     }
