@@ -15,6 +15,7 @@ fillEveryNLayers=1
 solidLayersAtTop=3
 solidLayersAtBottom=3
 numberOfPerimeters=2
+infillLayerThickness=0.2
 
 //==============
 //Nozzles
@@ -28,9 +29,9 @@ supportExtrusionWidth_mm=0.4
 firstLayerNozzle=2
 perimeterNozzle=2
 fillNozzle=2
-supportNozzle=1
-supportInterfaceNozzle=1
-raftBrimNozzle=1
+supportNozzle=0
+supportInterfaceNozzle=0
+raftBrimNozzle=0
 
 //==============
 //Valves
@@ -54,6 +55,7 @@ interfaceLayers=1
 raftBaseThickness_mm=0.300
 interfaceSpeed_mm_per_s=40
 supportGapEnabled=false
+supportInfillLayerThickness=0.2
   
 //==============
 //speed

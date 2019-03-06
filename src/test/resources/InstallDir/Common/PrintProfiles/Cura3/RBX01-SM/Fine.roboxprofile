@@ -12,6 +12,7 @@ fillDensity_normalised=0.4
 solidLayersAtTop=10
 solidLayersAtBottom=10
 numberOfPerimeters=3
+infillLayerThickness=0.1
 
 //==============
 //Nozzles
@@ -33,6 +34,7 @@ partialBMinimum=0.5:0.5
 supportPatternSpacing_mm=1.0
 raftAirGapLayer0_mm=0.1
 interfaceLayers=2
+supportInfillLayerThickness=0.1
   
 //==============
 //speed

@@ -15,6 +15,7 @@ fillEveryNLayers=1
 solidLayersAtTop=3
 solidLayersAtBottom=3
 numberOfPerimeters=2
+infillLayerThickness=0.2
 
 //==============
 //Nozzles
@@ -54,6 +55,7 @@ interfaceLayers=1
 raftBaseThickness_mm=0.300
 interfaceSpeed_mm_per_s=40
 supportGapEnabled=false
+supportInfillLayerThickness=0.2
   
 //==============
 //speed
