@@ -1,5 +1,6 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +62,7 @@ public class PrintProfileSettingsContainer {
 
         originalSettingsList.forEach(settingToSection ->
         {      
-            String sectionTitle = settingToSection.getValue();
+            String sectionTitle = BaseLookup.i18n(settingToSection.getValue());
             PrintProfileSetting originalSetting = settingToSection.getKey();
             
             // From the new settings find one with the same id and different vaue from the old setting
@@ -78,7 +80,7 @@ public class PrintProfileSettingsContainer {
                     changedValuesMap.get(sectionTitle).add(possibleChangedSetting.get());
                 } else
                 {
-                    changedValuesMap.put(sectionTitle, Arrays.asList(possibleChangedSetting.get()));
+                    changedValuesMap.put(sectionTitle, new ArrayList(Arrays.asList(possibleChangedSetting.get())));
                 }
             }
         });
