@@ -42,11 +42,10 @@ public class OutputUtilities
                     + formatter.format(new Date()) + "\n");
             writer.writeOutput("; " + BaseConfiguration.getTitleAndVersion() + "\n");
                         // Get the map to prevent error messages if the setting is not present.
-            Map<String, String> settingsMap = settingsProfile.getSettings();
-
+            
             writer.writeOutput(";\n; Settings\n");
-            writeMapSetting(writer, settingsMap, "infillLayerThickness");
-            writeMapSetting(writer, settingsMap, "fillExtrusionWidth_mm");
+            writeProfileSetting(writer, settingsProfile, "infillLayerThickness");
+            writeProfileSetting(writer, settingsProfile, "fillExtrusionWidth_mm");
             
             List<NozzleParameters> nozzleParameters = settingsProfile.getNozzleParameters();
             if (nozzleParameters.size() > 0 && useNozzle0) {
@@ -71,10 +70,10 @@ public class OutputUtilities
         }
     }
 
-    private void writeMapSetting(GCodeOutputWriter writer, Map<String, String> settingsMap, String valueId) throws IOException {
-        String valueString = settingsMap.getOrDefault(valueId, "").trim();
+    private void writeProfileSetting(GCodeOutputWriter writer, RoboxProfile settingsProfile, String valueId) throws IOException {
+        String valueString = settingsProfile.getSpecificSettingAsStringWithDefault(valueId, "").trim();
         if (!valueString.isEmpty()) {
-            writeFloatSetting(writer, valueId, Float.valueOf(valueString));
+            writer.writeOutput(";# " + valueId + " = " + valueString + "\n");
         }
     }
 
@@ -83,7 +82,6 @@ public class OutputUtilities
             writer.writeOutput(";# " + valueId + " = " + df.format(value) + "\n");
         }
     }
-
 
     protected void appendPostPrintFooter(GCodeOutputWriter writer,
             TimeAndVolumeCalcResult timeAndVolumeCalcResult, Optional<PrinterType> typeCode,

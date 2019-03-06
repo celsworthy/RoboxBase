@@ -116,6 +116,34 @@ public class RoboxProfile {
         return value;
     }
 
+    public float getSpecificFloatSettingWithDefault(String settingId, int defaultValue) {
+        float floatValue = defaultValue;
+        String settingsValue = settings.get(settingId);
+        if (settingsValue != null)
+            floatValue = Float.valueOf(settingsValue);
+        return floatValue;
+    }
+    
+    public int getSpecificIntSettingWithDefault(String settingId, int defaultValue) {
+        int intValue = defaultValue;
+        String settingsValue = settings.get(settingId);
+        if (settingsValue != null)
+            intValue = Integer.valueOf(settingsValue);
+        return intValue;
+    }
+    
+    public boolean getSpecificBooleanSettingWithDefault(String settingId, boolean defaultValue) {
+        boolean booleanValue = defaultValue;
+        String settingsValue = settings.get(settingId);
+        if (settingsValue != null)
+           booleanValue = Boolean.valueOf(settingsValue);
+        return booleanValue;
+    }
+    
+    public String getSpecificSettingAsStringWithDefault(String settingId, String defaultValue) {
+        return settings.getOrDefault(settingId, defaultValue);
+    }
+
     @Override
     public String toString() {
         return name;
