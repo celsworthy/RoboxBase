@@ -167,7 +167,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String progressOutputCommand = "";
         String modelFileCommand = "";
         String extruderTrainCommand = "";
-        String extruderSettingFormat = "-s extruder_nr=\"%d\"";
+        String settingCommand = "-s";
+        String extruderSettingFormat = "extruder_nr=\"%d\"";
 
         switch (slicerType)
         {
@@ -285,6 +286,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     
                     if (slicerType == SlicerType.Cura3)
                     {
+                        windowsPrintCommand += " " + settingCommand;
                         windowsPrintCommand += " " + String.format(extruderSettingFormat, extruderNo);
                     }
                     
@@ -335,6 +337,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     
                     if (slicerType == SlicerType.Cura3)
                     {
+                        commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));
                     }
                     
@@ -383,6 +386,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     
                     if (slicerType == SlicerType.Cura3)
                     {
+                        commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));
                     }
                     
