@@ -168,7 +168,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String modelFileCommand = "";
         String extruderTrainCommand = "";
         String settingCommand = "-s";
-        String extruderSettingFormat = "extruder_nr=\"%d\"";
+        String extruderSettingFormat = "extruder_nr=%d";
 
         switch (slicerType)
         {
