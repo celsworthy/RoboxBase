@@ -328,7 +328,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         // Extruder needs swapping... just because
                         extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
                         commands.add(extruderTrainCommand + extruderNo);
-                        commands.add(String.format(extruderSettingFormat, extruderNo));
                     }
                     if (!modelFileCommand.isEmpty())
                         commands.add(modelFileCommand);
