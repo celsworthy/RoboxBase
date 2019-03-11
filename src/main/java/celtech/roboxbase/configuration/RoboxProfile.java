@@ -168,7 +168,7 @@ public class RoboxProfile {
             String partialBMinimum = settings.get(PARTIAL_B_MINIMUM);
             String[] values = partialBMinimum.split(":");
             for(int i = 0; i < values.length; i++) {
-                createdNozzleParameters.get(i).setPartialBMinimum(Float.parseFloat(values[i]));
+                createdNozzleParameters.get(i).setPartialBMinimum(Float.parseFloat(values[i]) / 100);
             }
         }
        
