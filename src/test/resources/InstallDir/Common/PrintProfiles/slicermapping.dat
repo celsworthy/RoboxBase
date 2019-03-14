@@ -236,10 +236,11 @@
 			"layer_height":"layerHeight_mm",
 			"layer_height_0":"firstLayerHeight_mm",
 			"wall_line_count":"numberOfPerimeters",
-			"roofing_layer_count":"solidLayersAtTop", 
+			"top_layers":"solidLayersAtTop", 
 			"bottom_layers":"solidLayersAtBottom",
-			"infill_sparse_density":"fillDensity_normalised:*100",
-			"infill_line_distance":"fillDensity_normalised:?0->-1:[fillExtrusionWidth_mm",
+			"top_bottom_pattern":"top_bottom_pattern",
+			"infill_sparse_density":"fillDensity_normalised",
+			"infill_line_distance":"fillDensity_normalised:?0->-1:[fillExtrusionWidth_mm:*100",
 			"brim_line_count":"brimWidth_mm",
 			"magic_spiralize":"spiralPrint",
 			"support_z_distance":"supportZDistance_mm:?supportGapEnabled=false->0",
@@ -247,6 +248,17 @@
 			"infill_pattern":"fillPattern",
 			"infill_angles":"fillDirection",
 			"gradual_infill_steps":"gradualInfillSteps",
+			"coasting_enable":"coastingEnable",
+			"coasting_volume":"coastingVolume",
+			"coasting_min_volume":"coastingMinVolume",
+			"coasting_speed":"coastingSpeed",
+			"infill_sparse_thickness":"infillLayerThickness:*layerHeight_mm",
+			"optimize_wall_printing_order":"optimize_wall_printing_order",
+			"infill_before_walls":"infill_before_walls",
+			"skin_angles":"skin_angles",
+			"roofing_pattern":"roofing_pattern",
+			"roofing_angles":"roofing_angles",
+			"roofing_layer_count":"roofing_layer_count",
 
 			
 			/*
@@ -281,10 +293,13 @@
 			"support_interface_enable":"enableSupportInterface",
 			"support_roof_enable":"enableSupportInterface",
 			"support_bottom_enable":"enableSupportInterface",
+			"support_infill_sparse_thickness":"supportInfillLayerThickness:*layerHeight_mm",
+			"support_wall_count":"support_wall_count",
 
 			/*
 			 * Speed settings
 			 */
+			"retraction_combing":"retraction_combing",
 			"speed_layer_0":"firstLayerSpeed_mm_per_s",
 			"speed_print_layer_0":"firstLayerSpeed_mm_per_s",
 			"speed_wall":"perimeterSpeed_mm_per_s",

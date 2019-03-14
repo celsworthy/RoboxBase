@@ -2392,6 +2392,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2425,6 +2426,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2460,6 +2462,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2494,6 +2497,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2528,6 +2532,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2562,6 +2567,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2596,6 +2602,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2630,6 +2637,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2663,6 +2671,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -4258,6 +4267,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printerpoNumber.set(idResponse.getPoNumber());
                     printerIdentity.printerserialNumber.set(idResponse.getSerialNumber());
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
+                    printerIdentity.printerelectronicsVersion.set(idResponse.getElectronicsVersion());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
                     break;

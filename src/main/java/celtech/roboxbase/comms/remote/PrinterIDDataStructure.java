@@ -12,6 +12,8 @@ package celtech.roboxbase.comms.remote;
 public class PrinterIDDataStructure
 {
 
+    // modelBytes + editionBytes + weekOfManufactureBytes + yearOfManufactureBytes + poNumberBytes + serialNumberBytes
+    // checkByteBytes + electronicsVersionBytes + firstPadBytes + printerFriendlyNameBytes + secondPadBytes + colourBytes = 256.
     /**
      *
      */
@@ -50,10 +52,25 @@ public class PrinterIDDataStructure
     /**
      *
      */
+    public static final int electronicsVersionBytes = 1;
+
+    /**
+     *
+     */
+    public static final int firstPadBytes = 40;
+
+    /**
+     *
+     */
     public static final int printerFriendlyNameBytes = 100;
 
     /**
      *
      */
-    public static final int colourBytes = 2;
+    public static final int secondPadBytes = 86;
+
+    /**
+     *
+     */
+    public static final int colourBytes = 6;
 }
