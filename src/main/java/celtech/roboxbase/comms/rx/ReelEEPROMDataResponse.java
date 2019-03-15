@@ -177,7 +177,6 @@ public abstract class ReelEEPROMDataResponse extends RoboxRxPacket
             {
                 steno.error("Failed to decode material name.");
                 friendlyName = "";
-
             }
             byteOffset += FRIENDLY_NAME_LENGTH;
 
