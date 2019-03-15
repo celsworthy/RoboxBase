@@ -26,7 +26,7 @@ public class StringToBase64Encoder
      */
     public static String encode(String plainString) throws UnsupportedEncodingException
     {
-        return Base64.getEncoder().encodeToString(plainString.getBytes("UTF-8"));
+        return Base64.getMimeEncoder().encodeToString(plainString.getBytes("UTF-8"));
     }
 
     /**
@@ -37,7 +37,7 @@ public class StringToBase64Encoder
      */
     public static String decode(String encodedString) throws UnsupportedEncodingException
     {
-        byte[] decodedData = Base64.getDecoder().decode(encodedString);
+        byte[] decodedData = Base64.getMimeDecoder().decode(encodedString);
         return new String(decodedData, "UTF-8");
     }
 
