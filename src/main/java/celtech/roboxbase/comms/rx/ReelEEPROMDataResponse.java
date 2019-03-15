@@ -170,7 +170,14 @@ public abstract class ReelEEPROMDataResponse extends RoboxRxPacket
             }
 
             String encodedFriendlyName = new String(byteData, byteOffset, FRIENDLY_NAME_LENGTH, charsetToUse);
-            friendlyName = StringToBase64Encoder.decode(encodedFriendlyName);
+            try
+            {
+                friendlyName = StringToBase64Encoder.decode(encodedFriendlyName);
+            } catch (IllegalArgumentException ex)
+            {
+                steno.error("Failed to decode material name.");
+                friendlyName = "";
+            }
             byteOffset += FRIENDLY_NAME_LENGTH;
 
             //Handle case where reelFriendlyName has not yet been set on EEPROM
