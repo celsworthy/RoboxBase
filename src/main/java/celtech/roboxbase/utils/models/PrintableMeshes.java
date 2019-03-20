@@ -122,4 +122,11 @@ public class PrintableMeshes
     {
         return cameraTriggerData;
     }
+    
+    public int getNumberOfExtruders()
+    {
+        return (int) usedExtruders.stream()
+                .filter(extruderUsed -> extruderUsed == true)
+                .count();
+    }
 }

@@ -1,7 +1,5 @@
 package celtech.roboxbase.configuration.slicer;
 
-import celtech.roboxbase.configuration.Filament;
-import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
@@ -50,17 +48,20 @@ public class Cura3ConfigConvertor {
         curaDefaultSettingsEditor.endEditing(storageDirectory);
     }
     
-    private void addDefaultsForPrinter() {
+    private void addDefaultsForPrinter()
+    {
         int width;
         int depth;
         int height;
         
-        if(printer == null) {
+        if(printer == null) 
+        {
             PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
             width = printerDef.getPrintVolumeWidth();
             depth = printerDef.getPrintVolumeDepth();
             height = printerDef.getPrintVolumeHeight();
-        } else {
+        } else
+        {
             width =  printer.printerConfigurationProperty().get().getPrintVolumeWidth();
             depth = printer.printerConfigurationProperty().get().getPrintVolumeDepth();
             height = printer.printerConfigurationProperty().get().getPrintVolumeHeight();
@@ -73,10 +74,9 @@ public class Cura3ConfigConvertor {
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_x", (float) -(width /2));
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_y", (float) -(depth /2));
         
-        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", 
-                printableMeshes.getUsedExtruders().size());
-        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", 
-                printableMeshes.getUsedExtruders().size());
+        int numberOfExtruders = printableMeshes.getNumberOfExtruders();
+        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", numberOfExtruders);
+        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", numberOfExtruders);
     }
     
     private void addExtrudersAndDefaults() {

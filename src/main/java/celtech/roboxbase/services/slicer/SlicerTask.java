@@ -124,7 +124,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
-        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), printableMeshes.getExtruderForModel(), centreOfPrintedObject, progressReceiver, steno);
+        boolean succeeded = sliceFile(printJobUUID, 
+                printJobDirectory, 
+                slicerType, 
+                meshExportResult.getCreatedFiles(), 
+                printableMeshes.getExtruderForModel(), 
+                centreOfPrintedObject, 
+                progressReceiver,
+                printableMeshes.getNumberOfExtruders(),
+                steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
         steno.debug("Slicer Timer Report");
@@ -142,6 +150,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
+            int numberofExtruders,
             Stenographer steno)
     {
         boolean succeeded = false;
@@ -270,13 +279,16 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
                     if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberofExtruders > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         windowsPrintCommand += " " + extruderTrainCommand + extruderNo;
                     }
                     windowsPrintCommand += " " + modelFileCommand;
@@ -322,13 +334,16 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberofExtruders > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         commands.add(extruderTrainCommand + extruderNo);
                     }
                     if (!modelFileCommand.isEmpty())
@@ -371,13 +386,16 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
                     if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i))
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberofExtruders > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         commands.add(extruderTrainCommand + extruderNo);
                     }
                     if (!modelFileCommand.isEmpty())
