@@ -11,7 +11,7 @@ import org.parboiled.Rule;
  * @author George Salter
  */
 //@BuildParseTree
-public class Cura3GCodeParser extends GCodeParser {
+public class Cura4GCodeParser extends GCodeParser {
     
     @Override
     public Rule Layer()

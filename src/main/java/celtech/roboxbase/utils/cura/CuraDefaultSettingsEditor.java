@@ -19,7 +19,7 @@ import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
 /**
- * A class to allow editing of the Cura 3 default settings file.
+ * A class to allow editing of the Cura 4 default settings file.
  * 
  * @author George Salter
  */
@@ -27,8 +27,8 @@ public class CuraDefaultSettingsEditor {
     
     private static final Stenographer STENO = StenographerFactory.getStenographer(CuraDefaultSettingsEditor.class.getName());
     
-    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmprinter.def.json";
-    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmextruder.def.json";
+    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura4) + "fdmprinter.def.json";
+    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura4) + "fdmextruder.def.json";
     private static final String EDITED_FILE_NAME = "fdmprinter_robox.def.json";
     private static final String SETTINGS = "settings";
     private static final String CHILDREN = "children";

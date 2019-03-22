@@ -22,22 +22,21 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author George Salter
  */
-public class Cura3ConfigConvertor {
+public class Cura4ConfigConvertor {
     
-    private static final Stenographer STENO = StenographerFactory.getStenographer(
-            Cura3ConfigConvertor.class.getName());
+    private static final Stenographer STENO = StenographerFactory.getStenographer(Cura4ConfigConvertor.class.getName());
     
     private final Printer printer;
     private final PrintableMeshes printableMeshes;
     
     private CuraDefaultSettingsEditor curaDefaultSettingsEditor;
     
-    public Cura3ConfigConvertor(Printer printer, PrintableMeshes printableMeshes) {
+    public Cura4ConfigConvertor(Printer printer, PrintableMeshes printableMeshes) {
         this.printer = printer;
         this.printableMeshes = printableMeshes;
     }
     
-    public void injectConfigIntoCura3SettingsFile(String configFile, String storageDirectory) {
+    public void injectConfigIntoCura4SettingsFile(String configFile, String storageDirectory) {
         curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
         curaDefaultSettingsEditor.beginEditing();
         

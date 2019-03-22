@@ -1,9 +1,9 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,23 +40,23 @@ public class RoboxProfileSettingsContainer {
     private static final String HEAD_TYPE = "headType";
     
     private static Map<String, List<RoboxProfile>> curaRoboxProfiles;
-    private static Map<String, List<RoboxProfile>> cura3RoboxProfiles;
+    private static Map<String, List<RoboxProfile>> cura4RoboxProfiles;
     private static Map<String, List<RoboxProfile>> slic3rRoboxProfiles;
     
     private static Map<String, ObservableList<RoboxProfile>> curaCustomRoboxProfiles;
-    private static Map<String, ObservableList<RoboxProfile>> cura3CustomRoboxProfiles;
+    private static Map<String, ObservableList<RoboxProfile>> cura4CustomRoboxProfiles;
     private static Map<String, ObservableList<RoboxProfile>> slic3rCustomRoboxProfiles;
     
     
     public RoboxProfileSettingsContainer() {
         curaRoboxProfiles = new HashMap<>();
-        cura3RoboxProfiles = new HashMap<>();
+        cura4RoboxProfiles = new HashMap<>();
         slic3rRoboxProfiles = new HashMap<>();
         curaCustomRoboxProfiles = new HashMap<>();
-        cura3CustomRoboxProfiles = new HashMap<>();
+        cura4CustomRoboxProfiles = new HashMap<>();
         slic3rCustomRoboxProfiles = new HashMap<>();
         loadRoboxProfiles(SlicerType.Cura);
-        loadRoboxProfiles(SlicerType.Cura3);
+        loadRoboxProfiles(SlicerType.Cura4);
     }
     
     public static RoboxProfileSettingsContainer getInstance() {
@@ -70,8 +70,8 @@ public class RoboxProfileSettingsContainer {
         switch (slicerType) {
             case Cura:
                 return curaRoboxProfiles;
-            case Cura3:
-                return cura3RoboxProfiles;
+            case Cura4:
+                return cura4RoboxProfiles;
             case Slic3r:
                 return slic3rRoboxProfiles;
             default:
@@ -83,8 +83,8 @@ public class RoboxProfileSettingsContainer {
         switch (slicerType) {
             case Cura:
                 return curaCustomRoboxProfiles;
-            case Cura3:
-                return cura3CustomRoboxProfiles;
+            case Cura4:
+                return cura4CustomRoboxProfiles;
             case Slic3r:
                 return slic3rCustomRoboxProfiles;
             default:

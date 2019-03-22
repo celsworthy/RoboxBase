@@ -10,12 +10,12 @@ import java.util.Locale;
  *
  * @author George Salter
  */
-public class Cura3ConfigWriter extends SlicerConfigWriter {
+public class Cura4ConfigWriter extends SlicerConfigWriter {
 
-    public Cura3ConfigWriter()
+    public Cura4ConfigWriter()
     {
         super();
-        slicerType = SlicerType.Cura3;
+        slicerType = SlicerType.Cura4;
         PRINT_PROFILE_SETTINGS_CONTAINER.getDefaultPrintProfileSettingsForSlicer(slicerType).getAllSettings()
                 .forEach(setting -> printProfileSettingsMap.put(setting.getId(), setting));
     }

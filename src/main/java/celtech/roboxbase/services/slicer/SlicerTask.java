@@ -168,7 +168,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String linuxSlicerCommand = "";
         String configLoadCommand = "";
         String configLoadFile = "";
-        //The next variable is only required for Cura3
+        //The next variable is only required for Cura4
         String actionCommand = "";
         //The next variable is only required for Slic3r
         String printCenterCommand = "";
@@ -200,11 +200,11 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 configLoadFile = configFile;
                 progressOutputCommand = "-p";
                 break;
-            case Cura3:
+            case Cura4:
                 windowsSlicerCommand = "\"" + BaseConfiguration.
-                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\"";
-                macSlicerCommand = "Cura3/CuraEngine";
-                linuxSlicerCommand = "Cura3/CuraEngine";
+                        getCommonApplicationDirectory() + "Cura4\\CuraEngine.exe\"";
+                macSlicerCommand = "Cura4/CuraEngine";
+                linuxSlicerCommand = "Cura4/CuraEngine";
                 actionCommand = "slice";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-j";
@@ -282,7 +282,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
                         if (numberofExtruders > 1)
                         {
@@ -296,7 +296,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         windowsPrintCommand += " " + settingCommand;
                         windowsPrintCommand += " " + String.format(extruderSettingFormat, extruderNo);
@@ -337,7 +337,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
                         if (numberofExtruders > 1)
                         {
@@ -350,7 +350,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));
@@ -389,7 +389,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i))
+                    if(slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i))
                     {
                         if (numberofExtruders > 1)
                         {
@@ -402,7 +402,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));
