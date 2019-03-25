@@ -37,7 +37,7 @@ public class Cura4ConfigConvertor {
     }
     
     public void injectConfigIntoCura4SettingsFile(String configFile, String storageDirectory) {
-        curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
+        curaDefaultSettingsEditor = new CuraDefaultSettingsEditor(printableMeshes.getNumberOfNozzles() <= 1);
         curaDefaultSettingsEditor.beginEditing();
         
         addDefaultsForPrinter();
@@ -73,9 +73,9 @@ public class Cura4ConfigConvertor {
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_x", (float) -(width /2));
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_y", (float) -(depth /2));
         
-        int numberOfExtruders = printableMeshes.getNumberOfExtruders();
-        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", numberOfExtruders);
-        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", numberOfExtruders);
+        int numberOfNozzles = printableMeshes.getNumberOfNozzles();
+        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", numberOfNozzles);
+        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", numberOfNozzles);
     }
     
     private void addExtrudersAndDefaults() {

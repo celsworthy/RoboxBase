@@ -131,7 +131,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 printableMeshes.getExtruderForModel(), 
                 centreOfPrintedObject, 
                 progressReceiver,
-                printableMeshes.getNumberOfExtruders(),
+                printableMeshes.getNumberOfNozzles(),
                 steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
@@ -150,9 +150,19 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
-            int numberofExtruders,
+            int numberOfNozzles,
             Stenographer steno)
     {
+        // Heads with a single nozzle are anomalous because
+        // tool zero uses the "E" extruder, which is usually
+        // extruder number 1. So for these kinds of head, the
+        // extruder number needs to be reset to 0, hence the
+        // need for the numberOfNozzles parameter.
+        // This hack is closely related to the hack in
+        // CuraDefaultSettingsEditor that also sets the extruder
+        // number to zero for single nozzle heads.
+ 
+ 
         boolean succeeded = false;
 
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
@@ -284,7 +294,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 {
                     if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        if (numberofExtruders > 1)
+                        if (numberOfNozzles > 1)
                         {
                             // Extruder needs swapping... just because
                             extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
@@ -339,7 +349,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 {
                     if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        if (numberofExtruders > 1)
+                        if (numberOfNozzles > 1)
                         {
                             // Extruder needs swapping... just because
                             extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
@@ -389,9 +399,9 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i))
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i))
                     {
-                        if (numberofExtruders > 1)
+                        if (numberOfNozzles > 1)
                         {
                             // Extruder needs swapping... just because
                             extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;

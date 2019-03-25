@@ -2,6 +2,8 @@ package celtech.roboxbase.utils.models;
 
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
+import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
 import celtech.roboxbase.services.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
@@ -123,10 +125,12 @@ public class PrintableMeshes
         return cameraTriggerData;
     }
     
-    public int getNumberOfExtruders()
+    public int getNumberOfNozzles()
     {
-        return (int) usedExtruders.stream()
-                .filter(extruderUsed -> extruderUsed == true)
-                .count();
+        int nNozzles = 0;
+        HeadFile printerHead = HeadContainer.getHeadByID(settings.getHeadType());
+        if (printerHead != null)
+            nNozzles = printerHead.getNozzles().size();
+        return nNozzles;
     }
 }
