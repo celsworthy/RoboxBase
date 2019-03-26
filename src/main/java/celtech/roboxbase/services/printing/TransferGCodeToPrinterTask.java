@@ -291,7 +291,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             try
             {
                 steno.info("Transferred GCode");
-                if (thisJobCanBeReprinted && printJobStatistics != null)
+                if (printJobStatistics != null)
                     remoteCI.startPrintJob(printJobID);
                 else
                     remoteCI.printGCodeFile(remoteDirectory + '/' + gcodeFile.getName());

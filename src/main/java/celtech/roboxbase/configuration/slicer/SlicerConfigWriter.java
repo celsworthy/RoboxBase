@@ -99,7 +99,7 @@ public abstract class SlicerConfigWriter {
             writer.write("#Profile " + profileData.getName()+ "\n");
             writer.write("#\n");
 
-            if(slicerType == SlicerType.Cura3) {
+            if(slicerType == SlicerType.Cura4) {
                 outputFilamentDiameter(writer, BaseConfiguration.filamentDiameter);
             } else {
                 outputFilamentDiameter(writer,
@@ -135,7 +135,7 @@ public abstract class SlicerConfigWriter {
                     float value = Float.parseFloat(settingNameOrValue);
                     Optional<Float> calculatedValue = applyValue(profileData, value, entry.getValue());
                     if (calculatedValue.isPresent()) {
-                        if(slicerType == SlicerType.Cura3) {
+                        if(slicerType == SlicerType.Cura4) {
                             outputLine(writer, targetVariableName,
                                    calculatedValue.get());
                         } else {

@@ -124,7 +124,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
-        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), printableMeshes.getExtruderForModel(), centreOfPrintedObject, progressReceiver, steno);
+        boolean succeeded = sliceFile(printJobUUID, 
+                printJobDirectory, 
+                slicerType, 
+                meshExportResult.getCreatedFiles(), 
+                printableMeshes.getExtruderForModel(), 
+                centreOfPrintedObject, 
+                progressReceiver,
+                printableMeshes.getNumberOfNozzles(),
+                steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
         steno.debug("Slicer Timer Report");
@@ -142,8 +150,19 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
+            int numberOfNozzles,
             Stenographer steno)
     {
+        // Heads with a single nozzle are anomalous because
+        // tool zero uses the "E" extruder, which is usually
+        // extruder number 1. So for these kinds of head, the
+        // extruder number needs to be reset to 0, hence the
+        // need for the numberOfNozzles parameter.
+        // This hack is closely related to the hack in
+        // CuraDefaultSettingsEditor that also sets the extruder
+        // number to zero for single nozzle heads.
+ 
+ 
         boolean succeeded = false;
 
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
@@ -159,7 +178,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String linuxSlicerCommand = "";
         String configLoadCommand = "";
         String configLoadFile = "";
-        //The next variable is only required for Cura3
+        //The next variable is only required for Cura4
         String actionCommand = "";
         //The next variable is only required for Slic3r
         String printCenterCommand = "";
@@ -191,11 +210,11 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 configLoadFile = configFile;
                 progressOutputCommand = "-p";
                 break;
-            case Cura3:
+            case Cura4:
                 windowsSlicerCommand = "\"" + BaseConfiguration.
-                        getCommonApplicationDirectory() + "Cura3\\CuraEngine.exe\"";
-                macSlicerCommand = "Cura3/CuraEngine";
-                linuxSlicerCommand = "Cura3/CuraEngine";
+                        getCommonApplicationDirectory() + "Cura4\\CuraEngine.exe\"";
+                macSlicerCommand = "Cura4/CuraEngine";
+                linuxSlicerCommand = "Cura4/CuraEngine";
                 actionCommand = "slice";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-j";
@@ -270,13 +289,16 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if (slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         windowsPrintCommand += " " + extruderTrainCommand + extruderNo;
                     }
                     windowsPrintCommand += " " + modelFileCommand;
@@ -284,7 +306,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         windowsPrintCommand += " " + settingCommand;
                         windowsPrintCommand += " " + String.format(extruderSettingFormat, extruderNo);
@@ -322,20 +344,23 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
 
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i)) 
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         commands.add(extruderTrainCommand + extruderNo);
                     }
                     if (!modelFileCommand.isEmpty())
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));
@@ -371,20 +396,23 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
                 previousExtruder = -1;
-                extruderNo = -1;
+                extruderNo = 0;
                 for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    if(slicerType == SlicerType.Cura3 && previousExtruder != extrudersForMeshes.get(i))
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i))
                     {
-                        // Extruder needs swapping... just because
-                        extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
                         commands.add(extruderTrainCommand + extruderNo);
                     }
                     if (!modelFileCommand.isEmpty())
                         commands.add(modelFileCommand);
                     commands.add(createdMeshFiles.get(i));
                     
-                    if (slicerType == SlicerType.Cura3)
+                    if (slicerType == SlicerType.Cura4)
                     {
                         commands.add(settingCommand);
                         commands.add(String.format(extruderSettingFormat, extruderNo));

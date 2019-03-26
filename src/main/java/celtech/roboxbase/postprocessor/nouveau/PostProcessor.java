@@ -152,7 +152,7 @@ public class PostProcessor
             nozzleProxies.add(proxy);
         }
 
-        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura3)
+        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura4)
         {
             // If we have a dual extruder head but a single extruder machine force use of the available extruder
             if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
@@ -179,7 +179,7 @@ public class PostProcessor
                         break;
                 }
             }
-        } else if (slicerType == SlicerType.Cura3) 
+        } else if (slicerType == SlicerType.Cura4) 
         {
             if (!settingsProfile.getSpecificBooleanSettingWithDefault("infill_before_walls", false))
                 featureSet.enableFeature(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT);
@@ -556,8 +556,8 @@ public class PostProcessor
         {
             GCodeParser gcodeParser;
             
-            if(slicerType == SlicerType.Cura3) {
-                gcodeParser = Parboiled.createParser(Cura3GCodeParser.class);
+            if(slicerType == SlicerType.Cura4) {
+                gcodeParser = Parboiled.createParser(Cura4GCodeParser.class);
             } else {
                 gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
             }

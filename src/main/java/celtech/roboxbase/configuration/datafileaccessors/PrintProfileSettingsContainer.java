@@ -94,21 +94,21 @@ public class PrintProfileSettingsContainer {
         objectMapper.registerModule(new Jdk8Module());
         
         File curaPrintProfileSettingsFile = new File(BaseConfiguration.getPrintProfileSettingsFileLocation(SlicerType.Cura));
-        File cura3PrintProfileSettingsFile = new File(BaseConfiguration.getPrintProfileSettingsFileLocation(SlicerType.Cura3));
+        File cura4PrintProfileSettingsFile = new File(BaseConfiguration.getPrintProfileSettingsFileLocation(SlicerType.Cura4));
         
         STENO.debug("File path for cura print profile settings file: " + curaPrintProfileSettingsFile.getAbsolutePath());
-        STENO.debug("File path for cura3 print profile settings file: " + cura3PrintProfileSettingsFile.getAbsolutePath());
+        STENO.debug("File path for cura4 print profile settings file: " + cura4PrintProfileSettingsFile.getAbsolutePath());
         
         try 
         {
             PrintProfileSettings curaPrintProfileSettings = objectMapper.readValue(curaPrintProfileSettingsFile, PrintProfileSettings.class);
-            PrintProfileSettings cura3PrintProfileSettings = objectMapper.readValue(cura3PrintProfileSettingsFile, PrintProfileSettings.class);
+            PrintProfileSettings cura4PrintProfileSettings = objectMapper.readValue(cura4PrintProfileSettingsFile, PrintProfileSettings.class);
             
             printProfileSettings.put(SlicerType.Cura, curaPrintProfileSettings);
-            printProfileSettings.put(SlicerType.Cura3, cura3PrintProfileSettings);
+            printProfileSettings.put(SlicerType.Cura4, cura4PrintProfileSettings);
             
             defaultPrintProfileSettings.put(SlicerType.Cura, new PrintProfileSettings(curaPrintProfileSettings));
-            defaultPrintProfileSettings.put(SlicerType.Cura3, new PrintProfileSettings(cura3PrintProfileSettings));
+            defaultPrintProfileSettings.put(SlicerType.Cura4, new PrintProfileSettings(cura4PrintProfileSettings));
         } catch (IOException ex)
         {
             STENO.error(ex.getMessage());

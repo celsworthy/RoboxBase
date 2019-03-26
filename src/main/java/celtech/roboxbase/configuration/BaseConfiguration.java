@@ -116,7 +116,7 @@ public class BaseConfiguration
     public static final String gcodePostProcessedFileHandle = "_robox";
     public static final String printProfileFileExtension = ".roboxprofile";
     public static final String curaFilePath = "Cura/";
-    public static final String cura3FilePath = "Cura3/";
+    public static final String cura4FilePath = "Cura4/";
 
     public static final String customSettingsProfileName = "Custom";
 
@@ -652,8 +652,8 @@ public class BaseConfiguration
     public static String getApplicationPrintProfileDirectoryForSlicer(SlicerType slicerType) {
         if(slicerType == SlicerType.Cura) {
             return getApplicationPrintProfileDirectory() + curaFilePath;
-        } else if(slicerType == SlicerType.Cura3) {
-            return getApplicationPrintProfileDirectory() + cura3FilePath;
+        } else if(slicerType == SlicerType.Cura4) {
+            return getApplicationPrintProfileDirectory() + cura4FilePath;
         }
         
         return getApplicationPrintProfileDirectory();
@@ -664,8 +664,8 @@ public class BaseConfiguration
         
         if(slicerType == SlicerType.Cura) {
             userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
-        } else if(slicerType == SlicerType.Cura3) {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura3FilePath;
+        } else if(slicerType == SlicerType.Cura4) {
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura4FilePath;
         }
          
         File dirHandle = new File(userSlicerPrintProfileDirectory);

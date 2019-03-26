@@ -5,7 +5,7 @@ import celtech.roboxbase.MaterialType;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.configuration.slicer.Cura3ConfigConvertor;
+import celtech.roboxbase.configuration.slicer.Cura4ConfigConvertor;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriter;
 import celtech.roboxbase.configuration.slicer.SlicerConfigWriterFactory;
 import celtech.roboxbase.printerControl.PrintJob;
@@ -205,9 +205,9 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
 
         configWriter.generateConfigForSlicer(settingsToUse, configFileName);
 
-        if (slicerTypeToUse == SlicerType.Cura3) {
-            Cura3ConfigConvertor cura3ConfigConvertor = new Cura3ConfigConvertor(printerToUse, meshesToPrint);
-            cura3ConfigConvertor.injectConfigIntoCura3SettingsFile(configFileName, gCodeDirectoryName + File.separator);
+        if (slicerTypeToUse == SlicerType.Cura4) {
+            Cura4ConfigConvertor cura4ConfigConvertor = new Cura4ConfigConvertor(printerToUse, meshesToPrint);
+            cura4ConfigConvertor.injectConfigIntoCura4SettingsFile(configFileName, gCodeDirectoryName + File.separator);
         }
     }
     

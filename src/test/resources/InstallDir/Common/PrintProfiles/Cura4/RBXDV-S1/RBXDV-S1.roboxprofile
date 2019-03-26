@@ -1,8 +1,8 @@
 //==============
 //MetaData
 //==============
-profileName=RBX01-DM
-headType=RBX01-DM
+profileName=RBXDV-S1
+headType=RBXDV-S1
 
 //==============
 //Extrusion
@@ -20,15 +20,15 @@ infillLayerThickness=1
 //==============
 //Nozzles
 //==============
-firstLayerExtrusionWidth_mm=0.6
-perimeterExtrusionWidth_mm=0.4
-fillExtrusionWidth_mm=0.4
-solidFillExtrusionWidth_mm=0.4
-topSolidFillExtrusionWidth_mm=0.4
-supportExtrusionWidth_mm=0.4
-firstLayerNozzle=2
-perimeterNozzle=2
-fillNozzle=2
+perimeterExtrusionWidth_mm=0.6
+fillExtrusionWidth_mm=0.6
+solidFillExtrusionWidth_mm=0.6
+topSolidFillExtrusionWidth_mm=0.5
+supportExtrusionWidth_mm=0.5
+firstLayerNozzle=0
+perimeterNozzle=0
+skinNozzle=0
+fillNozzle=0
 supportNozzle=0
 supportInterfaceNozzle=0
 raftBrimNozzle=0
@@ -36,8 +36,8 @@ raftBrimNozzle=0
 //==============
 //Valves
 //==============
-ejectionVolume=0.3:0.3
-partialBMinimum=50:50
+ejectionVolume=24.6
+partialBMinimum=50
 
 //==============
 //Support
@@ -60,7 +60,7 @@ supportInfillLayerThickness=1
 //==============
 //speed
 //==============
-firstLayerSpeed_mm_per_s=8
+firstLayerSpeed_mm_per_s=15
 perimeterSpeed_mm_per_s=30
 smallPerimeterSpeed_mm_per_s=20
 externalPerimeterSpeed_mm_per_s=30
@@ -75,13 +75,13 @@ gapFillSpeed_mm_per_s=20
 //Cooling
 //==============
 enableCooling=true
-minFanSpeed_percent=60:60
-maxFanSpeed_percent=100:100
+minFanSpeed_percent=60
+maxFanSpeed_percent=100
 bridgeFanSpeed_percent=100
 disableFanFirstNLayers=0
 coolIfLayerTimeLessThan_secs=60
-slowDownIfLayerTimeLessThan_secs=15:15
-minPrintSpeed_mm_per_s=8:8
+slowDownIfLayerTimeLessThan_secs=15
+minPrintSpeed_mm_per_s=8
 
 maxClosesBeforeNozzleReselect=10
 brimWidth_mm=0

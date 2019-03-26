@@ -19,7 +19,7 @@ import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
 /**
- * A class to allow editing of the Cura 3 default settings file.
+ * A class to allow editing of the Cura 4 default settings file.
  * 
  * @author George Salter
  */
@@ -27,8 +27,8 @@ public class CuraDefaultSettingsEditor {
     
     private static final Stenographer STENO = StenographerFactory.getStenographer(CuraDefaultSettingsEditor.class.getName());
     
-    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmprinter.def.json";
-    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura3) + "fdmextruder.def.json";
+    private static final String JSON_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura4) + "fdmprinter.def.json";
+    private static final String JSON_EXTRUDER_SETTINGS_FILE = BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(SlicerType.Cura4) + "fdmextruder.def.json";
     private static final String EDITED_FILE_NAME = "fdmprinter_robox.def.json";
     private static final String SETTINGS = "settings";
     private static final String CHILDREN = "children";
@@ -44,9 +44,15 @@ public class CuraDefaultSettingsEditor {
     
     private final Map<String, JsonNodeWrapper> settingsNodes = new HashMap<>();
     private final Map<String, Map<String, JsonNodeWrapper>> extruderSettingsNodesMap = new HashMap<>();
+
+    private boolean singleNozzleHead = false;
     
     private JsonNode settingsRootNode = null;
     private Map<String, JsonNode> extruderRootNodes;
+    
+    public CuraDefaultSettingsEditor(boolean singleNozzleHead) {
+        this.singleNozzleHead = singleNozzleHead;
+    }    
     
     /**
      * Read the JSON file into nodes. 
@@ -118,10 +124,24 @@ public class CuraDefaultSettingsEditor {
             case "str":
             case "enum":
             case "[int]":
-            case "extruder":
-            case "optional_extruder":
                 settingObjectNode.remove(DEFAULT_VALUE);
                 settingObjectNode.put(DEFAULT_VALUE, value);
+                break;                
+            case "extruder":
+            case "optional_extruder":
+                // Heads with a single nozzle are anomalous because
+                // tool zero uses the "E" extruder, which is usually
+                // extruder number 1. So for these kinds of head, the
+                // extruder number needs to be reset to 0.
+                // This seems a very odd place to do this, but there
+                // is no-where else that is obvious. This hack is closely related
+                // to the hack in SlicerTask that also sets the extruder number to zero
+                // for single nozzle heads.
+                settingObjectNode.remove(DEFAULT_VALUE);
+                if (singleNozzleHead)
+                    settingObjectNode.put(DEFAULT_VALUE, "0");
+                else    
+                    settingObjectNode.put(DEFAULT_VALUE, value);
                 break;
             default:
                 STENO.warning("Unknown cura setting type: " + settingType +

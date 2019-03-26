@@ -15,8 +15,8 @@ public class SlicerConfigWriterFactory
         
         switch (slicerType)
         {
-            case Cura3:
-                writer = new Cura3ConfigWriter();
+            case Cura4:
+                writer = new Cura4ConfigWriter();
                 break;
             case Cura:
                 writer = new CuraConfigWriter();

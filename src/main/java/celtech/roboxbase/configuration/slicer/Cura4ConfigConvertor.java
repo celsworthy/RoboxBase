@@ -1,7 +1,5 @@
 package celtech.roboxbase.configuration.slicer;
 
-import celtech.roboxbase.configuration.Filament;
-import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
@@ -24,23 +22,22 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author George Salter
  */
-public class Cura3ConfigConvertor {
+public class Cura4ConfigConvertor {
     
-    private static final Stenographer STENO = StenographerFactory.getStenographer(
-            Cura3ConfigConvertor.class.getName());
+    private static final Stenographer STENO = StenographerFactory.getStenographer(Cura4ConfigConvertor.class.getName());
     
     private final Printer printer;
     private final PrintableMeshes printableMeshes;
     
     private CuraDefaultSettingsEditor curaDefaultSettingsEditor;
     
-    public Cura3ConfigConvertor(Printer printer, PrintableMeshes printableMeshes) {
+    public Cura4ConfigConvertor(Printer printer, PrintableMeshes printableMeshes) {
         this.printer = printer;
         this.printableMeshes = printableMeshes;
     }
     
-    public void injectConfigIntoCura3SettingsFile(String configFile, String storageDirectory) {
-        curaDefaultSettingsEditor = new CuraDefaultSettingsEditor();
+    public void injectConfigIntoCura4SettingsFile(String configFile, String storageDirectory) {
+        curaDefaultSettingsEditor = new CuraDefaultSettingsEditor(printableMeshes.getNumberOfNozzles() <= 1);
         curaDefaultSettingsEditor.beginEditing();
         
         addDefaultsForPrinter();
@@ -50,17 +47,20 @@ public class Cura3ConfigConvertor {
         curaDefaultSettingsEditor.endEditing(storageDirectory);
     }
     
-    private void addDefaultsForPrinter() {
+    private void addDefaultsForPrinter()
+    {
         int width;
         int depth;
         int height;
         
-        if(printer == null) {
+        if(printer == null) 
+        {
             PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
             width = printerDef.getPrintVolumeWidth();
             depth = printerDef.getPrintVolumeDepth();
             height = printerDef.getPrintVolumeHeight();
-        } else {
+        } else
+        {
             width =  printer.printerConfigurationProperty().get().getPrintVolumeWidth();
             depth = printer.printerConfigurationProperty().get().getPrintVolumeDepth();
             height = printer.printerConfigurationProperty().get().getPrintVolumeHeight();
@@ -73,10 +73,9 @@ public class Cura3ConfigConvertor {
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_x", (float) -(width /2));
         curaDefaultSettingsEditor.editDefaultFloatValue("mesh_position_y", (float) -(depth /2));
         
-        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", 
-                printableMeshes.getUsedExtruders().size());
-        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", 
-                printableMeshes.getUsedExtruders().size());
+        int numberOfNozzles = printableMeshes.getNumberOfNozzles();
+        curaDefaultSettingsEditor.editDefaultIntValue("machine_extruder_count", numberOfNozzles);
+        curaDefaultSettingsEditor.editDefaultIntValue("extruders_enabled_count", numberOfNozzles);
     }
     
     private void addExtrudersAndDefaults() {
