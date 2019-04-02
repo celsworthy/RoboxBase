@@ -430,6 +430,8 @@ public interface Printer extends RoboxResponseConsumer
 
     public ObservableList<FirmwareError> getActiveErrors();
 
+    public ObservableList<FirmwareError> getCurrentErrors();
+
     /*
      * Higher level controls
      */
