@@ -1261,4 +1261,9 @@ public class TestPrinter implements Printer
     public void tidyPrintJobDirectories() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public ObservableList<FirmwareError> getCurrentErrors() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

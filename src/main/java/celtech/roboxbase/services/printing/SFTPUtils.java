@@ -83,6 +83,9 @@ public class SFTPUtils
                             remotePath,
                             monitor);
 
+            channelSftp.disconnect();
+            session.disconnect();
+            
             transferredOK = true;
         }
         catch (SftpException | JSchException | IOException ex)
