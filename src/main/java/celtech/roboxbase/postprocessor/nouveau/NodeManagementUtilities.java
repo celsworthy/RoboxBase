@@ -62,74 +62,74 @@ public class NodeManagementUtilities
         }
     }
     
+    private boolean sectionContainsExtrusions(GCodeEventNode node)
+    {
+        // Return true if the node is an Extrusion node, or has any descendents
+        // that are extrusion nodes.
+        if (node instanceof ExtrusionNode)
+            return true;
+        
+        Iterator<GCodeEventNode> treeIterator = node.treeSpanningIterator(null);
+        while (treeIterator.hasNext()) 
+        {
+            GCodeEventNode descendentNode = treeIterator.next();
+            if (descendentNode instanceof ExtrusionNode)
+                return true;
+        }
+        
+        return false;
+    }
+    
     protected void movePerimeterSections(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
     {
-        STENO.trace("movePerimeterSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        // Sections that do not contain any extrusions are not moved
+        // as the first section in an object inherits the type from
+        // the previous object, but may only contain some set up
+        // and travels before changing to a different section type.
+        STENO.debug("movePerimeterSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
-
-        boolean encounteredFillBeforePerimeter = false;
-        GCodeEventNode outerPerimeterParent = null;
-        GCodeEventNode innerPerimeterParent = null;
+        List<GCodeEventNode> perimeterParents = new ArrayList<>();
         GCodeEventNode fillParent = null;
 
         while (layerIterator.hasNext())
         {
             GCodeEventNode node = layerIterator.next();
-            if (node instanceof OuterPerimeterSectionNode)
+            if (fillParent != null && 
+                (node instanceof OuterPerimeterSectionNode ||
+                 node instanceof InnerPerimeterSectionNode))
             {
-                if (outerPerimeterParent == null)
-                    outerPerimeterParent = node.getParent().get();
-
+                GCodeEventNode pp = node.getParent().get();
+                if (fillParent != pp &&
+                    !perimeterParents.contains(pp) &&
+                    sectionContainsExtrusions(pp))
+                {
+                    perimeterParents.add(pp);
+                }
             }
-            else if (node instanceof InnerPerimeterSectionNode)
+            else if (node instanceof FillSectionNode && fillParent == null)
             {
-                if (innerPerimeterParent == null)
-                    innerPerimeterParent = node.getParent().get();
-            }
-            else if (node instanceof FillSectionNode)
-            {
-                if (fillParent == null)
-                    fillParent = node.getParent().get();
-                if (outerPerimeterParent == null && innerPerimeterParent == null)
-                    encounteredFillBeforePerimeter = true;
+                GCodeEventNode fp = node.getParent().get();
+                if (sectionContainsExtrusions(fp))
+                    fillParent = fp;
             }
         }
         
-        if (encounteredFillBeforePerimeter)
+        // Move perimeters in front of fill.
+        if (!perimeterParents.isEmpty() && fillParent != null)
         {
-            STENO.trace("object containing first fill is before objects containing perimeter");
-           
-            if (outerPerimeterParent != null)
-            {
-                if (outerPerimeterParent != fillParent)
-                {
-                    if (outerPerimeterParent.getParent().get() == fillParent.getParent().get())
-                    {
-                        outerPerimeterParent.removeFromParent();
-                        fillParent.addSiblingBefore(outerPerimeterParent);
-                    }
-                    else
-                    {
-                        STENO.trace("Parent of object containing fill is not the same as parent of object containing outer perimeter!");
-                    }
-                }
-                
-                if (innerPerimeterParent != outerPerimeterParent &&
-                    innerPerimeterParent != fillParent)
-                {
-                    if (innerPerimeterParent.getParent().get() == fillParent.getParent().get())
-                    {
-                        innerPerimeterParent.removeFromParent();
-                        fillParent.addSiblingBefore(innerPerimeterParent);
-                    }
-                    else
-                    {
-                        STENO.trace("Parent of object containing fill is not the same as parent of object containing inner perimeter!");
-                    }
-                }
-            }
-            STENO.trace("... done");
+            // fillParent is not "final" or "effectively final" so
+            // can't be used in lambda expression. So make another
+            // variable that is final.
+            final GCodeEventNode ffp = fillParent;
+            STENO.debug("... moving perimeter sections to be in front of first fill section ...");
+            perimeterParents.forEach(pp -> {
+                pp.removeFromParent();
+            });
+            perimeterParents.forEach(pp -> {
+                ffp.addSiblingBefore(pp);
+            });
         }
+        STENO.debug("... done");
     }
 
     protected void moveSupportSections(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
@@ -145,22 +145,13 @@ public class NodeManagementUtilities
             if (node instanceof SupportSectionNode)
             {
                 GCodeEventNode sp = node.getParent().get();
-                if (!supportParents.contains(sp)) 
+                if (!supportParents.contains(sp) && sectionContainsExtrusions(sp)) 
                 {
                     // Do not count section if it does not include any extrusions,
                     // as the first section in an object inherits the type from
                     // the previous object, but may only contain some set up
                     // and travels before changing to a different section type.
-                    Iterator<GCodeEventNode> treeIterator = node.treeSpanningIterator(null);
-                    while (treeIterator.hasNext()) 
-                    {
-                        GCodeEventNode descendentNode = treeIterator.next();
-                        if (descendentNode instanceof ExtrusionNode)
-                        {
-                            supportParents.add(sp);
-                            break;
-                        }
-                    }
+                    supportParents.add(sp);
                 }
             }
         }
