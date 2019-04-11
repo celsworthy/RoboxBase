@@ -2,6 +2,7 @@ package celtech.roboxbase.licensing;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.appManager.NotificationType;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.licence.Licence;
 import celtech.roboxbase.licence.LicenceType;
@@ -32,6 +33,8 @@ public class LicenceManager
     
     private static final int FIFTEEN_DAYS = 15;
     private static final List<LicenceChangeListener> LICENSE_CHANGE_LISTENERS = new ArrayList<>();
+    
+    private static boolean proLicenceActiveNotified = false;
 
     /**
      * Class is singleton
@@ -77,10 +80,11 @@ public class LicenceManager
                                                 BaseConfiguration.LICENSE_SUB_PATH +
                                                 "/timer.lic");
         boolean isLicenseWithoutHardwareAllowed = NoHardwareLicenceTimer.getInstance().hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
-        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) 
-        {
-            BaseLookup.getSystemNotificationHandler().showConnectLicensedPrinterDialog();
-        }
+        // I think perhaps we can remove this dialog, a notification should be enough
+//        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) 
+//        {
+//            BaseLookup.getSystemNotificationHandler().showConnectLicensedPrinterDialog();
+//        }
         
         boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
         
@@ -99,6 +103,14 @@ public class LicenceManager
                     enableApplicationFeaturesBasedOnLicenseType(license.getLicenceType());
                     Optional<Licence> licenceOption = Optional.of(license);
                     LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(licenceOption));
+                    
+                    if (BaseLookup.getSystemNotificationHandler() != null && !proLicenceActiveNotified)
+                    {
+                        proLicenceActiveNotified = true;
+                        BaseLookup.getSystemNotificationHandler().showInformationNotification(
+                                BaseLookup.i18n("notification.licence.licenceTitle"),
+                                BaseLookup.i18n("notification.licence.licenceActivated"));
+                    }
                 }
             }
             // We have a valid license but it is not active
@@ -107,11 +119,28 @@ public class LicenceManager
                 enableApplicationFeaturesBasedOnLicenseType(LicenceType.AUTOMAKER_FREE);
                 Optional<Licence> licenceOption = Optional.of(license);
                 LICENSE_CHANGE_LISTENERS.forEach(listener -> listener.onLicenceChange(licenceOption));
+                if (BaseLookup.getSystemNotificationHandler() != null)
+                {
+                    BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                                BaseLookup.i18n("notification.licence.connectLicencedPrinter"),
+                                BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                                NotificationType.CAUTION);
+                }
+                proLicenceActiveNotified = false;
             }
             
             return true;
         }
         
+        if (BaseLookup.getSystemNotificationHandler() != null)
+        {
+            BaseLookup.getSystemNotificationHandler().showDismissableNotification(
+                        BaseLookup.i18n("notification.licence.licenceExpired"),
+                        BaseLookup.i18n("notification.postProcessorFailure.dismiss"),
+                        NotificationType.CAUTION);
+        }
+        
+        proLicenceActiveNotified = false;
         return false;
     }
     

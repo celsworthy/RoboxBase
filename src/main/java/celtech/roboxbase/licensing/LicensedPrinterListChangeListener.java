@@ -13,7 +13,7 @@ public class LicensedPrinterListChangeListener implements PrinterListChangesList
     
         @Override
         public void whenPrinterAdded(Printer printer) {
-            LicenceManager.getInstance().validateLicence(false);
+            LicenceManager.getInstance().validateLicence(true);
         }
 
         @Override
