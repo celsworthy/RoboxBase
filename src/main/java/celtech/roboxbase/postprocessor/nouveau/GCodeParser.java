@@ -46,6 +46,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     LayerNode thisLayer = new LayerNode();
     double feedrateInForce = -1;
     int currentLineNumber = 0;
+    double currentHeadHight = 0;
     double currentLayerHeight = 0;
     int currentObject = -1;
     String currentSection = null;
@@ -928,6 +929,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             validateZPosition(zValue.get());
                             node.getMovement().setZ(zValue.get());
+                            currentHeadHight = zValue.get();
                         }
 
                         if (dValue.isSet())
@@ -940,10 +942,13 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                             node.getExtrusion().setE(eValue.get());
                         }
 						
-						if (commentText.isSet())
+			if (commentText.isSet())
                         {
                             node.setCommentText(commentText.get());
-						}
+			}
+                        
+                        // Here we set the current layer height to the head height to make sure the layer height is based on where we are extruding.
+                        currentLayerHeight = currentHeadHight;
 
                         node.setGCodeLineNumber(++currentLineNumber);
 
@@ -1022,7 +1027,9 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             node.getMovement().setZ(zValue.get());
                             validateZPosition(zValue.get());
-                            currentLayerHeight = zValue.get();
+                            // Here we record the head hight, this isn't always at the layer height due to z-hops
+                            // The layer hight is the current head height when extruding.
+                            currentHeadHight = zValue.get();
                         }
 
                         node.setGCodeLineNumber(++currentLineNumber);
