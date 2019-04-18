@@ -39,7 +39,7 @@ public class PrinterSettingsOverrides
     private float fillDensityOverride = 0;
     private final BooleanProperty printSupportOverride = new SimpleBooleanProperty(false);
     private final BooleanProperty printSupportGapEnabledOverride = new SimpleBooleanProperty(false);
-    private final ObjectProperty<SupportType> printSupportTypeOverride = new SimpleObjectProperty<>(SupportType.MATERIAL_2);
+    private final ObjectProperty<SupportType> printSupportTypeOverride = new SimpleObjectProperty<>(SupportType.AS_PROFILE);
     private boolean raftOverride = false;
     private boolean spiralPrintOverride = false;
     
@@ -55,7 +55,7 @@ public class PrinterSettingsOverrides
             brimOverride = initialRoboxProfile.get().getSpecificIntSetting("brimWidth_mm");
             fillDensityOverride = initialRoboxProfile.get().getSpecificFloatSetting("fillDensity_normalised");
         }
-        printSupportTypeOverride.set(SupportType.MATERIAL_2);
+        printSupportTypeOverride.set(SupportType.AS_PROFILE);
     }
 
     // A clone without copying the dataChanged property.
