@@ -43,6 +43,7 @@ public class PrinterColourMap
         colourMap.put(Color.web("#FF0000"), Color.web("#FF0000"));
         colourMap.put(Color.web("#FF4600"), Color.web("#FF7F00"));
         colourMap.put(Color.web("#FFC800"), Color.web("#FFFF00"));
+        colourMap.put(Color.web("#FFFFFF"), Color.web("#A3A3A3"));
         
         printerColours = new ArrayList<>(colourMap.keySet());
         displayColours = new ArrayList<>(colourMap.values());
