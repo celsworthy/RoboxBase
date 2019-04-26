@@ -124,10 +124,10 @@ public class PrinterSettingsOverrides
         return customSettingsName;
     }
 
-    public Optional<RoboxProfile> getBaseProfile(String headType, SlicerType slicerType)
+    public Optional<RoboxProfile> getBaseProfile(String headType, SlicerType slicerType, PrintQualityEnumeration printQuality)
     {
         Optional<RoboxProfile> profileOption = Optional.empty();
-        switch (printQuality.get()) {
+        switch (printQuality) {
             case DRAFT:
                 profileOption = ROBOX_PROFILE_SETTINGS_CONTAINER
                         .getRoboxProfileWithName(BaseConfiguration.draftSettingsProfileName, slicerType, headType);
@@ -152,7 +152,13 @@ public class PrinterSettingsOverrides
 
     public RoboxProfile getSettings(String headType, SlicerType slicerType)
     {
-        Optional<RoboxProfile> settings = getBaseProfile(headType, slicerType);
+        Optional<RoboxProfile> settings = getBaseProfile(headType, slicerType, printQuality.get());
+        return applyOverrides(settings);
+    }
+    
+    public RoboxProfile getSettings(String headType, SlicerType slicerType, PrintQualityEnumeration printQuality)
+    {
+        Optional<RoboxProfile> settings = getBaseProfile(headType, slicerType, printQuality);
         return applyOverrides(settings);
     }
 
