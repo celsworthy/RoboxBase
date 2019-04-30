@@ -4012,9 +4012,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
                                                     && doNotCheckForPresenceOfHead)
                                                 || ((foundError == FirmwareError.D_FILAMENT_SLIP
-                                                        || foundError == FirmwareError.E_FILAMENT_SLIP
-                                                        || foundError == FirmwareError.NOZZLE_FLUSH_NEEDED)
+                                                        || foundError == FirmwareError.E_FILAMENT_SLIP)
                                                     && printerStatus.get() == PrinterStatus.IDLE
+                                                    && !inCommissioningMode)
+                                                || (foundError == FirmwareError.NOZZLE_FLUSH_NEEDED
+                                                    && (printerStatus.get() == PrinterStatus.IDLE
+                                                        || printerStatus.get() == PrinterStatus.PURGING_HEAD)
                                                     && !inCommissioningMode))
                                         {
                                             steno.debug("Error:" + foundError.
