@@ -872,9 +872,39 @@ public class CloseLogic
                     inScopeEventCounter >= 0 && inScopeEventCounter < extractedMovements.getInScopeEvents().size(); 
                     inScopeEventCounter += directionIterator) 
             {
-                if (extractedMovements.getInScopeEvents().get(inScopeEventCounter) instanceof ExtrusionNode) 
+                ExtrusionNode convertedTravelNode = null;
+                
+                if (extractedMovements.getInScopeEvents().get(inScopeEventCounter) instanceof TravelNode)
                 {
-                    ExtrusionNode extrusionNodeBeingExamined = (ExtrusionNode) extractedMovements.getInScopeEvents().get(inScopeEventCounter);
+                    if (goingBackwards)
+                    {
+                        // If we are working backwards and we find a travel, we need to make sure the travel goes to the next node.
+                        // The current travel needs to be turned to an extrusion.
+                        TravelNode travelNode = ((TravelNode) extractedMovements.getInScopeEvents().get(inScopeEventCounter));
+                        convertedTravelNode = new ExtrusionNode();
+                        convertedTravelNode.getMovement().setX(travelNode.getMovement().getX());
+                        convertedTravelNode.getMovement().setY(travelNode.getMovement().getY());
+                        convertedTravelNode.getFeedrate().setFeedRate_mmPerMin(travelNode.getFeedrate().getFeedRate_mmPerMin());
+                        convertedTravelNode.getExtrusion().setE(0);
+                    } else
+                    {
+                        TravelNode copy = ((TravelNode) extractedMovements.getInScopeEvents().get(inScopeEventCounter)).clone();
+                        nodeToAddToPlaceholder.addSiblingAfter(copy);
+                        nodeToAddToPlaceholder = copy;
+                    }
+                }
+                if (extractedMovements.getInScopeEvents().get(inScopeEventCounter) instanceof ExtrusionNode
+                        || convertedTravelNode != null) 
+                {
+                    ExtrusionNode extrusionNodeBeingExamined;
+                
+                    if (convertedTravelNode != null)
+                    {
+                        extrusionNodeBeingExamined = convertedTravelNode;
+                    } else
+                    {
+                        extrusionNodeBeingExamined = (ExtrusionNode) extractedMovements.getInScopeEvents().get(inScopeEventCounter);
+                    }
 
                     ExtrusionNode copy = extrusionNodeBeingExamined.clone();
                     nodeToAddToPlaceholder.addSiblingAfter(copy);
@@ -1034,11 +1064,6 @@ public class CloseLogic
                             break OUTER;
                         }
                     }
-                } else if (extractedMovements.getInScopeEvents().get(inScopeEventCounter) instanceof TravelNode)
-                {
-                    TravelNode copy = ((TravelNode) extractedMovements.getInScopeEvents().get(inScopeEventCounter)).clone();
-                    nodeToAddToPlaceholder.addSiblingAfter(copy);
-                    nodeToAddToPlaceholder = copy;
                 }
             }
 

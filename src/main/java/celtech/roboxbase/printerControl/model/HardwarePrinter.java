@@ -272,6 +272,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * Keep an observable list... 
      */
     private final ObservableList<FirmwareError> activeErrors = FXCollections.observableArrayList();
+    /*
+     * The Root interface needs to know about all the current errors (except maybe the suppressed ones).
+     * The active error list only contains errors for which "isRequireUserToClear()" returns true,
+     * although it isn't obvious why some are set this way and others are not. To avoid disturbing
+     * code that was not well understood, a second list "currentErrors" was created which contains
+     * all the uncleared errors, except for the suppressed ones. This is the list used by the Root
+     * interface.
+     */
+    private final ObservableList<FirmwareError> currentErrors = FXCollections.observableArrayList();
 
     private StatusResponse latestStatusResponse = null;
     private AckResponse latestErrorResponse = null;
@@ -1452,8 +1461,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         gcodePacket.setMessagePayload(gcodeToSendWithLF);
 
-        GCodeDataResponse response = (GCodeDataResponse) commandInterface.
-                writeToPrinter(gcodePacket);
+        RoboxRxPacket rawResponse = commandInterface.writeToPrinter(gcodePacket);
+        GCodeDataResponse response = (rawResponse instanceof GCodeDataResponse ? (GCodeDataResponse)rawResponse : null);
 
         if (addToTranscript)
         {
@@ -3940,8 +3949,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                     if (ackResponse.isError())
                     {
-                        List<FirmwareError> errorsFound = new ArrayList<>(ackResponse.
-                                getFirmwareErrors());
+                        List<FirmwareError> errorsFound = new ArrayList<>(ackResponse.getFirmwareErrors());
 
                         // Copy the error consumer list to stop concurrent modification exceptions if the consumer deregisters itself
                         Map<ErrorConsumer, List<FirmwareError>> errorsToIterateThrough = new WeakHashMap<>(
@@ -3963,20 +3971,20 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         if (processErrors)
                         {
                             List<FirmwareError> newErrors = new ArrayList();
-                    
+                            
                             StringBuilder errorOutput = new StringBuilder();
                             ackResponse.getFirmwareErrors().forEach(error ->
                             {
                                 errorOutput.append(BaseLookup.i18n(error.getErrorTitleKey()));
                                 errorOutput.append('\n');
                             });
-                            steno.debug(errorOutput.toString());
+                            steno.info(errorOutput.toString());
 
                             errorsFound.stream()
                                     .forEach(foundError ->
                                     {
                                         errorWasConsumed = false;
-
+                                        currentErrors.add(foundError);
                                         if (foundError == FirmwareError.Z_TOP_SWITCH)
                                         {
                                             if (head.get() != null)
@@ -4002,16 +4010,23 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                                         if (suppressedFirmwareErrors.contains(foundError)
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
-                                                && doNotCheckForPresenceOfHead)
+                                                    && doNotCheckForPresenceOfHead)
                                                 || ((foundError == FirmwareError.D_FILAMENT_SLIP
-                                                || foundError == FirmwareError.E_FILAMENT_SLIP)
-                                                && printerStatus.get() == PrinterStatus.IDLE
-                                                && !inCommissioningMode))
+                                                        || foundError == FirmwareError.E_FILAMENT_SLIP)
+                                                    && printerStatus.get() == PrinterStatus.IDLE
+                                                    && !inCommissioningMode)
+                                                || (foundError == FirmwareError.NOZZLE_FLUSH_NEEDED
+                                                    && (printerStatus.get() == PrinterStatus.IDLE
+                                                        || printerStatus.get() == PrinterStatus.PURGING_HEAD)
+                                                    && !inCommissioningMode))
                                         {
                                             steno.debug("Error:" + foundError.
                                                     name() + " suppressed");
                                         } else
                                         {
+                                            if (!currentErrors.contains(foundError))
+                                                currentErrors.add(foundError);
+
                                             errorsToIterateThrough.forEach((consumer, errorList) ->
                                             {
                                                 if (errorList.contains(foundError)
@@ -4033,22 +4048,33 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             }
                                         }
                                     });
-                            List<FirmwareError> inactiveErrors = new ArrayList();
                             if (!commandInterface.isLocalPrinter())
                             {
+                                List<FirmwareError> lostErrors = new ArrayList();
                                 activeErrors.stream()
                                     .forEach(activeError ->
                                         {
                                             if(!newErrors.contains(activeError))
                                             {
-                                                inactiveErrors.add(activeError);
+                                                lostErrors.add(activeError);
                                             }
                                         });
-                                inactiveErrors.stream()
-                                    .forEach(inactiveError ->
+                                // Ideally, currentErrors should be a superset of activeErrors,
+                                // but in practise activeErrors can contain some suppressed errors.
+                                currentErrors.stream()
+                                    .forEach(currentError ->
                                         {
-                                            steno.info("Error no longer active:" + inactiveError.name());
-                                            activeErrors.remove(inactiveError);
+                                            if(!errorsFound.contains(currentError) && !lostErrors.contains(currentError))
+                                            {
+                                                lostErrors.add(currentError);
+                                            }
+                                        });
+                                lostErrors.stream()
+                                    .forEach(lostError ->
+                                        {
+                                            steno.info("Error no longer current:" + lostError.name());
+                                            activeErrors.remove(lostError);
+                                            currentErrors.remove(lostError);
                                         });
                             }
                             steno.trace(ackResponse.toString());
@@ -4064,7 +4090,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     }
                     else
                     {
-                        if (processErrors && !commandInterface.isLocalPrinter() && !activeErrors.isEmpty())
+                        if (processErrors &&
+                            !commandInterface.isLocalPrinter() &&
+                            (!activeErrors.isEmpty() || !currentErrors.isEmpty()))
                         {
                             activeErrors.stream()
                                 .forEach(activeError ->
@@ -4072,6 +4100,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     steno.info("Error no longer active:" + activeError.name());
                                 });
                             activeErrors.clear();
+                            currentErrors.clear();
                         }
                     }
                     break;
@@ -4812,10 +4841,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void clearError(FirmwareError error)
     {
-        if (activeErrors.contains(error))
+        if (activeErrors.contains(error) || currentErrors.contains(error))
         {
             commandInterface.clearError(error);
             activeErrors.remove(error);
+            currentErrors.remove(error);
         }
     }
 
@@ -4824,12 +4854,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         commandInterface.clearAllErrors();
         activeErrors.clear();
+        currentErrors.clear();
     }
 
     @Override
     public ObservableList<FirmwareError> getActiveErrors()
     {
         return activeErrors;
+    }
+
+    @Override
+    public ObservableList<FirmwareError> getCurrentErrors()
+    {
+        return currentErrors;
     }
 
     @Override

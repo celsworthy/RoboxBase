@@ -46,7 +46,10 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     LayerNode thisLayer = new LayerNode();
     double feedrateInForce = -1;
     int currentLineNumber = 0;
+    double currentHeadHight = 0;
     double currentLayerHeight = 0;
+    double currentXPosition = 0;
+    double currentYPosition = 0;
     int currentObject = -1;
     String currentSection = null;
     double printVolumeWidth = 0;
@@ -785,7 +788,7 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
     }
 
     //Travel
-    // G0 F12000 X88.302 Y42.421 Z1.020
+    // G0 F12000 X88.302 Y42.421
     Rule TravelDirective()
     {
         Var<Double> fValue = new Var<>();
@@ -831,12 +834,20 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             validateXPosition(xValue.get());
                             node.getMovement().setX(xValue.get());
+                            currentXPosition = xValue.get();
+                        } else
+                        {
+                            node.getMovement().setX(currentXPosition);
                         }
 
                         if (yValue.isSet())
                         {
                             validateYPosition(yValue.get());
                             node.getMovement().setY(yValue.get());
+                            currentYPosition = yValue.get();
+                        } else
+                        {
+                            node.getMovement().setY(currentYPosition);
                         }
 
                         node.setGCodeLineNumber(++currentLineNumber);
@@ -916,18 +927,27 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             validateXPosition(xValue.get());
                             node.getMovement().setX(xValue.get());
+                            currentXPosition = xValue.get();
+                        } else
+                        {
+                            node.getMovement().setX(currentXPosition);
                         }
 
                         if (yValue.isSet())
                         {
                             validateYPosition(yValue.get());
                             node.getMovement().setY(yValue.get());
+                            currentYPosition = yValue.get();
+                        } else
+                        {
+                            node.getMovement().setY(currentYPosition);
                         }
 
                         if (zValue.isSet())
                         {
                             validateZPosition(zValue.get());
                             node.getMovement().setZ(zValue.get());
+                            currentHeadHight = zValue.get();
                         }
 
                         if (dValue.isSet())
@@ -940,10 +960,13 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                             node.getExtrusion().setE(eValue.get());
                         }
 						
-						if (commentText.isSet())
+			if (commentText.isSet())
                         {
                             node.setCommentText(commentText.get());
-						}
+			}
+                        
+                        // Here we set the current layer height to the head height to make sure the layer height is based on where we are extruding.
+                        currentLayerHeight = currentHeadHight;
 
                         node.setGCodeLineNumber(++currentLineNumber);
 
@@ -1010,19 +1033,29 @@ public abstract class GCodeParser extends BaseParser<GCodeEventNode> {
                         {
                             node.getMovement().setX(xValue.get());
                             validateXPosition(xValue.get());
+                            currentXPosition = xValue.get();
+                        } else
+                        {
+                            node.getMovement().setX(currentXPosition);
                         }
 
                         if (yValue.isSet())
                         {
                             node.getMovement().setY(yValue.get());
                             validateYPosition(yValue.get());
+                            currentYPosition = yValue.get();
+                        } else
+                        {
+                            node.getMovement().setY(currentYPosition);
                         }
 
                         if (zValue.isSet())
                         {
                             node.getMovement().setZ(zValue.get());
                             validateZPosition(zValue.get());
-                            currentLayerHeight = zValue.get();
+                            // Here we record the head hight, this isn't always at the layer height due to z-hops
+                            // The layer hight is the current head height when extruding.
+                            currentHeadHight = zValue.get();
                         }
 
                         node.setGCodeLineNumber(++currentLineNumber);

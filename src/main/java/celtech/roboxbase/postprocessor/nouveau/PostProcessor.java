@@ -259,8 +259,6 @@ public class PostProcessor
 
                 List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
                 LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
-
-                String initialToolChange = "";
                 
                 for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
@@ -276,6 +274,12 @@ public class PostProcessor
                     }
                     
                     lineRead = lineRead.trim();
+                    
+                    if (lineRead.matches("T[0-1]") && layerCounter < 0)
+                    {
+                        int initialToolChange = Integer.parseInt(lineRead.substring(1));
+                        lastPostProcessResult.setLastObjectNumber(initialToolChange);
+                    }    
                     
                     if (lineRead.matches(";LAYER:[-]*[0-9]+"))
                     {

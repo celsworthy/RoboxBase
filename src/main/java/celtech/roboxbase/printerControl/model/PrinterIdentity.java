@@ -235,7 +235,7 @@ public class PrinterIdentity
         {
             // To maintain compatibility with older printers,
             // the electronics version property is not included
-            // in the checksum if it is missing, or equal to "1".
+            // in the checksum.
             String stringToChecksum = printermodelProperty().get()
                         + printereditionProperty().get()
                         + printerweekOfManufactureProperty().get()

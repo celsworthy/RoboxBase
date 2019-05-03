@@ -4,6 +4,7 @@ import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
+import celtech.roboxbase.utils.FileUtilities;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -220,13 +222,16 @@ public class RoboxProfileSettingsContainer {
         }
     }
     
-    private static Map<String, String> loadHeadSettingsIntoMap(String headType, SlicerType slicerType) {
+    private static Map<String, String> loadHeadSettingsIntoMap(String headType, SlicerType slicerType) 
+    {
         File headDirectory = new File(BaseConfiguration.getApplicationPrintProfileDirectoryForSlicer(slicerType) + headType);
+
         File[] headFilesFiltered = headDirectory.listFiles((File dir, String name) -> {
             return name.split("\\.")[0].equals(headType);
         });
-            
-        if(headFilesFiltered.length == 0) {
+           
+        if(headFilesFiltered.length == 0) 
+        {
             STENO.warning("No head profile exists in folder: " + headDirectory.getPath());
             STENO.warning("Creating empty map for settings");
             return new HashMap<>();
@@ -258,18 +263,14 @@ public class RoboxProfileSettingsContainer {
     }
     
     private RoboxProfile saveUserProfile(String profileName, SlicerType slicerType, 
-            Map<String, List<PrintProfileSetting>> settingsToWrite, String headType) {
-        String headDirPath = BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType) + "/" + headType;
-        
-        // If the head directory does not exist we must first create it
-        File userPrintProfileHeadDir = new File(headDirPath);
-        if(!userPrintProfileHeadDir.exists()) {
-            userPrintProfileHeadDir.mkdir();
-        }
+            Map<String, List<PrintProfileSetting>> settingsToWrite, String headType) 
+    {
+        String headDirPath = FileUtilities.findOrCreateFileInDir(Paths.get(BaseConfiguration.getUserPrintProfileDirectoryForSlicer(slicerType)), headType);
         
         String profileFilePath = headDirPath + "/" + profileName + BaseConfiguration.printProfileFileExtension;
         File file = new File(profileFilePath);
-        if(file.exists()) {
+        if(file.exists()) 
+        {
             file.delete();
         }
 
