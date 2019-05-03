@@ -8,6 +8,7 @@ public class SuitablePrintJob
 {
     private String printJobID;
     private String printJobName;
+    private String printJobPath;
     private String printProfileName;
     private double durationInSeconds;
     private double eVolume;
@@ -44,6 +45,16 @@ public class SuitablePrintJob
         this.printJobName = printJobName;
     }
 
+    public String getPrintJobPath() 
+    {
+        return printJobPath;
+    }
+
+    public void setPrintJobPath(String printJobPath) 
+    {
+        this.printJobPath = printJobPath;
+    }
+    
     public String getPrintProfileName()
     {
         return printProfileName;

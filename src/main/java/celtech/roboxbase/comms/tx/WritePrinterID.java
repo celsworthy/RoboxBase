@@ -14,8 +14,8 @@ public class WritePrinterID extends RoboxTxPacket
 {
 
     public static final int BYTES_FOR_NAME = PrinterIDDataStructure.printerFriendlyNameBytes;
-    public static final int BYTES_FOR_FIRST_PAD = 41;
-    public static final int BYTES_FOR_SECOND_PAD = 186 - BYTES_FOR_NAME;
+    public static final int BYTES_FOR_FIRST_PAD = PrinterIDDataStructure.firstPadBytes;
+    public static final int BYTES_FOR_SECOND_PAD = PrinterIDDataStructure.secondPadBytes;
 
     private final char[] firstPad = new char[BYTES_FOR_FIRST_PAD];
     private final char[] secondPad = new char[BYTES_FOR_SECOND_PAD];
@@ -47,6 +47,7 @@ public class WritePrinterID extends RoboxTxPacket
     private String poNumber;
     private String serialNumber;
     private String checkByte;
+    private String electronicsVersion;
     private String printerFriendlyName;
     private String colourWebString = "";
 
@@ -59,12 +60,13 @@ public class WritePrinterID extends RoboxTxPacket
      * @param poNumber
      * @param serialNumber
      * @param checkByte
+     * @param electronicsVersion
      * @param printerFriendlyName
      * @param printerColourWebString
      */
     public void setIDAndColour(String model, String edition,
             String weekOfManufacture, String yearOfManufacture, String poNumber,
-            String serialNumber, String checkByte, String printerFriendlyName,
+            String serialNumber, String checkByte, String electronicsVersion, String printerFriendlyName,
             String printerColourWebString)
     {
         this.model = model;
@@ -74,6 +76,7 @@ public class WritePrinterID extends RoboxTxPacket
         this.poNumber = poNumber;
         this.serialNumber = serialNumber;
         this.checkByte = checkByte;
+        this.electronicsVersion = electronicsVersion;
         this.printerFriendlyName = printerFriendlyName;
         this.colourWebString = printerColourWebString;
 
@@ -98,6 +101,7 @@ public class WritePrinterID extends RoboxTxPacket
         payload.append(String.format("%1$-7s", poNumber));
         payload.append(String.format("%1$-4s", serialNumber));
         payload.append(String.format("%1$1s", checkByte));
+        payload.append(String.format("%1$1s", electronicsVersion));
         payload.append(firstPad);
         payload.append(String.format("%1$" + BYTES_FOR_NAME + "s",
                 printerFriendlyName));
@@ -118,6 +122,7 @@ public class WritePrinterID extends RoboxTxPacket
             String printerpoNumberIn,
             String printerserialNumberIn,
             String printercheckByteIn,
+            String printerElectronicsVersionIn,
             String printerFriendlyNameIn,
             String printerColourWebString,
             String firmwareVersionIn)
@@ -129,6 +134,7 @@ public class WritePrinterID extends RoboxTxPacket
                 printerpoNumberIn,
                 printerserialNumberIn,
                 printercheckByteIn,
+                printerElectronicsVersionIn,
                 printerFriendlyNameIn,
                 printerColourWebString);
     }
@@ -143,6 +149,7 @@ public class WritePrinterID extends RoboxTxPacket
                 identity.printerpoNumberProperty().get(),
                 identity.printerserialNumberProperty().get(),
                 identity.printercheckByteProperty().get(),
+                identity.printerelectronicsVersionProperty().get(),
                 identity.printerFriendlyNameProperty().get(),
                 ColourStringConverter.colourToString(identity.printerColourProperty().get()));
     }
@@ -182,6 +189,11 @@ public class WritePrinterID extends RoboxTxPacket
         return checkByte;
     }
 
+    public String getElectronicsVersion()
+    {
+        return electronicsVersion;
+    }
+
     public String getPrinterFriendlyName()
     {
         return printerFriendlyName;
@@ -195,6 +207,11 @@ public class WritePrinterID extends RoboxTxPacket
     public void setCheckByte(String checkByte)
     {
         this.checkByte = checkByte;
+    }
+
+    public void setElectronicsVersion(String electronicsVersion)
+    {
+        this.electronicsVersion = electronicsVersion;
     }
 
     public void setEdition(String edition)

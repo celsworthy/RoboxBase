@@ -15,20 +15,23 @@ import celtech.roboxbase.configuration.Macro;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterEdition;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
-import celtech.roboxbase.utils.models.PrintableMeshes;
+import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
+import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
 import celtech.roboxbase.utils.RectangularBounds;
+import celtech.roboxbase.utils.models.PrintableProject;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
 import java.util.List;
+import java.util.Optional;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -58,7 +61,11 @@ public interface Printer extends RoboxResponseConsumer
     public ReadOnlyObjectProperty<PrinterEdition> printerEditionProperty();
 
     public void setPrinterEdition(PrinterEdition printerEdition);
+    
+    public ReadOnlyObjectProperty<PrinterConnection> printerConnectionProperty();
 
+    public void setPrinterConnection(PrinterConnection printerConnection);
+    
     //Returns Width, Depth and Height centre point
     public Point3D getPrintVolumeCentre();
 
@@ -81,7 +88,7 @@ public interface Printer extends RoboxResponseConsumer
      * Print
      */
     public ReadOnlyBooleanProperty canPrintProperty();
-
+    
     /*
      * Can open or close a nozzle
      */
@@ -246,7 +253,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void pause() throws PrinterException;
 
-    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException;
+    public void printProject(PrintableProject printableProject, Optional<GCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired) throws PrinterException;
 
     public ReadOnlyObjectProperty<PrinterStatus> printerStatusProperty();
 
@@ -423,6 +430,8 @@ public interface Printer extends RoboxResponseConsumer
 
     public ObservableList<FirmwareError> getActiveErrors();
 
+    public ObservableList<FirmwareError> getCurrentErrors();
+
     /*
      * Higher level controls
      */
@@ -580,10 +589,16 @@ public interface Printer extends RoboxResponseConsumer
     public CommandInterface getCommandInterface();
 
     public List<SuitablePrintJob> listJobsReprintableByMe();
+
+    public List<PrintJobStatistics> listReprintableJobs();
+    
+    public List<SuitablePrintJob> createSuitablePrintJobsFromStatistics(List<PrintJobStatistics> printJobStats);
     
     public void tidyPrintJobDirectories();
 
     public boolean reprintJob(String printJobID);
+    
+    public boolean printJobFromDirectory(String printJobName, String directoryPath);
 
     // Methods provided to allow a simple, more thread-safe way of accessing the printer info
     public AckResponse getLastErrorResponse();

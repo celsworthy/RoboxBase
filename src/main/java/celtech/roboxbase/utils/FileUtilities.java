@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import org.apache.commons.io.FileUtils;
 
@@ -105,6 +106,25 @@ public class FileUtilities
                 }
             }
         }
+    }
+    
+    /**
+     * Return the sub folder specified as a string after a check to see if the file exists.
+     * Create the file if not.
+     * 
+     * @param parentDir the parent directory path
+     * @param fileName the file name
+     * @return the path to the sub directory as a String
+     */
+    public static String findOrCreateFileInDir(Path parentDir, String fileName)
+    {
+        String subDirPath = parentDir + File.separator + fileName;
+        File subDir = new File(subDirPath);
+        if(!subDir.exists())
+        {
+            subDir.mkdir();
+        }
+        return subDirPath;
     }
 
 }

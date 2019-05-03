@@ -49,6 +49,7 @@ public enum ExtrusionTask
         switch (slicerType)
         {
             case Cura:
+            case Cura4:
                 label = curaLabelInGCode;
                 break;
             case Slic3r:

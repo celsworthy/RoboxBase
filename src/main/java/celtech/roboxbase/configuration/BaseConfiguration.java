@@ -2,6 +2,7 @@ package celtech.roboxbase.configuration;
 
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
+import celtech.roboxbase.configuration.utils.RoboxProfileUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,12 +14,13 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
 import libertysystems.stenographer.LogLevel;
@@ -49,6 +51,7 @@ public class BaseConfiguration
      * CONSTANTS
      */
     public static final float filamentDiameterToYieldVolumetricExtrusion = 1.1283791670955125738961589031215f;
+    public static final float filamentDiameter = 1.75f;
     public static final int maxPermittedTempDifferenceForPurge = 15;
 
     private static String applicationName = null;
@@ -56,6 +59,7 @@ public class BaseConfiguration
 
     private static Configuration configuration = null;
     private static String applicationInstallDirectory = null;
+    private static String celInstallDirectory = null;
 
     private static String commonApplicationDirectory = null;
 
@@ -117,6 +121,8 @@ public class BaseConfiguration
 
     public static final String gcodePostProcessedFileHandle = "_robox";
     public static final String printProfileFileExtension = ".roboxprofile";
+    public static final String curaFilePath = "Cura/";
+    public static final String cura4FilePath = "Cura4/";
 
     public static final String customSettingsProfileName = "Custom";
 
@@ -129,11 +135,16 @@ public class BaseConfiguration
     public static final String macroFileExtension = ".gcode";
     public static final String macroFileSubpath = "Macros/";
 
+    public static final String LICENSE_SUB_PATH = "License/";
+    
     private static String printProfileFileDirectory = null;
     private static String userPrintProfileFileDirectory = null;
     public static final String printProfileDirectoryPath = "PrintProfiles";
     public static final int maxPrintSpoolFiles = 20;
 
+    private static String printProfileSettingsFileLocation = null;
+    private static final String printProfileSettingsFileName = "print_profile_settings.json";
+    
     private static String applicationLanguageRaw = null;
 
     private static CoreMemory coreMemory = null;
@@ -340,11 +351,23 @@ public class BaseConfiguration
         return applicationInstallDirectory;
     }
 
+    public static String getCELInstallDirectory()
+    {
+        if (celInstallDirectory == null)
+        {
+            File p = new File(applicationInstallDirectory);
+            celInstallDirectory = p.getParent() + File.separator;
+        }
+
+        return celInstallDirectory;
+    }
+
     public static String getCommonApplicationDirectory()
     {
         if (commonApplicationDirectory == null)
         {
-            commonApplicationDirectory = applicationInstallDirectory + "../Common/";
+            File p = new File(applicationInstallDirectory);
+            commonApplicationDirectory = getCELInstallDirectory() + "Common" + File.separator;
         }
 
         return commonApplicationDirectory;
@@ -571,31 +594,14 @@ public class BaseConfiguration
 
         if (configuration != null && userStorageDirectory == null)
         {
-            if (getMachineType() == MachineType.WINDOWS)
-            {
-                String registryValue = WindowsRegistry.currentUser("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Personal");
-
-                if (registryValue != null)
-                {
-                    Path regPath = Paths.get(registryValue);
-                    if (Files.exists(regPath, LinkOption.NOFOLLOW_LINKS))
-                    {
-                        userStorageDirectory = registryValue + "\\"
-                                + getApplicationName() + File.separator;
-                    }
-                }
-            }
-
-            // Other OSes +
-            // Just in case we're on a windows machine and the lookup failed...
             if (userStorageDirectory == null)
             {
                 try
                 {
                     userStorageDirectory = configuration.getFilenameString(
                             applicationConfigComponent, userStorageDirectoryComponent, null)
-                            + getApplicationName() + File.separator;
-                    steno.debug("User storage directory = " + userStorageDirectory);
+                            + getApplicationName() + "/";
+                    steno.info("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {
                     steno.error(
@@ -647,6 +653,70 @@ public class BaseConfiguration
         }
 
         return userPrintProfileFileDirectory;
+    }
+    
+    public static String getApplicationPrintProfileDirectoryForSlicer(SlicerType slicerType)
+    {
+        if(slicerType == SlicerType.Cura) 
+        {
+            return getApplicationPrintProfileDirectory() + curaFilePath;
+        } else if(slicerType == SlicerType.Cura4) 
+        {
+            return getApplicationPrintProfileDirectory() + cura4FilePath;
+        }
+        
+        return getApplicationPrintProfileDirectory();
+    }
+    
+    public static String getUserPrintProfileDirectoryForSlicer(SlicerType slicerType) 
+    {
+        String userSlicerPrintProfileDirectory = getUserPrintProfileDirectory();
+        
+        if (slicerType == SlicerType.Cura)
+        {
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
+        } else if (slicerType == SlicerType.Cura4) 
+        {
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura4FilePath;
+        }
+         
+        File dirHandle = new File(userSlicerPrintProfileDirectory);
+        if (!dirHandle.exists()) 
+        {
+            dirHandle.mkdirs();
+        }
+        
+        if (slicerType == SlicerType.Cura)
+        {
+            // Find any old .roboxprofiles hanging around and convert them to the new format
+            // They are added to the correct head folder and the old file is archived
+            try 
+            {
+                Path userProfileDir = Paths.get(getUserPrintProfileDirectory());
+                
+                List<Path> oldRoboxFiles = Files.list(userProfileDir)
+                        .filter(file -> file.getFileName().toString().endsWith(printProfileFileExtension))
+                        .collect(Collectors.toList());
+                
+                if (!oldRoboxFiles.isEmpty()) 
+                {
+                    for (Path file : oldRoboxFiles)
+                    {
+                        RoboxProfileUtils.convertOldProfileIntoNewFormat(file, dirHandle.toPath());
+                    }
+                }
+            } catch (IOException ex) 
+            {
+                steno.exception("Failed to convert old robox profiles to the new format.", ex);
+            }
+        }
+        
+        return userSlicerPrintProfileDirectory;
+    }
+    
+    public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)
+    {
+        return printProfileSettingsFileLocation = getApplicationPrintProfileDirectoryForSlicer(slicerType) + printProfileSettingsFileName;
     }
 
     public static String getUserTempDirectory()
@@ -736,7 +806,12 @@ public class BaseConfiguration
 
     public static String getBinariesDirectory()
     {
-        return BaseConfiguration.getCommonApplicationDirectory() + "bin/";
+        return BaseConfiguration.getCommonApplicationDirectory() + "bin" + File.separator;
+    }
+
+    public static String getGCodeViewerDirectory()
+    {
+        return BaseConfiguration.getCommonApplicationDirectory() + "GCodeViewer" + File.separator;
     }
 
     public static void enableApplicationFeature(ApplicationFeature feature)
@@ -847,5 +922,4 @@ public class BaseConfiguration
             }
         }
     }
-
 }

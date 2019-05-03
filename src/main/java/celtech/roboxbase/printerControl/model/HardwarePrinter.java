@@ -24,7 +24,6 @@ import celtech.roboxbase.comms.rx.ListFilesResponse;
 import celtech.roboxbase.comms.rx.PrinterIDResponse;
 import celtech.roboxbase.comms.rx.ReelEEPROMDataResponse;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
-import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.ACK_WITH_ERRORS;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.FIRMWARE_RESPONSE;
 import static celtech.roboxbase.comms.rx.RxPacketTypeEnum.HEAD_EEPROM_DATA;
@@ -78,19 +77,20 @@ import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionAc
 import celtech.roboxbase.printerControl.model.statetransitions.StateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleHeightTransitions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightActions;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationNozzleOpeningTransitions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightActions;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationSingleNozzleHeightTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYTransitions;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleHeightStateTransitionManager;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.NozzleOpeningStateTransitionManager;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.SingleNozzleHeightStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.calibration.XAndYStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeActions;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeTransitions;
+import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
@@ -99,7 +99,7 @@ import celtech.roboxbase.utils.Math.MathUtils;
 import celtech.roboxbase.utils.PrinterUtils;
 import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.SystemUtils;
-import celtech.roboxbase.utils.models.PrintableMeshes;
+import celtech.roboxbase.utils.models.PrintableProject;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.SimpleCancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
@@ -206,6 +206,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final ObservableMap<Integer, Reel> reels = FXCollections.observableHashMap();
     private final ObservableMap<Integer, Filament> effectiveFilaments = FXCollections.observableHashMap();
     private final ObservableList<Extruder> extruders = FXCollections.observableArrayList();
+    
+    private final ObjectProperty<PrinterConnection> printerConnection = new SimpleObjectProperty();
 
     private ObjectProperty<EEPROMState> lastHeadEEPROMState = new SimpleObjectProperty<>(EEPROMState.NOT_PRESENT);
     private final int maxNumberOfReels = 2;
@@ -270,6 +272,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
      * Keep an observable list... 
      */
     private final ObservableList<FirmwareError> activeErrors = FXCollections.observableArrayList();
+    /*
+     * The Root interface needs to know about all the current errors (except maybe the suppressed ones).
+     * The active error list only contains errors for which "isRequireUserToClear()" returns true,
+     * although it isn't obvious why some are set this way and others are not. To avoid disturbing
+     * code that was not well understood, a second list "currentErrors" was created which contains
+     * all the uncleared errors, except for the suppressed ones. This is the list used by the Root
+     * interface.
+     */
+    private final ObservableList<FirmwareError> currentErrors = FXCollections.observableArrayList();
 
     private StatusResponse latestStatusResponse = null;
     private AckResponse latestErrorResponse = null;
@@ -398,7 +409,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canPrint.bind(head.isNotNull()
                 .and(printerStatus.isEqualTo(PrinterStatus.IDLE))
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
-
+        
         canOpenCloseNozzle.set(false);
         canCalibrateNozzleOpening.set(false);
         canCalibrateNozzleHeight.set(false);
@@ -408,8 +419,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canCancel.bind(
                 pauseStatus.isEqualTo(PauseStatus.PAUSED)
-                        .or(printEngine.postProcessorService.runningProperty())
-                        .or(printEngine.slicerService.runningProperty())
+                        //.or(printEngine.postProcessorService.runningProperty())
+                        //.or(printEngine.slicerService.runningProperty())
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -565,6 +576,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public void setPrinterEdition(PrinterEdition printerEdition)
     {
         this.printerEdition.set(printerEdition);
+    }
+    
+    @Override
+    public ReadOnlyObjectProperty<PrinterConnection> printerConnectionProperty() 
+    {
+        return printerConnection;
+    }
+    
+    @Override
+    public void setPrinterConnection(PrinterConnection printerConnection) 
+    {
+        this.printerConnection.set(printerConnection);
     }
 
     @Override
@@ -1438,8 +1461,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         gcodePacket.setMessagePayload(gcodeToSendWithLF);
 
-        GCodeDataResponse response = (GCodeDataResponse) commandInterface.
-                writeToPrinter(gcodePacket);
+        RoboxRxPacket rawResponse = commandInterface.writeToPrinter(gcodePacket);
+        GCodeDataResponse response = (rawResponse instanceof GCodeDataResponse ? (GCodeDataResponse)rawResponse : null);
 
         if (addToTranscript)
         {
@@ -2052,13 +2075,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         }
     }
 
-    /**
-     *
-     * @param printableMeshes
-     * @throws celtech.roboxbase.printerControl.model.PrinterException
-     */
     @Override
-    public void printMeshes(PrintableMeshes printableMeshes, boolean safetyFeaturesRequired) throws PrinterException
+    public void printProject(PrintableProject printableProject, Optional<GCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired) throws PrinterException
     {
         Filament filament0 = effectiveFilamentsProperty().get(0);
         Filament filament1 = effectiveFilamentsProperty().get(1);
@@ -2071,8 +2089,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         double bedTarget = 0;
         double ambientTarget = 0;
 
-        List<Boolean> usedExtruders = printableMeshes.getUsedExtruders();
-
+        List<Boolean> usedExtruders = printableProject.getUsedExtruders();
+        
         boolean needToOverrideTempsForReel0 = false;
         if (filament0 != FilamentContainer.UNKNOWN_FILAMENT)
         {
@@ -2217,12 +2235,12 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         try
         {
             transmitDirectGCode(GCodeConstants.goToTargetFirstLayerBedTemperature, false);
+            boolean gCodeGenSuccessful = printEngine.printProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
+            transmitDirectGCode(GCodeConstants.switchBedHeaterOff, false);
         } catch (RoboxCommsException ex)
         {
             steno.error("Error whilst sending preheat commands");
         }
-
-        printEngine.printProject(printableMeshes, safetyFeaturesRequired);
     }
 
     @Override
@@ -2383,6 +2401,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2416,6 +2435,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2451,6 +2471,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2485,6 +2506,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2519,6 +2541,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2553,6 +2576,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2587,6 +2611,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2621,6 +2646,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -2654,6 +2680,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 newIdentity.printerpoNumber.get(),
                 newIdentity.printerserialNumber.get(),
                 newIdentity.printercheckByte.get(),
+                newIdentity.printerelectronicsVersion.get(),
                 newIdentity.printerFriendlyName.get(),
                 ColourStringConverter.colourToString(newIdentity.printerColour.get()),
                 newIdentity.firmwareVersion.get());
@@ -3922,8 +3949,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                     if (ackResponse.isError())
                     {
-                        List<FirmwareError> errorsFound = new ArrayList<>(ackResponse.
-                                getFirmwareErrors());
+                        List<FirmwareError> errorsFound = new ArrayList<>(ackResponse.getFirmwareErrors());
 
                         // Copy the error consumer list to stop concurrent modification exceptions if the consumer deregisters itself
                         Map<ErrorConsumer, List<FirmwareError>> errorsToIterateThrough = new WeakHashMap<>(
@@ -3945,20 +3971,20 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         if (processErrors)
                         {
                             List<FirmwareError> newErrors = new ArrayList();
-                    
+                            
                             StringBuilder errorOutput = new StringBuilder();
                             ackResponse.getFirmwareErrors().forEach(error ->
                             {
                                 errorOutput.append(BaseLookup.i18n(error.getErrorTitleKey()));
                                 errorOutput.append('\n');
                             });
-                            steno.debug(errorOutput.toString());
+                            steno.info(errorOutput.toString());
 
                             errorsFound.stream()
                                     .forEach(foundError ->
                                     {
                                         errorWasConsumed = false;
-
+                                        currentErrors.add(foundError);
                                         if (foundError == FirmwareError.Z_TOP_SWITCH)
                                         {
                                             if (head.get() != null)
@@ -3984,16 +4010,23 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
                                         if (suppressedFirmwareErrors.contains(foundError)
                                                 || (foundError == FirmwareError.HEAD_POWER_EEPROM
-                                                && doNotCheckForPresenceOfHead)
+                                                    && doNotCheckForPresenceOfHead)
                                                 || ((foundError == FirmwareError.D_FILAMENT_SLIP
-                                                || foundError == FirmwareError.E_FILAMENT_SLIP)
-                                                && printerStatus.get() == PrinterStatus.IDLE
-                                                && !inCommissioningMode))
+                                                        || foundError == FirmwareError.E_FILAMENT_SLIP)
+                                                    && printerStatus.get() == PrinterStatus.IDLE
+                                                    && !inCommissioningMode)
+                                                || (foundError == FirmwareError.NOZZLE_FLUSH_NEEDED
+                                                    && (printerStatus.get() == PrinterStatus.IDLE
+                                                        || printerStatus.get() == PrinterStatus.PURGING_HEAD)
+                                                    && !inCommissioningMode))
                                         {
                                             steno.debug("Error:" + foundError.
                                                     name() + " suppressed");
                                         } else
                                         {
+                                            if (!currentErrors.contains(foundError))
+                                                currentErrors.add(foundError);
+
                                             errorsToIterateThrough.forEach((consumer, errorList) ->
                                             {
                                                 if (errorList.contains(foundError)
@@ -4015,22 +4048,33 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                             }
                                         }
                                     });
-                            List<FirmwareError> inactiveErrors = new ArrayList();
                             if (!commandInterface.isLocalPrinter())
                             {
+                                List<FirmwareError> lostErrors = new ArrayList();
                                 activeErrors.stream()
                                     .forEach(activeError ->
                                         {
                                             if(!newErrors.contains(activeError))
                                             {
-                                                inactiveErrors.add(activeError);
+                                                lostErrors.add(activeError);
                                             }
                                         });
-                                inactiveErrors.stream()
-                                    .forEach(inactiveError ->
+                                // Ideally, currentErrors should be a superset of activeErrors,
+                                // but in practise activeErrors can contain some suppressed errors.
+                                currentErrors.stream()
+                                    .forEach(currentError ->
                                         {
-                                            steno.info("Error no longer active:" + inactiveError.name());
-                                            activeErrors.remove(inactiveError);
+                                            if(!errorsFound.contains(currentError) && !lostErrors.contains(currentError))
+                                            {
+                                                lostErrors.add(currentError);
+                                            }
+                                        });
+                                lostErrors.stream()
+                                    .forEach(lostError ->
+                                        {
+                                            steno.info("Error no longer current:" + lostError.name());
+                                            activeErrors.remove(lostError);
+                                            currentErrors.remove(lostError);
                                         });
                             }
                             steno.trace(ackResponse.toString());
@@ -4046,7 +4090,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     }
                     else
                     {
-                        if (processErrors && !commandInterface.isLocalPrinter() && !activeErrors.isEmpty())
+                        if (processErrors &&
+                            !commandInterface.isLocalPrinter() &&
+                            (!activeErrors.isEmpty() || !currentErrors.isEmpty()))
                         {
                             activeErrors.stream()
                                 .forEach(activeError ->
@@ -4054,6 +4100,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     steno.info("Error no longer active:" + activeError.name());
                                 });
                             activeErrors.clear();
+                            currentErrors.clear();
                         }
                     }
                     break;
@@ -4249,6 +4296,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     printerIdentity.printerpoNumber.set(idResponse.getPoNumber());
                     printerIdentity.printerserialNumber.set(idResponse.getSerialNumber());
                     printerIdentity.printercheckByte.set(idResponse.getCheckByte());
+                    printerIdentity.printerelectronicsVersion.set(idResponse.getElectronicsVersion());
                     printerIdentity.printerFriendlyName.set(idResponse.getPrinterFriendlyName());
                     printerIdentity.printerColour.set(Color.web(idResponse.getPrinterColour()));
                     break;
@@ -4793,10 +4841,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void clearError(FirmwareError error)
     {
-        if (activeErrors.contains(error))
+        if (activeErrors.contains(error) || currentErrors.contains(error))
         {
             commandInterface.clearError(error);
             activeErrors.remove(error);
+            currentErrors.remove(error);
         }
     }
 
@@ -4805,6 +4854,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     {
         commandInterface.clearAllErrors();
         activeErrors.clear();
+        currentErrors.clear();
     }
 
     @Override
@@ -4814,45 +4864,69 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public List<SuitablePrintJob> listJobsReprintableByMe()
+    public ObservableList<FirmwareError> getCurrentErrors()
+    {
+        return currentErrors;
+    }
+
+    @Override
+    public List<PrintJobStatistics> listReprintableJobs()
     {
         List<PrintJobStatistics> orderedStats = new ArrayList<>();
-        List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
-
-        steno.debug("Getting suitable print jobs");
-        File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
-        for (File printJobDir : printSpoolDir.listFiles())
+        try
         {
-            steno.debug("Checking file: " + printJobDir.getName());
-            if (printJobDir.isDirectory())
+            steno.debug("Getting reprintable print jobs");
+            File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
+            for (File printJobDir : printSpoolDir.listFiles())
             {
-                PrintJob pj = new PrintJob(printJobDir.getName());
-                File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
-                File statistics = new File(pj.getStatisticsFileLocation());
-                
-                if (roboxisedGCode.exists())
-                    steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
-                if (statistics.exists())
-                    steno.debug("Has statistics " + statistics.getName());
-                if (roboxisedGCode.exists() && statistics.exists())
+                steno.debug("Checking file: " + printJobDir.getName());
+                if (printJobDir.isDirectory())
                 {
-                    steno.debug("Adding stats to list");
+                    PrintJob pj = new PrintJob(printJobDir.getName());
+                    File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
+                    File statistics = new File(pj.getStatisticsFileLocation());
 
-                    //Valid files - does it work for us?
-                    try
+                    if (roboxisedGCode.exists())
+                        steno.debug("Has roboxisedGCode " + roboxisedGCode.getName());
+                    if (statistics.exists())
+                        steno.debug("Has statistics " + statistics.getName());
+                    if (roboxisedGCode.exists() && statistics.exists())
                     {
-                        PrintJobStatistics stats = pj.getStatistics();
-                        orderedStats.add(stats);
-                    } catch (IOException ex)
-                    {
-                        steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        steno.debug("Adding stats to list");
+
+                        //Valid files - does it work for us?
+                        try
+                        {
+                            PrintJobStatistics stats = pj.getStatistics();
+                            orderedStats.add(stats);
+                        } catch (IOException ex)
+                        {
+                            steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
+                        }
                     }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            steno.exception("Failed to listFiles from " + BaseConfiguration.getPrintSpoolDirectory(), ex);
+        }
+        return orderedStats;
+    }
 
+    @Override
+    public List<SuitablePrintJob> listJobsReprintableByMe()
+    {
+        return createSuitablePrintJobsFromStatistics(listReprintableJobs());
+    }
+
+    @Override
+    public List<SuitablePrintJob> createSuitablePrintJobsFromStatistics(List<PrintJobStatistics> orderedStats) 
+    {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+        
+        List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
+        
         orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
         //Make sure the newest are at the top
         Collections.reverse(orderedStats);
@@ -4909,6 +4983,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         SuitablePrintJob suitablePrintJob = new SuitablePrintJob();
                         suitablePrintJob.setPrintJobID(stats.getPrintJobID());
                         suitablePrintJob.setPrintJobName(stats.getProjectName());
+                        suitablePrintJob.setPrintJobPath(stats.getProjectPath());
                         suitablePrintJob.setPrintProfileName(stats.getProfileName());
                         suitablePrintJob.setDurationInSeconds(stats.getPredictedDuration());
                         suitablePrintJob.seteVolume(stats.geteVolumeUsed());
@@ -4999,6 +5074,13 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     public boolean reprintJob(String printJobID)
     {
         PrintJob printJob = new PrintJob(printJobID);
+        return getPrintEngine().reprintFileFromDisk(printJob);
+    }
+    
+    @Override
+    public boolean printJobFromDirectory(String printJobName, String directoryPath) 
+    {
+        PrintJob printJob = new PrintJob(printJobName, directoryPath);
         return getPrintEngine().reprintFileFromDisk(printJob);
     }
 

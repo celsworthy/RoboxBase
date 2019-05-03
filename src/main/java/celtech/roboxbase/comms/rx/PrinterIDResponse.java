@@ -28,6 +28,7 @@ public class PrinterIDResponse extends RoboxRxPacket
     private String poNumber;
     private String serialNumber;
     private String checkByte;
+    private String electronicsVersion;
     private String printerFriendlyName;
     // This is the web string version of the printer display colour
     private String printerColour = "";
@@ -84,6 +85,10 @@ public class PrinterIDResponse extends RoboxRxPacket
             this.checkByte = this.checkByte.trim();
             byteOffset += PrinterIDDataStructure.checkByteBytes;
 
+            this.electronicsVersion = new String(byteData, byteOffset, PrinterIDDataStructure.electronicsVersionBytes, charsetToUse);
+            this.electronicsVersion = this.electronicsVersion.trim();
+            byteOffset += PrinterIDDataStructure.electronicsVersionBytes;
+
             byteOffset += WritePrinterID.BYTES_FOR_FIRST_PAD;
 
             this.printerFriendlyName = new String(byteData, byteOffset, PrinterIDDataStructure.printerFriendlyNameBytes, charsetToUse);
@@ -99,8 +104,8 @@ public class PrinterIDResponse extends RoboxRxPacket
             byteOffset += WritePrinterID.BYTES_FOR_SECOND_PAD;
 
             String colourDigits = new String(byteData, byteOffset,
-                    PrinterIDDataStructure.colourBytes * 3, charsetToUse);
-            byteOffset += PrinterIDDataStructure.colourBytes * 3;
+                    PrinterIDDataStructure.colourBytes, charsetToUse);
+            byteOffset += PrinterIDDataStructure.colourBytes;
 
             printerColour = stringToColor(colourDigits).toString();
 
@@ -216,6 +221,15 @@ public class PrinterIDResponse extends RoboxRxPacket
      *
      * @return
      */
+    public String getElectronicsVersion()
+    {
+        return electronicsVersion;
+    }
+
+    /**
+     *
+     * @return
+     */
     public String getPrinterFriendlyName()
     {
         return printerFriendlyName;
@@ -267,6 +281,16 @@ public class PrinterIDResponse extends RoboxRxPacket
         this.printerFriendlyName = printerFriendlyName;
     }
 
+    public void setCheckByte(String checkByte) 
+    {
+        this.checkByte = checkByte;
+    }
+    
+    public void setElectronicsVersion(String electronicsVersion)
+    {
+        this.electronicsVersion = electronicsVersion;
+    }
+
     @Override
     public int packetLength(float requiredFirmwareVersion)
     {
@@ -276,17 +300,18 @@ public class PrinterIDResponse extends RoboxRxPacket
     @Override
     public int hashCode()
     {
-        return new HashCodeBuilder(15, 37).
-                append(model).
-                append(edition).
-                append(weekOfManufacture).
-                append(yearOfManufacture).
-                append(poNumber).
-                append(serialNumber).
-                append(checkByte).
-                append(printerFriendlyName).
-                append(printerColour).
-                toHashCode();
+        return new HashCodeBuilder(15, 37)
+                .append(model)
+                .append(edition)
+                .append(weekOfManufacture)
+                .append(yearOfManufacture)
+                .append(poNumber)
+                .append(serialNumber)
+                .append(checkByte)
+                .append(electronicsVersion)
+                .append(printerFriendlyName)
+                .append(printerColour)
+                .toHashCode();
     }
 
     @Override
@@ -302,23 +327,27 @@ public class PrinterIDResponse extends RoboxRxPacket
         }
 
         PrinterIDResponse rhs = (PrinterIDResponse) obj;
-        return new EqualsBuilder().
-                // if deriving: appendSuper(super.equals(obj)).
-                append(model, rhs.model).
-                append(edition, rhs.edition).
-                append(weekOfManufacture, rhs.weekOfManufacture).
-                append(yearOfManufacture, rhs.yearOfManufacture).
-                append(poNumber, rhs.poNumber).
-                append(serialNumber, rhs.serialNumber).
-                append(checkByte, rhs.checkByte).
-                append(printerFriendlyName, rhs.printerFriendlyName).
-                append(printerColour, rhs.printerColour).
-                isEquals();
+        return new EqualsBuilder()
+                // if deriving: .appendSuper(super.equals(obj))
+                .append(model, rhs.model)
+                .append(edition, rhs.edition)
+                .append(weekOfManufacture, rhs.weekOfManufacture)
+                .append(yearOfManufacture, rhs.yearOfManufacture)
+                .append(poNumber, rhs.poNumber)
+                .append(serialNumber, rhs.serialNumber)
+                .append(checkByte, rhs.checkByte)
+                .append(electronicsVersion, rhs.electronicsVersion)
+                .append(printerFriendlyName, rhs.printerFriendlyName)
+                .append(printerColour, rhs.printerColour)
+                .isEquals();
     }
 
     @JsonIgnore
     public String getAsFormattedString()
     {
+        // To maintain compatibility with older printers,
+        // the electronics version property is not included
+        // in the formatted string if it is missing, or equal to "1".
         StringBuilder idString = new StringBuilder();
         idString.append(model);
         idString.append("-");
@@ -332,7 +361,7 @@ public class PrinterIDResponse extends RoboxRxPacket
         idString.append(serialNumber);
         idString.append("-");
         idString.append(checkByte);
-
+        
         return idString.toString();
     }
     
@@ -348,7 +377,7 @@ public class PrinterIDResponse extends RoboxRxPacket
                         + yearOfManufacture
                         + poNumber
                         + serialNumber;
-                
+
             try
             {
                 char checkDigit = SystemUtils.generateUPSModulo10Checksum(stringToChecksum.replaceAll("-", ""));
@@ -357,6 +386,8 @@ public class PrinterIDResponse extends RoboxRxPacket
             {
                 steno.error("Error whilst testing validity of printer identity \"" + stringToChecksum + "\"");
             }
+        } else if (yearOfManufacture.equals("1901DUMMY$") && checkByte.length() == 2) {
+            return true;
         }
         return valid;
     }

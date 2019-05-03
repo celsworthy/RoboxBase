@@ -11,7 +11,6 @@ import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
 import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.services.CameraTriggerData;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,16 +38,19 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
     private final String printJobDirectory;
     private final Printer printerToUse;
     private final DoubleProperty taskProgress = new SimpleDoubleProperty(0);
+    private final SlicerType slicerType;
 
     public PostProcessorTask(
             String printJobUUID,
             PrintableMeshes printableMeshes,
-            Printer printerToUse)
+            Printer printerToUse,
+            SlicerType slicerType)
     {
         this.printJobUUID = printJobUUID;
         this.printableMeshes = printableMeshes;
         this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID + File.separator;
         this.printerToUse = printerToUse;
+        this.slicerType = slicerType;
         updateTitle("Post Processor");
         updateProgress(0.0, 100.0);
     }
@@ -72,7 +74,8 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                     printableMeshes,
                     printJobDirectory,
                     printerToUse,
-                    taskProgress);
+                    taskProgress,
+                    slicerType);
         } catch (Exception ex)
         {
             ex.printStackTrace();
@@ -86,9 +89,9 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             PrintableMeshes printableMeshes,
             String printJobDirectory,
             Printer printer,
-            DoubleProperty taskProgress) throws IOException
+            DoubleProperty taskProgress,
+            SlicerType slicerType) throws IOException
     {
-        SlicerType selectedSlicer = null;
         String headType;
         if (printer != null && printer.headProperty().get() != null)
         {
@@ -96,13 +99,6 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
         } else
         {
             headType = HeadContainer.defaultHeadID;
-        }
-        if (printableMeshes.getSettings().getSlicerOverride() != null)
-        {
-            selectedSlicer = printableMeshes.getSettings().getSlicerOverride();
-        } else
-        {
-            selectedSlicer = printableMeshes.getDefaultSlicerType();
         }
 
         PrintJob printJob = new PrintJob(printJobUUID, printJobDirectory);
@@ -113,7 +109,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
 
         PostProcessorFeatureSet ppFeatures = new PostProcessorFeatureSet();
 
-        HeadFile headFileToUse = null;
+        HeadFile headFileToUse;
         if (printer == null
                 || printer.headProperty().get() == null)
         {
@@ -171,7 +167,8 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 taskProgress,
                 objectToNozzleNumberMap,
                 printableMeshes.getCameraTriggerData(),
-                printableMeshes.isSafetyFeaturesRequired());
+                printableMeshes.isSafetyFeaturesRequired(),
+                slicerType);
 
         RoboxiserResult roboxiserResult = postProcessor.processInput();
         if (roboxiserResult.isSuccess())

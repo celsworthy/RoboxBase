@@ -2,13 +2,17 @@ package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.InnerPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.NodeProcessingException;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ObjectDelineationNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.OrphanObjectDelineationNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.OuterPerimeterSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.RetractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.SectionNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.SupportSectionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.UnretractNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithOrigin;
@@ -20,6 +24,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
@@ -27,7 +33,8 @@ import java.util.Optional;
  */
 public class NodeManagementUtilities
 {
-
+    private static final Stenographer STENO = StenographerFactory.getStenographer(NodeManagementUtilities.class.getName());
+    
     private final PostProcessorFeatureSet featureSet;
     private final List<NozzleProxy> nozzleProxies;
 
@@ -36,6 +43,126 @@ public class NodeManagementUtilities
     {
         this.featureSet = featureSet;
         this.nozzleProxies = nozzleProxies;
+    }
+
+    protected void removeFirstUnretractWithNoRetract(LayerNode layerNode) 
+    {
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+        
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+            
+            if(node instanceof RetractNode) {
+                break;
+            } else if (node instanceof UnretractNode) {
+                node.removeFromParent();
+                break;
+            }
+        }
+    }
+    
+    private boolean sectionContainsExtrusions(GCodeEventNode node)
+    {
+        // Return true if the node is an Extrusion node, or has any descendents
+        // that are extrusion nodes.
+        if (node instanceof ExtrusionNode)
+            return true;
+        
+        Iterator<GCodeEventNode> treeIterator = node.treeSpanningIterator(null);
+        while (treeIterator.hasNext()) 
+        {
+            GCodeEventNode descendentNode = treeIterator.next();
+            if (descendentNode instanceof ExtrusionNode)
+                return true;
+        }
+        
+        return false;
+    }
+    
+    protected void movePerimeterSections(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
+    {
+        // Sections that do not contain any extrusions are not moved
+        // as the first section in an object inherits the type from
+        // the previous object, but may only contain some set up
+        // and travels before changing to a different section type.
+        STENO.debug("movePerimeterSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+        List<GCodeEventNode> perimeterParents = new ArrayList<>();
+        GCodeEventNode fillParent = null;
+
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+            if (fillParent != null && 
+                (node instanceof OuterPerimeterSectionNode ||
+                 node instanceof InnerPerimeterSectionNode))
+            {
+                GCodeEventNode pp = node.getParent().get();
+                if (fillParent != pp &&
+                    !perimeterParents.contains(pp) &&
+                    sectionContainsExtrusions(pp))
+                {
+                    perimeterParents.add(pp);
+                }
+            }
+            else if (node instanceof FillSectionNode && fillParent == null)
+            {
+                GCodeEventNode fp = node.getParent().get();
+                if (sectionContainsExtrusions(fp))
+                    fillParent = fp;
+            }
+        }
+        
+        // Move perimeters in front of fill.
+        if (!perimeterParents.isEmpty() && fillParent != null)
+        {
+            // fillParent is not "final" or "effectively final" so
+            // can't be used in lambda expression. So make another
+            // variable that is final.
+            final GCodeEventNode ffp = fillParent;
+            STENO.debug("... moving perimeter sections to be in front of first fill section ...");
+            perimeterParents.forEach(pp -> {
+                pp.removeFromParent();
+            });
+            perimeterParents.forEach(pp -> {
+                ffp.addSiblingBefore(pp);
+            });
+        }
+        STENO.debug("... done");
+    }
+
+    protected void moveSupportSections(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)
+    {
+        STENO.trace("moveSupportSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
+
+        List<GCodeEventNode> supportParents = new ArrayList<>();
+
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode node = layerIterator.next();
+            if (node instanceof SupportSectionNode)
+            {
+                GCodeEventNode sp = node.getParent().get();
+                if (!supportParents.contains(sp) && sectionContainsExtrusions(sp)) 
+                {
+                    // Do not count section if it does not include any extrusions,
+                    // as the first section in an object inherits the type from
+                    // the previous object, but may only contain some set up
+                    // and travels before changing to a different section type.
+                    supportParents.add(sp);
+                }
+            }
+        }
+        
+        // Move support to the end.
+        if (!supportParents.isEmpty())
+        {
+            STENO.trace("Moving support sections to the end");
+            supportParents.forEach(sp -> sp.removeFromParent());
+            supportParents.forEach(sp -> layerNode.addChildAtEnd(sp));
+        }
     }
 
     protected void rehabilitateUnretractNodes(LayerNode layerNode)
@@ -217,8 +344,7 @@ public class NodeManagementUtilities
 
             int potentialObjectNumber = orphanNode.getPotentialObjectNumber();
 
-            if (potentialObjectNumber
-                    < 0)
+            if (potentialObjectNumber < 0)
             {
                 if (lastLayerParseResult.getLastObjectNumber().isPresent())
                 {
@@ -260,6 +386,65 @@ public class NodeManagementUtilities
             //Remove the orphan
             orphanNode.removeFromParent();
         }
+    }
+
+    protected void tidySections(LayerNode layerNode, final LayerPostProcessResult lastLayerParseResult)
+    {
+        // If a section in an object does not contain any extrusions, merge it with the
+        // next section.
+        Iterator<GCodeEventNode> layerIterator = layerNode.childIterator();
+
+        List<GCodeEventNode> noExtrusionList = new ArrayList<>();
+        List<GCodeEventNode> objectsToDelete = new ArrayList<>();
+
+        while (layerIterator.hasNext())
+        {
+            GCodeEventNode objectNode = layerIterator.next();
+            Iterator<GCodeEventNode> objectIterator = objectNode.childIterator();
+            while (objectIterator.hasNext())
+            {
+                GCodeEventNode sectionNode = objectIterator.next();
+                Iterator<GCodeEventNode> sectionIterator = sectionNode.childIterator();
+                boolean containsExtrusion = false;
+                while (sectionIterator.hasNext() && !containsExtrusion)
+                {
+                    GCodeEventNode childNode = sectionIterator.next();
+                    if (childNode instanceof ExtrusionNode)
+                        containsExtrusion = true;
+                }
+                if (!containsExtrusion)
+                    noExtrusionList.add(sectionNode);
+                else
+                {
+                    if (sectionNode instanceof SectionNode)
+                    {
+                        SectionNode sNode = (SectionNode)sectionNode;
+                        GCodeEventNode mNode = sNode.childIterator().next();
+                        noExtrusionList.forEach(n -> {
+                            objectsToDelete.add(n);
+                            // Transfer the children from the previous extrusion nodes to this section node
+                            Iterator<GCodeEventNode> childIterator = n.childIterator();
+                            List<GCodeEventNode> nodesToRemove = new ArrayList<>();
+
+                            while (childIterator.hasNext())
+                            {
+                                GCodeEventNode childNode = childIterator.next();
+                                nodesToRemove.add(childNode);
+                            }
+
+                            nodesToRemove.forEach(nn -> {
+                                nn.removeFromParent();
+                                mNode.addSiblingBefore(nn);
+                            });
+                        });
+                    }
+                    noExtrusionList.clear();
+                }
+            }
+            noExtrusionList.clear();
+        }
+        objectsToDelete.forEach(GCodeEventNode::removeFromParent);
+                    
     }
 
     protected Optional<ExtrusionNode> findNextExtrusion(GCodeEventNode topLevelNode, GCodeEventNode node) throws NodeProcessingException

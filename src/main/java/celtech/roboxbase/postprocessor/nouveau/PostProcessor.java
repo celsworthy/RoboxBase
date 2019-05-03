@@ -2,12 +2,13 @@ package celtech.roboxbase.postprocessor.nouveau;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.appManager.NotificationType;
+import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterDefinitionFile;
 import celtech.roboxbase.configuration.fileRepresentation.PrinterSettingsOverrides;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
-import static celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile.SupportType.*;
+import static celtech.roboxbase.configuration.fileRepresentation.SupportType.*;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.NozzleProxy;
@@ -57,6 +58,8 @@ public class PostProcessor
 
     private final Stenographer steno = StenographerFactory.getStenographer(PostProcessor.class.getName());
 
+    private final String movePerimeterTimerName = "ReorderPerimeter";
+    private final String moveSupportTimerName = "ReorderSupport";
     private final String unretractTimerName = "Unretract";
     private final String orphanTimerName = "Orphans";
     private final String nozzleControlTimerName = "NozzleControl";
@@ -81,10 +84,12 @@ public class PostProcessor
     private final String gcodeFileToProcess;
     private final String gcodeOutputFile;
     private final HeadFile headFile;
-    private final SlicerParametersFile slicerParametersFile;
+    private final RoboxProfile settingsProfile;
     private final DoubleProperty taskProgress;
     private final boolean safetyFeaturesRequired;
     private final PrinterSettingsOverrides printerOverrides;
+    
+    private final SlicerType slicerType;
 
     private final List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
@@ -112,14 +117,15 @@ public class PostProcessor
             String gcodeFileToProcess,
             String gcodeOutputFile,
             HeadFile headFile,
-            SlicerParametersFile settings,
+            RoboxProfile settings,
             PrinterSettingsOverrides printerOverrides,
             PostProcessorFeatureSet postProcessorFeatureSet,
             String headType,
             DoubleProperty taskProgress,
             Map<Integer, Integer> objectToNozzleNumberMap,
             CameraTriggerData cameraTriggerData,
-            boolean safetyFeaturesRequired)
+            boolean safetyFeaturesRequired,
+            SlicerType slicerType)
     {
         this.printJobUUID = printJobUUID;
         this.nameOfPrint = nameOfPrint;
@@ -129,23 +135,24 @@ public class PostProcessor
         this.gcodeOutputFile = gcodeOutputFile;
         this.headFile = headFile;
         this.featureSet = postProcessorFeatureSet;
-        this.slicerParametersFile = settings;
+        this.settingsProfile = settings;
         this.taskProgress = taskProgress;
         this.printerOverrides = printerOverrides;
         this.safetyFeaturesRequired = safetyFeaturesRequired;
+        this.slicerType = slicerType;
 
         nozzleProxies.clear();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < slicerParametersFile.getNozzleParameters()
+                nozzleIndex < settingsProfile.getNozzleParameters()
                         .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(slicerParametersFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(settingsProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
 
-        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
+        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura4)
         {
             // If we have a dual extruder head but a single extruder machine force use of the available extruder
             if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
@@ -172,6 +179,18 @@ public class PostProcessor
                         break;
                 }
             }
+        } else if (slicerType == SlicerType.Cura4) 
+        {
+            if (!settingsProfile.getSpecificBooleanSettingWithDefault("infill_before_walls", false))
+                featureSet.enableFeature(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT);
+            if (settingsProfile.getSpecificBooleanSettingWithDefault("support_after_model", true))
+                featureSet.enableFeature(PostProcessorFeature.MOVE_SUPPORT_AFTER_MODEL);
+            
+            if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
+            } else {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
+            }
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
@@ -184,9 +203,9 @@ public class PostProcessor
         }
 
         nodeManagementUtilities = new NodeManagementUtilities(featureSet, nozzleProxies);
-        postProcessorUtilityMethods = new UtilityMethods(featureSet, slicerParametersFile, headType, nodeManagementUtilities, cameraTriggerData);
-        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, slicerParametersFile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
-        closeLogic = new CloseLogic(slicerParametersFile, featureSet, headType, nodeManagementUtilities);
+        postProcessorUtilityMethods = new UtilityMethods(featureSet, settingsProfile, headType, nodeManagementUtilities, cameraTriggerData);
+        nozzleControlUtilities = new NozzleAssignmentUtilities(nozzleProxies, settingsProfile, headFile, featureSet, postProcessingMode, objectToNozzleNumberMap);
+        closeLogic = new CloseLogic(settingsProfile, featureSet, headType, nodeManagementUtilities);
         heaterSaver = new FilamentSaver(100, 120);
         outputVerifier = new OutputVerifier(featureSet);
     }
@@ -240,7 +259,7 @@ public class PostProcessor
 
                 List<LayerPostProcessResult> postProcessResults = new ArrayList<>();
                 LayerPostProcessResult lastPostProcessResult = new LayerPostProcessResult(null, defaultObjectNumber, null, null, null, -1, 0);
-
+                
                 for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
                     linesRead++;
@@ -253,8 +272,15 @@ public class PostProcessor
                         }
                         lastPercentSoFar = percentSoFar;
                     }
-
+                    
                     lineRead = lineRead.trim();
+                    
+                    if (lineRead.matches("T[0-1]") && layerCounter < 0)
+                    {
+                        int initialToolChange = Integer.parseInt(lineRead.substring(1));
+                        lastPostProcessResult.setLastObjectNumber(initialToolChange);
+                    }    
+                    
                     if (lineRead.matches(";LAYER:[-]*[0-9]+"))
                     {
                         if (layerCounter >= 0)
@@ -325,11 +351,18 @@ public class PostProcessor
                     eRequired = true;
                 }
 
-                Optional<PrinterType> printerTypeCode = (printer != null ? Optional.of(printer.findPrinterType()) : Optional.empty());
+                Optional<PrinterType> printerTypeCode;
+                if(printer == null) {
+                    PrinterDefinitionFile printerDef = PrinterContainer.getPrinterByID(PrinterContainer.defaultPrinterID);
+                    printerTypeCode = Optional.of(PrinterType.getPrinterTypeForTypeCode(printerDef.getTypeCode()));
+                } else {
+                    printerTypeCode = Optional.of(printer.findPrinterType());
+                }
                     
                 outputUtilities.prependPrePrintHeader(writer,
                         printerTypeCode,
                         headFile.getTypeCode(),
+                        settingsProfile,
                         nozzle0HeatRequired,
                         nozzle1HeatRequired,
                         safetyFeaturesRequired);
@@ -391,10 +424,10 @@ public class PostProcessor
                 String statsProfileName = "";
                 float statsLayerHeight = 0;
 
-                if (slicerParametersFile != null)
+                if (settingsProfile != null)
                 {
-                    statsProfileName = slicerParametersFile.getProfileName();
-                    statsLayerHeight = slicerParametersFile.getLayerHeight_mm();
+                    statsProfileName = settingsProfile.getName();
+                    statsLayerHeight = settingsProfile.getSpecificFloatSetting("layerHeight_mm");
                 }
 
                 PrintJobStatistics roboxisedStatistics = new PrintJobStatistics(
@@ -525,7 +558,13 @@ public class PostProcessor
         // Parse the last layer if it exists...
         if (layerBuffer.length() > 0)
         {
-            CuraGCodeParser gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+            GCodeParser gcodeParser;
+            
+            if(slicerType == SlicerType.Cura4) {
+                gcodeParser = Parboiled.createParser(Cura4GCodeParser.class);
+            } else {
+                gcodeParser = Parboiled.createParser(CuraGCodeParser.class);
+            }
 
             if (printer == null)
             {
@@ -541,11 +580,12 @@ public class PostProcessor
                         printer.printerConfigurationProperty().get().getPrintVolumeHeight());
             }
 
-            if (lastLayerParseResult
-                    != null)
+            if (lastLayerParseResult != null)
             {
                 gcodeParser.setStartingLineNumber(lastLayerParseResult.getLastLineNumber());
                 gcodeParser.setFeedrateInForce(lastLayerParseResult.getLastFeedrateInForce());
+                gcodeParser.setCurrentObject(lastLayerParseResult.getLastObjectNumber().orElse(-1));
+                gcodeParser.setCurrentSection(lastLayerParseResult.getLastSection());
             }
 
             BasicParseRunner runner = new BasicParseRunner<>(gcodeParser.Layer());
@@ -562,11 +602,15 @@ public class PostProcessor
             } else
             {
                 LayerNode layerNode = gcodeParser.getLayerNode();
-                int lastFeedrate = gcodeParser.getFeedrateInForce();
+                double lastFeedrate = gcodeParser.getFeedrateInForce();
                 int lastLineNumber = gcodeParser.getCurrentLineNumber();
+                int lastObjectNumber = gcodeParser.getCurrentObject();
+                String lastSection = gcodeParser.getCurrentSection();
                 parseResultAtEndOfThisLayer = postProcess(layerNode, lastLayerParseResult);
                 parseResultAtEndOfThisLayer.setLastFeedrateInForce(lastFeedrate);
                 parseResultAtEndOfThisLayer.setLastLineNumber(lastLineNumber);
+                parseResultAtEndOfThisLayer.setLastObjectNumber(lastObjectNumber);
+                parseResultAtEndOfThisLayer.setLastSection(lastSection);
             }
         } else
         {
@@ -579,14 +623,33 @@ public class PostProcessor
     private LayerPostProcessResult postProcess(LayerNode layerNode,
             LayerPostProcessResult lastLayerParseResult)
     {
+        if(lastLayerParseResult.getLayerData() == null) {
+            nodeManagementUtilities.removeFirstUnretractWithNoRetract(layerNode);
+        }
+        
         timeUtils.timerStart(this, unretractTimerName);
         nodeManagementUtilities.rehabilitateUnretractNodes(layerNode);
         timeUtils.timerStop(this, unretractTimerName);
 
         timeUtils.timerStart(this, orphanTimerName);
         nodeManagementUtilities.rehomeOrphanObjects(layerNode, lastLayerParseResult);
+        //nodeManagementUtilities.tidySections(layerNode, lastLayerParseResult);
         timeUtils.timerStop(this, orphanTimerName);
 
+        if (featureSet.isEnabled(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT))
+        {
+            timeUtils.timerStart(this, movePerimeterTimerName);
+            nodeManagementUtilities.movePerimeterSections(layerNode, lastLayerParseResult);
+            timeUtils.timerStop(this, movePerimeterTimerName);
+        }
+
+        if (featureSet.isEnabled(PostProcessorFeature.MOVE_SUPPORT_AFTER_MODEL))
+        {
+            timeUtils.timerStart(this, moveSupportTimerName);
+            nodeManagementUtilities.moveSupportSections(layerNode, lastLayerParseResult);
+            timeUtils.timerStop(this, moveSupportTimerName);
+        }
+        
         int lastObjectNumber = -1;
 
         timeUtils.timerStart(this, nozzleControlTimerName);
@@ -606,7 +669,7 @@ public class PostProcessor
         timeUtils.timerStart(this, unnecessaryToolchangeTimerName);
         postProcessorUtilityMethods.suppressUnnecessaryToolChangesAndInsertToolchangeCloses(layerNode, lastLayerParseResult, nozzleProxies);
         timeUtils.timerStop(this, unnecessaryToolchangeTimerName);
-
+        
         if (featureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
         {
             timeUtils.timerStart(this, cameraEventTimerName);
@@ -626,7 +689,7 @@ public class PostProcessor
     {
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
 
-        int lastFeedrate = -1;
+        double lastFeedrate = -1;
 
         SectionNode lastSectionNode = null;
         ToolSelectNode lastToolSelectNode = null;
@@ -691,6 +754,10 @@ public class PostProcessor
     {
         steno.debug("Post Processor Timer Report");
         steno.debug("============");
+        if (featureSet.isEnabled(PostProcessorFeature.MOVE_PERIMETERS_TO_FRONT))
+            steno.debug(movePerimeterTimerName + " " + timeUtils.timeTimeSoFar_ms(this, movePerimeterTimerName));
+        if (featureSet.isEnabled(PostProcessorFeature.MOVE_SUPPORT_AFTER_MODEL))
+            steno.debug(moveSupportTimerName + " " + timeUtils.timeTimeSoFar_ms(this, moveSupportTimerName));
         steno.debug(unretractTimerName + " " + timeUtils.timeTimeSoFar_ms(this, unretractTimerName));
         steno.debug(orphanTimerName + " " + timeUtils.timeTimeSoFar_ms(this, orphanTimerName));
         steno.debug(nozzleControlTimerName + " " + timeUtils.timeTimeSoFar_ms(this, nozzleControlTimerName));

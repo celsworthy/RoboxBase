@@ -2,19 +2,20 @@ package celtech.roboxbase.configuration.slicer;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.datafileaccessors.PrintProfileSettingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappingData;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -23,13 +24,25 @@ import libertysystems.stenographer.StenographerFactory;
 
 /**
  *
- * @author Ian
+ * @author Ian and George Salter
  */
-public abstract class SlicerConfigWriter
-{
+public abstract class SlicerConfigWriter {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(
+    private static final Stenographer STENO = StenographerFactory.getStenographer(
         Slic3rConfigWriter.class.getName());
+    
+    static final PrintProfileSettingsContainer PRINT_PROFILE_SETTINGS_CONTAINER = PrintProfileSettingsContainer.getInstance();
+
+    Map<String, PrintProfileSetting> printProfileSettingsMap = new HashMap<>();
+    
+    private static final String FLOAT = "float";
+    private static final String INT = "int";
+    private static final String BOOLEAN = "boolean";
+    private static final String OPTION = "option";
+    private static final String NOZZLE = "nozzle";
+    private static final String EXTRUSION = "extrusion";
+    private static final String NUMBER_LIST = "numbers";
+    
     SlicerType slicerType = null;
     private SimpleDateFormat dateFormatter = null;
     protected NumberFormat threeDPformatter;
@@ -42,34 +55,36 @@ public abstract class SlicerConfigWriter
     private final String optionalDivider = "->";
     private final String equivalenceDivider = "=";
 
-    private final String optionalNoOutput = "-|";
-
-    public SlicerConfigWriter()
-    {
+    public SlicerConfigWriter() {
         dateFormatter = new SimpleDateFormat("EEE d MMM y HH:mm:ss", Locale.UK);
         threeDPformatter = DecimalFormat.getNumberInstance(Locale.UK);
         threeDPformatter.setMaximumFractionDigits(3);
         threeDPformatter.setGroupingUsed(false);
     }
 
-    public final void generateConfigForSlicer(SlicerParametersFile profileData,
-        String destinationFile)
-    {
+    public final void generateConfigForSlicer(RoboxProfile profileData, String destinationFile) {
         SlicerMappingData mappingData = BaseLookup.getSlicerMappings().getMappings().get(slicerType);
+        profileData = extractNonOverridenSettings(profileData);
         generateConfigForSlicerWithMappings(profileData, destinationFile, mappingData);
     }
 
-    public final void generateConfigForSlicerWithMappings(SlicerParametersFile profileData,
-        String destinationFile, SlicerMappingData mappingData)
-    {
+    /**
+     * Generates a .roboxprofile file which takes into account the user slicer preferences,
+     * and the slicermappings.dat file, which will map the options for a particular slicer.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param destinationFile the destination for the .roboxprofile file.
+     * @param mappingData The mapping data from the slicermappings.dat file.
+     */
+    public final void generateConfigForSlicerWithMappings(RoboxProfile profileData,
+        String destinationFile, SlicerMappingData mappingData) {
 
         bringDataInBounds(profileData);
 
         File outputFile = new File(destinationFile);
         FileWriter writer = null;
 
-        try
-        {
+        try {
             writer = new FileWriter(outputFile);
 
             String dateString = dateFormatter.format(new Date());
@@ -81,11 +96,15 @@ public abstract class SlicerConfigWriter
                 + BaseConfiguration.getApplicationVersion()
                 + "\n");
             writer.write("#Slicer type " + slicerType.name() + "\n");
-            writer.write("#Profile " + profileData.getProfileName() + "\n");
+            writer.write("#Profile " + profileData.getName()+ "\n");
             writer.write("#\n");
 
-            outputFilamentDiameter(writer,
+            if(slicerType == SlicerType.Cura4) {
+                outputFilamentDiameter(writer, BaseConfiguration.filamentDiameter);
+            } else {
+                outputFilamentDiameter(writer,
                                    BaseConfiguration.filamentDiameterToYieldVolumetricExtrusion);
+            }
 
             outputPrintCentre(writer, centreX, centreY);
 
@@ -102,123 +121,102 @@ public abstract class SlicerConfigWriter
                     value = valueElements[1];
                 }
 
-                steno.debug("Writing default " + variableName);
+                STENO.debug("Writing default " + variableName);
                 outputLine(writer, variableName, value);
             }
 
-            for (Map.Entry<String, String> entry : mappingData.getMappingData().entrySet())
-            {
-//                String methodName = entry.getKey();
-//                String targetVariableName = extractTargetVariableName(entry.getValue());
+            for (Map.Entry<String, String> entry : mappingData.getMappingData().entrySet()) {
                 String targetVariableName = entry.getKey();
-                String methodNameOrValue = extractTargetVariableName(entry.getValue());
-                steno.debug("Processing method: " + methodNameOrValue + " and variable : "
+                String settingNameOrValue = extractTargetVariableName(entry.getValue());
+                STENO.debug("Processing method: " + settingNameOrValue + " and variable : "
                     + targetVariableName);
 
-                try
-                {
-                    float value = Float.parseFloat(methodNameOrValue);
-                    Optional<Float> calculatedValue = applyValue(profileData, value,
-                                                                 entry.getValue());
-                    if (calculatedValue.isPresent())
-                    {
-                        outputLine(writer, targetVariableName,
+                try {
+                    float value = Float.parseFloat(settingNameOrValue);
+                    Optional<Float> calculatedValue = applyValue(profileData, value, entry.getValue());
+                    if (calculatedValue.isPresent()) {
+                        if(slicerType == SlicerType.Cura4) {
+                            outputLine(writer, targetVariableName,
+                                   calculatedValue.get());
+                        } else {
+                            outputLine(writer, targetVariableName,
                                    calculatedValue.get().intValue());
-                    }
-                } catch (NumberFormatException nfe)
-                {
-                    // it's a method name
-
-                    Method getMethod;
-
-                    try
-                    {
-                        getMethod = getVariableMethod(methodNameOrValue);
-
-                        try
-                        {
-                            steno.debug("Writing " + methodNameOrValue + " : " + targetVariableName);
-
-                            Class<?> returnTypeClass = getMethod.getReturnType();
-
-                            if (returnTypeClass.equals(boolean.class))
-                            {
-                                boolean value = (boolean) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(int.class))
-                            {
-                                int value = (int) getMethod.invoke(profileData);
-                                Optional<Float> calculatedValue = applyValue(profileData, value,
-                                                                             entry.getValue());
-                                if (calculatedValue.isPresent())
-                                {
-                                    outputLine(writer, targetVariableName,
-                                               calculatedValue.get().intValue());
-                                }
-                            } else if (returnTypeClass.equals(float.class))
-                            {
-                                float value = (float) getMethod.invoke(profileData);
-                                Optional<Float> calculatedValue = applyValue(profileData, value,
-                                                                             entry.getValue());
-                                if (calculatedValue.isPresent())
-                                {
-                                    outputLine(writer, targetVariableName, calculatedValue.get());
-                                }
-                            } else if (returnTypeClass.equals(String.class))
-                            {
-                                String value = (String) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(SlicerType.class))
-                            {
-                                SlicerType value = (SlicerType) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(FillPattern.class))
-                            {
-                                FillPattern value = (FillPattern) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
-                            } else if (returnTypeClass.equals(SupportPattern.class))
-                            {
-                                SupportPattern value = (SupportPattern) getMethod.invoke(profileData);
-                                outputLine(writer, targetVariableName, value);
-                            } else
-                            {
-                                steno.error("Got unknown return type: " + returnTypeClass.getName());
-                            }
-
-                        } catch (IllegalAccessException ex)
-                        {
-                            steno.error("Illegal access exception when retrieving from "
-                                + methodNameOrValue);
-                        } catch (InvocationTargetException ex)
-                        {
-                            steno.error("Invocation target exception when retrieving from "
-                                + methodNameOrValue);
                         }
-                    } catch (NoSuchMethodException ex)
-                    {
-                        steno.warning("Failed to get method: " + methodNameOrValue + " variable: "
-                            + targetVariableName);
+                    }
+                } catch (NumberFormatException nfe) {
+                    Optional<String> settingType = getSettingType(settingNameOrValue);
+                    STENO.debug("Writing " + settingNameOrValue + " : " + targetVariableName);
+                    if(settingType.isPresent()) {
+                        switch (settingType.get()) {
+                            case BOOLEAN: {
+                                boolean value = profileData.getSpecificBooleanSetting(settingNameOrValue);
+                                outputLine(writer, targetVariableName, value);
+                                break;
+                            }
+                            case INT: {
+                                if(isSettingPerExtruder(settingNameOrValue)) {
+                                    outputLine(writer, targetVariableName, profileData.getSpecificSettingAsString(settingNameOrValue));
+                                } else {
+                                    int value = profileData.getSpecificIntSetting(settingNameOrValue);
+                                    Optional<Float> calculatedValue = applyValue(profileData, value, entry.getValue());
+                                    if (calculatedValue.isPresent()) {
+                                        outputLine(writer, targetVariableName, calculatedValue.get().intValue());
+                                    }
+                                }
+                                break;
+                            }
+                            case NOZZLE: {
+                                    int value = profileData.getSpecificIntSetting(settingNameOrValue);
+                                    // Do not override the nozzle if we have anything other than 0 or 1
+                                    value = value > 1 ? -1 : value;
+                                    outputLine(writer, targetVariableName, value);
+                                break;
+                            }
+                            case FLOAT:
+                            case EXTRUSION: {
+                                if(isSettingPerExtruder(settingNameOrValue)) {
+                                    outputLine(writer, targetVariableName, profileData.getSpecificSettingAsString(settingNameOrValue));
+                                } else {
+                                    float value = profileData.getSpecificFloatSetting(settingNameOrValue);
+                                    Optional<Float> calculatedValue = applyValue(profileData, value, entry.getValue());
+                                    if (calculatedValue.isPresent()) {
+                                        outputLine(writer, targetVariableName, calculatedValue.get());
+                                    }
+                                }
+                                break;
+                            }
+                            case OPTION: {
+                                String value = profileData.getSpecificSettingAsString(settingNameOrValue);
+                                outputLine(writer, targetVariableName, value);
+                                break;
+                            }
+                            case NUMBER_LIST: {
+                                String value = profileData.getSpecificSettingAsString(settingNameOrValue);
+                                value = formatStringIntoList(value);
+                                outputLine(writer, targetVariableName, value);
+                                break;
+                            }
+                            default:
+                                STENO.error("Got unknown return type: " + settingType.get());
+                                break;
+                        }
                     }
                 }
             }
         } catch (FileNotFoundException ex)
         {
-            steno.error("Couldn't open slicer settings file for writing - " + destinationFile
+            STENO.error("Couldn't open slicer settings file for writing - " + destinationFile
                 + " : " + ex.getMessage());
         } catch (IOException ex)
         {
-            steno.error("IO Exception whilst writing slic3r settings - " + destinationFile + " : "
+            STENO.error("IO Exception whilst writing slic3r settings - " + destinationFile + " : "
                 + ex.getMessage());
-        } finally
-        {
-            if (writer != null)
-            {
-                try
-                {
+        } finally {
+            if (writer != null) {
+                try {
                     writer.close();
-                } catch (IOException ex)
-                {
-                    steno.error("Failed to close configuration file " + outputFile.getName());
+                } catch (IOException ex) {
+                    STENO.error("Failed to close configuration file " + outputFile.getName());
                 }
             }
         }
@@ -235,29 +233,19 @@ public abstract class SlicerConfigWriter
         centreY = y;
     }
 
-    protected abstract void outputLine(FileWriter writer, String variableName, boolean value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, int value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, float value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, String value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, SlicerType value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, FillPattern value) throws IOException;
-
-    protected abstract void outputLine(FileWriter writer, String variableName, SupportPattern value) throws IOException;
-
-    protected abstract void outputPrintCentre(FileWriter writer, float centreX, float centreY) throws IOException;
-
-    protected abstract void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException;
-
-    private Optional<Float> applyValue(SlicerParametersFile profileData, float value,
+    /**
+     * Evaluates an operation given by a particular mapping and manipulates the 
+     * profileData value based on the operation.
+     * 
+     * @param profileData the user slicer parameters.
+     * @param value the value in the parameters file.
+     * @param operationString the operation to be applied to the value.
+     * @return the new value after an operation has been applied/
+     */
+    private Optional<Float> applyValue(RoboxProfile profileData, float value,
         String operationString)
     {
         float resultingValue = value;
-        boolean okToProcess = false;
 
         if (operationString.contains(parameterDivider))
         {
@@ -289,147 +277,87 @@ public abstract class SlicerConfigWriter
 
                                 if (optionalCheckParts.length == 2)
                                 {
-                                    try
-                                    {
-                                        Method getMethod = getVariableMethod(optionalCheckParts[0]);
-
-                                        Class<?> returnTypeClass = getMethod.getReturnType();
-
-                                        if (returnTypeClass.equals(boolean.class))
-                                        {
-                                            try
-                                            {
-                                                boolean valueToTest = (boolean) getMethod.invoke(
-                                                    profileData);
-                                                boolean valueWeAreLookingFor = Boolean.valueOf(
-                                                    optionalCheckParts[1]);
-                                                boolean stopOnEquality = optionalAssignmentString[1].equals(
+                                    Optional<String> settingType = getSettingType(optionalCheckParts[0]);
+                                    if (settingType.isPresent()) {
+                                        try {
+                                            String valueToTest = profileData.getSpecificSettingAsString(optionalCheckParts[0]);
+                                            String valueWeAreLookingFor = optionalCheckParts[1];
+                                            boolean stopOnEquality = optionalAssignmentString[1].equals(
                                                     "|");
-
-                                                if (valueToTest == valueWeAreLookingFor)
-                                                {
-                                                    if (stopOnEquality)
-                                                    {
-                                                        return Optional.empty();
-                                                    } else
-                                                    {
-                                                        float valueToSet = Float.valueOf(
+                                            
+                                            if (valueToTest.equals(valueWeAreLookingFor)) {
+                                                if (stopOnEquality) {
+                                                    return Optional.empty();
+                                                } else {
+                                                    float valueToSet = Float.valueOf(
                                                             optionalAssignmentString[1]);
-                                                        resultingValue = valueToSet;
-                                                        doneProcessing = true;
-                                                    }
-                                                } else
-                                                {
-                                                    variable = valueElements[0];
+                                                    resultingValue = valueToSet;
+                                                    doneProcessing = true;
                                                 }
-                                            } catch (IllegalAccessException | InvocationTargetException ex)
-                                            {
-                                                steno.error(
-                                                    "Error retrieving test for value from variable "
-                                                    + optionalCheckParts[0]);
-                                            } catch (NumberFormatException ex)
-                                            {
-                                                steno.error("Error processing numeric value for "
-                                                    + optionalCheckParts[1]);
+                                            } else {
+                                                variable = valueElements[0];
                                             }
-                                        } else
-                                        {
-                                            steno.error("I don't support return types of "
-                                                + returnTypeClass.getName() + " at this time");
+                                        } catch (NumberFormatException ex) {
+                                            STENO.error("Error processing numeric value for "
+                                                    + optionalCheckParts[1]);
                                         }
-                                    } catch (NoSuchMethodException ex)
-                                    {
-                                        steno.warning("Failed to get method for "
-                                            + optionalCheckParts[0] + " in " + operationString);
+                                    } else {
+                                        STENO.error("Error in query, setting does not exist with id: " + optionalCheckParts[0]);
                                     }
                                 }
-                            } else
-                            {
-                                try
-                                {
+                            } else {
+                                try {
                                     float valueToCheckFor = Float.valueOf(
                                         optionalAssignmentString[0]);
                                     float optionalAssignmentValue = Float.valueOf(
                                         optionalAssignmentString[1]);
 
-                                    if (value == valueToCheckFor)
-                                    {
+                                    if (value == valueToCheckFor) {
                                         resultingValue = optionalAssignmentValue;
                                         doneProcessing = true;
                                     }
-                                } catch (NumberFormatException ex)
-                                {
+                                } catch (NumberFormatException ex) {
                                     // Failed to process...
-                                    steno.warning("Couldn't process optional slicer mapping: "
+                                    STENO.warning("Couldn't process optional slicer mapping: "
                                         + operation);
                                 }
                             }
-                        } else
-                        {
-                            steno.warning("Erroneous optional slicer mapping: " + operation);
+                        } else {
+                            STENO.warning("Erroneous optional slicer mapping: " + operation);
                         }
                     }
 
-                    if (!doneProcessing && !optionalOperatorDetected)
-                    {
-
-                        Method getMethod;
+                    if (!doneProcessing && !optionalOperatorDetected) {
 
                         float variableValue = 0;
-
-                        try
-                        {
-                            getMethod = getVariableMethod(variable);
-
-                            // Found a get - must be a variable that we can use...
-                            try
-                            {
-                                if (getMethod.getReturnType().equals(int.class))
-                                {
-                                    variableValue = (int) getMethod.invoke(profileData);
-                                } else
-                                {
-                                    variableValue = (float) getMethod.invoke(profileData);
-                                }
-                                okToProcess = true;
-                            } catch (IllegalAccessException | InvocationTargetException ex)
-                            {
-                                steno.warning("Failed to get value for " + variable);
+                        Optional<String> settingType = getSettingType(variable);
+                        
+                        if(settingType.isPresent()) {
+                            if (settingType.get().equals(INT)) {
+                                variableValue = profileData.getSpecificIntSetting(variable);
+                            } else if (settingType.get().equals(FLOAT) || settingType.get().equals(EXTRUSION)) {
+                                variableValue = profileData.getSpecificFloatSetting(variable);
                             }
-                        } catch (NoSuchMethodException ex)
-                        {
-                            // We should have a number instead
-                            try
-                            {
-                                variableValue = Float.valueOf(variable);
-                                okToProcess = true;
-                            } catch (NumberFormatException ex1)
-                            {
-                                steno.warning("Failed to get get method or numeric value for "
-                                    + variable + " in " + operationString);
-                            }
+                        } else {
+                            variableValue = Float.valueOf(variable);
                         }
 
-                        if (okToProcess)
-                        {
-                            switch (operator)
-                            {
-                                case "*":
-                                    resultingValue = resultingValue * variableValue;
-                                    break;
-                                case "[":
-                                    resultingValue = variableValue / resultingValue;
-                                    break;
-                                case "/":
-                                    resultingValue = resultingValue / variableValue;
-                                    break;
-                                case "+":
-                                    resultingValue = resultingValue + variableValue;
-                                    break;
-                                case "-":
-                                    resultingValue = resultingValue - variableValue;
-                                    break;
-                            }
+                        switch (operator) {
+                            case "*":
+                                resultingValue = resultingValue * variableValue;
+                                break;
+                            case "[":
+                                resultingValue = variableValue / resultingValue;
+                                break;
+                            case "/":
+                                resultingValue = resultingValue / variableValue;
+                                break;
+                            case "+":
+                                resultingValue = resultingValue + variableValue;
+                                break;
+                            case "-":
+                                resultingValue = resultingValue - variableValue;
+                                break;
                         }
                     }
                 }
@@ -439,12 +367,10 @@ public abstract class SlicerConfigWriter
         return Optional.of(resultingValue);
     }
 
-    private String extractTargetVariableName(String value)
-    {
+    private String extractTargetVariableName(String value) {
         String targetVariableName = value;
 
-        if (value.contains(":"))
-        {
+        if (value.contains(":")) {
             String[] elements = value.split(":");
             targetVariableName = elements[0];
         }
@@ -452,15 +378,76 @@ public abstract class SlicerConfigWriter
         return targetVariableName;
     }
 
-    private Method getVariableMethod(final String methodName) throws NoSuchMethodException
-    {
-        String altMethodName = "get" + methodName.substring(0, 1).toUpperCase()
-            + methodName.substring(1, methodName.length());
-
-        Method foundMethod = SlicerParametersFile.class.getMethod(altMethodName, null);
-
-        return foundMethod;
+    private Optional<String> getSettingType(String settingId) {
+        PrintProfileSetting setting = printProfileSettingsMap.get(settingId);
+        if(setting == null) {
+            return Optional.empty();
+        }
+        return Optional.of(setting.getValueType());
     }
+    
+    private boolean isSettingPerExtruder(String settingId) {
+        PrintProfileSetting setting = printProfileSettingsMap.get(settingId);
+        return setting.isPerExtruder();
+    }
+    
+    /**
+     * Take a string in the form of numbers separated by commas, remove any trailing
+     * commas and wrap in square brackets.
+     * 
+     * @param unformattedString the string to be formated to an 'array'
+     * @return formatted String
+     */
+    private String formatStringIntoList(String unformattedString) {
+        if(unformattedString == null || unformattedString.isEmpty()) {
+            return "[]";
+        }
+        
+        String listString = unformattedString.trim();
 
-    abstract void bringDataInBounds(SlicerParametersFile profileData);
+        return "[" + listString + "]";
+    }
+    
+    /**
+     * Make sure all settings are taken into account before mapping to the slicer.
+     * This means settings which only exist in the print_profile_settings.json
+     * are still taken into account.
+     * 
+     * @param profileData the {@link RoboxProfile} to add missing settings to.
+     * @return 
+     */
+    private RoboxProfile extractNonOverridenSettings(RoboxProfile profileData) {
+        Map<String, String> profileSettings = profileData.getSettings();
+        
+        printProfileSettingsMap.keySet().forEach(settingId -> {
+            if(!profileSettings.containsKey(settingId)) {
+                profileSettings.put(settingId, printProfileSettingsMap.get(settingId).getValue());
+            }
+        });
+        
+        profileData.setSettings(profileSettings);
+        return profileData;
+    }
+        
+    public SlicerType getSlicerType() {
+        return slicerType;
+    }
+    
+    protected abstract void outputLine(FileWriter writer, String variableName, boolean value) throws IOException;
+
+    protected abstract void outputLine(FileWriter writer, String variableName, int value) throws IOException;
+
+    protected abstract void outputLine(FileWriter writer, String variableName, float value) throws IOException;
+
+    protected abstract void outputLine(FileWriter writer, String variableName, String value) throws IOException;
+
+    protected abstract void outputLine(FileWriter writer, String variableName, SlicerType value) throws IOException;
+
+    protected abstract void outputLine(FileWriter writer, String variableName, Enum value) throws IOException;
+
+    protected abstract void outputPrintCentre(FileWriter writer, float centreX, float centreY) throws IOException;
+
+    protected abstract void outputFilamentDiameter(FileWriter writer, float diameter) throws IOException;
+
+    abstract void bringDataInBounds(RoboxProfile profileData);
 }

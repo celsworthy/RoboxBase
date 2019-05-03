@@ -1,5 +1,7 @@
 package celtech.roboxbase.configuration;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
+
 /**
  *
  * @author Ian
@@ -7,7 +9,9 @@ package celtech.roboxbase.configuration;
 public enum SlicerType
 {
 
-    Slic3r(0), Cura(1);
+    Slic3r(0), 
+    @JsonEnumDefaultValue Cura(1), 
+    Cura4(2);
 
     private final int enumPosition;
 

@@ -3,7 +3,6 @@ package celtech.roboxbase.services.slicer;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.SlicerType;
-import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.TimeUtils;
@@ -11,6 +10,7 @@ import celtech.roboxbase.utils.exporters.AMFOutputConverter;
 import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 {
 
-    private final Stenographer steno = StenographerFactory.getStenographer(SlicerTask.class.
+    private static final Stenographer STENO = StenographerFactory.getStenographer(SlicerTask.class.
             getName());
     private String printJobUUID = null;
     private final PrintableMeshes printableMeshes;
@@ -70,7 +70,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             return null;
         }
 
-        steno.debug("slice " + printableMeshes.getSettings().getProfileName());
+        STENO.debug("slice " + printableMeshes.getSettings().getName());
         updateTitle("Slicer");
         updateMessage("Preparing model for conversion");
         updateProgress(0.0, 100.0);
@@ -80,7 +80,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 printJobDirectory,
                 printerToUse,
                 this,
-                steno
+                STENO
         );
     }
 
@@ -96,10 +96,6 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         timeUtils.timerStart(uuidString, slicerTimerName);
 
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
-        if (printableMeshes.getSettings().getSlicerOverride() != null)
-        {
-            slicerType = printableMeshes.getSettings().getSlicerOverride();
-        }
 
         MeshFileOutputConverter outputConverter = null;
 
@@ -128,7 +124,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
-        boolean succeeded = sliceFile(printJobUUID, printJobDirectory, slicerType, meshExportResult.getCreatedFiles(), centreOfPrintedObject, progressReceiver, steno);
+        boolean succeeded = sliceFile(printJobUUID, 
+                printJobDirectory, 
+                slicerType, 
+                meshExportResult.getCreatedFiles(), 
+                printableMeshes.getExtruderForModel(), 
+                centreOfPrintedObject, 
+                progressReceiver,
+                printableMeshes.getNumberOfNozzles(),
+                steno);
 
         timeUtils.timerStop(uuidString, slicerTimerName);
         steno.debug("Slicer Timer Report");
@@ -143,16 +147,29 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             String printJobDirectory,
             SlicerType slicerType,
             List<String> createdMeshFiles,
+            List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
+            int numberOfNozzles,
             Stenographer steno)
     {
+        // Heads with a single nozzle are anomalous because
+        // tool zero uses the "E" extruder, which is usually
+        // extruder number 1. So for these kinds of head, the
+        // extruder number needs to be reset to 0, hence the
+        // need for the numberOfNozzles parameter.
+        // This hack is closely related to the hack in
+        // CuraDefaultSettingsEditor that also sets the extruder
+        // number to zero for single nozzle heads.
+ 
+ 
         boolean succeeded = false;
 
         String tempGcodeFilename = printJobUUID + BaseConfiguration.gcodeTempFileExtension;
 
         String configFile = printJobUUID + BaseConfiguration.printProfileFileExtension;
-
+        String jsonSettingsFile = "fdmprinter_robox.def.json";
+        
         MachineType machineType = BaseConfiguration.getMachineType();
         ArrayList<String> commands = new ArrayList<>();
 
@@ -160,11 +177,17 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         String macSlicerCommand = "";
         String linuxSlicerCommand = "";
         String configLoadCommand = "";
+        String configLoadFile = "";
+        //The next variable is only required for Cura4
+        String actionCommand = "";
         //The next variable is only required for Slic3r
         String printCenterCommand = "";
-        String combinedConfigSection = "";
         String verboseOutputCommand = "";
         String progressOutputCommand = "";
+        String modelFileCommand = "";
+        String extruderTrainCommand = "";
+        String settingCommand = "-s";
+        String extruderSettingFormat = "extruder_nr=%d";
 
         switch (slicerType)
         {
@@ -174,7 +197,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 macSlicerCommand = "Slic3r.app/Contents/MacOS/slic3r";
                 linuxSlicerCommand = "Slic3r/bin/slic3r";
                 configLoadCommand = "--load";
-                combinedConfigSection = configLoadCommand + " \"" + configFile + "\"";
+                configLoadFile = configFile;
                 printCenterCommand = "--print-center";
                 break;
             case Cura:
@@ -184,13 +207,28 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 linuxSlicerCommand = "Cura/CuraEngine";
                 verboseOutputCommand = "-v";
                 configLoadCommand = "-c";
+                configLoadFile = configFile;
                 progressOutputCommand = "-p";
-                combinedConfigSection = configLoadCommand + " \"" + configFile + "\"";
+                break;
+            case Cura4:
+                windowsSlicerCommand = "\"" + BaseConfiguration.
+                        getCommonApplicationDirectory() + "Cura4\\CuraEngine.exe\"";
+                macSlicerCommand = "Cura4/CuraEngine";
+                linuxSlicerCommand = "Cura4/CuraEngine";
+                actionCommand = "slice";
+                verboseOutputCommand = "-v";
+                configLoadCommand = "-j";
+                configLoadFile = jsonSettingsFile;
+                progressOutputCommand = "-p";
+                modelFileCommand = "-l";
+                extruderTrainCommand = "-e";
                 break;
         }
 
         steno.debug("Selected slicer is " + slicerType + " : " + Thread.currentThread().getName());
 
+        int previousExtruder;
+        int extruderNo;
         switch (machineType)
         {
             case WINDOWS_95:
@@ -201,12 +239,15 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + printJobDirectory
                         + "\" && "
                         + windowsSlicerCommand
-                        + " "
-                        + verboseOutputCommand
+                        + " ";
+                if (!actionCommand.isEmpty())
+                    win95PrintCommand += actionCommand + " ";
+                win95PrintCommand += verboseOutputCommand
                         + " "
                         + progressOutputCommand
                         + " "
-                        + combinedConfigSection
+                        + configLoadCommand
+                        + " \"" + configLoadFile + "\""
                         + " -o "
                         + "\"" + tempGcodeFilename + "\"";
                 for (String fileName : createdMeshFiles)
@@ -226,16 +267,19 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         + printJobDirectory
                         + "\" && "
                         + windowsSlicerCommand
-                        + " "
-                        + verboseOutputCommand
+                        + " ";
+                if (!actionCommand.isEmpty())
+                    windowsPrintCommand += actionCommand + " ";
+                windowsPrintCommand += verboseOutputCommand
                         + " "
                         + progressOutputCommand
                         + " "
-                        + combinedConfigSection
-                        + " -o "
+                        + configLoadCommand
+                        + " \"" + configLoadFile + "\"";
+                 windowsPrintCommand += " -o "
                         + "\"" + tempGcodeFilename + "\"";
 
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     windowsPrintCommand += " " + printCenterCommand;
                     windowsPrintCommand += " "
@@ -244,12 +288,31 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ());
                 }
 
-//                windowsPrintCommand += " *.stl";
-                for (String fileName : createdMeshFiles)
+                previousExtruder = -1;
+                extruderNo = 0;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
+                    {
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
+                        windowsPrintCommand += " " + extruderTrainCommand + extruderNo;
+                    }
+                    windowsPrintCommand += " " + modelFileCommand;
                     windowsPrintCommand += " \"";
-                    windowsPrintCommand += fileName;
+                    windowsPrintCommand += createdMeshFiles.get(i);
                     windowsPrintCommand += "\"";
+                    
+                    if (slicerType == SlicerType.Cura4)
+                    {
+                        windowsPrintCommand += " " + settingCommand;
+                        windowsPrintCommand += " " + String.format(extruderSettingFormat, extruderNo);
+                    }
+                    
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
                 windowsPrintCommand += " && popd\"";
                 steno.debug(windowsPrintCommand);
@@ -258,56 +321,104 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             case MAC:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + macSlicerCommand);
-                if (!verboseOutputCommand.equals(""))
+                if (!actionCommand.isEmpty())
+                    commands.add(actionCommand);
+                if (!verboseOutputCommand.isEmpty())
                 {
                     commands.add(verboseOutputCommand);
                 }
-                if (!progressOutputCommand.equals(""))
+                if (!progressOutputCommand.isEmpty())
                 {
                     commands.add(progressOutputCommand);
                 }
                 commands.add(configLoadCommand);
-                commands.add(configFile);
+                commands.add(configLoadFile);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     commands.add(printCenterCommand);
                     commands.add(String.format(Locale.UK, "%.3f", centreOfPrintedObject.getX())
                             + ","
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
-                for (String fileName : createdMeshFiles)
+
+                previousExtruder = -1;
+                extruderNo = 0;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    commands.add(fileName);
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i)) 
+                    {
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
+                        commands.add(extruderTrainCommand + extruderNo);
+                    }
+                    if (!modelFileCommand.isEmpty())
+                        commands.add(modelFileCommand);
+                    commands.add(createdMeshFiles.get(i));
+                    
+                    if (slicerType == SlicerType.Cura4)
+                    {
+                        commands.add(settingCommand);
+                        commands.add(String.format(extruderSettingFormat, extruderNo));
+                    }
+                    
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
+
                 break;
             case LINUX_X86:
             case LINUX_X64:
                 commands.add(BaseConfiguration.getCommonApplicationDirectory()
                         + linuxSlicerCommand);
-                if (!verboseOutputCommand.equals(""))
+                if (!actionCommand.isEmpty())
+                    commands.add(actionCommand);
+                if (!verboseOutputCommand.isEmpty())
                 {
                     commands.add(verboseOutputCommand);
                 }
-                if (!progressOutputCommand.equals(""))
+                if (!progressOutputCommand.isEmpty())
                 {
                     commands.add(progressOutputCommand);
                 }
                 commands.add(configLoadCommand);
-                commands.add(configFile);
+                commands.add(configLoadFile);
                 commands.add("-o");
                 commands.add(tempGcodeFilename);
-                if (!printCenterCommand.equals(""))
+                if (!printCenterCommand.isEmpty())
                 {
                     commands.add(printCenterCommand);
                     commands.add(String.format(Locale.UK, "%.3f", centreOfPrintedObject.getX())
                             + ","
                             + String.format(Locale.UK, "%.3f", centreOfPrintedObject.getZ()));
                 }
-                for (String fileName : createdMeshFiles)
+                previousExtruder = -1;
+                extruderNo = 0;
+                for (int i = 0; i < createdMeshFiles.size(); i++)
                 {
-                    commands.add(fileName);
+                    if (slicerType == SlicerType.Cura4 && previousExtruder != extrudersForMeshes.get(i))
+                    {
+                        if (numberOfNozzles > 1)
+                        {
+                            // Extruder needs swapping... just because
+                            extruderNo = extrudersForMeshes.get(i) > 0 ? 0 : 1;
+                        }
+                        commands.add(extruderTrainCommand + extruderNo);
+                    }
+                    if (!modelFileCommand.isEmpty())
+                        commands.add(modelFileCommand);
+                    commands.add(createdMeshFiles.get(i));
+                    
+                    if (slicerType == SlicerType.Cura4)
+                    {
+                        commands.add(settingCommand);
+                        commands.add(String.format(extruderSettingFormat, extruderNo));
+                    }
+                    
+                    previousExtruder = extrudersForMeshes.get(i);
                 }
                 break;
             default:
@@ -316,13 +427,14 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 
         if (commands.size() > 0)
         {
-            steno.debug("Slicer command is " + String.join(" ", commands));
+            //steno.debug("Slicer command is " + String.join(" ", commands));
             ProcessBuilder slicerProcessBuilder = new ProcessBuilder(commands);
             if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
             {
                 steno.debug("Set working directory (Non-Windows) to " + printJobDirectory);
                 slicerProcessBuilder.directory(new File(printJobDirectory));
             }
+            steno.info("Slicer command is " + String.join(" ", slicerProcessBuilder.command()));
 
             Process slicerProcess = null;
             try
@@ -351,8 +463,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                         break;
                     default:
                         steno.error("Failure when invoking slicer with command line: " + String.join(
-                                " ", commands));
-                        steno.error("Slicer terminated with unknown exit code " + exitStatus);
+                                " ", slicerProcessBuilder.command()));
+                        steno.error("Slicer terminated with exit code " + exitStatus);
                         break;
                 }
             } catch (IOException ex)

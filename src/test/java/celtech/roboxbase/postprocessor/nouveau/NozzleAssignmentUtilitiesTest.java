@@ -1,9 +1,10 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.configuration.RoboxProfile;
+import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
-import celtech.roboxbase.configuration.datafileaccessors.SlicerParametersContainer;
+import celtech.roboxbase.configuration.datafileaccessors.RoboxProfileSettingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.ExtrusionNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.FillSectionNode;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -130,18 +132,16 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
-        SlicerParametersFile paramFile = SlicerParametersContainer.getSettings("Draft", "RBX01-SM");
-        List<Integer> extrudersForModel = new ArrayList<>();
-        extrudersForModel.add(0);
-        extrudersForModel.add(1);
+        Optional<RoboxProfile> optionalRoboxProfile = RoboxProfileSettingsContainer.getInstance().getRoboxProfileWithName("Draft", SlicerType.Cura, "RBX01-SM");
+        RoboxProfile roboxProfile = optionalRoboxProfile.get();
 
         List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < paramFile.getNozzleParameters()
+                nozzleIndex < roboxProfile.getNozzleParameters()
                 .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(paramFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(roboxProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
@@ -150,7 +150,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
-                paramFile,
+                roboxProfile,
                 singleMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
@@ -280,18 +280,16 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
-        SlicerParametersFile paramFile = SlicerParametersContainer.getSettings("Draft", "RBX01-SM");
-        List<Integer> extrudersForModel = new ArrayList<>();
-        extrudersForModel.add(0);
-        extrudersForModel.add(1);
+        Optional<RoboxProfile> optionalRoboxProfile = RoboxProfileSettingsContainer.getInstance().getRoboxProfileWithName("Draft", SlicerType.Cura, "RBX01-SM");
+        RoboxProfile roboxProfile = optionalRoboxProfile.get();
 
         List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < paramFile.getNozzleParameters()
+                nozzleIndex < roboxProfile.getNozzleParameters()
                 .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(paramFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(roboxProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
@@ -304,7 +302,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
-                paramFile,
+                roboxProfile,
                 dualMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
@@ -431,18 +429,16 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
-        SlicerParametersFile paramFile = SlicerParametersContainer.getSettings("Draft", "RBX01-SM");
-        List<Integer> extrudersForModel = new ArrayList<>();
-        extrudersForModel.add(0);
-        extrudersForModel.add(1);
+        Optional<RoboxProfile> optionalRoboxProfile = RoboxProfileSettingsContainer.getInstance().getRoboxProfileWithName("Draft", SlicerType.Cura, "RBX01-SM");
+        RoboxProfile roboxProfile = optionalRoboxProfile.get();
 
         List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < paramFile.getNozzleParameters()
+                nozzleIndex < roboxProfile.getNozzleParameters()
                 .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(paramFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(roboxProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
@@ -456,7 +452,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
-                paramFile,
+                roboxProfile,
                 dualMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,
@@ -594,18 +590,16 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_NOZZLE_FULLY_AT_START);
         ppFeatures.enableFeature(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES);
 
-        SlicerParametersFile paramFile = SlicerParametersContainer.getSettings("Draft", "RBX01-SM");
-        List<Integer> extrudersForModel = new ArrayList<>();
-        extrudersForModel.add(0);
-        extrudersForModel.add(1);
+        Optional<RoboxProfile> optionalRoboxProfile = RoboxProfileSettingsContainer.getInstance().getRoboxProfileWithName("Draft", SlicerType.Cura, "RBX01-SM");
+        RoboxProfile roboxProfile = optionalRoboxProfile.get();
 
         List<NozzleProxy> nozzleProxies = new ArrayList<>();
 
         for (int nozzleIndex = 0;
-                nozzleIndex < paramFile.getNozzleParameters()
+                nozzleIndex < roboxProfile.getNozzleParameters()
                 .size(); nozzleIndex++)
         {
-            NozzleProxy proxy = new NozzleProxy(paramFile.getNozzleParameters().get(nozzleIndex));
+            NozzleProxy proxy = new NozzleProxy(roboxProfile.getNozzleParameters().get(nozzleIndex));
             proxy.setNozzleReferenceNumber(nozzleIndex);
             nozzleProxies.add(proxy);
         }
@@ -619,7 +613,7 @@ public class NozzleAssignmentUtilitiesTest extends BaseEnvironmentConfiguredTest
 
         NozzleAssignmentUtilities assignmentUtilities = new NozzleAssignmentUtilities(
                 nozzleProxies,
-                paramFile,
+                roboxProfile,
                 dualMaterialHead,
                 ppFeatures,
                 PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL,

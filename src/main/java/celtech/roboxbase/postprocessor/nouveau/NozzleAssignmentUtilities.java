@@ -1,7 +1,7 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
+import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
-import celtech.roboxbase.configuration.fileRepresentation.SlicerParametersFile;
 import celtech.roboxbase.postprocessor.NozzleProxy;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerNode;
@@ -31,7 +31,7 @@ public class NozzleAssignmentUtilities
 {
 
     private final Stenographer steno = StenographerFactory.getStenographer(NozzleAssignmentUtilities.class.getName());
-    private final SlicerParametersFile slicerParametersFile;
+    private final RoboxProfile settingsProfile;
     private final HeadFile headFile;
     private final PostProcessorFeatureSet featureSet;
     private final PostProcessingMode postProcessingMode;
@@ -40,20 +40,20 @@ public class NozzleAssignmentUtilities
     private final Map<Integer, Integer> objectToNozzleNumberMap;
 
     public NozzleAssignmentUtilities(List<NozzleProxy> nozzleProxies,
-            SlicerParametersFile slicerParametersFile,
+            RoboxProfile settingsProfile,
             HeadFile headFile,
             PostProcessorFeatureSet featureSet,
             PostProcessingMode postProcessingMode,
             Map<Integer, Integer> objectToNozzleNumberMap)
     {
-        this.slicerParametersFile = slicerParametersFile;
+        this.settingsProfile = settingsProfile;
         this.headFile = headFile;
         this.featureSet = featureSet;
         this.postProcessingMode = postProcessingMode;
         this.objectToNozzleNumberMap = objectToNozzleNumberMap;
 
         nozzleControlUtilities = new NozzleManagementUtilities(nozzleProxies,
-                slicerParametersFile,
+                settingsProfile,
                 headFile);
     }
 
@@ -111,6 +111,7 @@ public class NozzleAssignmentUtilities
                         // Don't change anything if we're in task-based selection as this always uses extruder E
                         switch (postProcessingMode)
                         {
+                            case LEAVE_TOOL_CHANGES_ALONE_DUAL:
                             case SUPPORT_IN_FIRST_MATERIAL:
                             case SUPPORT_IN_SECOND_MATERIAL:
                                 switch (toolSelectNode.getToolNumber())
@@ -181,15 +182,14 @@ public class NozzleAssignmentUtilities
         for (ObjectDelineationNode objectNode : objectNodes)
         {
             objectReferenceNumber = objectNode.getObjectNumber();
+            // Add retract node to end of previous object section (before tool change)
             if (lastObjectReferenceNumber != -1
                     && lastObjectReferenceNumber != objectReferenceNumber
-                    && lastSectionNode != null)
+                    && lastSectionNode != null
+                    && (lastSectionNode.getChildren().isEmpty()
+                    || !(lastSectionNode.getChildren().get(lastSectionNode.getChildren().size() - 1) instanceof RetractNode)))
             {
-                if (lastSectionNode.getChildren().size() == 0
-                        || !(lastSectionNode.getChildren().get(lastSectionNode.getChildren().size() - 1) instanceof RetractNode))
-                {
-                    lastSectionNode.addChildAtEnd(new RetractNode());
-                }
+                lastSectionNode.addChildAtEnd(new RetractNode());
             }
 
             lastObjectReferenceNumber = objectReferenceNumber;
@@ -294,7 +294,7 @@ public class NozzleAssignmentUtilities
                             //In this case nozzle 0 corresponds to tool 0
                             if (layerNode.getLayerNumber() == 0)
                             {
-                                int notionalNozzleNumber = slicerParametersFile.getFirstLayerNozzle();
+                                int notionalNozzleNumber = settingsProfile.getSpecificIntSetting("firstLayerNozzle");
                                 if (notionalNozzleNumber >= 0
                                         && notionalNozzleNumber <= 1)
                                 {
@@ -321,7 +321,12 @@ public class NozzleAssignmentUtilities
                                 || (sectionUnderConsideration instanceof SkirtSectionNode)))
                         {
                             requiredToolNumber = (postProcessingMode == PostProcessingMode.SUPPORT_IN_FIRST_MATERIAL) ? 1 : 0;
-                        } else
+                        } else if (postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL
+                                || postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE) 
+                        {
+                            requiredToolNumber = objectReferenceNumber;
+                        }
+                        else
                         {
                             requiredToolNumber = objectToNozzleNumberMap.get(objectReferenceNumber);
                         }
