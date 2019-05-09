@@ -23,12 +23,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-base</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>12-ea+14</version>
+            <version>11.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
