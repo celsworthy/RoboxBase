@@ -493,7 +493,7 @@ public class BaseConfiguration
         if (installationProperties != null
                 && applicationLocale == null)
         {
-            applicationLocale = installationProperties.getProperty("locale");
+            applicationLocale = installationProperties.getProperty("language");
         }
 
         return applicationLocale;
