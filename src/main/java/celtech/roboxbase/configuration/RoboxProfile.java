@@ -83,6 +83,7 @@ public class RoboxProfile {
             STENO.error("Setting with id: " + settingId + " does not exist. Returning 0.");
             return 0f;
         }
+        value = sanitiseValue(value);
         float floatValue = Float.valueOf(value);
         return floatValue;
     }
@@ -120,7 +121,10 @@ public class RoboxProfile {
         float floatValue = defaultValue;
         String settingsValue = settings.get(settingId);
         if (settingsValue != null)
+        {
+            settingsValue = sanitiseValue(settingsValue);
             floatValue = Float.valueOf(settingsValue);
+        }
         return floatValue;
     }
     
@@ -157,6 +161,7 @@ public class RoboxProfile {
         
         if(settings.containsKey(EJECTION_VOLUME)) {
             String ejectionVolume = settings.get(EJECTION_VOLUME);
+            ejectionVolume = sanitiseValue(ejectionVolume);
             for(String value : ejectionVolume.split(":")) {
                 NozzleParameters nozzleParameters = new NozzleParameters();
                 nozzleParameters.setEjectionVolume(Float.parseFloat(value));
@@ -166,6 +171,7 @@ public class RoboxProfile {
         
         if(settings.containsKey(PARTIAL_B_MINIMUM)) {
             String partialBMinimum = settings.get(PARTIAL_B_MINIMUM);
+            partialBMinimum = sanitiseValue(partialBMinimum);
             String[] values = partialBMinimum.split(":");
             for(int i = 0; i < values.length; i++) {
                 createdNozzleParameters.get(i).setPartialBMinimum(Float.parseFloat(values[i]) / 100);
@@ -173,5 +179,18 @@ public class RoboxProfile {
         }
        
         nozzleParameters = createdNozzleParameters;
+    }
+    
+    /**
+     * Some languages use , as a decimal point delimiter, we need to sanitise the string
+     * to make sure we are replacing these with decimal points before we attempt to do anything with them.
+     * 
+     * @param value
+     * @return String representing the value with any , replaced with .
+     */
+    private String sanitiseValue(String value) 
+    {
+        String sanitisedValue = value.replaceAll("," , ".");
+        return sanitisedValue;
     }
 }
