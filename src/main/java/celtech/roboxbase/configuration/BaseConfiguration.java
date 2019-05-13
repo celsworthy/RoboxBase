@@ -598,9 +598,11 @@ public class BaseConfiguration
             {
                 try
                 {
-                    userStorageDirectory = configuration.getFilenameString(
-                            applicationConfigComponent, userStorageDirectoryComponent, null)
-                            + getApplicationName() + "/";
+                    userStorageDirectory = Paths.get(configuration.getFilenameString(applicationConfigComponent,
+                                                                                     userStorageDirectoryComponent,
+                                                                                     null),
+                                                     getApplicationName()).toAbsolutePath()
+                                               + File.separator;
                     steno.info("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {
