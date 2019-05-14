@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -189,41 +190,56 @@ public class RoboxProfileSettingsContainer {
         loadRoboxProfilesIntoMap(userProfileDirectory, slicerType, false);
     }
     
-    private void loadRoboxProfilesIntoMap(File profileDirectory, SlicerType slicerType, boolean standardProfile) {
+    private void loadRoboxProfilesIntoMap(File profileDirectory, SlicerType slicerType, boolean standardProfile) 
+    {
         Map<String, List<RoboxProfile>> allProfilesMap = getRoboxProfilesForSlicer(slicerType);
         Map<String, ObservableList<RoboxProfile>> customProfilesMap = getCustomRoboxProfilesForSlicer(slicerType);
         
-        if(profileDirectory.exists()) {
-            for(File headDir : profileDirectory.listFiles()) {
-                if(headDir.isDirectory()) {
+        if(profileDirectory.exists())
+        {
+            for(File headDir : profileDirectory.listFiles()) 
+            {
+                if(headDir.isDirectory()) 
+                {
                     String headType = headDir.getName();
+                    List<String> usedNames = allProfilesMap.getOrDefault(headType, new ArrayList<>()).stream()
+                            .map(profile -> profile.getName())
+                            .collect(Collectors.toList());
                     Map<String, String> settings = loadHeadSettingsIntoMap(headType, slicerType);
 
                     List<RoboxProfile> allRoboxProfiles = new ArrayList<>();
                     ObservableList<RoboxProfile> customRoboxProfiles = FXCollections.observableArrayList();
 
-                    for(File profile : headDir.listFiles()) {
+                    for(File profile : headDir.listFiles())
+                    {
                         String profileName = profile.getName().split("\\.")[0];
-                        if(!profileName.equals(headType)) {
+                        if(!profileName.equals(headType) && !usedNames.contains(profileName))
+                        {
                             Map<String, String> profileSettings = new HashMap<>(settings);
                             addOrOverriteSettings(profile, profileSettings);
                             RoboxProfile roboxProfile = new RoboxProfile(profileName, headType, standardProfile, profileSettings);
                             allRoboxProfiles.add(roboxProfile);
-                            if(!standardProfile) {
+                            if(!standardProfile) 
+                            {
                                 customRoboxProfiles.add(roboxProfile);
                             }
+                            usedNames.add(profileName);
                         }
                     }
 
-                    if(allProfilesMap.containsKey(headType)) {
+                    if(allProfilesMap.containsKey(headType)) 
+                    {
                         allProfilesMap.get(headType).addAll(allRoboxProfiles);
-                    } else {
+                    } else 
+                    {
                         allProfilesMap.put(headType, allRoboxProfiles);
                     }
 
-                    if(customProfilesMap.containsKey(headType)) {
+                    if(customProfilesMap.containsKey(headType)) 
+                    {
                         customProfilesMap.get(headType).addAll(customRoboxProfiles);
-                    } else {
+                    } else 
+                    {
                         customProfilesMap.put(headType, customRoboxProfiles);
                     }
                 }

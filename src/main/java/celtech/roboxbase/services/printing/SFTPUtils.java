@@ -33,6 +33,25 @@ public class SFTPUtils
         this.hostAddress = hostAddress;
     }
     
+    private void createRemoteDirectory(ChannelSftp channelSftp, String remoteDirectory) throws SftpException
+    {
+        SftpATTRS attrs = null;
+        try
+        {
+            attrs = channelSftp.stat(remoteDirectory);
+        }
+        catch (Exception e)
+        {
+            steno.debug("Remote directory \"" + remoteDirectory + "\" not found");
+        }
+
+        if (attrs == null)
+        {
+            steno.info("Creating remote directory \"" + remoteDirectory + "\"");
+            channelSftp.mkdir(remoteDirectory);
+        }
+    }
+    
     public boolean transferToRemotePrinter(File localFile, String remoteDirectory, String remoteFile, SftpProgressMonitor monitor)
     {
         // Use sftp to transfer file to remote printer.
@@ -58,22 +77,19 @@ public class SFTPUtils
                         
             if (remoteDirectory != null && !remoteDirectory.isEmpty())
             {
-                steno.info("Checking for remote directory \"" + remoteDirectory + "\"");
-
-                SftpATTRS attrs = null;
-                try
+                // Create directory, creating any missing parent directories.
+                // This fixes a problem where the transfer fails because
+                // the project directory has not been created.
+                String[] pathComponents = remoteDirectory.split("/");
+                remotePath = "";
+                for(int i = 0; i < pathComponents.length; ++i)
                 {
-                    attrs = channelSftp.stat(remoteDirectory);
-                }
-                catch (Exception e)
-                {
-                    steno.debug("Remote directory \"" + remoteDirectory + "\" not found");
-                }
-
-                if (attrs == null)
-                {
-                    steno.info("Creating remote directory \"" + remoteDirectory + "\"");
-                    channelSftp.mkdir(remoteDirectory);
+                    if (i == 0)
+                        remotePath = pathComponents[0];
+                    else
+                        remotePath = remotePath + "/" + pathComponents[i];
+                    if (!remotePath.isEmpty())
+                        createRemoteDirectory(channelSftp, remotePath);
                 }
                 remotePath = remoteDirectory + '/' + remoteFile;
             }

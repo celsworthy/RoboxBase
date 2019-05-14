@@ -20,7 +20,7 @@ public class HeadFile
     private String typeCode;
     private HeadType type;
     private ValveType valves;
-    private float zReduction;
+    private float zReduction = 0.0f;
 
     private List<NozzleHeaterData> nozzleHeaters = new ArrayList<>();
     private List<NozzleData> nozzles = new ArrayList<>();
