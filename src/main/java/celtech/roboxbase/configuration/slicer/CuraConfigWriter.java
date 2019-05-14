@@ -4,7 +4,9 @@ import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  *
@@ -12,13 +14,18 @@ import java.util.Locale;
  */
 public class CuraConfigWriter extends SlicerConfigWriter
 {
-
+    private static final String SUPPORT_TYPE_SETTING = "supportType";
+    private static final Map<String, String> OPTION_TO_NUMBER_MAP = new HashMap<>();
+    
     public CuraConfigWriter()
     {
         super();
         slicerType = SlicerType.Cura;
         PRINT_PROFILE_SETTINGS_CONTAINER.getDefaultPrintProfileSettingsForSlicer(slicerType).getAllSettings()
                 .forEach(setting -> printProfileSettingsMap.put(setting.getId(), setting));
+        
+        OPTION_TO_NUMBER_MAP.put("rectlinear_grid", "0");
+        OPTION_TO_NUMBER_MAP.put("rectlinear", "1");
     }
 
     @Override
@@ -43,6 +50,10 @@ public class CuraConfigWriter extends SlicerConfigWriter
     @Override
     protected void outputLine(FileWriter writer, String variableName, String value) throws IOException
     {
+        if (variableName.equals(SUPPORT_TYPE_SETTING))
+        {
+            value = OPTION_TO_NUMBER_MAP.containsKey(value) ? OPTION_TO_NUMBER_MAP.get(value) : value;
+        }
         writer.append(variableName + "=" + value + "\n");
     }
 

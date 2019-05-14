@@ -206,13 +206,28 @@ public class BaseLookup
 
     public static Locale getDefaultApplicationLocale()
     {
-        String languageTag = BaseConfiguration.getApplicationLocale();
+        Locale appLocale = getLocaleFromTag(BaseConfiguration.getApplicationLocale());
+        
+        if (appLocale == null)
+        {
+            steno.debug("Default language tag is null - using \"en\" locale.");
+            appLocale = Locale.ENGLISH;
+        }
+        
+        return appLocale;
+    }
+    
+    public static Locale getLocaleFromTag(String languageTag)
+    {
         Locale appLocale;
+        
         if (languageTag == null || languageTag.length() == 0)
         {
+            steno.debug("Starting AutoMaker - language tag is null - using default locale.");
             appLocale = Locale.getDefault();
         } else
         {
+            steno.debug("Starting AutoMaker - language tag is \"" + languageTag + "\"");
             String[] languageElements = languageTag.split("-");
             switch (languageElements.length)
             {
