@@ -153,6 +153,7 @@ public class StatusResponse extends RoboxRxPacket
     private float feedRateDMultiplier = 0;
     private WhyAreWeWaitingState whyAreWeWaitingState = WhyAreWeWaitingState.NOT_WAITING;
     private boolean headPowerOn = false;
+    private int hardwareRev = 0;
 
     public boolean getDataIsValid()
     {
@@ -658,6 +659,16 @@ public class StatusResponse extends RoboxRxPacket
     public void setHeadPowerOn(boolean value)
     {
         headPowerOn = value;
+    }
+    
+    public int getHardwareRev()
+    {
+        return hardwareRev;
+    }
+    
+    public void setHardwareRev(int hardwareRev)
+    {
+        this.hardwareRev = hardwareRev;
     }
 
     public void setRunningPrintJobID(String runningPrintJobID)
@@ -1370,6 +1381,19 @@ public class StatusResponse extends RoboxRxPacket
                 this.headPowerOn = (byteData[byteOffset] & 1) > 0;
                 byteOffset += 1;
             }
+            
+            if (requiredFirmwareVersion >= 768)
+            {
+                String hardwareRevString = new String(byteData, byteOffset, 1, charsetToUse);
+                byteOffset += 1;
+                try
+                {
+                    this.hardwareRev = Math.round(decimalFloatFormatter.parse(hardwareRevString).floatValue());
+                } catch (ParseException ex)
+                {
+                    steno.error("Couldn't parse nozzle in use - " + hardwareRevString);
+                }
+            }
 
             success = true;
         } catch (UnsupportedEncodingException ex)
@@ -1498,6 +1522,8 @@ public class StatusResponse extends RoboxRxPacket
         outputString.append("\n");
         outputString.append("Head power on: " + headPowerOn);
         outputString.append("\n");
+        outputString.append("Hardware revision: " + hardwareRev);
+        outputString.append("\n");
         outputString.append(">>>>>>>>>>\n");
 
         return outputString.toString();
@@ -1506,7 +1532,11 @@ public class StatusResponse extends RoboxRxPacket
     @Override
     public int packetLength(float requiredFirmwareVersion)
     {
-        if (requiredFirmwareVersion >= 740 || requiredFirmwareVersion == RoboxRxPacketFactory.USE_LATEST_FIRMWARE_VERSION)
+        if (requiredFirmwareVersion >= 768 || requiredFirmwareVersion == RoboxRxPacketFactory.USE_LATEST_FIRMWARE_VERSION)
+        {
+            return 222;
+        }
+        if (requiredFirmwareVersion >= 740)
         {
             return 221;
         } else if (requiredFirmwareVersion >= 724)
@@ -1591,6 +1621,7 @@ public class StatusResponse extends RoboxRxPacket
                 append(feedRateDMultiplier).
                 append(whyAreWeWaitingState).
                 append(headPowerOn).
+                append(hardwareRev).
                 toHashCode();
     }
 
@@ -1674,6 +1705,7 @@ public class StatusResponse extends RoboxRxPacket
                 append(feedRateDMultiplier, rhs.feedRateDMultiplier).
                 append(whyAreWeWaitingState, rhs.whyAreWeWaitingState).
                 append(headPowerOn, rhs.headPowerOn).
+                append(hardwareRev, rhs.hardwareRev).
                 isEquals();
         // if deriving: appendSuper(super.equals(obj)).
     }
