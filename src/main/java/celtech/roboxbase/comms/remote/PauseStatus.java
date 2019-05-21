@@ -22,8 +22,13 @@ public enum PauseStatus
     /**
      *
      */
-    RESUME_PENDING(3, "printerStatus.resuming");
-
+    RESUME_PENDING(3, "printerStatus.resuming"),
+    /**
+     * 
+     */
+    SELFIE_PAUSE(4, "printerStatus.selfie");
+    
+    
     /**
      *
      * @param valueOf
