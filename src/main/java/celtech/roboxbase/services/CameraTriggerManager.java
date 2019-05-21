@@ -1,10 +1,12 @@
 package celtech.roboxbase.services;
 
-import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.postprocessor.nouveau.nodes.CommentNode;
-import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeDirectiveNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.LayerChangeDirectiveNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.MCodeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
+import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.printerControl.model.PrinterException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,6 +31,20 @@ public class CameraTriggerManager
     private final ScheduledExecutorService scheduledPhoto;
     private final Runnable photoRun;
     private CameraTriggerData triggerData;
+    
+    private final ChangeListener pauseStatusListener = (observable, oldPauseStatus, newPauseStatus) -> {
+        if (newPauseStatus == PauseStatus.SELFIE_PAUSE)
+        {
+            boolean pictureTaken = triggerUSBCamera();
+            try 
+            {
+                associatedPrinter.resume();
+            } catch (PrinterException ex)
+            {
+                steno.error("Exception whilst resuming");
+            }
+        }
+    };
 
     public CameraTriggerManager(Printer printer)
     {
@@ -70,6 +86,13 @@ public class CameraTriggerManager
                 }
             }
         };
+        
+        if (associatedPrinter != null)
+        {
+            // In case the printer has been seen before, we only want to have one pauseStatusListener
+            associatedPrinter.pauseStatusProperty().removeListener(pauseStatusListener);
+            associatedPrinter.pauseStatusProperty().addListener(pauseStatusListener);
+        }
     }
 
     private final ChangeListener<Number> cameraTriggerListener = (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
@@ -100,9 +123,12 @@ public class CameraTriggerManager
             moveBedForward.getFeedrate().setFeedRate_mmPerMin(moveFeedrate_mm_per_min);
         }
 
-        GCodeDirectiveNode dwellWhilePictureTaken = new GCodeDirectiveNode();
-        dwellWhilePictureTaken.setGValue(4);
-        dwellWhilePictureTaken.setSValue(triggerData.getDelayAfterCapture());
+        MCodeNode selfiePauseNode = new MCodeNode(1);
+        selfiePauseNode.setCPresent(true);
+        
+//        GCodeDirectiveNode dwellWhilePictureTaken = new GCodeDirectiveNode();
+//        dwellWhilePictureTaken.setGValue(4);
+//        dwellWhilePictureTaken.setSValue(triggerData.getDelayAfterCapture());
 
         TravelNode returnToPreviousPosition = new TravelNode();
         returnToPreviousPosition.getMovement().setX(layerChangeNode.getMovement().getX());
@@ -111,7 +137,8 @@ public class CameraTriggerManager
 
         layerChangeNode.addSiblingAfter(endComment);
         layerChangeNode.addSiblingAfter(returnToPreviousPosition);
-        layerChangeNode.addSiblingAfter(dwellWhilePictureTaken);
+        //layerChangeNode.addSiblingAfter(dwellWhilePictureTaken);
+        layerChangeNode.addSiblingAfter(selfiePauseNode);
         if (outputMoveCommand)
         {
             layerChangeNode.addSiblingAfter(moveBedForward);
@@ -140,5 +167,10 @@ public class CameraTriggerManager
     public void setTriggerData(CameraTriggerData triggerData)
     {
         this.triggerData = triggerData;
+    }
+    
+    private boolean triggerUSBCamera()
+    {
+        return true;
     }
 }
