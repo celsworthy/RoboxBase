@@ -5,6 +5,7 @@ import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.datafileaccessors.RoboxProfileSettingsContainer;
+import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import java.util.Optional;
 import javafx.beans.property.BooleanProperty;
@@ -153,13 +154,13 @@ public class PrinterSettingsOverrides
     public RoboxProfile getSettings(String headType, SlicerType slicerType)
     {
         Optional<RoboxProfile> settings = getBaseProfile(headType, slicerType, printQuality.get());
-        return applyOverrides(settings);
+        return applyOverrides(settings, headType);
     }
     
     public RoboxProfile getSettings(String headType, SlicerType slicerType, PrintQualityEnumeration printQuality)
     {
         Optional<RoboxProfile> settings = getBaseProfile(headType, slicerType, printQuality);
-        return applyOverrides(settings);
+        return applyOverrides(settings, headType);
     }
 
     /**
@@ -168,7 +169,7 @@ public class PrinterSettingsOverrides
      * @param roboxProfile
      * @return
      */
-    public RoboxProfile applyOverrides(Optional<RoboxProfile> roboxProfile)
+    public RoboxProfile applyOverrides(Optional<RoboxProfile> roboxProfile, String headType)
     {
         if(!roboxProfile.isPresent()) 
         {
@@ -201,17 +202,20 @@ public class PrinterSettingsOverrides
             profileCopy.addOrOverride("numberOfPerimeters", "1");
         }
 
-        // Overrides what is on profile. Unless AS_PROFILE is selected.
-        if(printSupportTypeOverride.get().equals(SupportType.MATERIAL_1)) 
+        if (HeadContainer.getHeadByID(headType).getType() == Head.HeadType.DUAL_MATERIAL_HEAD)
         {
-            profileCopy.addOrOverride("supportNozzle", "1");
-            profileCopy.addOrOverride("supportInterfaceNozzle", "1");
-            profileCopy.addOrOverride("raftBrimNozzle", "1");
-        } else if (printSupportTypeOverride.get().equals(SupportType.MATERIAL_2)) 
-        {
-            profileCopy.addOrOverride("supportNozzle", "0");
-            profileCopy.addOrOverride("supportInterfaceNozzle", "0");
-            profileCopy.addOrOverride("raftBrimNozzle", "0");
+            // Overrides what is on profile. Unless AS_PROFILE is selected.
+            if(printSupportTypeOverride.get().equals(SupportType.MATERIAL_1)) 
+            {
+                profileCopy.addOrOverride("supportNozzle", "1");
+                profileCopy.addOrOverride("supportInterfaceNozzle", "1");
+                profileCopy.addOrOverride("raftBrimNozzle", "1");
+            } else if (printSupportTypeOverride.get().equals(SupportType.MATERIAL_2)) 
+            {
+                profileCopy.addOrOverride("supportNozzle", "0");
+                profileCopy.addOrOverride("supportInterfaceNozzle", "0");
+                profileCopy.addOrOverride("raftBrimNozzle", "0");
+            }
         }
         
         return profileCopy;
