@@ -10,14 +10,7 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.utils.ScriptUtils;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
 import libertysystems.stenographer.Stenographer;
@@ -35,8 +28,6 @@ public class CameraTriggerManager
     
     private Printer associatedPrinter = null;
     private static final int moveFeedrate_mm_per_min = 12000;
-    private final ScheduledExecutorService scheduledPhoto;
-    private final Runnable photoRun;
     private CameraTriggerData triggerData;
     
     private final ChangeListener pauseStatusListener = (observable, oldPauseStatus, newPauseStatus) -> {
@@ -58,17 +49,6 @@ public class CameraTriggerManager
     public CameraTriggerManager(Printer printer)
     {
         associatedPrinter = printer;
-        scheduledPhoto = Executors.newSingleThreadScheduledExecutor();
-        photoRun = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                STENO.debug("Firing camera");
-                String goProURLString = "http://10.5.5.9/camera/SH?t=" + triggerData.getGoProWifiPassword() + "&p=%01";
-                fireCameraThroughURL(goProURLString);
-            }
-        };
         
         if (associatedPrinter != null)
         {
@@ -77,44 +57,6 @@ public class CameraTriggerManager
             associatedPrinter.pauseStatusProperty().addListener(pauseStatusListener);
         }
     }
-    
-    private void fireCameraThroughURL(String urlString)
-    {
-        try
-        {
-            URL obj = new URL(urlString);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-            con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.44 (KHTML, like Gecko) JavaFX/8.0 Safari/537.44");
-
-            // optional default is GET
-            con.setRequestMethod("GET");
-            
-            //add request header
-            con.setConnectTimeout(500);
-            con.setReadTimeout(500);
-
-            int responseCode = con.getResponseCode();
-
-            if (responseCode == 200 && con.getContentLength() > 0)
-            {
-                STENO.debug("Took picture");
-            } else
-            {
-                STENO.error("Failed to take picture - response was " + responseCode);
-            }
-        } catch (IOException ex)
-        {
-            STENO.error("Exception whilst attempting to take GoPro picture");
-        }
-    }
-
-    private final ChangeListener<Number> cameraTriggerListener = (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
-    {
-        if (newValue.intValue() > oldValue.intValue())
-        {
-            triggerCamera();
-        }
-    };
 
     public void appendLayerEndTriggerCode(LayerChangeDirectiveNode layerChangeNode, boolean turnOffHeadLights)
     {
@@ -141,10 +83,6 @@ public class CameraTriggerManager
         MCodeNode turnHeadLightsOff = new MCodeNode(128);
         MCodeNode turnHeadLightsOn = new MCodeNode(129);
         
-//        GCodeDirectiveNode dwellWhilePictureTaken = new GCodeDirectiveNode();
-//        dwellWhilePictureTaken.setGValue(4);
-//        dwellWhilePictureTaken.setSValue(triggerData.getDelayAfterCapture());
-
         TravelNode returnToPreviousPosition = new TravelNode();
         returnToPreviousPosition.getMovement().setX(layerChangeNode.getMovement().getX());
         returnToPreviousPosition.getMovement().setY(layerChangeNode.getMovement().getY());
@@ -156,7 +94,6 @@ public class CameraTriggerManager
             layerChangeNode.addSiblingAfter(turnHeadLightsOn);
                 
         layerChangeNode.addSiblingAfter(returnToPreviousPosition);
-        //layerChangeNode.addSiblingAfter(dwellWhilePictureTaken);
         layerChangeNode.addSiblingAfter(selfiePauseNode);
         
         if (outputMoveCommand)
@@ -166,24 +103,6 @@ public class CameraTriggerManager
             layerChangeNode.addSiblingAfter(turnHeadLightsOff);
 
         layerChangeNode.addSiblingAfter(beginComment);
-    }
-
-    public void listenForCameraTrigger()
-    {
-        STENO.debug("Started listening for camera trigger");
-        associatedPrinter.getPrintEngine().progressCurrentLayerProperty().addListener(cameraTriggerListener);
-    }
-
-    public void stopListeningForCameraTrigger()
-    {
-        STENO.debug("Stopped listening for camera trigger");
-        associatedPrinter.getPrintEngine().progressCurrentLayerProperty().removeListener(cameraTriggerListener);
-    }
-
-    private void triggerCamera()
-    {
-        STENO.debug("Asked to trigger camera");
-        scheduledPhoto.schedule(photoRun, triggerData.getDelayBeforeCapture(), TimeUnit.SECONDS);
     }
 
     public void setTriggerData(CameraTriggerData triggerData)
@@ -216,8 +135,6 @@ public class CameraTriggerManager
                     }
                     
                     ScriptUtils.runScript("takePhoto.sh", jobID);
-//                    String webCamURL = "http://localHost:8101/0/action/snapshot";
-//                    fireCameraThroughURL(webCamURL);
                 } 
                 
                 resumePrinter = true;

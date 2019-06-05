@@ -415,17 +415,9 @@ public class PrintEngine implements ControllableService
             {
                 if (t1 == PrintQueueStatus.PRINTING)
                 {
-                    if (macroBeingRun.get() == null && cameraIsEnabled)
-                    {
-                        cameraTriggerManager.listenForCameraTrigger();
-                    }
                     printJob.set(new PrintJob(associatedPrinter.printJobIDProperty().get()));
                 } else
                 {
-                    if (macroBeingRun.get() == null)
-                    {
-                        cameraTriggerManager.stopListeningForCameraTrigger();
-                    }
                     printJob.set(null);
                 }
             }
