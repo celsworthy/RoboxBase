@@ -6,7 +6,8 @@ package celtech.roboxbase.services;
  */
 public class CameraTriggerData
 {
-
+    private final boolean turnOffHeadLights;
+    private final boolean turnOffLED;
     private final String goProWifiPassword;
     private final boolean moveBeforeCapture;
     private final int xMoveBeforeCapture;
@@ -14,13 +15,17 @@ public class CameraTriggerData
     private final long delayBeforeCapture;
     private final int delayAfterCapture;
 
-    public CameraTriggerData(String goProWifiPassword,
+    public CameraTriggerData(boolean turnOffHeadLights,
+            boolean turnOffLED,
+            String goProWifiPassword,
             boolean moveBeforeCapture,
             int xMoveBeforeCapture,
             int yMoveBeforeCapture,
             long delayBeforeCapture,
             int delayAfterCapture)
     {
+        this.turnOffHeadLights = turnOffHeadLights;
+        this.turnOffLED = turnOffLED;
         this.moveBeforeCapture = moveBeforeCapture;
         this.goProWifiPassword = goProWifiPassword;
         this.xMoveBeforeCapture = xMoveBeforeCapture;
@@ -29,6 +34,16 @@ public class CameraTriggerData
         this.delayAfterCapture = delayAfterCapture;
     }
 
+    public boolean isTurnOffHeadLights()
+    {
+        return turnOffHeadLights;
+    }
+    
+    public boolean isTurnOffLED()
+    {
+        return turnOffLED;
+    }
+    
     public String getGoProWifiPassword()
     {
         return goProWifiPassword;
