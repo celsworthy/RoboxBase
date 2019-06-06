@@ -6,32 +6,33 @@ package celtech.roboxbase.services;
  */
 public class CameraTriggerData
 {
-
-    private final String goProWifiPassword;
+    private final boolean turnOffHeadLights;
+    private final boolean turnOffLED;
     private final boolean moveBeforeCapture;
     private final int xMoveBeforeCapture;
     private final int yMoveBeforeCapture;
-    private final long delayBeforeCapture;
-    private final int delayAfterCapture;
 
-    public CameraTriggerData(String goProWifiPassword,
+    public CameraTriggerData(boolean turnOffHeadLights,
+            boolean turnOffLED,
             boolean moveBeforeCapture,
             int xMoveBeforeCapture,
-            int yMoveBeforeCapture,
-            long delayBeforeCapture,
-            int delayAfterCapture)
+            int yMoveBeforeCapture)
     {
+        this.turnOffHeadLights = turnOffHeadLights;
+        this.turnOffLED = turnOffLED;
         this.moveBeforeCapture = moveBeforeCapture;
-        this.goProWifiPassword = goProWifiPassword;
         this.xMoveBeforeCapture = xMoveBeforeCapture;
         this.yMoveBeforeCapture = yMoveBeforeCapture;
-        this.delayBeforeCapture = delayBeforeCapture;
-        this.delayAfterCapture = delayAfterCapture;
     }
 
-    public String getGoProWifiPassword()
+    public boolean isTurnOffHeadLights()
     {
-        return goProWifiPassword;
+        return turnOffHeadLights;
+    }
+    
+    public boolean isTurnOffLED()
+    {
+        return turnOffLED;
     }
 
     public boolean isMoveBeforeCapture()
@@ -47,15 +48,5 @@ public class CameraTriggerData
     public int getyMoveBeforeCapture()
     {
         return yMoveBeforeCapture;
-    }
-
-    public long getDelayBeforeCapture()
-    {
-        return delayBeforeCapture;
-    }
-
-    public int getDelayAfterCapture()
-    {
-        return delayAfterCapture;
     }
 }
