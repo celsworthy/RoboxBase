@@ -1,6 +1,5 @@
 package celtech.roboxbase.utils;
 
-import celtech.roboxbase.configuration.BaseConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,12 +17,10 @@ public class ScriptUtils
 {
     public static final Stenographer STENO = StenographerFactory.getStenographer(ScriptUtils.class.getName());
     
-    public static String runScript(String scriptName, String... parameters)
+    public static String runScript(String pathToScript, String... parameters)
     {
         List<String> command = new ArrayList<>();
-        String commandLine = BaseConfiguration.getBinariesDirectory() + scriptName;
-        command.add(commandLine);
-
+        command.add(pathToScript);
         command.addAll(Arrays.asList(parameters));
 
         ProcessBuilder builder = new ProcessBuilder(command);
