@@ -1,5 +1,6 @@
 package celtech.roboxbase.postprocessor.stylus;
 
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.importers.twod.svg.SVGConverterConfiguration;
 import celtech.roboxbase.importers.twod.svg.metadata.dragknife.PathHelper;
@@ -9,6 +10,8 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
+import celtech.roboxbase.printerControl.model.Head;
+import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.models.PrintableShapes;
 import celtech.roboxbase.utils.models.ShapeForProcessing;
 import celtech.roboxbase.utils.twod.ShapeToWorldTransformer;
@@ -232,7 +235,7 @@ public class PrintableShapesToGCode
         return gcodeNodes;
     }
 
-    public static void writeGCodeToFile(String outputFilename, List<GCodeEventNode> gcodeNodes)
+    public static void writeGCodeToFile(String outputFilename, List<GCodeEventNode> gcodeNodes, String headTypeID, Optional<PrinterType> printerTypeOpt)
     {
         PrintWriter out = null;
         try
@@ -242,8 +245,9 @@ public class PrintableShapesToGCode
             //Add a macro header
             try
             {
+                
                 List<String> startMacro = GCodeMacros.getMacroContents("stylus_start",
-                        Optional.<PrinterType>empty(), null, false, false, false);
+                        printerTypeOpt, headTypeID, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);
@@ -265,7 +269,7 @@ public class PrintableShapesToGCode
             try
             {
                 List<String> startMacro = GCodeMacros.getMacroContents("stylus_end",
-                        Optional.<PrinterType>empty(), null, false, false, false);
+                        printerTypeOpt, headTypeID, false, false, false);
                 for (String macroLine : startMacro)
                 {
                     out.println(macroLine);

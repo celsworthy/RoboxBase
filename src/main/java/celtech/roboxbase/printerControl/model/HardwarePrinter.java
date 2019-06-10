@@ -91,6 +91,7 @@ import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeAction
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeStateTransitionManager;
 import celtech.roboxbase.printerControl.model.statetransitions.purge.PurgeTransitions;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
+import celtech.roboxbase.services.gcodegenerator.StylusGCodeGeneratorResult;
 import celtech.roboxbase.services.printing.DatafileSendAlreadyInProgress;
 import celtech.roboxbase.services.printing.DatafileSendNotInitialised;
 import celtech.roboxbase.utils.AxisSpecifier;
@@ -2237,6 +2238,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             transmitDirectGCode(GCodeConstants.goToTargetFirstLayerBedTemperature, false);
             boolean gCodeGenSuccessful = printEngine.printProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
             transmitDirectGCode(GCodeConstants.switchBedHeaterOff, false);
+        } catch (RoboxCommsException ex)
+        {
+            steno.error("Error whilst sending preheat commands");
+        }
+    }
+
+    @Override
+    public void printStylusProject(PrintableProject printableProject, Optional<StylusGCodeGeneratorResult> potentialGCodeGenResult, boolean safetyFeaturesRequired) throws PrinterException
+    {
+        try
+        {
+            transmitDirectGCode(GCodeConstants.switchBedHeaterOff, false);
+            boolean gCodeGenSuccessful = printEngine.printStylusProject(printableProject, potentialGCodeGenResult, safetyFeaturesRequired);
         } catch (RoboxCommsException ex)
         {
             steno.error("Error whilst sending preheat commands");

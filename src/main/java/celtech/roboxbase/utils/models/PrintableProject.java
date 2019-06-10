@@ -25,6 +25,10 @@ public class PrintableProject {
         this.projectName = projectName;
         this.printQuality = printQuality;
         this.projectLocation = projectLocation;
+        this.cameraEnabled = false;
+        this.cameraTriggerData = null;
+        this.usedExtruders = null;
+        this.jobUUID = "";
     }
 
     public String getProjectName() {
