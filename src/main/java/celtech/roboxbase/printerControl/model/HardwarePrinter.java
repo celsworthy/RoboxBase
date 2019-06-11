@@ -465,7 +465,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         //TODO make this work with multiple extruders
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
-                .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
+                .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING))
+                .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE)))
                 .and(extruders.get(0).filamentLoaded));
     }
 
