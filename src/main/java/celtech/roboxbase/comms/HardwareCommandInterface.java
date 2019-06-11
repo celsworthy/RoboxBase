@@ -49,7 +49,7 @@ public class HardwareCommandInterface extends CommandInterface
         if (serialPortManager != null
                 && serialPortManager.serialPort != null)
         {
-            if (serialPortManager.serialPort.isOpened())
+            if (serialPortManager.serialPort.isOpen())
             {
                 try
                 {
@@ -96,7 +96,7 @@ public class HardwareCommandInterface extends CommandInterface
                                 + " and got "
                                 + packetType);
                     }
-//                    steno.trace("Got a response packet back of type: " + packetType.toString());
+                    //steno.trace("Got a response packet back of type: " + packetType.toString());
                     RoboxRxPacket rxPacketTemplate = RoboxRxPacketFactory.createPacket(packetType);
                     int packetLength = rxPacketTemplate.packetLength(firmwareVersionInUse);
 

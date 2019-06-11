@@ -5,6 +5,8 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
 import com.sun.javafx.geom.Path2D;
 import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.scene.NodeHelper;
+import com.sun.javafx.scene.shape.ShapeHelper;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -120,8 +122,8 @@ public abstract class StylusMetaPart
     {
         List<GCodeEventNode> gcodeNodes = new ArrayList<>();
 
-        final Path2D path2D = new Path2D(shape.impl_configShape());
-        final BaseTransform tx = shape.impl_getLeafTransform();
+        final Path2D path2D = new Path2D(ShapeHelper.configShape(shape));
+        final BaseTransform tx = NodeHelper.getLeafTransform(shape);
         PathHelper pathHelper = new PathHelper(path2D, tx, 1.0);
 
         int numberOfSteps = 10;

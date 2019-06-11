@@ -5,7 +5,7 @@
 package celtech.roboxbase.comms.remote;
 
 import java.io.UnsupportedEncodingException;
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 /**
  * StringToBase64Encoder is a text to binary encoder that takes a String and returns
@@ -26,7 +26,7 @@ public class StringToBase64Encoder
      */
     public static String encode(String plainString) throws UnsupportedEncodingException
     {
-        return DatatypeConverter.printBase64Binary(plainString.getBytes("UTF-8"));
+        return Base64.getMimeEncoder().encodeToString(plainString.getBytes("UTF-8"));
     }
 
     /**
@@ -37,7 +37,7 @@ public class StringToBase64Encoder
      */
     public static String decode(String encodedString) throws UnsupportedEncodingException
     {
-        byte[] decodedData = DatatypeConverter.parseBase64Binary(encodedString);
+        byte[] decodedData = Base64.getMimeDecoder().decode(encodedString);
         return new String(decodedData, "UTF-8");
     }
 
