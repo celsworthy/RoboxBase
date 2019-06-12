@@ -230,8 +230,14 @@ public class NozzleAssignmentUtilities
 
                             if (lastSectionNode == null)
                             {
-                                requiredToolNumber = 0;
-                                steno.warning("The tool number could not be determined on layer " + layerNode.getLayerNumber());
+                                if (postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL)
+                                {
+                                    requiredToolNumber = objectReferenceNumber;
+                                } else
+                                {
+                                    requiredToolNumber = 0;
+                                    steno.warning("The tool number could not be determined on layer " + layerNode.getLayerNumber());
+                                }
                             } else
                             {
                                 if (lastSectionNode.getParent() != null
