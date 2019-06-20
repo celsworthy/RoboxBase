@@ -15,6 +15,7 @@ public class StylusGCodeGeneratorResult
     private boolean cancelled = false;
     private String rawOutputFileName = null;
     private String compensatedOutputFileName = null;
+    private boolean hasDragKnife = false;
     private boolean resultOK = false;
     
     public StylusGCodeGeneratorResult()
@@ -47,6 +48,24 @@ public class StylusGCodeGeneratorResult
     public boolean isCancelled()
     {
         return cancelled;
+    }
+
+    /**
+     *
+     * @param hasDragKnife
+     */
+    public void setHasDragKnife(boolean hasDragKnife)
+    {
+        this.hasDragKnife = hasDragKnife;
+    }
+
+    /**
+     *
+     * @return boolean
+     */
+    public boolean getHasDragKnife()
+    {
+        return hasDragKnife;
     }
 
     /**

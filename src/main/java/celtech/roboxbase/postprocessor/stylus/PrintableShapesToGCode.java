@@ -7,6 +7,8 @@ import celtech.roboxbase.importers.twod.svg.metadata.dragknife.PathHelper;
 import celtech.roboxbase.postprocessor.nouveau.nodes.GCodeEventNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.StylusScribeNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.TravelNode;
+import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Movement;
+import celtech.roboxbase.postprocessor.nouveau.nodes.providers.MovementProvider;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Renderable;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
@@ -24,6 +26,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,15 +48,11 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class PrintableShapesToGCode
 {
-
-    private static boolean isInContact = false;
-
     private static final Stenographer steno = StenographerFactory.getStenographer(PrintableShapesToGCode.class.getName());
+    private static final double MINIMUM_OFFSET = 0.0001;
 
     public static List<GCodeEventNode> parsePrintableShapes(PrintableShapes shapes)
     {
-        isInContact = false;
-
         List<GCodeEventNode> gcodeEventNodes = new ArrayList<>();
 
         for (ShapeForProcessing shapeForProcessing : shapes.getShapesForProcessing())
@@ -88,7 +87,7 @@ public class PrintableShapesToGCode
                 switch (elementType)
                 {
                     case PathIterator.SEG_MOVETO:
-                        steno.info("Got a SEG_MOVETO");
+                        //steno.info("Got a SEG_MOVETO");
                         Point2D currentPoint_moveto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
                         gcodeEvents.add(createTravelNode("Travel to start of path segment",
                                 SVGConverterConfiguration.getInstance().getTravelFeedrate(),
@@ -98,7 +97,7 @@ public class PrintableShapesToGCode
                         lastY = pathData[1];
                         break;
                     case PathIterator.SEG_LINETO:
-                        steno.info("Got a SEG_LINETO");
+                        //steno.info("Got a SEG_LINETO");
                         Point2D currentPoint_lineto = shapeToWorldTransformer.transformShapeToRealWorldCoordinates(pathData[0], pathData[1]);
                         gcodeEvents.add(createStylusScribeNode("Straight cut",
                                 SVGConverterConfiguration.getInstance().getCuttingFeedrate(),
@@ -108,7 +107,7 @@ public class PrintableShapesToGCode
                         lastY = pathData[1];
                         break;
                     case PathIterator.SEG_QUADTO:
-                        steno.info("Got a SEG_QUADTO");
+                        //steno.info("Got a SEG_QUADTO");
                         QuadCurve newQuadCurve = new QuadCurve();
                         newQuadCurve.setStartX(lastX);
                         newQuadCurve.setStartY(lastY);
@@ -122,7 +121,7 @@ public class PrintableShapesToGCode
                         lastY = pathData[3];
                         break;
                     case PathIterator.SEG_CUBICTO:
-                        steno.info("Got a SEG_CUBICTO");
+                        //steno.info("Got a SEG_CUBICTO");
                         CubicCurve newCubicCurve = new CubicCurve();
                         newCubicCurve.setStartX(lastX);
                         newCubicCurve.setStartY(lastY);
@@ -138,7 +137,7 @@ public class PrintableShapesToGCode
                         lastY = pathData[5];
                         break;
                     case PathIterator.SEG_CLOSE:
-                        steno.info("Got a SEG_CLOSE");
+                        //steno.info("Got a SEG_CLOSE");
                         break;
                 }
                 pathIterator.next();
@@ -287,6 +286,32 @@ public class PrintableShapesToGCode
             {
                 out.flush();
                 out.close();
+            }
+        }
+    }
+
+    public static void offsetGCode(List<GCodeEventNode> gcodeNodes, double xOffset, double yOffset, double zOffset)
+    {
+        // Usually the GCode for shapes does not contain Z moves, which are added later. The zOffset
+        // is here just for completeness.
+        boolean hasXOffset = (abs(xOffset) > MINIMUM_OFFSET);
+        boolean hasYOffset = (abs(yOffset) > MINIMUM_OFFSET);
+        boolean hasZOffset = (abs(zOffset) > MINIMUM_OFFSET);
+        
+        if (hasXOffset || hasYOffset || hasZOffset)
+        {
+            for (GCodeEventNode gNode : gcodeNodes)
+            {
+                if (gNode instanceof MovementProvider)
+                {
+                    Movement m = ((MovementProvider)gNode).getMovement();
+                    if (hasXOffset && m.isXSet())
+                        m.setX(m.getX() + xOffset);
+                    if (hasYOffset &&m.isYSet())
+                        m.setY(m.getY() + yOffset);
+                    if (hasZOffset && m.isZSet())
+                        m.setZ(m.getZ() + zOffset);
+                }
             }
         }
     }
