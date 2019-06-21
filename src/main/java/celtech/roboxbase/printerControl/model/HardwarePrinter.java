@@ -187,6 +187,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final BooleanProperty canCalibrateNozzleHeight = new SimpleBooleanProperty(false);
     private final BooleanProperty canCalibrateXYAlignment = new SimpleBooleanProperty(false);
     private final BooleanProperty canCalibrateNozzleOpening = new SimpleBooleanProperty(false);
+    private final BooleanProperty isStylusHead = new SimpleBooleanProperty(false);
 
     private boolean headIntegrityChecksInhibited = false;
 
@@ -362,7 +363,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 canCalibrateNozzleHeight.set(false);
                 canCalibrateXYAlignment.unbind();
                 canCalibrateXYAlignment.set(false);
-
+                isStylusHead.set(false);
+                
                 if (newHeadValue != null)
                 {
                     if (head.get().valveTypeProperty().get() == Head.ValveType.FITTED)
@@ -385,6 +387,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                                 .and(Bindings.valueAt(reels, 1).isNotNull())))
                         );
                     }
+                    if (head.get().headTypeProperty().get() == Head.HeadType.STYLUS_HEAD)
+                        isStylusHead.set(true);
                     canCalibrateNozzleHeight.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                             .and(extrudersProperty().get(0).filamentLoadedProperty())
                             .and(Bindings.valueAt(reels, 0).isNotNull())
@@ -467,7 +471,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING))
                 .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE)))
-                .and(extruders.get(0).filamentLoaded));
+                .and(extruders.get(0).filamentLoaded.or(isStylusHead)));
     }
 
     FilamentContainer.FilamentDatabaseChangesListener filamentDatabaseChangesListener

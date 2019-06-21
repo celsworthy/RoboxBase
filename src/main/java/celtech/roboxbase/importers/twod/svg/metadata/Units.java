@@ -13,7 +13,7 @@ public enum Units
     FEET(304.8, "ft", "feet"),
     M(1000.0, "m", "metre"),
     MM(1.0, "mm", "millimetre"),
-    PT(0.3527777777, "pt", "point"),
+    PT(0.3527777778, "pt", "point"),
     PX(1.0, "px", "pixel"),
     YARD(914.4, "yd", "yard");
 
@@ -67,12 +67,20 @@ public enum Units
     {
         Units unitType = UNKNOWN;
         String sslc = sizeString.toLowerCase();
-        for (Units units : Units.values())
+        // Check for mm first, as it clashes with m.
+        if (sslc.endsWith(MM.shortName.toLowerCase()))
         {
-            if (sslc.endsWith(units.shortName.toLowerCase()))
+            unitType = MM;
+        }
+        else
+        {
+            for (Units units : Units.values())
             {
-                unitType = units;
-                break;
+                if (sslc.endsWith(units.shortName.toLowerCase()))
+                {
+                    unitType = units;
+                    break;
+                }
             }
         }
         return unitType;
