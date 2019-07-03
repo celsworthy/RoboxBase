@@ -18,7 +18,7 @@ import org.junit.rules.TemporaryFolder;
 public class DummyPrinterCommandInterfaceTest extends BaseEnvironmentConfiguredTest
 {
 
-    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.SERIAL, "Test Printer");
+    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.DeviceConnectionType.SERIAL, "Test Printer");
 
     @ClassRule
     public static TemporaryFolder temporaryUserStorageFolder = new TemporaryFolder();

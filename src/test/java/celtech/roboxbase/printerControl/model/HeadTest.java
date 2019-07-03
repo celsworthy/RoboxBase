@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class HeadTest extends BaseEnvironmentConfiguredTest
 {
 
-    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.SERIAL, "Test Printer");
+    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.DeviceConnectionType.SERIAL, "Test Printer");
 
     @Test
     public void testWriteAndReadLastFilamentTempFor2Heaters() throws RoboxCommsException

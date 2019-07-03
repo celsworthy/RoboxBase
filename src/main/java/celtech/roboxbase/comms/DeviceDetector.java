@@ -8,15 +8,18 @@ import java.util.List;
  */
 public abstract class DeviceDetector
 {
+    public static final String NOT_CONNECTED_STRING = "NOT_CONNECTED";
+    
     public DeviceDetector()
     {
     }
 
-    public enum PrinterConnectionType
+    public enum DeviceConnectionType
     {
         SERIAL,
         ROBOX_REMOTE,
-        DUMMY
+        DUMMY,
+        USB
     }
     
     public abstract List<DetectedDevice> searchForDevices();

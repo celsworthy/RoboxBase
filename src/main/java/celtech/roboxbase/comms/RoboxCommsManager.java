@@ -1,9 +1,11 @@
 package celtech.roboxbase.comms;
 
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
@@ -54,6 +56,11 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
     private final SerialDeviceDetector usbSerialDeviceDetector;
     private final RemotePrinterDetector remotePrinterDetector;
+    
+    // perhaps we want to move this (and asociated code) into CameraCommsManager
+    // This also means we need to move the CameraCommsManager out of root
+    // and into RoboxBase...
+    private final RemoteCameraDetector remoteCameraDetector;
 
     private boolean doNotCheckForPresenceOfHead = false;
     private BooleanProperty detectLoadedFilamentOverride = new SimpleBooleanProperty(true);
@@ -78,6 +85,8 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
         usbSerialDeviceDetector = new SerialDeviceDetector(pathToBinaries, roboxVendorID, roboxProductID, printerToSearchFor);
         remotePrinterDetector = new RemotePrinterDetector();
+        
+        remoteCameraDetector = new RemoteCameraDetector();
 
         steno = StenographerFactory.getStenographer(this.getClass().getName());
 
@@ -250,6 +259,10 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             List<DetectedDevice> directlyAttachedDevices = usbSerialDeviceDetector.searchForDevices();
             List<DetectedDevice> remotelyAttachedDevices = remotePrinterDetector.searchForDevices();
 
+            // Cache camera info
+            List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
+            CoreMemory.getInstance().retainAndAddUSBDirectories(remotelyAttachedCameras);
+            
             //Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();
             directlyAttachedDevices.forEach(newPrinter ->
@@ -372,7 +385,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         dummyPrinterCounter++;
         String actualPrinterPort = isCustomPrinter ? CUSTOM_CONNECTION_HANDLE : dummyPrinterPort + " " + dummyPrinterCounter;
         dummyPrinterName = isCustomPrinter ? BaseLookup.i18n("preferences.customPrinter") : "DP " + dummyPrinterCounter;
-        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.DUMMY,
+        DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.DeviceConnectionType.DUMMY,
                 actualPrinterPort);
         assessCandidatePrinter(printerHandle);
     }
@@ -396,7 +409,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     {
         return activePrinters.entrySet()
                              .stream()
-                             .filter(p -> p.getKey().getConnectionType() == DeviceDetector.PrinterConnectionType.DUMMY)
+                             .filter(p -> p.getKey().getConnectionType() == DeviceDetector.DeviceConnectionType.DUMMY)
                              .map(e -> e.getValue())
                              .collect(Collectors.toList()); 
     }
@@ -404,7 +417,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     private List<DetectedDevice> getDummyPrinterHandles() {
         return activePrinters.keySet()
                 .stream()
-                .filter(printerHandle -> printerHandle.getConnectionType() == DeviceDetector.PrinterConnectionType.DUMMY)
+                .filter(printerHandle -> printerHandle.getConnectionType() == DeviceDetector.DeviceConnectionType.DUMMY)
                 .collect(Collectors.toList());
     }
 

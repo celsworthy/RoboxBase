@@ -1,5 +1,6 @@
 package celtech.roboxbase.configuration;
 
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.DetectedServer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
@@ -25,6 +26,8 @@ public class CoreMemory
     private static final String LAST_PRINTER_FIRMWARE_VERSION_KEY = "LastPrinterFirmwareVersion";
 
     private List<DetectedServer> cachedActiveRoboxRoots = null;
+    
+    private List<CameraInfo> cachedConnectedCameraInfo = null;
 
     private static CoreMemory instance = null;
 
@@ -142,5 +145,23 @@ public class CoreMemory
     public void setLastPrinterSerial(String printerIDToUse)
     {
         BaseConfiguration.setApplicationMemory(LAST_PRINTER_SERIAL_KEY, printerIDToUse);
+    }
+    
+    public List<CameraInfo> getCachedConnectedCameraInfo()
+    {
+        return cachedConnectedCameraInfo;
+    }
+    
+    public void setCachedConnectedCameraInfo(List<CameraInfo> connectedCameraInfo)
+    {
+        this.cachedConnectedCameraInfo = connectedCameraInfo;
+    }
+    
+    public void retainAndAddUSBDirectories(List<CameraInfo> connectedCameraInfo) 
+    {
+        cachedConnectedCameraInfo.retainAll(connectedCameraInfo);
+        connectedCameraInfo.stream()
+                .filter(camInfo -> !cachedConnectedCameraInfo.contains(camInfo))
+                .forEach(cachedConnectedCameraInfo::add);
     }
 }

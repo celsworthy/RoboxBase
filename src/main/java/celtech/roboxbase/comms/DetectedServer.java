@@ -1,7 +1,9 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
+import celtech.roboxbase.comms.remote.clear.ListCamerasResponse;
 import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.remote.types.SerializableFilament;
@@ -123,6 +125,8 @@ public final class DetectedServer
     public static final int maxAllowedPollCount = 8;
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
+    @JsonIgnore
+    private static final String LIST_CAMERAS_COMMAND = "/api/discovery/listCameras";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
     @JsonIgnore
@@ -546,9 +550,9 @@ public final class DetectedServer
                 listPrintersResponse.getPrinterIDs().forEach((printerID) ->
                 {
                      detectedDevices.add(previousDetectedDevices.stream()
-                                                                .filter((d) -> d.getConnectionHandle().equals(printerID) && d.getConnectionType() == DeviceDetector.PrinterConnectionType.ROBOX_REMOTE)
+                                                                .filter((d) -> d.getConnectionHandle().equals(printerID) && d.getConnectionType() == DeviceDetector.DeviceConnectionType.ROBOX_REMOTE)
                                                                 .findAny()
-                                                                .orElse(new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID)));
+                                                                .orElse(new RemoteDetectedPrinter(this, DeviceDetector.DeviceConnectionType.ROBOX_REMOTE, printerID)));
                 });
                 
                 // Disconnect any devices that were previously found, but are not in the new list.
@@ -579,6 +583,56 @@ public final class DetectedServer
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);
         }
         return detectedDevices;
+    }
+    
+    public List<CameraInfo> listAttachedCameras()
+    {
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_CAMERAS_COMMAND;
+        
+        List<CameraInfo> detectedCameras = new ArrayList<>();
+        
+        long t1 = System.currentTimeMillis();
+        try
+        {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setConnectTimeout(connectTimeOutShort);
+            con.setReadTimeout(readTimeOutShort);
+            
+            int responseCode = con.getResponseCode();
+
+            if (responseCode == 200)
+            {
+                int availChars = con.getInputStream().available();
+                byte[] inputData = new byte[availChars];
+                con.getInputStream().read(inputData, 0, availChars);
+                ListCamerasResponse listCamerasResponse = mapper.readValue(inputData, ListCamerasResponse.class);
+
+                detectedCameras = listCamerasResponse.getCameras();
+                
+                pollCount = 0; // Successful contact, so zero the poll count;
+            } else
+            {
+                steno.warning("No response from @ " + address.getHostAddress());
+            }
+        } catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst polling for remote cameras @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+        }
+        catch (IOException ex)
+        {
+            steno.exception("Error whilst polling for remote cameras @ " + address.getHostAddress(), ex);
+        }
+        return detectedCameras;
     }
 
     public void postRoboxPacket(String urlString) throws IOException

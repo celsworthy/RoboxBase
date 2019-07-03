@@ -10,17 +10,17 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 public class DetectedDevice
 {
 
-    private final DeviceDetector.PrinterConnectionType connectionType;
+    private final DeviceDetector.DeviceConnectionType connectionType;
     private final String connectionHandle;
 
-    public DetectedDevice(DeviceDetector.PrinterConnectionType connectionType,
+    public DetectedDevice(DeviceDetector.DeviceConnectionType connectionType,
             String connectionHandle)
     {
         this.connectionType = connectionType;
         this.connectionHandle = connectionHandle;
     }
 
-    public DeviceDetector.PrinterConnectionType getConnectionType()
+    public DeviceDetector.DeviceConnectionType getConnectionType()
     {
         return connectionType;
     }

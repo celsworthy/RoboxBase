@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -76,8 +75,6 @@ public class SerialDeviceDetector extends DeviceDetector
         StringBuilder outputBuffer = new StringBuilder();
 
         ProcessBuilder builder = new ProcessBuilder(command);
-        Map<String, String> environ = builder.environment();
-
         Process process = null;
 
         try
@@ -105,7 +102,7 @@ public class SerialDeviceDetector extends DeviceDetector
         {
             for (String handle : outputBuffer.toString().split(" "))
             {
-                detectedPrinters.add(new DetectedDevice(PrinterConnectionType.SERIAL, handle));
+                detectedPrinters.add(new DetectedDevice(DeviceConnectionType.SERIAL, handle));
             }
         }
 

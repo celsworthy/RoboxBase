@@ -10,7 +10,7 @@ public class RemoteDetectedPrinter extends DetectedDevice
 {
     private final DetectedServer serverPrinterIsAttachedTo;
 
-    public RemoteDetectedPrinter(DetectedServer serverPrinterIsAttachedTo, DeviceDetector.PrinterConnectionType connectionType, String connectionHandle)
+    public RemoteDetectedPrinter(DetectedServer serverPrinterIsAttachedTo, DeviceDetector.DeviceConnectionType connectionType, String connectionHandle)
     {
         super(connectionType, connectionHandle);
         this.serverPrinterIsAttachedTo = serverPrinterIsAttachedTo;
