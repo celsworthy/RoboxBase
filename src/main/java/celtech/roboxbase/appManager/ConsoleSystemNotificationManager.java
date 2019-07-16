@@ -41,7 +41,7 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
 
     @Override
-    public boolean askUserToUpdateFirmware()
+    public boolean askUserToUpdateFirmware(Printer printerToUpdate)
     {
         outputNotification("Firmware update query");
         return true;

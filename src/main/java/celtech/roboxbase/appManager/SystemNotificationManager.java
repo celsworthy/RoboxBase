@@ -37,7 +37,7 @@ public interface SystemNotificationManager
      *
      * @return True if the user has agreed to update, otherwise false
      */
-    boolean askUserToUpdateFirmware();
+    boolean askUserToUpdateFirmware(Printer printerToUpdate);
 
     RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID);
     
