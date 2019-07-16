@@ -23,6 +23,7 @@ public class StylusSettings
     private double zOffset = 0.0;
     private final BooleanProperty dataChanged = new SimpleBooleanProperty(false);
     private boolean modified = false;
+    private boolean readOnly = false;
 
     public StylusSettings()
     {
@@ -175,11 +176,23 @@ public class StylusSettings
     {
         return name;
     }
-
-    @JsonIgnore
+    
+        @JsonIgnore
     public boolean isModified()
     {
         return modified;
+    }
+
+    @JsonIgnore
+    public void setReadOnly(boolean readOnly)
+    {
+        this.readOnly = readOnly;
+    }
+
+    @JsonIgnore
+    public boolean isReadOnly()
+    {
+        return readOnly;
     }
 
     @JsonIgnore

@@ -24,12 +24,15 @@ public class StylusSettingsContainerTest extends BaseEnvironmentConfiguredTest
     @Test
     public void testLoadStylusSettings()
     {
-        ObservableList<StylusSettings> stylusSettings = StylusSettingsContainer.getCompleteSettingsList();
+        ObservableList<StylusSettings> stylusSettings = StylusSettingsContainer.getInstance()
+                                                                               .getCompleteSettingsList();
         assertEquals(2, stylusSettings.size());
         
-        Optional<StylusSettings> ssOpt = StylusSettingsContainer.getSettingsByName("NotPresent");
+        Optional<StylusSettings> ssOpt = StylusSettingsContainer.getInstance()
+                                                                .getSettingsByName("NotPresent");
         assertTrue(ssOpt.isEmpty());
-        ssOpt = StylusSettingsContainer.getSettingsByName("Biro");
+        ssOpt = StylusSettingsContainer.getInstance()
+                                       .getSettingsByName("Biro");
         assertTrue(ssOpt.isPresent());
     }    
 }

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -34,22 +35,23 @@ public class StylusSettingsContainer
     private final ObservableList<StylusSettings> completeStylusSettingsList;
     private final ObservableMap<String, StylusSettings> completeStylusSettingsMap = FXCollections.observableHashMap();
     private final ObjectMapper mapper = new ObjectMapper();
-
+    private List<Runnable> listeners = new ArrayList<>();
+    
     private StylusSettingsContainer()
     {
         FileFilter filter = (p -> p.getName().endsWith(BaseConfiguration.stylusSettingsFileExtension));
         File settingsDirHandle = new File(BaseConfiguration.getApplicationStylusSettingsDirectory());
         File[] stylusSettingFiles = settingsDirHandle.listFiles(filter);
-        ingestSettingsFiles(stylusSettingFiles);
+        ingestSettingsFiles(stylusSettingFiles, true);
         settingsDirHandle = new File(BaseConfiguration.getUserStylusSettingsDirectory());
         stylusSettingFiles = settingsDirHandle.listFiles(filter);
-        ingestSettingsFiles(stylusSettingFiles);
+        ingestSettingsFiles(stylusSettingFiles, false);
         completeStylusSettingsList = FXCollections.observableArrayList(completeStylusSettingsMap.values());
         Collections.sort(completeStylusSettingsList, (s1, s2) -> s1.getName().compareToIgnoreCase(s2.getName()));
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
-    private void ingestSettingsFiles(File[] settingsFiles)
+    private void ingestSettingsFiles(File[] settingsFiles, boolean readOnly)
     {
         if (settingsFiles != null)
         {
@@ -58,9 +60,17 @@ public class StylusSettingsContainer
                 try
                 {
                     StylusSettings settingsData = mapper.readValue(settingsFile, StylusSettings.class);
-                    completeStylusSettingsMap.put(settingsData.getName(), settingsData);
-
-                } catch (IOException ex)
+                    settingsData.setReadOnly(readOnly);
+                    if (readOnly && completeStylusSettingsMap.containsKey(settingsData.getName()))
+                    {
+                        steno.warning("Discarding stylus settings from " + settingsFile.getAbsolutePath());
+                    }
+                    else
+                    {
+                        completeStylusSettingsMap.put(settingsData.getName(), settingsData);
+                    }
+                }
+                catch (IOException ex)
                 {
                     steno.error("Error loading stylus settings from " + settingsFile.getAbsolutePath());
                 }
@@ -68,29 +78,30 @@ public class StylusSettingsContainer
         }
     }
 
-    private static void createInstance()
+    public static StylusSettingsContainer getInstance()
     {
         if (instance == null)
             instance = new StylusSettingsContainer();
-    }
-
-    public static StylusSettingsContainer getInstance()
-    {
-        createInstance();
         return instance;
     }
 
-    public static Optional<StylusSettings> getSettingsByName(String settingsName)
+    public Optional<StylusSettings> getSettingsByName(String settingsName)
     {
-        createInstance();
         StylusSettings namedSettings = instance.completeStylusSettingsMap.getOrDefault(settingsName, null);
         return Optional.ofNullable(namedSettings);
     }
 
-    public static ObservableList<StylusSettings> getCompleteSettingsList()
+    public ObservableList<StylusSettings> getCompleteSettingsList()
     {
-        createInstance();
         return instance.completeStylusSettingsList;
+    }
+    
+    public void saveSettings(StylusSettings settingsData)
+    {
+        StylusSettings freshSettings = new StylusSettings();
+        freshSettings.setFrom(settingsData);
+        freshSettings.setName(freshSettings.getName().trim());
+        saveSettingsToFile(freshSettings);
     }
     
     private String sanitizeFilename(String inputName)
@@ -98,22 +109,33 @@ public class StylusSettingsContainer
         return inputName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
     }
     
-    public void saveSettings(StylusSettings settingsData)
+    private void saveSettingsToFile(StylusSettings settingsData)
     {
-        checkUserDirectory();
-        writeSettingsToFile(settingsData);
-        String sName = settingsData.getName();
-        completeStylusSettingsMap.put(sName, settingsData);
-        int comparison = -1;
-        int sIndex = -1;
-        for (sIndex = 0; comparison < 0 && sIndex < completeStylusSettingsList.size(); ++sIndex)
-            comparison = sName.compareToIgnoreCase(completeStylusSettingsList.get(sIndex).getName());
-        if (comparison == 0)
-            completeStylusSettingsList.set(sIndex, settingsData);
-        else if (comparison > 0)
-            completeStylusSettingsList.add(sIndex, settingsData);
+        StylusSettings existingSettings = completeStylusSettingsMap.getOrDefault(settingsData.getName(), null);
+        if (existingSettings != null && existingSettings.isReadOnly())
+        {
+            steno.error("Can't overwrite existing read-only settings \"" +  settingsData.getName() + "\"");
+        }
         else
-            completeStylusSettingsList.add(settingsData);
+        {
+            checkUserDirectory();
+            writeSettingsToFile(settingsData);
+            String sName = settingsData.getName();
+            completeStylusSettingsMap.put(sName, settingsData);
+            int comparison = 1;
+            int sIndex = -1;
+            for (sIndex = 0; sIndex < completeStylusSettingsList.size(); ++sIndex)
+            {
+                comparison = sName.compareToIgnoreCase(completeStylusSettingsList.get(sIndex).getName());
+                if (comparison <= 0)
+                    break;
+            }
+            if (comparison == 0)
+                completeStylusSettingsList.set(sIndex, settingsData);
+            else
+                completeStylusSettingsList.add(sIndex, settingsData);
+           fireWhenSettingsChanged();
+        }
     }
 
     public void saveAllSettings()
@@ -135,8 +157,8 @@ public class StylusSettingsContainer
     private void writeSettingsToFile(StylusSettings settingsData)
     {
         String userFilePath = BaseConfiguration.getUserStylusSettingsDirectory()
-                                + File.separator
-                                + sanitizeFilename(settingsData.getName());
+                                + sanitizeFilename(settingsData.getName())
+                                + ".stylussettings";
         try
         {
             File userFile = new File(userFilePath);
@@ -146,5 +168,21 @@ public class StylusSettingsContainer
         {
             steno.error("Error trying to user stylus settings to \"" + userFilePath + "\"");
         }
+    }
+ 
+    public void addListener(Runnable listener)
+    {
+        listeners.add(listener);
+    }
+
+    public void removeListener(Runnable listener)
+    {
+        listeners.remove(listener);
+    }
+
+    private void fireWhenSettingsChanged()
+    {
+        List<Runnable> listToIterateThrough = listeners.stream().collect(Collectors.toList());
+        listToIterateThrough.forEach(l -> l.run());
     }
 }

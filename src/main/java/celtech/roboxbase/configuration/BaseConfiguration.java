@@ -807,7 +807,7 @@ public class BaseConfiguration
 
     public static String getUserStylusSettingsDirectory()
     {
-        userStylusSettingsDirectory = BaseConfiguration.getUserStorageDirectory() + stylusSettingsDirectory + File.separator;
+        userStylusSettingsDirectory = BaseConfiguration.getUserStorageDirectory() + stylusSettingsPath + File.separator;
 
         File dirHandle = new File(userStylusSettingsDirectory);
 
