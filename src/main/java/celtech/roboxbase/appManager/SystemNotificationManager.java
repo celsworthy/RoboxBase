@@ -86,6 +86,8 @@ public interface SystemNotificationManager
     boolean showModelTooBigDialog(String modelFilename);
 
     boolean showApplicationUpgradeDialog(String applicationName);
+    
+    boolean showAreYouSureYouWantToDowngradeDialog();
 
     public PurgeResponse showPurgeDialog();
     public PurgeResponse showPurgeDialog(boolean allowAutoPrint);

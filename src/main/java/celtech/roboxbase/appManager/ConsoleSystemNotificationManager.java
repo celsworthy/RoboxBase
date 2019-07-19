@@ -194,6 +194,13 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
         outputNotification("Application upgrade dialog");
         return true;
     }
+    
+    @Override
+    public boolean showAreYouSureYouWantToDowngradeDialog()
+    {
+        outputNotification("Application downgrade root dialog");
+        return false;
+    }
 
     @Override
     public PurgeResponse showPurgeDialog()

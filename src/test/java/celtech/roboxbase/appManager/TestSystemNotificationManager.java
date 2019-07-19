@@ -150,6 +150,12 @@ public class TestSystemNotificationManager implements SystemNotificationManager
     {
         return false;
     }
+    
+    @Override
+    public boolean showAreYouSureYouWantToDowngradeDialog()
+    {
+        return false;
+    }
 
     @Override
     public boolean showJobsTransferringShutdownDialog()
