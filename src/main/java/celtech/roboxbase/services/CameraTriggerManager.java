@@ -134,7 +134,7 @@ public class CameraTriggerManager
                         jobID = associatedPrinter.getPrintEngine().printJobProperty().get().getJobUUID();
                     }
                     
-                    ScriptUtils.runScript(BaseConfiguration.getApplicationInstallDirectory(CameraTriggerManager.class) + "takePhoto.sh", jobID);
+                    ScriptUtils.runScript("takePhoto.sh", jobID);
                 } 
                 
                 resumePrinter = true;
