@@ -11,8 +11,10 @@ import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
 import celtech.roboxbase.utils.models.PrintableMeshes;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -490,11 +492,9 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         return succeeded;
     }
     
-    public static boolean killSlicing(SlicerType slicerType,
+    public static void killSlicing(SlicerType slicerType,
             Stenographer steno)
     {
-        boolean succeeded = false;
-        
         String windowsKillCommand = "";
         String macKillCommand = "";
         String linuxKillCommand = "";
@@ -506,8 +506,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             case Cura:
             case Cura4:
                 windowsKillCommand = "taskkill /IM \"CuraEngine.exe\" /F";
-                macKillCommand = "killall CuraEngine";
-                linuxKillCommand = "killall CuraEngine";
+                macKillCommand = "./KillCuraEngine.mac.sh";
+                linuxKillCommand = "./KillCuraEngine.linux.sh";
                 break;
         }
         
@@ -540,29 +540,21 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         if (!commands.isEmpty())
         {
             ProcessBuilder killSlicerProcessBuilder = new ProcessBuilder(commands);
+            if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
+            {
+                String binDir = BaseConfiguration.getBinariesDirectory();
+                steno.debug("Set working directory (Non-Windows) to " + binDir);
+                killSlicerProcessBuilder.directory(new File(binDir));
+            }
             try 
-            {        
+            {       
                 Process slicerKillProcess = killSlicerProcessBuilder.start();
-                
-                int exitStatus = slicerKillProcess.waitFor();
-                switch (exitStatus)
-                {
-                    case 0:
-                        steno.debug("Slicer killed successfully");
-                        succeeded = true;
-                        break;
-                    default:
-                        steno.error("Failure when killing slicer with command line: " + String.join(
-                                " ", killSlicerProcessBuilder.command()));
-                        break;
-                }
+                slicerKillProcess.waitFor();
             } catch (IOException | InterruptedException ex) 
             {
                 steno.exception("Exception whilst killing slicer", ex);
             }
         }
-        
-        return succeeded;
     }
     
     private static void emptyPrintJobDirectory(String printJobDirectory)
