@@ -375,9 +375,6 @@ public final class DetectedServer
 
         steno.info("Connecting " + name.get());
         steno.debug("Status = " + serverStatus.get());
-        if (serverIP.get().equalsIgnoreCase("192.168.1.74"))
-            steno.debug("Serve is Pern");
-            
 
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
