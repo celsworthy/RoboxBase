@@ -12,7 +12,7 @@ public class Configuration
     /**
      * Admin API
      */
-    public static final String adminAPIService = "/admin";
+  public static final String adminAPIService = "/admin";
     public static final String shutdown = "/shutdown";
 
     /**
@@ -28,9 +28,4 @@ public class Configuration
     public static final String overrideFilamentService = "/overrideFilament";
     public static final String clearAllErrorsService = "/clearAllErrors";
     public static final String clearErrorService = "/clearError";
-    
-    /**
-     * Camera API
-     */
-    public static final String cameraAPIService = "/camera";
 }

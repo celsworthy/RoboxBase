@@ -19,7 +19,7 @@ public class TestSystemNotificationManager implements SystemNotificationManager
 {
 
     @Override
-    public boolean askUserToUpdateFirmware()
+    public boolean askUserToUpdateFirmware(Printer printerToUpdate)
     {
         return false;
     }
@@ -147,6 +147,12 @@ public class TestSystemNotificationManager implements SystemNotificationManager
 
     @Override
     public boolean showApplicationUpgradeDialog(String applicationName)
+    {
+        return false;
+    }
+    
+    @Override
+    public boolean showAreYouSureYouWantToDowngradeDialog()
     {
         return false;
     }
