@@ -767,7 +767,7 @@ public final class DetectedServer
     
     public boolean upgradeRootSoftware(String path, String filename, PercentProgressReceiver progressReceiver)
     {
-        boolean success = false;
+        boolean success = true;
         
         // First try SFTP;
         TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
@@ -786,7 +786,7 @@ public final class DetectedServer
             }
             catch (IOException ex)
             {
-                steno.error("Failed to shutdown remote server: " + ex.getMessage());
+                steno.debug("Exception in shutdown of remote server, server likely shutdown before response: " + ex.getMessage());
             }
         }
         
