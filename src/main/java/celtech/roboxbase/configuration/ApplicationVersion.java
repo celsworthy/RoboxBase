@@ -114,4 +114,10 @@ public class ApplicationVersion implements Comparable<ApplicationVersion>
     {
         return nonNumericVersion;
     }    
+    
+    @Override
+    public String toString()
+    {
+        return versionString;
+    }
 }
