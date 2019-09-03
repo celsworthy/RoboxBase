@@ -3,17 +3,12 @@
  */
 package celtech.roboxbase.configuration.datafileaccessors;
 
-import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.Filament;
 import celtech.roboxbase.configuration.fileRepresentation.StylusSettings;
 import celtech.roboxbase.utils.BaseEnvironmentConfiguredTest;
-import java.io.File;
 import java.util.Optional;
 import javafx.collections.ObservableList;
-import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Before;
 
 /**
  *
