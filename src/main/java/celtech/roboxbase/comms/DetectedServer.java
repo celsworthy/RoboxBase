@@ -75,7 +75,7 @@ public final class DetectedServer
             
             server.serverIP.set(addressText);
             server.setName(node.get("name").asText());
-            server.setVersion(new ApplicationVersion(node.get("version").asText()));
+            server.setVersion(new ApplicationVersion(node.get("version").get("versionString").asText()));
             server.setPin(node.get("pin").asText());
             server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
             
@@ -266,7 +266,7 @@ public final class DetectedServer
 
     public void setVersion(ApplicationVersion version)
     {
-        if (!version.getVersionString().equals(this.version.getVersionString()))
+        if (this.version == null || !version.getVersionString().equals(this.version.getVersionString()))
         {
             this.version = version;
             dataChanged.set(!dataChanged.get());

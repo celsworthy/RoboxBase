@@ -4,11 +4,11 @@
 package celtech.roboxbase.printerControl.model.statetransitions.purge;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
-import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.appManager.SystemNotificationManager.PrinterErrorChoice;
-import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.comms.rx.FirmwareError;
+import celtech.roboxbase.printerControl.model.Printer;
+import celtech.roboxbase.printerControl.model.statetransitions.calibration.CalibrationXAndYActions;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +64,8 @@ public class PurgePrinterErrorHandler
             {
                 // Do nothing for the moment...
             } else if (error == FirmwareError.D_FILAMENT_SLIP
-                || error == FirmwareError.E_FILAMENT_SLIP)
+                || error == FirmwareError.E_FILAMENT_SLIP
+                    || error == FirmwareError.ERROR_BED_TEMPERATURE_DROOP)
             {
                 if (showingFilamentSlipErrorDialog) {
                     return;
