@@ -217,7 +217,7 @@ public abstract class CommandInterface extends Thread
                         // packet length to use.
                         firmwareVersionInUse = firmwareResponse.getFirmwareRevisionFloat();
                             
-                        if (requiredFirmwareVersion > 0 && firmwareResponse.getFirmwareRevisionFloat() != requiredFirmwareVersion)
+                        if (requiredFirmwareVersion > 0 && firmwareVersionInUse != requiredFirmwareVersion)
                         {
                             // The firmware version is different to that associated with AutoMaker
                             steno.warning(String.format("Firmware version is %.0f and should be %.0f.", firmwareVersionInUse, requiredFirmwareVersion));
@@ -234,7 +234,7 @@ public abstract class CommandInterface extends Thread
 
                             if (BaseConfiguration.isApplicationFeatureEnabled(ApplicationFeature.AUTO_UPDATE_FIRMWARE))
                             {
-                                if (firmwareResponse.getFirmwareRevisionFloat() >= 691)
+                                if (firmwareVersionInUse >= 691)
                                 {
                                     // Is the SD card present?
                                     try
@@ -258,9 +258,18 @@ public abstract class CommandInterface extends Thread
                                     }
                                 }
 
-                                // Tell the user to update
-                                loadRequiredFirmware = BaseLookup.getSystemNotificationHandler().
-                                        askUserToUpdateFirmware(printerToUse);
+                                if (firmwareVersionInUse < requiredFirmwareVersion)
+                                {
+                                    // Tell the user to update
+                                    loadRequiredFirmware = BaseLookup.getSystemNotificationHandler()
+                                            .askUserToUpdateFirmware(printerToUse);
+                                } else 
+                                {
+                                    // If printer firmware is more than required, we ask the user if they are sure of the downgrade
+                                    loadRequiredFirmware = BaseLookup.getSystemNotificationHandler()
+                                            .showDowngradeFirmwareDialog(printerToUse);
+                                }
+                                
                             }
                         }
 
