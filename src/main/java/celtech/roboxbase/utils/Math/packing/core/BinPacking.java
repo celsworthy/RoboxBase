@@ -1,5 +1,6 @@
 package celtech.roboxbase.utils.Math.packing.core;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.utils.Math.packing.primitives.MArea;
 import java.awt.*;
 import java.util.ArrayList;
@@ -34,6 +35,13 @@ public class BinPacking {
 
 			notPlaced = bin.dropPieces(notPlaced);
 
+                        if (notPlaced.length > 0)
+                        {
+                            BaseLookup.getSystemNotificationHandler()
+                                    .showErrorNotification(BaseLookup.i18n("error.autolayoutModelTooBigTitle"), 
+                                            BaseLookup.i18n("error.autolayoutModelTooBigMessage"));
+                        }
+                        
 			System.out.println("Bin " + (++nbin) + " generated");
 			bins.add(bin);
 //			if (notPlaced.length > 0)
