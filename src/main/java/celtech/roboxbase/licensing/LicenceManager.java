@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -54,8 +55,10 @@ public class LicenceManager
             @Override
             public void run()
             {
-                startupTimeElapsed = true;
-                validateLicence(true);
+                Platform.runLater(() -> {
+                    startupTimeElapsed = true;
+                    validateLicence(true);
+                });
             }
         };
         

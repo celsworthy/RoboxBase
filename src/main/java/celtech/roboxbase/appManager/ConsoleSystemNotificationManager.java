@@ -46,7 +46,13 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
         outputNotification("Firmware update query");
         return true;
     }
-
+    
+    @Override
+    public boolean showDowngradeFirmwareDialog(Printer printerToUpdate)
+    {
+        return false;
+    }
+    
     @Override
     public RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse PrprinterID)
     {

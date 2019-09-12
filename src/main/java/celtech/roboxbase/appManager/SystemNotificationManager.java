@@ -35,9 +35,12 @@ public interface SystemNotificationManager
     /**
      * Returns true for no update and false for update
      *
+     * @param printerToUpdate
      * @return True if the user has agreed to update, otherwise false
      */
     boolean askUserToUpdateFirmware(Printer printerToUpdate);
+    
+    boolean showDowngradeFirmwareDialog(Printer printerToUpdate);
 
     RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID);
     

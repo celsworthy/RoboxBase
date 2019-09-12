@@ -188,6 +188,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private final BooleanProperty canCalibrateXYAlignment = new SimpleBooleanProperty(false);
     private final BooleanProperty canCalibrateNozzleOpening = new SimpleBooleanProperty(false);
     private final BooleanProperty isStylusHead = new SimpleBooleanProperty(false);
+    private final BooleanProperty usedExtrudersLoaded = new SimpleBooleanProperty(false);
 
     private boolean headIntegrityChecksInhibited = false;
 
@@ -467,11 +468,14 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 .and(printEngine.highIntensityCommsInProgressProperty().not())
                 .and(busyStatus.isEqualTo(BusyStatus.NOT_BUSY)));
 
-        //TODO make this work with multiple extruders
+        // This is rebound when a project is printed and depends on the extruders being used
+        usedExtrudersLoaded.bind(extruders.get(0).filamentLoaded);
+        
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING))
                 .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE)))
-                .and(extruders.get(0).filamentLoaded.or(isStylusHead)));
+                .and(extruders.get(0).filamentLoaded.or(isStylusHead))
+                .and(usedExtrudersLoaded));
     }
 
     FilamentContainer.FilamentDatabaseChangesListener filamentDatabaseChangesListener
@@ -2097,6 +2101,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         List<Boolean> usedExtruders = printableProject.getUsedExtruders();
         
+        bindLoadedExtruders(usedExtruders);
+        
         boolean needToOverrideTempsForReel0 = false;
         if (filament0 != FilamentContainer.UNKNOWN_FILAMENT)
         {
@@ -2246,6 +2252,19 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         } catch (RoboxCommsException ex)
         {
             steno.error("Error whilst sending preheat commands");
+        }
+    }
+    
+    private void bindLoadedExtruders(List<Boolean> usedExtruders)
+    {
+        usedExtrudersLoaded.unbind();
+        if (usedExtruders.get(0))
+        {
+            usedExtrudersLoaded.bind(extruders.get(0).filamentLoaded);
+        }
+        if (usedExtruders.get(1))
+        {
+            usedExtrudersLoaded.bind(extruders.get(1).filamentLoaded);
         }
     }
 
