@@ -4953,8 +4953,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         for (PrintJobStatistics stats : orderedStats)
         {
             steno.debug("Checking job " +  stats.getPrintJobID());
-            HeadType printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
-            steno.debug("    job printed with head type" +  printedWithHeadType.toString());
+            HeadType printedWithHeadType = null;
+            try
+            {
+                printedWithHeadType = HeadType.valueOf(stats.getPrintedWithHeadType());
+                steno.debug("    job printed with head type" +  printedWithHeadType.toString());
+            } catch (IllegalArgumentException e)
+            {
+                steno.debug("    HeadType is invalid");
+            }
             if (headProperty().get() == null)
                 steno.debug("    head is null");
             if (headProperty().get() != null && headProperty().get().headTypeProperty().get() != printedWithHeadType)
