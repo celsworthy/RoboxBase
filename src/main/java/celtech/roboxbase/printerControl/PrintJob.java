@@ -68,6 +68,14 @@ public class PrintJob
     }
 
     /**
+     * @return the printJobDirectory
+     */
+    public String getJobDirectory()
+    {
+        return printJobDirectory;
+    }
+
+    /**
      * Get the location of the roboxised file
      *
      * @return
