@@ -7,6 +7,7 @@ import celtech.roboxbase.comms.remote.clear.ListCamerasResponse;
 import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.remote.types.SerializableFilament;
+import celtech.roboxbase.configuration.ApplicationVersion;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
@@ -76,7 +77,7 @@ public final class DetectedServer
             
             server.serverIP.set(addressText);
             server.setName(node.get("name").asText());
-            server.setVersion(node.get("version").asText());
+            server.setVersion(new ApplicationVersion(node.get("version").get("versionString").asText()));
             server.setPin(node.get("pin").asText());
             server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
             
@@ -91,10 +92,11 @@ public final class DetectedServer
     private final StringProperty name = new SimpleStringProperty("");
     @JsonIgnore
     private final StringProperty serverIP = new SimpleStringProperty("");
-    private final StringProperty version = new SimpleStringProperty("");
     private final StringProperty pin = new SimpleStringProperty("1111");
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
     private ListProperty<String> colours = new SimpleListProperty<>();
+    
+    private ApplicationVersion version;
     
     private List<DetectedDevice> detectedDevices = new ArrayList();
 
@@ -261,23 +263,18 @@ public final class DetectedServer
 //        return serverIP;
 //    }
 
-    public String getVersion()
-    {
-        return version.get();
-    }
-
-    public void setVersion(String version)
-    {
-        if (!version.equals(this.version))
-        {
-            this.version.set(version);
-            dataChanged.set(!dataChanged.get());
-        }
-    }
-
-    public StringProperty versionProperty()
+    public ApplicationVersion getVersion()
     {
         return version;
+    }
+
+    public void setVersion(ApplicationVersion version)
+    {
+        if (this.version == null || !version.getVersionString().equals(this.version.getVersionString()))
+        {
+            this.version = version;
+            dataChanged.set(!dataChanged.get());
+        }
     }
 
     public List<String> getColours() 
@@ -388,34 +385,33 @@ public final class DetectedServer
         {
             try
             {
-                if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()) &&
-                    !(BaseConfiguration.getApplicationVersion().startsWith("tadev") && version.get().startsWith("tadev"))) // Debug hack to allow mismatching development versions to operate.
+                int response = getData(LIST_PRINTERS_COMMAND);
+                if (response == 200)
                 {
-                    steno.debug("Setting status to WRONG_VERSION");
-                    setServerStatus(ServerStatus.WRONG_VERSION);
-                    CoreMemory.getInstance().deactivateRoboxRoot(this);
-                } else
-                {
-
-                    int response = getData(LIST_PRINTERS_COMMAND);
-                    if (response == 200)
+                    if (!version.getVersionString().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()) &&
+                    !(BaseConfiguration.getApplicationVersion().startsWith("tadev") && version.getVersionString().startsWith("tadev"))) // Debug hack to allow mismatching development versions to operate.
+                    {
+                        steno.debug("Setting status to WRONG_VERSION");
+                        setServerStatus(ServerStatus.WRONG_VERSION);
+                        CoreMemory.getInstance().deactivateRoboxRoot(this);
+                    } else
                     {
                         steno.debug("Setting status to CONNECTED");
                         setServerStatus(ServerStatus.CONNECTED);
                         CoreMemory.getInstance().activateRoboxRoot(this);
                         success = true;
-                    } else if (response == 401)
-                    {
-                        steno.debug("Setting status to WRONG_PIN");
-                        setServerStatus(ServerStatus.WRONG_PIN);
-                        CoreMemory.getInstance().deactivateRoboxRoot(this);
-                    } else
-                    {
-                        
-                        steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
-                        setServerStatus(ServerStatus.NOT_CONNECTED);
-                        CoreMemory.getInstance().deactivateRoboxRoot(this);
                     }
+                } else if (response == 401)
+                {
+                    steno.debug("Setting status to WRONG_PIN");
+                    setServerStatus(ServerStatus.WRONG_PIN);
+                    CoreMemory.getInstance().deactivateRoboxRoot(this);
+                } else
+                {
+
+                    steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
+                    setServerStatus(ServerStatus.NOT_CONNECTED);
+                    CoreMemory.getInstance().deactivateRoboxRoot(this);
                 }
             } catch (IOException ex)
             {
@@ -478,7 +474,7 @@ public final class DetectedServer
                 {
                     gotAResponse = true;
                     name.set(response.getName());
-                    version.set(response.getServerVersion());
+                    version = new ApplicationVersion(response.getServerVersion());
                     serverIP.set(response.getServerIP());
                     
                     ObservableList<String> observableList = FXCollections.observableArrayList();
@@ -825,7 +821,7 @@ public final class DetectedServer
     
     public boolean upgradeRootSoftware(String path, String filename, PercentProgressReceiver progressReceiver)
     {
-        boolean success = false;
+        boolean success = true;
         
         // First try SFTP;
         TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
@@ -844,7 +840,7 @@ public final class DetectedServer
             }
             catch (IOException ex)
             {
-                steno.error("Failed to shutdown remote server: " + ex.getMessage());
+                steno.debug("Exception in shutdown of remote server, server likely shutdown before response: " + ex.getMessage());
             }
         }
         

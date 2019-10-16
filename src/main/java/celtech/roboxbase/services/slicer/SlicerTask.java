@@ -11,11 +11,17 @@ import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
 import celtech.roboxbase.utils.models.PrintableMeshes;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -94,7 +100,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         steno.debug("Starting slicing");
         String uuidString = new String(printJobUUID);
         timeUtils.timerStart(uuidString, slicerTimerName);
-
+        
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
 
         MeshFileOutputConverter outputConverter = null;
@@ -484,6 +490,94 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         }
 
         return succeeded;
+    }
+    
+    public static void killSlicing(SlicerType slicerType,
+            Stenographer steno)
+    {
+        String windowsKillCommand = "";
+        String macKillCommand = "";
+        String linuxKillCommand = "";
+
+        switch (slicerType)
+        {
+            case Slic3r:
+                break;
+            case Cura:
+            case Cura4:
+                windowsKillCommand = "taskkill /IM \"CuraEngine.exe\" /F";
+                macKillCommand = "./KillCuraEngine.mac.sh";
+                linuxKillCommand = "./KillCuraEngine.linux.sh";
+                break;
+        }
+        
+        MachineType machineType = BaseConfiguration.getMachineType();
+        List<String> commands = new ArrayList<>();
+        
+        switch (machineType)
+        {
+            case WINDOWS_95:
+                commands.add("command.com");
+                commands.add("/S");
+                commands.add("/C");
+                commands.add(windowsKillCommand);
+                break;
+            case WINDOWS:
+                commands.add("cmd.exe");
+                commands.add("/S");
+                commands.add("/C");
+                commands.add(windowsKillCommand);
+                break;
+            case MAC:
+                commands.add(macKillCommand);
+                break;
+            case LINUX_X64:
+            case LINUX_X86:
+                commands.add(linuxKillCommand);
+                break;
+        }
+        
+        if (!commands.isEmpty())
+        {
+            ProcessBuilder killSlicerProcessBuilder = new ProcessBuilder(commands);
+            if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
+            {
+                String binDir = BaseConfiguration.getBinariesDirectory();
+                steno.debug("Set working directory (Non-Windows) to " + binDir);
+                killSlicerProcessBuilder.directory(new File(binDir));
+            }
+            try 
+            {       
+                Process slicerKillProcess = killSlicerProcessBuilder.start();
+                slicerKillProcess.waitFor();
+            } catch (IOException | InterruptedException ex) 
+            {
+                steno.exception("Exception whilst killing slicer", ex);
+            }
+        }
+    }
+    
+    private static void emptyPrintJobDirectory(String printJobDirectory)
+    {
+        Path printJobDirectoryPath = Paths.get(printJobDirectory);
+        if (Files.exists(printJobDirectoryPath) && Files.isDirectory(printJobDirectoryPath))
+        {
+            try(Stream<Path> paths = Files.walk(printJobDirectoryPath))
+            {
+                paths.forEach(path -> {
+                    try 
+                    {
+                        Files.delete(path);
+                    } catch (IOException ex) 
+                    {
+                        STENO.exception("Error when trying to delete " + path.toString(), ex);
+                    }
+                });
+            } catch (IOException ex)
+            {
+                STENO.exception("Error when trying to walk through directory " + printJobDirectory, ex);
+            }
+        }
     }
 
     @Override

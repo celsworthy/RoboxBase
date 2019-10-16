@@ -97,6 +97,7 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
             if (isCancelled())
             {
                 result.setCancelled(true);
+                SlicerTask.killSlicing(meshesToPrint.getDefaultSlicerType(), steno);
                 return result;
             }
             if (slicerResult.isSuccess())

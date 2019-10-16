@@ -3,11 +3,11 @@
  */
 package celtech.roboxbase.printerControl.model.statetransitions.calibration;
 
-import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.appManager.SystemNotificationManager.PrinterErrorChoice;
-import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.events.ErrorConsumer;
+import celtech.roboxbase.comms.rx.FirmwareError;
+import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,8 @@ public class CalibrationPrinterErrorHandler
         if (!errorCancellable.cancelled().get())
         {
             if (error == FirmwareError.B_POSITION_LOST
-                    || error == FirmwareError.B_POSITION_WARNING)
+                    || error == FirmwareError.B_POSITION_WARNING
+                    || error == FirmwareError.ERROR_BED_TEMPERATURE_DROOP)
             {
                 // Do nothing for the moment...
             } else if ((error == FirmwareError.D_FILAMENT_SLIP

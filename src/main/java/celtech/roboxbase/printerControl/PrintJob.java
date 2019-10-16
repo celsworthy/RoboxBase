@@ -4,6 +4,8 @@ import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import java.io.File;
 import java.io.IOException;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
 
 /**
  * A PrintJob represents a print run of a Project, and is associated with a print job directory in
@@ -13,7 +15,9 @@ import java.io.IOException;
  */
 public class PrintJob
 {
-
+    private static final Stenographer STENO = StenographerFactory.getStenographer(PrintJob.class.getName());
+    
+    
     private String jobUUID = null;
     private String printJobDirectory = null;
     private PrintJobStatistics statistics = null;
@@ -64,6 +68,14 @@ public class PrintJob
     }
 
     /**
+     * @return the printJobDirectory
+     */
+    public String getJobDirectory()
+    {
+        return printJobDirectory;
+    }
+
+    /**
      * Get the location of the roboxised file
      *
      * @return
@@ -92,6 +104,7 @@ public class PrintJob
     {
         if (statistics == null)
         {
+            STENO.info("Looking for statistics file in location - " + getStatisticsFileLocation());
             statistics = PrintJobStatistics.importStatisticsFromGCodeFile(getStatisticsFileLocation());
         }
         return statistics;

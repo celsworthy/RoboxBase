@@ -41,12 +41,18 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
 
     @Override
-    public boolean askUserToUpdateFirmware()
+    public boolean askUserToUpdateFirmware(Printer printerToUpdate)
     {
         outputNotification("Firmware update query");
         return true;
     }
-
+    
+    @Override
+    public boolean showDowngradeFirmwareDialog(Printer printerToUpdate)
+    {
+        return false;
+    }
+    
     @Override
     public RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse PrprinterID)
     {
@@ -193,6 +199,13 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     {
         outputNotification("Application upgrade dialog");
         return true;
+    }
+    
+    @Override
+    public boolean showAreYouSureYouWantToDowngradeDialog()
+    {
+        outputNotification("Application downgrade root dialog");
+        return false;
     }
 
     @Override

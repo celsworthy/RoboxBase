@@ -1,5 +1,6 @@
 package celtech.roboxbase.utils.Math.packing.core;
 
+import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.utils.Math.packing.primitives.MArea;
 import java.awt.*;
 import java.util.ArrayList;
@@ -18,11 +19,15 @@ public class BinPacking {
 		System.out.println(".............Started computation of bin placements.............");
 		ArrayList<Bin> bins = new ArrayList<Bin>();
 		int nbin = 0;
-		boolean stillToPlace = true;
+//		boolean stillToPlace = true;
 		MArea[] notPlaced = pieces;
 		double t1 = System.currentTimeMillis();
-		while (stillToPlace) {
-			stillToPlace = false;
+//		while (stillToPlace) {
+//			stillToPlace = false;
+
+                // Removed loop in BinPackingStrategy as we only have 1 bin which is the size of the print bed.
+                // This also fixes a bug where autolayout would infinitely run if used when an object does not fit on the bed.
+
 			Bin bin = new Bin(binDimension);
 			notPlaced = bin.BBCompleteStrategy(notPlaced);
 
@@ -30,11 +35,18 @@ public class BinPacking {
 
 			notPlaced = bin.dropPieces(notPlaced);
 
+                        if (notPlaced.length > 0)
+                        {
+                            BaseLookup.getSystemNotificationHandler()
+                                    .showErrorNotification(BaseLookup.i18n("error.autolayoutModelTooBigTitle"), 
+                                            BaseLookup.i18n("error.autolayoutModelTooBigMessage"));
+                        }
+                        
 			System.out.println("Bin " + (++nbin) + " generated");
 			bins.add(bin);
-			if (notPlaced.length > 0)
-				stillToPlace = true;
-		}
+//			if (notPlaced.length > 0)
+//				stillToPlace = true;
+//		}
 		double t2 = System.currentTimeMillis();
 		System.out.println();
 		System.out.println("Number of used bins: " + nbin);

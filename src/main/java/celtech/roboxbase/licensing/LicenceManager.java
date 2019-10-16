@@ -16,6 +16,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -36,11 +39,33 @@ public class LicenceManager
     
     private static boolean proLicenceActiveNotified = false;
 
+    private boolean startupTimeElapsed = false;
+    
     /**
      * Class is singleton
      * Do not allow instantiation outside of class.
      */
-    private LicenceManager() {}
+    private LicenceManager() 
+    {
+        // On first initialisation we start a timer.
+        // The TimerTask will call validate licence, which allows AutoMaker to start
+        // without licence dialogs until the first wave of printers is connected.
+        TimerTask validateLicenceTask = new TimerTask() 
+        {    
+            @Override
+            public void run()
+            {
+                Platform.runLater(() -> {
+                    startupTimeElapsed = true;
+                    validateLicence(true);
+                });
+            }
+        };
+        
+        Timer timer = new Timer("ValidateLicenceTimer", true);
+        long delay = 30000L; // 30 seconds
+        timer.schedule(validateLicenceTask, delay);
+    }
     
     /**
      * Loaded when first accessed by {@link LicenceManager#getInstance()}  providing a
@@ -96,7 +121,7 @@ public class LicenceManager
         if(license.checkLicenceInDate() || LicenceUtilities.isLicenceFreeVersion(license))
         {
             // We have a license that can be activated
-            if(isAssociatedPrinterConnected || isLicenseWithoutHardwareAllowed) 
+            if(isAssociatedPrinterConnected || isLicenseWithoutHardwareAllowed || !startupTimeElapsed) 
             {
                 if(activateLicense)
                 {
