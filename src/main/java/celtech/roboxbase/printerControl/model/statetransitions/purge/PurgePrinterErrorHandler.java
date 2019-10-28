@@ -60,12 +60,12 @@ public class PurgePrinterErrorHandler
         if (!errorCancellable.cancelled().get())
         {
             if (error == FirmwareError.B_POSITION_LOST
-                    || error == FirmwareError.B_POSITION_WARNING)
+                    || error == FirmwareError.B_POSITION_WARNING
+                    || error == FirmwareError.ERROR_BED_TEMPERATURE_DROOP)
             {
                 // Do nothing for the moment...
             } else if (error == FirmwareError.D_FILAMENT_SLIP
-                || error == FirmwareError.E_FILAMENT_SLIP
-                    || error == FirmwareError.ERROR_BED_TEMPERATURE_DROOP)
+                || error == FirmwareError.E_FILAMENT_SLIP)
             {
                 if (showingFilamentSlipErrorDialog) {
                     return;
