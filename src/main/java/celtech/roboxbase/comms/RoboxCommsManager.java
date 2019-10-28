@@ -261,7 +261,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
             // Cache camera info
             List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
-            CoreMemory.getInstance().retainAndAddUSBDirectories(remotelyAttachedCameras);
+            CoreMemory.getInstance().retainAndAddCameraInfo(remotelyAttachedCameras);
             
             //Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();

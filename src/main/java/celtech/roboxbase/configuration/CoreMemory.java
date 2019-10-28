@@ -27,7 +27,7 @@ public class CoreMemory
 
     private List<DetectedServer> cachedActiveRoboxRoots = null;
     
-    private List<CameraInfo> cachedConnectedCameraInfo = null;
+    private final List<CameraInfo> cachedConnectedCameraInfo = new ArrayList<>();
 
     private static CoreMemory instance = null;
 
@@ -152,12 +152,7 @@ public class CoreMemory
         return cachedConnectedCameraInfo;
     }
     
-    public void setCachedConnectedCameraInfo(List<CameraInfo> connectedCameraInfo)
-    {
-        this.cachedConnectedCameraInfo = connectedCameraInfo;
-    }
-    
-    public void retainAndAddUSBDirectories(List<CameraInfo> connectedCameraInfo) 
+    public void retainAndAddCameraInfo(List<CameraInfo> connectedCameraInfo) 
     {
         cachedConnectedCameraInfo.retainAll(connectedCameraInfo);
         connectedCameraInfo.stream()

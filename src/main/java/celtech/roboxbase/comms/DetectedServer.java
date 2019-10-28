@@ -96,6 +96,9 @@ public final class DetectedServer
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
     private ListProperty<String> colours = new SimpleListProperty<>();
     
+    @JsonIgnore
+    private final BooleanProperty cameraDetected = new SimpleBooleanProperty(false);
+    
     private ApplicationVersion version;
     
     private List<DetectedDevice> detectedDevices = new ArrayList();
@@ -295,6 +298,11 @@ public final class DetectedServer
     public ListProperty coloursProperty() 
     {
         return colours;
+    }
+    
+    public boolean getCameraDetected()
+    {
+        return cameraDetected.get();
     }
 
     public ServerStatus getServerStatus()
@@ -628,6 +636,9 @@ public final class DetectedServer
         {
             steno.exception("Error whilst polling for remote cameras @ " + address.getHostAddress(), ex);
         }
+        
+        cameraDetected.set(!detectedCameras.isEmpty());
+        
         return detectedCameras;
     }
 
