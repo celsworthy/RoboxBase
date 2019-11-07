@@ -304,6 +304,17 @@ public final class DetectedServer
     {
         return cameraDetected.get();
     }
+    
+    public void setCameraDetected(boolean cameraDetected)
+    {
+        this.cameraDetected.set(cameraDetected);
+        dataChanged.set(!dataChanged.get());
+    }
+    
+    public BooleanProperty cameraDetectedProperty()
+    {
+        return cameraDetected;
+    }
 
     public ServerStatus getServerStatus()
     {

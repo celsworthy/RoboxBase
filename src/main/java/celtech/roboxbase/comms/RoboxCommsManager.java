@@ -5,7 +5,6 @@ import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.MachineType;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.printerControl.model.HardwarePrinter;
@@ -21,6 +20,7 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -45,6 +45,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
     private Stenographer steno = null;
     private final ObservableMap<DetectedDevice, Printer> activePrinters = FXCollections.observableHashMap();
+    private final ObservableList<CameraInfo> activeCameras = FXCollections.observableArrayList();
     private boolean suppressPrinterIDChecks = false;
     private int sleepBetweenStatusChecksMS = 1000;
 
@@ -247,6 +248,15 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         }
         return newPrinter;
     }
+    
+    private void assessCandidateCamera(CameraInfo candidateCamera)
+    {
+        if (!activeCameras.contains(candidateCamera))
+        {
+            activeCameras.add(candidateCamera);
+            BaseLookup.cameraConnected(candidateCamera);
+        }
+    }
 
     @Override
     public void run()
@@ -261,7 +271,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
             // Cache camera info
             List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
-            CoreMemory.getInstance().retainAndAddCameraInfo(remotelyAttachedCameras);
+            remotelyAttachedCameras.forEach(this::assessCandidateCamera);
             
             //Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();

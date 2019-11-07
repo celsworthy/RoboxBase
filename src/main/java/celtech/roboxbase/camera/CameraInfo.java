@@ -1,5 +1,7 @@
 package celtech.roboxbase.camera;
 
+import java.util.Objects;
+
 /**
  *
  * @author George Salter
@@ -84,5 +86,63 @@ public class CameraInfo
                 "Motion stream handle: " + motionStreamHandle + "\n" +
                 "Server addess: " + serverIP;
         return cameraInfoString;
+    }
+
+    @Override
+    public int hashCode() 
+    {
+        int hash = 7;
+        hash = 79 * hash + Objects.hashCode(this.udevName);
+        hash = 79 * hash + Objects.hashCode(this.cameraName);
+        hash = 79 * hash + this.cameraNumber;
+        hash = 79 * hash + Objects.hashCode(this.motionControlHandle);
+        hash = 79 * hash + Objects.hashCode(this.motionStreamHandle);
+        hash = 79 * hash + Objects.hashCode(this.serverIP);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) 
+    {
+        if (this == obj) 
+        {
+            return true;
+        }
+        if (obj == null) 
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass()) 
+        {
+            return false;
+        }
+        
+        final CameraInfo other = (CameraInfo) obj;
+        
+        if (this.cameraNumber != other.cameraNumber) 
+        {
+            return false;
+        }
+        if (!Objects.equals(this.udevName, other.udevName)) 
+        {
+            return false;
+        }
+        if (!Objects.equals(this.cameraName, other.cameraName))
+        {
+            return false;
+        }
+        if (!Objects.equals(this.motionControlHandle, other.motionControlHandle))
+        {
+            return false;
+        }
+        if (!Objects.equals(this.motionStreamHandle, other.motionStreamHandle))
+        {
+            return false;
+        }
+        if (!Objects.equals(this.serverIP, other.serverIP)) 
+        {
+            return false;
+        }
+        return true;
     }
 }
