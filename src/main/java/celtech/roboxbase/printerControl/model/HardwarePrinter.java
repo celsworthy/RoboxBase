@@ -5125,8 +5125,9 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public boolean printJobFromDirectory(String printJobName, String directoryPath) 
     {
+        steno.info("printJobFromDirectory(\"" + printJobName + "\", \"" + directoryPath);
         PrintJob printJob = new PrintJob(printJobName, directoryPath);
-        return getPrintEngine().reprintFileFromDisk(printJob);
+        return getPrintEngine().spoolAndPrintFileFromDisk(printJob);
     }
 
     @Override

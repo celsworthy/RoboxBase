@@ -26,9 +26,14 @@ import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.models.PrintableProject;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +41,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -682,6 +689,48 @@ public class PrintEngine implements ControllableService
     protected boolean reprintFileFromDisk(PrintJob printJob)
     {
         return reprintFileFromDisk(printJob, 0);
+    }
+
+    protected boolean spoolAndPrintFileFromDisk(PrintJob printJob)
+    {
+        PrintJob spoolJob = new PrintJob(printJob.getJobUUID());
+        File spoolJobDirectory = new File(spoolJob.getJobDirectory());
+        if (spoolJobDirectory.exists())
+        {
+            try 
+            {
+                // Delete the contents of the job directory.
+                Files.walk(Paths.get(spoolJob.getJobDirectory()))
+                     .filter(Files::isRegularFile)
+                     .map(Path::toFile)
+                     .forEach(File::delete);
+            } 
+            catch (IOException ex) 
+            {
+                steno.error("Couldn't empty job directory \"" + spoolJob.getJobDirectory() + "\"");
+            }
+        }
+        spoolJobDirectory.mkdirs();
+        
+        try 
+        {
+            // Copy the GCode file.
+            Path spoolGCodePath = Paths.get(spoolJob.getRoboxisedFileLocation());
+            Path originalGCodePath = Paths.get(printJob.getRoboxisedFileLocation());
+            Files.copy(originalGCodePath, spoolGCodePath, StandardCopyOption.REPLACE_EXISTING);
+            
+            // Copy the statistics file.
+            Path spoolStatisticsPath = Paths.get(spoolJob.getStatisticsFileLocation());
+            Path originalStatisticsPath = Paths.get(printJob.getStatisticsFileLocation());
+            Files.copy(originalStatisticsPath, spoolStatisticsPath, StandardCopyOption.REPLACE_EXISTING);
+        
+            return reprintFileFromDisk(spoolJob, 0);
+        } 
+        catch (IOException ex) 
+        {
+            steno.error("Couldn't copy from \"" + spoolJob.getJobDirectory() + "\"");
+        }
+        return false;
     }
 
     private boolean reprintDirectFromPrinter(PrintJob printJob) throws RoboxCommsException

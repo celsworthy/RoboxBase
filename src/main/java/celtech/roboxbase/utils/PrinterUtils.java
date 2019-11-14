@@ -1,21 +1,17 @@
 package celtech.roboxbase.utils;
 
 import celtech.roboxbase.BaseLookup;
-import celtech.roboxbase.printerControl.model.PrinterListChangesAdapter;
 import celtech.roboxbase.appManager.PurgeResponse;
-import celtech.roboxbase.comms.remote.BusyStatus;
-import celtech.roboxbase.configuration.Filament;
-import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
-import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
+import celtech.roboxbase.comms.remote.BusyStatus;
 import celtech.roboxbase.comms.rx.StatusResponse;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.services.printing.PrintService;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import java.util.List;
-import java.util.Set;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
@@ -371,7 +367,10 @@ public class PrinterUtils
             nozzleNumber = 0;
         }
 
-        if (Math.abs(targetNozzleTemperature
+        if (settingsFilament == FilamentContainer.UNKNOWN_FILAMENT)
+        {
+            return false;
+        } else if (Math.abs(targetNozzleTemperature
                 - printer.headProperty().get().getNozzleHeaters().get(nozzleNumber).
                         lastFilamentTemperatureProperty().get())
                 > BaseConfiguration.maxPermittedTempDifferenceForPurge)
