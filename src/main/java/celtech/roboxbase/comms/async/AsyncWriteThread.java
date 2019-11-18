@@ -7,7 +7,6 @@ import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.rx.RoboxRxPacketFactory;
 import celtech.roboxbase.comms.rx.RxPacketTypeEnum;
 import celtech.roboxbase.comms.tx.TxPacketTypeEnum;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -210,7 +209,6 @@ public class AsyncWriteThread extends Thread
                 steno.info("Connection lost - " + getName());
             } catch (RoboxCommsException | InterruptedException ex)
             {
-                commandInterface.dumpCommandHistory();
                 steno.exception("Unexpected error during write", ex);
             } finally
             {
