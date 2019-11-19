@@ -100,7 +100,7 @@ public abstract class CommandInterface extends Thread
         this.setPriority(8);
 
         asyncWriteThread = new AsyncWriteThread(this, printerHandle.getConnectionHandle());
-        asyncWriteThread.start();
+        
 
         try
         {
@@ -157,7 +157,6 @@ public abstract class CommandInterface extends Thread
     }
 
     @Override
-
     public void run()
     {
         while (keepRunning)
@@ -579,7 +578,14 @@ public abstract class CommandInterface extends Thread
      */
     public void setPrinter(Printer printer)
     {
+        // The asyncWriterThread is started here because it is potentially risky
+        // starting a thread in the constructor, as the command interface is not
+        // properly initialised. As not much can happen until a printer is set,
+        // it is started here. 
         this.printerToUse = printer;
+        State s = asyncWriteThread.getState();
+        
+        asyncWriteThread.start();
     }
 
     /**
@@ -642,11 +648,6 @@ public abstract class CommandInterface extends Thread
     }
 
     public void clearError(FirmwareError error)
-    {
-        // Nothing to do by default.
-    }
-    
-    public void dumpCommandHistory()
     {
         // Nothing to do by default.
     }
