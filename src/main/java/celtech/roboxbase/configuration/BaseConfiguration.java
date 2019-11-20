@@ -178,6 +178,14 @@ public class BaseConfiguration
         installationProperties = testingProperties;
         steno.info("App dir: " + applicationInstallDirectory);
         BaseConfiguration.applicationInstallDirectory = applicationInstallDirectory;
+        if (System.getProperty("os.name").startsWith("Windows") && BaseConfiguration.applicationInstallDirectory.matches("/[A-Za-z]:.*"))
+        {
+            // This seeems to be a bug. Windows paths from URLs come out with a leading /
+            // e.g. /C:/Root/Leaf
+            // Remove the leading slash
+            BaseConfiguration.applicationInstallDirectory = BaseConfiguration.applicationInstallDirectory.substring(1);
+        }
+
         BaseConfiguration.userStorageDirectory = userStorageDirectory;
     }
 
