@@ -6,7 +6,6 @@ import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappings;
-import celtech.roboxbase.i18n.languagedata.LanguageData;
 import celtech.roboxbase.postprocessor.GCodeOutputWriter;
 import celtech.roboxbase.postprocessor.GCodeOutputWriterFactory;
 import celtech.roboxbase.postprocessor.LiveGCodeOutputWriter;
@@ -14,13 +13,13 @@ import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterListChangesNotifier;
 import celtech.roboxbase.utils.tasks.LiveTaskExecutor;
 import celtech.roboxbase.utils.tasks.TaskExecutor;
+import celuk.language.I18n;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import libertysystems.stenographer.LogLevel;
@@ -37,8 +36,6 @@ public class BaseLookup
     private static final Stenographer steno = StenographerFactory.getStenographer(
             BaseLookup.class.getName());
 
-    private static ResourceBundle i18nbundle;
-    private static Locale applicationLocale;
     private static TaskExecutor taskExecutor;
     private static SlicerMappings slicerMappings;
     private static GCodeOutputWriterFactory<GCodeOutputWriter> postProcessorGCodeOutputWriterFactory;
@@ -60,22 +57,12 @@ public class BaseLookup
 
     public static ResourceBundle getLanguageBundle()
     {
-        return i18nbundle;
+        return I18n.getLanguageBundle();
     }
 
     public static String i18n(String stringId)
     {
-        String langString = null;
-        try
-        {
-           langString = i18nbundle.getString(stringId);
-        }
-        catch (MissingResourceException ex)
-        {
-            langString = stringId;
-        }
-        langString = substituteTemplates(langString);
-        return langString;
+        return I18n.t(stringId);
     }
 
     /**
@@ -87,22 +74,7 @@ public class BaseLookup
      */
     public static String substituteTemplates(String langString)
     {
-        String patternString = ".*\\*T(\\d\\d).*";
-        Pattern pattern = Pattern.compile(patternString);
-        while (true)
-        {
-            Matcher matcher = pattern.matcher(langString);
-            if (matcher.find())
-            {
-                String template = "*T" + matcher.group(1);
-                String templatePattern = "\\*T" + matcher.group(1);
-                langString = langString.replaceAll(templatePattern, i18n(template));
-            } else
-            {
-                break;
-            }
-        }
-        return langString;
+        return I18n.substituteTemplates(langString);
     }
 
     public static TaskExecutor getTaskExecutor()
@@ -259,49 +231,30 @@ public class BaseLookup
 
     public static Set<Locale> getAvailableLocales()
     {
-        return availableLocales;
+        return I18n.getAvailableLocales();
     }
 
     public static Locale getApplicationLocale()
     {
-        return applicationLocale;
+        return I18n.getApplicationLocale();
     }
 
     public static void setApplicationLocale(Locale locale)
     {
-        applicationLocale = locale;
+        I18n.setApplicationLocale(locale);
     }
 
     public static void setupDefaultValues(LogLevel logLevel, Locale appLocale, SystemNotificationManager notificationManager)
     {
         StenographerFactory.changeAllLogLevels(logLevel);
 
-        applicationLocale = appLocale;
-        steno.info("Starting AutoMaker - loading resources for locale " + applicationLocale);
-        i18nbundle = null;
-        availableLocales = null;
-        try
-        {
-            LanguageData languageData = new LanguageData();
-            availableLocales = languageData.getAvailableLocales();
-            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
-        }
-        catch (Exception ex)
-        {
-            steno.error("Failed to load language resources: " + ex.getMessage());
-            i18nbundle = null;
-            availableLocales = null;
-        }
-
-        if (i18nbundle == null)
-        {
-            applicationLocale = Locale.ENGLISH;
-            steno.debug("Loading resources for fallback locale " + applicationLocale);
-
-            LanguageData languageData = new LanguageData();
-            availableLocales = languageData.getAvailableLocales();
-            i18nbundle = ResourceBundle.getBundle("celtech.roboxbase.i18n.languagedata.LanguageData", applicationLocale);
-        }
+        I18n.addBundlePrefix("UI_");
+        I18n.addBundlePrefix("NoUI_");
+        I18n.addSubDirectoryToSearch("Common");
+        Path installPath = Paths.get(BaseConfiguration.getApplicationInstallDirectory(null)).normalize();
+        I18n.addSubDirectoryToSearch(installPath.getFileName().toString());
+        steno.info("Starting AutoMaker - loading resources for locale " + appLocale);
+        I18n.loadMessages(installPath.getParent().toString(), appLocale);
 
         BaseLookup.setTaskExecutor(
                 new LiveTaskExecutor());

@@ -32,7 +32,6 @@ public class DummyPrinterCommandInterfaceTest extends BaseEnvironmentConfiguredT
         commandInterface.connectToPrinter();
         
         HardwarePrinter hardwarePrinter = new HardwarePrinter(statusConsumer, commandInterface);
-        commandInterface.setPrinter(hardwarePrinter);
 
         hardwarePrinter.sendRawGCode("ATTACH HEAD RBX01-DM", true);
 

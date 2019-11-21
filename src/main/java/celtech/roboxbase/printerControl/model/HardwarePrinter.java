@@ -230,7 +230,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     private int dataFileSequenceNumber = 0;
     private int dataFileSequenceNumberStartPoint = 0;
     private static final int bufferSize = 512;
-    private static final StringBuffer outputBuffer = new StringBuffer(bufferSize);
+    private final StringBuffer outputBuffer = new StringBuffer(bufferSize);
     private boolean printInitiated = false;
 
     protected final ObjectProperty<PauseStatus> pauseStatus = new SimpleObjectProperty<>(
