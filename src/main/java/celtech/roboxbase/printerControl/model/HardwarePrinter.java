@@ -4003,7 +4003,6 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                     .forEach(foundError ->
                                     {
                                         errorWasConsumed = false;
-                                        currentErrors.add(foundError);
                                         if (foundError == FirmwareError.Z_TOP_SWITCH)
                                         {
                                             if (head.get() != null)
@@ -4041,7 +4040,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                         {
                                             steno.debug("Error:" + foundError.
                                                     name() + " suppressed");
-                                        } else
+                                        }
+                                        else
                                         {
                                             if (!currentErrors.contains(foundError))
                                                 currentErrors.add(foundError);
@@ -4097,7 +4097,8 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                         });
                             }
                             steno.trace(ackResponse.toString());
-                        } else
+                        }
+                        else
                         {
                             errorsFound.stream()
                                     .forEach(foundError ->
