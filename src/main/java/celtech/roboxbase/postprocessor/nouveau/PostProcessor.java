@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
+import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.parboiled.Parboiled;
@@ -210,7 +211,7 @@ public class PostProcessor
         outputVerifier = new OutputVerifier(featureSet);
     }
 
-    public RoboxiserResult processInput()
+    public RoboxiserResult processInput(Task postProcessorTask)
     {
         RoboxiserResult result = new RoboxiserResult();
         result.setSuccess(false);
@@ -262,6 +263,14 @@ public class PostProcessor
                 
                 for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     linesRead++;
                     double percentSoFar = ((double) linesRead / (double) linesInGCodeFile) * 100;
                     if (percentSoFar - lastPercentSoFar >= 1)
@@ -318,6 +327,14 @@ public class PostProcessor
 
                 for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     timeUtils.timerStart(this, assignExtrusionTimerName);
                     NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
                     timeUtils.timerStop(this, assignExtrusionTimerName);
@@ -378,6 +395,14 @@ public class PostProcessor
 
                 for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     timeUtils.timerStart(this, writeOutputTimerName);
                     if (resultToBeProcessed.getLayerData().getLayerNumber() == 1)
                     {
