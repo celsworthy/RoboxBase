@@ -11,16 +11,15 @@ import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
 import celtech.roboxbase.utils.models.PrintableMeshes;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.stream.Stream;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
@@ -98,8 +97,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             Stenographer steno)
     {
         steno.debug("Starting slicing");
-        String uuidString = new String(printJobUUID);
-        timeUtils.timerStart(uuidString, slicerTimerName);
+        String timerUUID = UUID.randomUUID().toString();
+        timeUtils.timerStart(timerUUID, slicerTimerName);
         
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
 
@@ -140,11 +139,18 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 printableMeshes.getNumberOfNozzles(),
                 steno);
 
-        timeUtils.timerStop(uuidString, slicerTimerName);
-        steno.debug("Slicer Timer Report");
-        steno.debug("============");
-        steno.debug(slicerTimerName + " " + timeUtils.timeTimeSoFar_ms(uuidString, slicerTimerName) / 1000.0 + " seconds");
-        steno.debug("============");
+        try {
+            timeUtils.timerStop(timerUUID, slicerTimerName);
+            steno.debug("Slicer Timer Report");
+            steno.debug("============");
+            steno.debug(slicerTimerName + " " + 0.001 * timeUtils.timeTimeSoFar_ms(timerUUID, slicerTimerName) + " seconds");
+            steno.debug("============");
+            timeUtils.timerDelete(timerUUID, slicerTimerName);
+        }
+        catch (TimeUtils.TimerNotFoundException ex) {
+            // This really should not happen!
+            steno.debug("Slicer Timer Report - timer not found!");
+        }
 
         return new SliceResult(printJobUUID, printableMeshes, printerToUse, succeeded);
     }
