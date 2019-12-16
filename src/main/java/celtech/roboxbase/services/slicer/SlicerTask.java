@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -66,8 +67,8 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         updateProgress(0.0, 100.0);
 
         STENO.debug("Starting slicing");
-        String uuidString = printJobUUID;
-        TIME_UTILS.timerStart(uuidString, SLICER_TIMER_NAME);
+        String timerUUID = UUID.randomUUID().toString();
+        TIME_UTILS.timerStart(timerUUID, SLICER_TIMER_NAME);
         
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
 
@@ -113,11 +114,20 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 progressReceiver,
                 printableMeshes.getNumberOfNozzles());
 
-        TIME_UTILS.timerStop(uuidString, SLICER_TIMER_NAME);
-        STENO.debug("Slicer Timer Report");
-        STENO.debug("============");
-        STENO.debug(SLICER_TIMER_NAME + " " + TIME_UTILS.timeTimeSoFar_ms(uuidString, SLICER_TIMER_NAME) / 1000.0 + " seconds");
-        STENO.debug("============");
+        try
+        {
+            TIME_UTILS.timerStop(timerUUID, SLICER_TIMER_NAME);
+            STENO.debug("Slicer Timer Report");
+            STENO.debug("============");
+            STENO.debug(SLICER_TIMER_NAME + " " + 0.001 * TIME_UTILS.timeTimeSoFar_ms(timerUUID, SLICER_TIMER_NAME) + " seconds");
+            STENO.debug("============");
+            TIME_UTILS.timerDelete(timerUUID, SLICER_TIMER_NAME);
+        }
+        catch (TimeUtils.TimerNotFoundException ex)
+        {
+            // This really should not happen!
+            STENO.debug("Slicer Timer Report - timer not found!");
+        }
 
         return new SliceResult(printJobUUID, printableMeshes, printerToUse, succeeded);
     }
