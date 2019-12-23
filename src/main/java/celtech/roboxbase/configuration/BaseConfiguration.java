@@ -241,6 +241,11 @@ public class BaseConfiguration
 
         return machineType;
     }
+    
+    public static boolean isWindows32Bit()
+    {
+        return System.getProperty("os.name").contains("Windows") && System.getenv("ProgramFiles(x86)") == null;
+    }
 
     public static String getApplicationName()
     {
