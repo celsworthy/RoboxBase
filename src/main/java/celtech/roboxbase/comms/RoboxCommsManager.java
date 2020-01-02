@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -34,6 +32,8 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     public static final String CUSTOM_CONNECTION_HANDLE = "OfflinePrinterConnection";
 
     public static final String MOUNTED_MEDIA_FILE_PATH = "/media";
+
+    public static final int MAX_ACTIVE_PRINTERS = 9;
     
     private static RoboxCommsManager instance = null;
 
@@ -67,7 +67,12 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     private BooleanProperty detectLoadedFilamentOverride = new SimpleBooleanProperty(true);
     private boolean searchForRemotePrinters = false;
 
-    private final BooleanBinding tooManyRoboxAttachedProperty;
+    // Set to true when an attempt is made to connect another printer when the maximum number
+    // of printers have already been connected. It will be set to false again when a printer is
+    // disconnected. This means listeners will be notifed when the first attempt to connect
+    // too any printers is made, but will not be notified again until the number of connected
+    // printers decreases.
+    private BooleanProperty tooManyRoboxAttachedProperty = new SimpleBooleanProperty(true);
 
     private RoboxCommsManager(String pathToBinaries,
             boolean suppressPrinterIDChecks,
@@ -91,7 +96,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
         steno = StenographerFactory.getStenographer(this.getClass().getName());
 
-        tooManyRoboxAttachedProperty = Bindings.size(activePrinters).greaterThan(9);
+        tooManyRoboxAttachedProperty.set(false);
     }
 
     /**
@@ -171,15 +176,21 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     private void assessCandidatePrinter(DetectedDevice detectedPrinter)
     {
         if (detectedPrinter != null
-                && !activePrinters.keySet().contains(detectedPrinter)
-                && !tooManyRoboxAttachedProperty.get())
+                && !activePrinters.keySet().contains(detectedPrinter))
         {
-            // We need to connect!
-            steno.info("Adding new printer on " + detectedPrinter.getConnectionHandle());
-
-            Printer newPrinter = makePrinter(detectedPrinter);
-            activePrinters.put(detectedPrinter, newPrinter);
-            newPrinter.startComms();
+            if (activePrinters.size() >= MAX_ACTIVE_PRINTERS)
+            {
+                steno.info("Max number of printers already connected - not connecteding to new printer on " + detectedPrinter.getConnectionHandle());
+                tooManyRoboxAttachedProperty.set(true);
+            }
+            else
+            {
+                // We need to connect!
+                steno.info("Adding new printer on " + detectedPrinter.getConnectionHandle());
+                Printer newPrinter = makePrinter(detectedPrinter);
+                activePrinters.put(detectedPrinter, newPrinter);
+                newPrinter.startComms();
+            }
         }
     }
 
@@ -369,6 +380,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         final Printer printerToRemove = activePrinters.get(printerHandle);
         if (printerToRemove != null)
         {
+            printerToRemove.stopComms();
             printerToRemove.shutdown();
         }
 
@@ -387,6 +399,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                 steno.info("Disconnected");
             }
             activePrinters.remove(printerHandle);
+            tooManyRoboxAttachedProperty.set(false);
         }
     }
 
@@ -459,7 +472,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         }
     }
 
-    public BooleanBinding tooManyRoboxAttachedProperty()
+    public BooleanProperty tooManyRoboxAttachedProperty()
     {
         return tooManyRoboxAttachedProperty;
     }

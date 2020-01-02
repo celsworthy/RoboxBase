@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.stream.Collectors.toList;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -45,7 +46,9 @@ public class RoboxProfile {
         this.headType = roboxProfile.getHeadType();
         this.standardProfile = roboxProfile.isStandardProfile();
         this.settings = new HashMap<>(roboxProfile.getSettings());
-        createNozzleParameters();
+        this.nozzleParameters = roboxProfile.getNozzleParameters().stream()
+                .map(nozzleParam -> new NozzleParameters(nozzleParam))
+                .collect(toList());
     }
 
     public String getName() {

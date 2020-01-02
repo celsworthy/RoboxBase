@@ -16,9 +16,12 @@ import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import celtech.roboxbase.services.slicer.ProgressReceiver;
 import celtech.roboxbase.services.slicer.SliceResult;
 import celtech.roboxbase.services.slicer.SlicerTask;
+import celtech.roboxbase.services.slicer.SlicerUtils;
 import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.io.File;
-import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -37,6 +40,8 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
     private PrintableMeshes meshesToUse = null;
     private PrintableMeshes meshesToPrint = null;
     private String gCodeDirectoryName = null;
+    
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /**
      *
@@ -67,60 +72,101 @@ public class GCodeGeneratorTask extends Task<GCodeGeneratorResult> implements Pr
     protected GCodeGeneratorResult call()
     {
         GCodeGeneratorResult result = new GCodeGeneratorResult();
-        try {
-            if (isCancelled())
+            
+        if (isCancelled())
+        {
+            result.setCancelled(true);
+            return result;
+        }
+
+        prepareSettingsForSlicing();
+        updateProgress(10.0, 100.0);
+        if (isCancelled())
+        {
+            result.setCancelled(true);
+            return result;
+        }
+        updateMessage(BaseLookup.i18n("printerStatus.slicing"));
+        PrintJob printJob = new PrintJob(meshesToPrint.getPrintQuality().getFriendlyName(), gCodeDirectoryName);
+        String slicerOutputFileName = printJob.getGCodeFileLocation();
+        String postProcOutputFileName = printJob.getRoboxisedFileLocation();
+
+        SlicerTask slicerTask = new SlicerTask(meshesToPrint.getPrintQuality().getFriendlyName(),
+                meshesToPrint,
+                gCodeDirectoryName,
+                printerToUse,
+                this);
+        executorService.execute(slicerTask);
+
+        SliceResult slicerResult = null;
+        try 
+        {
+            slicerResult = slicerTask.get();
+        } 
+        catch (InterruptedException ex) 
+        {
+            steno.debug("GCode Generation interrupted, probably due to a cancel");
+            steno.debug("Cancelling Slicer Task");
+            slicerTask.cancel(false);
+            steno.debug("Killing Slicer");
+            SlicerUtils.killSlicing(meshesToPrint.getDefaultSlicerType());
+        }
+        catch (ExecutionException ex) 
+        {
+            steno.warning("Slicing task failed with exception " + ex);
+            SlicerUtils.killSlicing(meshesToPrint.getDefaultSlicerType());
+        }
+
+        result.setSlicerResult(slicerResult, slicerOutputFileName);
+        updateProgress(60.0, 100.0);
+
+        if (isCancelled())
+        {
+            result.setCancelled(true);
+            return result;
+        }
+
+        if (slicerResult != null && slicerResult.isSuccess())
+        {
+            updateMessage(BaseLookup.i18n("printerStatus.postProcessing"));
+            DoubleProperty progress = new SimpleDoubleProperty();
+            progress.addListener((n, ov, nv) -> this.updateProgress(60.0 + 0.4 * nv.doubleValue(), 100.0));
+            
+            PostProcessorTask postProcessorTask = new PostProcessorTask(
+                meshesToPrint.getPrintQuality().getFriendlyName(),
+                meshesToPrint,
+                gCodeDirectoryName,
+                printerToUse,
+                progress,
+                meshesToPrint.getDefaultSlicerType());
+            executorService.execute(postProcessorTask);
+            
+            GCodePostProcessingResult postProcessingResult = null;
+            try 
             {
-                result.setCancelled(true);
-                return result;
+                postProcessingResult = postProcessorTask.get();
+            } catch (InterruptedException ex) 
+            {
+                steno.debug("GCode Generation interrupted, probably due to a cancel");
+                steno.debug("Cancelling Post Processor");
+                postProcessorTask.cancel(false);
+            } catch (ExecutionException ex) 
+            {
+                steno.warning("Post Processor task failed with exception " + ex);
             }
             
-            prepareSettingsForSlicing();
-            updateProgress(10.0, 100.0);
-            if (isCancelled())
-            {
-                result.setCancelled(true);
-                return result;
-            }
-            updateMessage(BaseLookup.i18n("printerStatus.slicing"));
-            PrintJob printJob = new PrintJob(meshesToPrint.getPrintQuality().getFriendlyName(), gCodeDirectoryName);
-            String slicerOutputFileName = printJob.getGCodeFileLocation();
-            String postProcOutputFileName = printJob.getRoboxisedFileLocation();
-
-            SliceResult slicerResult = SlicerTask.doSlicing(meshesToPrint.getPrintQuality().getFriendlyName(),
-                                                            meshesToPrint,
-                                                            gCodeDirectoryName,
-                                                            printerToUse,
-                                                            this,
-                                                            steno);
-            result.setSlicerResult(slicerResult, slicerOutputFileName);
-            updateProgress(60.0, 100.0);
-            if (isCancelled())
-            {
-                result.setCancelled(true);
-                SlicerTask.killSlicing(meshesToPrint.getDefaultSlicerType(), steno);
-                return result;
-            }
-            if (slicerResult.isSuccess())
-            {
-                updateMessage(BaseLookup.i18n("printerStatus.postProcessing"));
-                DoubleProperty progress = new SimpleDoubleProperty();
-                progress.addListener((n, ov, nv) -> this.updateProgress(60.0 + 0.4 * nv.doubleValue(), 100.0));
-                GCodePostProcessingResult postProcessingResult = PostProcessorTask.doPostProcessing(
-                    meshesToPrint.getPrintQuality().getFriendlyName(),
-                    meshesToPrint,
-                    gCodeDirectoryName,
-                    printerToUse,
-                    progress,
-                    meshesToPrint.getDefaultSlicerType());
-                result.setPostProcessingResult(postProcessingResult, postProcOutputFileName);
-            }
-            updateMessage("Done");
-            updateProgress(100.0, 100.0);
+            result.setPostProcessingResult(postProcessingResult, postProcOutputFileName);
         }
-        catch (IOException ex)
+        
+        if (isCancelled())
         {
-            steno.exception("There was an exception", ex);
+            result.setCancelled(true);
+            return result;
         }
+        
+        updateMessage("Done");
+        updateProgress(100.0, 100.0);
+        
         return result;
     }
     

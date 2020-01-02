@@ -1,24 +1,19 @@
 package celtech.roboxbase.services.postProcessor;
 
-import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.SlicerType;
+import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.configuration.fileRepresentation.HeadFile;
 import celtech.roboxbase.postprocessor.RoboxiserResult;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessor;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeature;
 import celtech.roboxbase.postprocessor.nouveau.PostProcessorFeatureSet;
 import celtech.roboxbase.printerControl.PrintJob;
-import celtech.roboxbase.utils.models.PrintableMeshes;
 import celtech.roboxbase.printerControl.model.Printer;
-import java.io.File;
-import java.io.IOException;
+import celtech.roboxbase.utils.models.PrintableMeshes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -30,26 +25,29 @@ import libertysystems.stenographer.StenographerFactory;
 public class PostProcessorTask extends Task<GCodePostProcessingResult>
 {
 
-    private static final Stenographer steno = StenographerFactory.getStenographer(
+    private static final Stenographer STENO = StenographerFactory.getStenographer(
             PostProcessorTask.class.getName());
 
     private final String printJobUUID;
     private final PrintableMeshes printableMeshes;
     private final String printJobDirectory;
     private final Printer printerToUse;
-    private final DoubleProperty taskProgress = new SimpleDoubleProperty(0);
+    private final DoubleProperty taskProgress;
     private final SlicerType slicerType;
 
     public PostProcessorTask(
             String printJobUUID,
             PrintableMeshes printableMeshes,
+            String printJobDirectory,
             Printer printerToUse,
+            DoubleProperty taskProgress,
             SlicerType slicerType)
     {
         this.printJobUUID = printJobUUID;
         this.printableMeshes = printableMeshes;
-        this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID + File.separator;
+        this.printJobDirectory = printJobDirectory;
         this.printerToUse = printerToUse;
+        this.taskProgress = taskProgress;
         this.slicerType = slicerType;
         updateTitle("Post Processor");
         updateProgress(0.0, 100.0);
@@ -57,45 +55,17 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
 
     @Override
     protected GCodePostProcessingResult call() throws Exception
-    {
-        GCodePostProcessingResult postProcessingResult = null;
-
-        try
+    {  
+        if (isCancelled())
         {
-            updateMessage("");
-            updateProgress(0.0, 100.0);
-            taskProgress.addListener(
-                    (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
-            {
-                updateProgress(newValue.doubleValue(), 100.0);
-            });
-            postProcessingResult = doPostProcessing(
-                    printJobUUID,
-                    printableMeshes,
-                    printJobDirectory,
-                    printerToUse,
-                    taskProgress,
-                    slicerType);
-        } catch (Exception ex)
-        {
-            ex.printStackTrace();
-            steno.error("Error in post processing");
+            STENO.debug("Slice cancelled");
+            return null;
         }
-        return postProcessingResult;
-    }
-
-    public static GCodePostProcessingResult doPostProcessing(
-            String printJobUUID,
-            PrintableMeshes printableMeshes,
-            String printJobDirectory,
-            Printer printer,
-            DoubleProperty taskProgress,
-            SlicerType slicerType) throws IOException
-    {
+        
         String headType;
-        if (printer != null && printer.headProperty().get() != null)
+        if (printerToUse != null && printerToUse.headProperty().get() != null)
         {
-            headType = printer.headProperty().get().typeCodeProperty().get();
+            headType = printerToUse.headProperty().get().typeCodeProperty().get();
         } else
         {
             headType = HeadContainer.defaultHeadID;
@@ -105,13 +75,13 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
         String gcodeFileToProcess = printJob.getGCodeFileLocation();
         String gcodeOutputFile = printJob.getRoboxisedFileLocation();
 
-        GCodePostProcessingResult postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printer, new RoboxiserResult());
+        GCodePostProcessingResult postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printerToUse, new RoboxiserResult());
 
         PostProcessorFeatureSet ppFeatures = new PostProcessorFeatureSet();
 
         HeadFile headFileToUse;
-        if (printer == null
-                || printer.headProperty().get() == null)
+        if (printerToUse == null
+                || printerToUse.headProperty().get() == null)
         {
             headFileToUse = HeadContainer.getHeadByID(HeadContainer.defaultHeadID);
             ppFeatures.enableFeature(PostProcessorFeature.REMOVE_ALL_UNRETRACTS);
@@ -120,7 +90,7 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
             ppFeatures.enableFeature(PostProcessorFeature.REPLENISH_BEFORE_OPEN);
         } else
         {
-            headFileToUse = HeadContainer.getHeadByID(printer.headProperty().get().typeCodeProperty().get());
+            headFileToUse = HeadContainer.getHeadByID(printerToUse.headProperty().get().typeCodeProperty().get());
             if (!headFileToUse.getTypeCode().equals("RBX01-SL")
                     && !headFileToUse.getTypeCode().equals("RBX01-DL"))
             {
@@ -148,15 +118,22 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 objectToNozzleNumberMap.put(objectIndex, nozzleForExtruder.get());
             } else
             {
-                steno.warning("Couldn't get extruder number for object " + objectIndex);
+                STENO.warning("Couldn't get extruder number for object " + objectIndex);
             }
             objectIndex++;
         }
+        
+        if (isCancelled())
+        {
+            STENO.debug("Slice cancelled");
+            return null;
+        }
+        
         PostProcessor postProcessor = new PostProcessor(
                 printJobUUID,
                 printableMeshes.getProjectName(),
                 printableMeshes.getUsedExtruders(),
-                printer,
+                printerToUse,
                 gcodeFileToProcess,
                 gcodeOutputFile,
                 headFileToUse,
@@ -170,14 +147,13 @@ public class PostProcessorTask extends Task<GCodePostProcessingResult>
                 printableMeshes.isSafetyFeaturesRequired(),
                 slicerType);
 
-        RoboxiserResult roboxiserResult = postProcessor.processInput();
+        RoboxiserResult roboxiserResult = postProcessor.processInput(this);
         if (roboxiserResult.isSuccess())
         {
             roboxiserResult.getPrintJobStatistics().writeStatisticsToFile(printJob.getStatisticsFileLocation());
-            postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printer, roboxiserResult);
+            postProcessingResult = new GCodePostProcessingResult(printJobUUID, gcodeOutputFile, printerToUse, roboxiserResult);
         }
 
         return postProcessingResult;
     }
-
 }

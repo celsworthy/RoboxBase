@@ -11,17 +11,12 @@ import celtech.roboxbase.utils.exporters.MeshExportResult;
 import celtech.roboxbase.utils.exporters.MeshFileOutputConverter;
 import celtech.roboxbase.utils.exporters.STLOutputConverter;
 import celtech.roboxbase.utils.models.PrintableMeshes;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Stream;
+import java.util.UUID;
 import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
@@ -33,38 +28,27 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
  */
 public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
 {
-
-    private static final Stenographer STENO = StenographerFactory.getStenographer(SlicerTask.class.
-            getName());
-    private String printJobUUID = null;
+    private static final Stenographer STENO = StenographerFactory.getStenographer(SlicerTask.class.getName());
+    private static final TimeUtils TIME_UTILS = new TimeUtils();
+    private static final String SLICER_TIMER_NAME = "Slicer";
+    
+    private final String printJobUUID;
     private final PrintableMeshes printableMeshes;
     private final String printJobDirectory;
-    private Printer printerToUse = null;
-
-    private static final TimeUtils timeUtils = new TimeUtils();
-    private static final String slicerTimerName = "Slicer";
-
-    public SlicerTask(String printJobUUID,
-            PrintableMeshes printableMeshes,
-            Printer printerToUse)
-    {
-        this.printJobUUID = printJobUUID;
-        this.printableMeshes = printableMeshes;
-        this.printJobDirectory = BaseConfiguration.getPrintSpoolDirectory() + printJobUUID
-                + File.separator;
-        this.printerToUse = printerToUse;
-        updateProgress(0.0, 100.0);
-    }
+    private final Printer printerToUse;
+    private final ProgressReceiver progressReceiver;
 
     public SlicerTask(String printJobUUID,
             PrintableMeshes printableMeshes,
             String printJobDirectory,
-            Printer printerToUse)
+            Printer printerToUse,
+            ProgressReceiver progressReceiver)
     {
         this.printJobUUID = printJobUUID;
         this.printableMeshes = printableMeshes;
         this.printJobDirectory = printJobDirectory;
         this.printerToUse = printerToUse;
+        this.progressReceiver = progressReceiver;
         updateProgress(0.0, 100.0);
     }
 
@@ -73,6 +57,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
     {
         if (isCancelled())
         {
+            STENO.debug("Slice cancelled");
             return null;
         }
 
@@ -81,25 +66,9 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
         updateMessage("Preparing model for conversion");
         updateProgress(0.0, 100.0);
 
-        return doSlicing(printJobUUID,
-                printableMeshes,
-                printJobDirectory,
-                printerToUse,
-                this,
-                STENO
-        );
-    }
-
-    public static SliceResult doSlicing(String printJobUUID,
-            PrintableMeshes printableMeshes,
-            String printJobDirectory,
-            Printer printerToUse,
-            ProgressReceiver progressReceiver,
-            Stenographer steno)
-    {
-        steno.debug("Starting slicing");
-        String uuidString = new String(printJobUUID);
-        timeUtils.timerStart(uuidString, slicerTimerName);
+        STENO.debug("Starting slicing");
+        String timerUUID = UUID.randomUUID().toString();
+        TIME_UTILS.timerStart(timerUUID, SLICER_TIMER_NAME);
         
         SlicerType slicerType = printableMeshes.getDefaultSlicerType();
 
@@ -127,6 +96,12 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             meshExportResult = outputConverter.outputFile(printableMeshes.getMeshesForProcessing(), printJobUUID, printJobDirectory,
                     false);
         }
+        
+        if (isCancelled())
+        {
+            STENO.debug("Slice cancelled");
+            return null;
+        }
 
         Vector3D centreOfPrintedObject = meshExportResult.getCentre();
 
@@ -137,27 +112,34 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 printableMeshes.getExtruderForModel(), 
                 centreOfPrintedObject, 
                 progressReceiver,
-                printableMeshes.getNumberOfNozzles(),
-                steno);
+                printableMeshes.getNumberOfNozzles());
 
-        timeUtils.timerStop(uuidString, slicerTimerName);
-        steno.debug("Slicer Timer Report");
-        steno.debug("============");
-        steno.debug(slicerTimerName + " " + timeUtils.timeTimeSoFar_ms(uuidString, slicerTimerName) / 1000.0 + " seconds");
-        steno.debug("============");
+        try
+        {
+            TIME_UTILS.timerStop(timerUUID, SLICER_TIMER_NAME);
+            STENO.debug("Slicer Timer Report");
+            STENO.debug("============");
+            STENO.debug(SLICER_TIMER_NAME + " " + 0.001 * TIME_UTILS.timeTimeSoFar_ms(timerUUID, SLICER_TIMER_NAME) + " seconds");
+            STENO.debug("============");
+            TIME_UTILS.timerDelete(timerUUID, SLICER_TIMER_NAME);
+        }
+        catch (TimeUtils.TimerNotFoundException ex)
+        {
+            // This really should not happen!
+            STENO.debug("Slicer Timer Report - timer not found!");
+        }
 
         return new SliceResult(printJobUUID, printableMeshes, printerToUse, succeeded);
     }
 
-    public static boolean sliceFile(String printJobUUID,
+    private boolean sliceFile(String printJobUUID,
             String printJobDirectory,
             SlicerType slicerType,
             List<String> createdMeshFiles,
             List<Integer> extrudersForMeshes,
             Vector3D centreOfPrintedObject,
             ProgressReceiver progressReceiver,
-            int numberOfNozzles,
-            Stenographer steno)
+            int numberOfNozzles)
     {
         // Heads with a single nozzle are anomalous because
         // tool zero uses the "E" extruder, which is usually
@@ -231,7 +213,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 break;
         }
 
-        steno.debug("Selected slicer is " + slicerType + " : " + Thread.currentThread().getName());
+        STENO.debug("Selected slicer is " + slicerType + " : " + Thread.currentThread().getName());
 
         int previousExtruder;
         int extruderNo;
@@ -321,7 +303,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                     previousExtruder = extrudersForMeshes.get(i);
                 }
                 windowsPrintCommand += " && popd\"";
-                steno.debug(windowsPrintCommand);
+                STENO.debug(windowsPrintCommand);
                 commands.add(windowsPrintCommand);
                 break;
             case MAC:
@@ -428,7 +410,7 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 }
                 break;
             default:
-                steno.error("Couldn't determine how to run slicer");
+                STENO.error("Couldn't determine how to run slicer");
         }
 
         if (commands.size() > 0)
@@ -437,12 +419,19 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             ProcessBuilder slicerProcessBuilder = new ProcessBuilder(commands);
             if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
             {
-                steno.debug("Set working directory (Non-Windows) to " + printJobDirectory);
+                STENO.debug("Set working directory (Non-Windows) to " + printJobDirectory);
                 slicerProcessBuilder.directory(new File(printJobDirectory));
             }
-            steno.info("Slicer command is " + String.join(" ", slicerProcessBuilder.command()));
+            STENO.info("Slicer command is " + String.join(" ", slicerProcessBuilder.command()));
 
             Process slicerProcess = null;
+            
+            if (isCancelled())
+            {
+                STENO.debug("Slice cancelled");
+                return false;
+            }
+            
             try
             {
                 slicerProcess = slicerProcessBuilder.start();
@@ -461,24 +450,31 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
                 outputGobbler.start();
 
                 int exitStatus = slicerProcess.waitFor();
+                
+                if (isCancelled())
+                {
+                    STENO.debug("Slice cancelled");
+                    return false;
+                }
+                
                 switch (exitStatus)
                 {
                     case 0:
-                        steno.debug("Slicer terminated successfully ");
+                        STENO.debug("Slicer terminated successfully ");
                         succeeded = true;
                         break;
                     default:
-                        steno.error("Failure when invoking slicer with command line: " + String.join(
+                        STENO.error("Failure when invoking slicer with command line: " + String.join(
                                 " ", slicerProcessBuilder.command()));
-                        steno.error("Slicer terminated with exit code " + exitStatus);
+                        STENO.error("Slicer terminated with exit code " + exitStatus);
                         break;
                 }
             } catch (IOException ex)
             {
-                steno.error("Exception whilst running slicer: " + ex);
+                STENO.error("Exception whilst running slicer: " + ex);
             } catch (InterruptedException ex)
             {
-                steno.warning("Interrupted whilst waiting for slicer to complete");
+                STENO.warning("Interrupted whilst waiting for slicer to complete");
                 if (slicerProcess != null)
                 {
                     slicerProcess.destroyForcibly();
@@ -486,98 +482,10 @@ public class SlicerTask extends Task<SliceResult> implements ProgressReceiver
             }
         } else
         {
-            steno.error("Couldn't run slicer - no commands for OS ");
+            STENO.error("Couldn't run slicer - no commands for OS ");
         }
 
         return succeeded;
-    }
-    
-    public static void killSlicing(SlicerType slicerType,
-            Stenographer steno)
-    {
-        String windowsKillCommand = "";
-        String macKillCommand = "";
-        String linuxKillCommand = "";
-
-        switch (slicerType)
-        {
-            case Slic3r:
-                break;
-            case Cura:
-            case Cura4:
-                windowsKillCommand = "taskkill /IM \"CuraEngine.exe\" /F";
-                macKillCommand = "./KillCuraEngine.mac.sh";
-                linuxKillCommand = "./KillCuraEngine.linux.sh";
-                break;
-        }
-        
-        MachineType machineType = BaseConfiguration.getMachineType();
-        List<String> commands = new ArrayList<>();
-        
-        switch (machineType)
-        {
-            case WINDOWS_95:
-                commands.add("command.com");
-                commands.add("/S");
-                commands.add("/C");
-                commands.add(windowsKillCommand);
-                break;
-            case WINDOWS:
-                commands.add("cmd.exe");
-                commands.add("/S");
-                commands.add("/C");
-                commands.add(windowsKillCommand);
-                break;
-            case MAC:
-                commands.add(macKillCommand);
-                break;
-            case LINUX_X64:
-            case LINUX_X86:
-                commands.add(linuxKillCommand);
-                break;
-        }
-        
-        if (!commands.isEmpty())
-        {
-            ProcessBuilder killSlicerProcessBuilder = new ProcessBuilder(commands);
-            if (machineType != MachineType.WINDOWS && machineType != MachineType.WINDOWS_95)
-            {
-                String binDir = BaseConfiguration.getBinariesDirectory();
-                steno.debug("Set working directory (Non-Windows) to " + binDir);
-                killSlicerProcessBuilder.directory(new File(binDir));
-            }
-            try 
-            {       
-                Process slicerKillProcess = killSlicerProcessBuilder.start();
-                slicerKillProcess.waitFor();
-            } catch (IOException | InterruptedException ex) 
-            {
-                steno.exception("Exception whilst killing slicer", ex);
-            }
-        }
-    }
-    
-    private static void emptyPrintJobDirectory(String printJobDirectory)
-    {
-        Path printJobDirectoryPath = Paths.get(printJobDirectory);
-        if (Files.exists(printJobDirectoryPath) && Files.isDirectory(printJobDirectoryPath))
-        {
-            try(Stream<Path> paths = Files.walk(printJobDirectoryPath))
-            {
-                paths.forEach(path -> {
-                    try 
-                    {
-                        Files.delete(path);
-                    } catch (IOException ex) 
-                    {
-                        STENO.exception("Error when trying to delete " + path.toString(), ex);
-                    }
-                });
-            } catch (IOException ex)
-            {
-                STENO.exception("Error when trying to walk through directory " + printJobDirectory, ex);
-            }
-        }
     }
 
     @Override
