@@ -149,11 +149,11 @@ public class RemoteServerDetector
 
                 if (receivedData.equals(RemoteDiscovery.iAmHereMessage))
                 {
-                    steno.debug("searchForServers got response from address " + inboundAddress.getAddress());
+                    steno.trace("searchForServers got response from address " + inboundAddress.getAddress());
                     DetectedServer newServer = DetectedServer.createDetectedServer(inboundAddress.getAddress());
                     if (newServer.whoAreYou())
                     {
-                        steno.debug("Adding server " + inboundAddress.getAddress() + " to newly discovered server list.");
+                        steno.trace("Adding server " + inboundAddress.getAddress() + " to newly discovered server list.");
                         newlyDiscoveredServers.add(newServer);
                     }
                 } else if (receivedData.equals(RemoteDiscovery.discoverHostsMessage))
