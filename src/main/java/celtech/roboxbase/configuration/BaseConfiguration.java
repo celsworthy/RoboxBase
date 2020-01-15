@@ -92,6 +92,7 @@ public class BaseConfiguration
     public static final String applicationKeyPath = "Key";
 
     private static final String remotePrintJobDirectory = "/home/pi/CEL Root/PrintJobs/";
+    private static final String remoteRootDirectory = "/home/pi/CEL Root/";
 
     private static MachineType machineType = null;
 
@@ -434,7 +435,13 @@ public class BaseConfiguration
         }
     }
     
-    public static String getRemotePrintJobDirectory() {
+    public static String getRemoteRootDirectory()
+    {
+        return remoteRootDirectory;
+    }
+    
+    public static String getRemotePrintJobDirectory() 
+    {
         return remotePrintJobDirectory;
     }
 
