@@ -1,6 +1,6 @@
 package celtech.roboxbase.utils.models;
 
-import celtech.roboxbase.services.CameraTriggerData;
+import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import java.util.List;
 

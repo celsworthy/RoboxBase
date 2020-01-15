@@ -1,4 +1,4 @@
-package celtech.roboxbase.services;
+package celtech.roboxbase.services.camera;
 
 /**
  *

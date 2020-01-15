@@ -30,7 +30,7 @@ import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.services.CameraTriggerData;
+import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.TimeUtils;
 import java.io.BufferedReader;

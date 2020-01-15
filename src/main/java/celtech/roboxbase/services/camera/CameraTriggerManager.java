@@ -1,4 +1,4 @@
-package celtech.roboxbase.services;
+package celtech.roboxbase.services.camera;
 
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.postprocessor.nouveau.nodes.CommentNode;
