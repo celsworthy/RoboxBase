@@ -1,6 +1,8 @@
 package celtech.roboxbase.services.camera;
 
+import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.services.printing.SFTPUtils;
+import java.io.File;
 import javafx.concurrent.Task;
 
 /**
@@ -11,9 +13,13 @@ public class ChangeRemoteCameraSettingsTask extends Task<Boolean>
 {
     private final String serverAddress;
     
-    public ChangeRemoteCameraSettingsTask(String serverAddress)
+    private final File cameraProfile;
+    
+    public ChangeRemoteCameraSettingsTask(String serverAddress,
+            File cameraProfile)
     {
         this.serverAddress = serverAddress;
+        this.cameraProfile = cameraProfile;
     }
     
 //    private class TransferProgressMonitor implements SftpProgressMonitor
@@ -52,7 +58,7 @@ public class ChangeRemoteCameraSettingsTask extends Task<Boolean>
 //        public void end(){
 //        }
 //    }
-
+    
     @Override
     protected Boolean call() throws Exception 
     {
@@ -61,10 +67,12 @@ public class ChangeRemoteCameraSettingsTask extends Task<Boolean>
         // We need to send the settings from the .camerprofile to the pi/server
         SFTPUtils sftpHelper = new SFTPUtils(serverAddress);
 //        SftpProgressMonitor monitor = 
-//        String remoteDirectory = BaseConfiguration.getRemoteRootDirectory();
-//        if (sftpHelper.transferToRemotePrinter(cameraProfile, remoteDirectory, gcodeFile.getName(), monitor))
-        
-        
+        String remoteDirectory = BaseConfiguration.getRemoteRootDirectory();
+//        if (sftpHelper.transferToRemotePrinter(cameraProfile, remoteDirectory, cameraProfile.getName(), monitor))
+//        {
+//            
+//        }
+
         // Then we need to tell root to run a script e.g. changeCameraSettings.sh
         
         return settingsChangeSuccessful;
