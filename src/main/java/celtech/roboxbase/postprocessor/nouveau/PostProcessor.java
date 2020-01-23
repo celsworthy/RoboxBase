@@ -153,7 +153,7 @@ public class PostProcessor
             nozzleProxies.add(proxy);
         }
 
-        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura4)
+        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
         {
             // If we have a dual extruder head but a single extruder machine force use of the available extruder
             if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
@@ -168,7 +168,7 @@ public class PostProcessor
             {
                 postProcessingMode = PostProcessingMode.FORCED_USE_OF_E_EXTRUDER;
                 steno.warning("Attempt to postprocess with a DM head and only the E extruder.");
-            } else
+            } else if (slicerType != SlicerType.Cura4)
             {
                 switch (printerOverrides.getPrintSupportTypeOverride())
                 {
@@ -179,6 +179,9 @@ public class PostProcessor
                         postProcessingMode = PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
                         break;
                 }
+            } else
+            {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
             }
         } else if (slicerType == SlicerType.Cura4) 
         {
@@ -187,11 +190,7 @@ public class PostProcessor
             if (settingsProfile.getSpecificBooleanSettingWithDefault("support_after_model", true))
                 featureSet.enableFeature(PostProcessorFeature.MOVE_SUPPORT_AFTER_MODEL);
             
-            if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
-                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
-            } else {
-                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
-            }
+            postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
