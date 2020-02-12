@@ -163,7 +163,10 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         return instance;
     }
 
-    private void assessCandidatePrinter(DetectedDevice detectedPrinter)
+    // This needs to be synchronized because it is called from both the RoboxCommsManager thread and
+    // the main JavaFX thread (when a dummy printer is added). Without the synchronization, the activePrinters
+    // list can be updated simultaneously by the two threads, occasionally causing corruption.
+    private synchronized void assessCandidatePrinter(DetectedDevice detectedPrinter)
     {
         if (detectedPrinter != null
                 && !activePrinters.keySet().contains(detectedPrinter))
@@ -351,8 +354,10 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     /**
      *
      */
-    @Override
-    public void disconnected(DetectedDevice printerHandle)
+    // This needs to be synchronized because it is called from both the RoboxCommsManager thread and
+    // the main JavaFX thread (when a dummy printer is removed). Without the synchronization, the activePrinters
+    // list can be updated simultaneously by the two threads, occasionally causing corruption.
+    private synchronized void disconnectedSync(DetectedDevice printerHandle)
     {
         final Printer printerToRemove = activePrinters.get(printerHandle);
         if (printerToRemove != null)
@@ -380,6 +385,15 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         }
     }
 
+    /**
+     *
+     */
+    @Override
+    public void disconnected(DetectedDevice printerHandle)
+    {
+        disconnectedSync(printerHandle);
+    }
+
     public void addDummyPrinter(boolean isCustomPrinter)
     {
         dummyPrinterCounter++;
@@ -392,7 +406,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
     public void removeDummyPrinter(DetectedDevice printerHandle)
     {
-        disconnected(printerHandle);
+        disconnectedSync(printerHandle);
     }
     
     public void removeAllDummyPrinters() {
