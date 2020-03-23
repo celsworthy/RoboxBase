@@ -122,7 +122,7 @@ public interface SystemNotificationManager
 
     public void hideKeepPushingFilamentNotification();
 
-    public void showEjectFailedDialog(Printer printer, int nozzleNumber);
+    public void showEjectFailedDialog(Printer printer, int nozzleNumber, FirmwareError error);
 
     public void showFilamentMotionCheckBanner();
 

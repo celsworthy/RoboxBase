@@ -286,7 +286,7 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
 
     @Override
-    public void showEjectFailedDialog(Printer printer, int nozzleNumber)
+    public void showEjectFailedDialog(Printer printer, int nozzleNumber, FirmwareError error)
     {
         outputNotification("Eject failed dialog");
     }

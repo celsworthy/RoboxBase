@@ -3723,11 +3723,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             switch (error)
             {
                 case E_UNLOAD_ERROR:
-                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 1);
+                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 1, error);
                     break;
 
                 case D_UNLOAD_ERROR:
-                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 0);
+                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 0, error);
                     break;
 
                 case E_FILAMENT_SLIP:
