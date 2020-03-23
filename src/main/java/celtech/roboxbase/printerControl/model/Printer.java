@@ -596,8 +596,8 @@ public interface Printer extends RoboxResponseConsumer
     
     public void tidyPrintJobDirectories();
 
-    public boolean reprintJob(String printJobID);
-    
+    public boolean printJob(String printJobID);
+
     public boolean printJobFromDirectory(String printJobName, String directoryPath);
 
     // Methods provided to allow a simple, more thread-safe way of accessing the printer info

@@ -5098,10 +5098,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     }
 
     @Override
-    public boolean reprintJob(String printJobID)
+    public boolean printJob(String printJobID)
     {
         PrintJob printJob = new PrintJob(printJobID);
-        return getPrintEngine().reprintFileFromDisk(printJob);
+        return getPrintEngine().printFileFromDisk(printJob);
     }
     
     @Override

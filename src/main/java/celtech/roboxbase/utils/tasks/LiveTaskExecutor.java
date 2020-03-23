@@ -36,6 +36,9 @@ public class LiveTaskExecutor implements TaskExecutor
     @Override
     public void runOnGUIThread(Runnable runnable)
     {
+        // Running immediately if this is the FX thread
+        // prevents things that wait for a FX thread task to complete from
+        // locking up, if the task is called from the FX thread. 
         if (Platform.isFxApplicationThread())
         {
             runnable.run();

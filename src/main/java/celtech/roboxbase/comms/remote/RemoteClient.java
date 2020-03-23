@@ -201,7 +201,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/reprintJob", printJobID, null);
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + "/remoteControl/printJob", printJobID, null);
         } catch (IOException ex)
         {
             String message = "Failed to start print job \"" +
