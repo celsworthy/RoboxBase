@@ -20,6 +20,8 @@ public class WhoAreYouResponse
     
     @JsonInclude(Include.NON_NULL)
     private List<String> printerColours;
+    @JsonInclude(Include.NON_NULL)
+    private String rootUUID;
 
     public WhoAreYouResponse()
     {
@@ -29,12 +31,14 @@ public class WhoAreYouResponse
     public WhoAreYouResponse(String name,
             String serverVersion,
             String serverIP,
-            List<String> printerColours)
+            List<String> printerColours,
+            String rootUUID)
     {
         this.name = name;
         this.serverVersion = serverVersion;
         this.serverIP = serverIP;
         this.printerColours = printerColours;
+        this.rootUUID = rootUUID;
     }
 
     @JsonProperty
@@ -85,5 +89,15 @@ public class WhoAreYouResponse
         this.printerColours = printerColours;
     }
     
-    
+    @JsonProperty
+    public String getRootUUID()
+    {
+        return rootUUID;
+    }
+
+    @JsonProperty
+    public void setRootUUID(String rootUUID) 
+    {
+        this.rootUUID = rootUUID;
+    }
 }
