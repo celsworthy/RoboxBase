@@ -505,7 +505,13 @@ public class UtilityMethods
             int layerNumber = lastLayerParseResult.getLayerData().getLayerNumber();
             if (layerNumber >= 0)
             {
-                layerNumberToLineNumber.add(layerNumber, writer.getNumberOfLinesOutput());
+                int nLines = writer.getNumberOfLinesOutput();
+                for (int i = layerNumberToLineNumber.size(); i < layerNumber; ++i)
+                {
+                    steno.warning("Adding missing layer number " + i + " to layer to line number map");
+                    layerNumberToLineNumber.add(nLines);
+                }
+                layerNumberToLineNumber.add(layerNumber, nLines);
             }
         }
     }
