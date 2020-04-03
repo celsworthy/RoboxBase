@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -255,17 +254,9 @@ public class PrintEngine implements ControllableService
             {
                 if (t1 == PrintQueueStatus.PRINTING)
                 {
-                    if (macroBeingRun.get() == null && cameraIsEnabled)
-                    {
-                        cameraTriggerManager.listenForCameraTrigger();
-                    }
                     printJob.set(new PrintJob(associatedPrinter.printJobIDProperty().get()));
                 } else
                 {
-                    if (macroBeingRun.get() == null)
-                    {
-                        cameraTriggerManager.stopListeningForCameraTrigger();
-                    }
                     printJob.set(null);
                 }
             }

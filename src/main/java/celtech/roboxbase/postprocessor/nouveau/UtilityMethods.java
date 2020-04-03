@@ -1,6 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
@@ -78,7 +77,7 @@ public class UtilityMethods
 
                 if (layerForwardsEvent instanceof LayerChangeDirectiveNode)
                 {
-                    cameraTriggerManager.appendLayerEndTriggerCode((LayerChangeDirectiveNode) layerForwardsEvent);
+                    cameraTriggerManager.appendLayerEndTriggerCode((LayerChangeDirectiveNode) layerForwardsEvent, cameraTriggerData.isTurnOffHeadLights());
                     break;
                 }
             }
