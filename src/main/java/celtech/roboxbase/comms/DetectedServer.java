@@ -77,6 +77,9 @@ public final class DetectedServer
             
             server.serverIP.set(addressText);
             server.setName(node.get("name").asText());
+            JsonNode subNode = node.get("rootUUID");
+            if (subNode != null)
+                server.setRootUUID(subNode.asText());
             server.setVersion(new ApplicationVersion(node.get("version").get("versionString").asText()));
             server.setPin(node.get("pin").asText());
             server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
@@ -95,6 +98,7 @@ public final class DetectedServer
     private final StringProperty pin = new SimpleStringProperty("1111");
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
     private ListProperty<String> colours = new SimpleListProperty<>();
+    private final StringProperty rootUUID = new SimpleStringProperty("");
     
     @JsonIgnore
     private final BooleanProperty cameraDetected = new SimpleBooleanProperty(false);
@@ -116,18 +120,18 @@ public final class DetectedServer
     private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.NOT_CONNECTED);
 
     @JsonIgnore
-    public static final String defaultUser = "root";
+    public static final String DEFAULT_USER = "root";
 
     @JsonIgnore
-    public static final int readTimeOutShort = 1500;
+    public static final int READ_TIMEOUT_SHORT = 1500;
     @JsonIgnore
-    public static final int connectTimeOutShort = 300;
+    public static final int CONNECT_TIMEOUT_SHORT = 300;
     @JsonIgnore
-    public static final int readTimeOutLong = 15000;
+    public static final int READ_TIMEOUT_LONG = 15000;
     @JsonIgnore
-    public static final int connectTimeOutLong = 2000;
+    public static final int CONNECT_TIMEOUT_LONG = 2000;
     @JsonIgnore
-    public static final int maxAllowedPollCount = 8;
+    public static final int MAX_ALLOWED_POLL_COUNT = 8;
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
     @JsonIgnore
@@ -195,7 +199,7 @@ public final class DetectedServer
 
     public boolean maxPollCountExceeded()
     {
-        if (pollCount > maxAllowedPollCount)
+        if (pollCount > MAX_ALLOWED_POLL_COUNT)
         {
             steno.warning("Maximum poll count of \"" + getDisplayName() + "\" exceeded! Count = " + Integer.toString(pollCount));
             return true;
@@ -235,7 +239,7 @@ public final class DetectedServer
 
     public void setName(String name)
     {
-        if (!name.equals(this.name))
+        if (!name.equals(this.name.get()))
         {
             this.name.set(name);
             dataChanged.set(!dataChanged.get());
@@ -314,6 +318,25 @@ public final class DetectedServer
     public BooleanProperty cameraDetectedProperty()
     {
         return cameraDetected;
+    }
+
+    public String getRootUUID()
+    {
+        return rootUUID.get();
+    }
+    
+    public void setRootUUID(String rootUUID)
+    {
+        if (!rootUUID.equals(this.rootUUID.get()))
+        {
+            this.rootUUID.set(rootUUID);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public StringProperty rootUUIDProperty()
+    {
+        return rootUUID;
     }
 
     public ServerStatus getServerStatus()
@@ -395,9 +418,6 @@ public final class DetectedServer
 
         steno.info("Connecting " + name.get());
         steno.debug("Status = " + serverStatus.get());
-        if (serverIP.get().equalsIgnoreCase("192.168.1.74"))
-            steno.debug("Serve is Pern");
-            
 
         if (serverStatus.get() != ServerStatus.WRONG_VERSION
                 && serverStatus.get() != ServerStatus.CONNECTED)
@@ -461,7 +481,7 @@ public final class DetectedServer
         boolean gotAResponse = false;
         WhoAreYouResponse response = null;
 
-        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes";
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes&rid=yes";
 
         long t1 = System.currentTimeMillis();
         try
@@ -476,8 +496,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
                     //+ BaseConfiguration.getApplicationVersion());
 
-            con.setConnectTimeout(connectTimeOutShort);
-            con.setReadTimeout(readTimeOutShort);
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
 
             int responseCode = con.getResponseCode();
 
@@ -498,11 +518,16 @@ public final class DetectedServer
                     
                     ObservableList<String> observableList = FXCollections.observableArrayList();
                     List<String> printerColours = response.getPrinterColours();
-                    if(printerColours != null) 
+                    if (printerColours != null) 
                     {
                         observableList = FXCollections.observableArrayList(printerColours);
                     }
                     colours = new SimpleListProperty<>(observableList);
+                    
+                    String rid = response.getRootUUID();
+                    if (rid != null) 
+                        rootUUID.set(rid);
+//                    System.out.println("Host \"" + address.getHostAddress() + "\" name = \"" + response.getName() + "\" rootUUID = \"" + rid + "\"");
 //                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
 //                    {
 //                        setServerStatus(ServerStatus.WRONG_VERSION);
@@ -547,8 +572,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutShort);
-            con.setReadTimeout(readTimeOutShort);
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
             
             int responseCode = con.getResponseCode();
 
@@ -673,8 +698,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutLong);
-            con.setReadTimeout(readTimeOutLong);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
 
             if (content != null)
             {
@@ -723,8 +748,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setReadTimeout(readTimeOutLong);
-            con.setConnectTimeout(connectTimeOutLong);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
 
             if (content != null)
             {
@@ -759,8 +784,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutLong);
-            con.setReadTimeout(readTimeOutLong);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
 
             rc = con.getResponseCode();
             pollCount = 0; // Successful contact, so zero the poll count;
@@ -794,9 +819,18 @@ public final class DetectedServer
         }
 
         DetectedServer rhs = (DetectedServer) obj;
-        return new EqualsBuilder()
+        // If both servers have rootUUIDs, compare them. Otherwise,
+        // compare the IP addresses.
+        if (!rootUUID.get().isEmpty() && !rhs.rootUUID.get().isEmpty())
+        {
+            return rootUUID.get().equals(rhs.rootUUID.get());
+        }
+        else
+        {    
+            return new EqualsBuilder()
                 .append(address, rhs.address)
                 .isEquals();
+        }
     }
 
     private class TransferProgressMonitor implements SftpProgressMonitor
@@ -907,7 +941,7 @@ public final class DetectedServer
         {
             // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
             disconnect();
-            pollCount = maxAllowedPollCount + 1;
+            pollCount = MAX_ALLOWED_POLL_COUNT + 1;
         }
         
         return success;
