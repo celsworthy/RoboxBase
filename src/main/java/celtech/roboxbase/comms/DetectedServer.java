@@ -644,8 +644,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutShort);
-            con.setReadTimeout(readTimeOutShort);
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
             
             int responseCode = con.getResponseCode();
 
