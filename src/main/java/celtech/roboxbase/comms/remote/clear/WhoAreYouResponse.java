@@ -22,23 +22,30 @@ public class WhoAreYouResponse
     private List<String> printerColours;
     @JsonInclude(Include.NON_NULL)
     private String rootUUID;
+    @JsonInclude(Include.NON_NULL)
+    private String upgradeStatus;
 
     public WhoAreYouResponse()
     {
         // Jackson deserialization
+        printerColours = null;
+        rootUUID = null;
+        upgradeStatus = null;
     }
 
     public WhoAreYouResponse(String name,
             String serverVersion,
             String serverIP,
             List<String> printerColours,
-            String rootUUID)
+            String rootUUID,
+            String upgradeStatus)
     {
         this.name = name;
         this.serverVersion = serverVersion;
         this.serverIP = serverIP;
         this.printerColours = printerColours;
         this.rootUUID = rootUUID;
+        this.upgradeStatus = upgradeStatus;
     }
 
     @JsonProperty
@@ -99,5 +106,17 @@ public class WhoAreYouResponse
     public void setRootUUID(String rootUUID) 
     {
         this.rootUUID = rootUUID;
+    }
+    
+    @JsonProperty
+    public String getUpgradeStatus()
+    {
+        return upgradeStatus;
+    }
+
+    @JsonProperty
+    public void setUpgradeStatus(String upgradeStatus) 
+    {
+        this.upgradeStatus = upgradeStatus;
     }
 }
