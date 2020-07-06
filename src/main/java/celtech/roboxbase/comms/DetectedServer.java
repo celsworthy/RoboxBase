@@ -144,6 +144,8 @@ public final class DetectedServer
     private static final String SAVE_FILAMENT_COMMAND = "/api/admin/saveFilament";
     @JsonIgnore
     private static final String DELETE_FILAMENT_COMMAND = "/api/admin/deleteFilament";
+    @JsonIgnore
+    private static final String SET_UPGRADE_COMMAND = "/api/admin/setUpgradeState";
 
     @JsonIgnore
     // A server for any given address is created once, on the first create request, and placed on the
@@ -156,7 +158,8 @@ public final class DetectedServer
         NOT_CONNECTED,
         CONNECTED,
         WRONG_VERSION,
-        WRONG_PIN;
+        WRONG_PIN,
+        UPGRADING;
 
         private String getI18NString()
         {
@@ -447,7 +450,6 @@ public final class DetectedServer
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
                 } else
                 {
-
                     steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
                     setServerStatus(ServerStatus.NOT_CONNECTED);
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
@@ -482,7 +484,6 @@ public final class DetectedServer
         WhoAreYouResponse response = null;
 
         String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes&rid=yes";
-
         long t1 = System.currentTimeMillis();
         try
         {
@@ -536,7 +537,16 @@ public final class DetectedServer
                 {
                     steno.warning("Got an indecipherable response from " + address.getHostAddress());
                 }
-            } else
+            }
+            else if (responseCode == 503)
+            {
+                if (serverStatus.get() != ServerStatus.UPGRADING)
+                {
+                    steno.warning("No response from @ " + address.getHostAddress());
+                    disconnect();
+                }
+            }
+            else
             {
                 steno.warning("No response from @ " + address.getHostAddress());
                 //disconnect();
@@ -605,7 +615,8 @@ public final class DetectedServer
                     }
                 });
                 pollCount = 0; // Successful contact, so zero the poll count;
-            } else
+            }
+            else
             {
                 disconnect();
                 steno.warning("No response from @ " + address.getHostAddress());
@@ -879,6 +890,18 @@ public final class DetectedServer
     {
         boolean success = true;
         
+        progressReceiver.updateProgressPercent(0.0);
+        
+        try
+        {
+            if (postData(SET_UPGRADE_COMMAND, "true") == 503) { // 503 = server unavailable - implies it is probably upgrading.
+                return false;
+            }
+        } catch (IOException ex)
+        {
+        }
+        serverStatus.set(ServerStatus.UPGRADING);
+        
         // First try SFTP;
         TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
         SFTPUtils sftpHelper = new SFTPUtils(address.getHostAddress());
@@ -908,6 +931,7 @@ public final class DetectedServer
 
             try
             {
+                progressReceiver.updateProgressPercent(0.0);
                 long t1 = System.currentTimeMillis();
                 MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
 
@@ -942,6 +966,16 @@ public final class DetectedServer
             // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
             disconnect();
             pollCount = MAX_ALLOWED_POLL_COUNT + 1;
+        }
+        else {
+            serverStatus.set(ServerStatus.CONNECTED);
+            try
+            {
+                postData(SET_UPGRADE_COMMAND, "false");
+            }
+            catch (IOException ex)
+            {
+            }
         }
         
         return success;
