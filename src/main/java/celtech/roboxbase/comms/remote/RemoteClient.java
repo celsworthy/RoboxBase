@@ -1,12 +1,15 @@
 package celtech.roboxbase.comms.remote;
 
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.rx.FirmwareError;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
+import celtech.roboxbase.utils.SystemUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -78,35 +81,6 @@ public class RemoteClient implements LowLevelInterface
         }
     }
 
-    private String jsonEscape(String source)
-    {
-        // Return a copy of the source with all unicode characters greater than 128 escaped
-        // as backslash u followed by the hex value for the codepoint.
-        if (source != null)
-        {
-            StringBuilder sb = new StringBuilder(source.length() + 4);
-            source.codePoints().forEach(c -> 
-                                        {
-                                            if (c > 0x7f)
-                                            {
-                                                // Encode as \\uHHHH
-                                                String t = Integer.toHexString(c).toUpperCase();
-                                                while (t.length() < 4)
-                                                    t = "0" + t;
-                                                sb.append("\\u");
-                                                sb.append(t.substring(t.length() - 4));
-                                            }
-                                            else
-                                            {
-                                                sb.appendCodePoint(c);
-                                            }
-                                        });
-            return sb.toString();
-        }
-        else
-            return "";
-    }
-    
     @Override
     public RoboxRxPacket writeToPrinter(String printerID, RoboxTxPacket messageToWrite) throws RoboxCommsException
     {
@@ -115,7 +89,7 @@ public class RemoteClient implements LowLevelInterface
         try
         {
             //steno.info("remoteClient.writeToPrinter(" + printerID + ", " + messageToWrite.getPacketType().name());
-            String dataToOutput = jsonEscape(mapper.writeValueAsString(messageToWrite));
+            String dataToOutput = SystemUtils.jsonEscape(mapper.writeValueAsString(messageToWrite));
             
             returnedPacket = (RoboxRxPacket) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + writeToPrinterUrlString, dataToOutput, RoboxRxPacket.class);
             //steno.info("got response " + returnedPacket.getPacketType());
@@ -159,7 +133,7 @@ public class RemoteClient implements LowLevelInterface
     {
         try
         {
-            String dataToOutput = jsonEscape(mapper.writeValueAsString(printJobStatistics));
+            String dataToOutput = SystemUtils.jsonEscape(mapper.writeValueAsString(printJobStatistics));
             remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + sendStatisticsUrlString, dataToOutput, null);
         } catch (IOException ex)
         {
@@ -182,13 +156,41 @@ public class RemoteClient implements LowLevelInterface
         return statistics;
     }
 
+    public void sendCameraData(String printerID, String printJobID, CameraSettings cameraData) throws RoboxCommsException
+    {
+        try
+        {
+            String dataToOutput = SystemUtils.jsonEscape(mapper.writeValueAsString(cameraData));
+        
+            remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + Configuration.lowLevelAPIService + "/" + printJobID + Configuration.sendCameraDataService, dataToOutput, null);
+        } catch (IOException ex)
+        {
+            steno.exception("Failed to send statistics to remote printer " + remotePrinterHandle, ex);
+            throw new RoboxCommsException("Failed to send statistics to remote printer" + remotePrinterHandle);
+        }
+    }
+
+    public CameraSettings retrieveCameraData(String printerID, String printJobID) throws RoboxCommsException
+    {
+        CameraSettings cameraData = null;
+        try
+        {
+            cameraData = (CameraSettings) remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + Configuration.lowLevelAPIService + "/" + printJobID + Configuration.retrieveCameraDataService, null, CameraSettings.class);
+        } catch (IOException ex)
+        {
+            throw new RoboxCommsException("Failed to retrieve statistics from remote printer" + remotePrinterHandle.getServerPrinterIsAttachedTo().getServerIP());
+        }
+
+        return cameraData;
+    }
+
     public void overrideFilament(String printerID, int reelNumber, Filament filament) throws RoboxCommsException
     {
         Map<Integer, String> filamentMap = new HashMap();
         filamentMap.put(reelNumber, filament.getFilamentID());
         try
         {
-            String jsonified = jsonEscape(mapper.writeValueAsString(filamentMap));
+            String jsonified = SystemUtils.jsonEscape(mapper.writeValueAsString(filamentMap));
             remotePrinterHandle.getServerPrinterIsAttachedTo().postRoboxPacket(baseAPIString + "/" + printerID + overrideFilamentUrlString, jsonified, null);
         } catch (IOException ex)
         {

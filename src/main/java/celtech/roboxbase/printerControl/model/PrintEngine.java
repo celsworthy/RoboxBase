@@ -1,11 +1,13 @@
 package celtech.roboxbase.printerControl.model;
 
 import celtech.roboxbase.BaseLookup;
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.comms.rx.SendFile;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.Macro;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.PrintJob;
@@ -14,7 +16,6 @@ import celtech.roboxbase.printerControl.PrinterStatus;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
 import celtech.roboxbase.printerControl.comms.commands.MacroLoadException;
 import celtech.roboxbase.printerControl.comms.commands.MacroPrintException;
-import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.services.camera.CameraTriggerManager;
 import celtech.roboxbase.services.ControllableService;
 import celtech.roboxbase.services.gcodegenerator.GCodeGeneratorResult;
@@ -130,7 +131,6 @@ public class PrintEngine implements ControllableService
     private boolean canDisconnectDuringPrint = true;
 
     private CameraTriggerManager cameraTriggerManager;
-    private CameraTriggerData cameraTriggerData;
     private boolean cameraIsEnabled = false;
 
     private BooleanProperty highIntensityCommsInProgress = new SimpleBooleanProperty(false);
@@ -368,7 +368,6 @@ public class PrintEngine implements ControllableService
         if (cameraIsEnabled)
         {
             cameraTriggerManager.setTriggerData(printableProject.getCameraTriggerData());
-            cameraTriggerData = printableProject.getCameraTriggerData();
         }
         
         if (associatedPrinter.printerStatusProperty().get() == PrinterStatus.IDLE 
@@ -393,7 +392,7 @@ public class PrintEngine implements ControllableService
         
         try {
             FileUtils.copyDirectory(new File(slicedFilesLocation), new File(printJobDirectoryName));
-            PrintJobUtils.assignPrintJobIdToProject(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString());
+            PrintJobUtils.assignPrintJobIdToProject(jobUUID, printJobDirectoryName, printableProject.getPrintQuality().toString(), printableProject.getCameraData());
         } catch (IOException ex) {
             steno.exception("Error when copying sliced project into print job directory", ex);
         }
@@ -430,6 +429,8 @@ public class PrintEngine implements ControllableService
         try
         {
             PrintJobStatistics printJobStatistics = printJob.getStatistics();
+            CameraSettings cameraData = printJob.getCameraData();
+
             linesInPrintingFile.set(printJobStatistics.getNumberOfLines());
 
             BaseLookup.getTaskExecutor().runOnGUIThread(() ->
@@ -441,6 +442,7 @@ public class PrintEngine implements ControllableService
                 transferGCodeToPrinterService.setModelFileToPrint(gCodeFileName);
                 transferGCodeToPrinterService.setPrinterToUse(associatedPrinter);
                 transferGCodeToPrinterService.setPrintJobStatistics(printJobStatistics);
+                transferGCodeToPrinterService.setCameraData(cameraData);
                 transferGCodeToPrinterService.setThisCanBeReprinted(canBeReprinted);
                 transferGCodeToPrinterService.start();
             });
@@ -490,6 +492,14 @@ public class PrintEngine implements ControllableService
             Path originalStatisticsPath = Paths.get(printJob.getStatisticsFileLocation());
             Files.copy(originalStatisticsPath, spoolStatisticsPath, StandardCopyOption.REPLACE_EXISTING);
         
+            // Copy the camera data file, if it exists.
+            File originalCameraDataFile = new File(printJob.getCameraDataFileLocation());
+            if (originalCameraDataFile.canRead()) {
+                Path spoolCameraDataPath = Paths.get(spoolJob.getCameraDataFileLocation());
+                Path originalCameraDataPath = Paths.get(printJob.getCameraDataFileLocation());
+                Files.copy(originalStatisticsPath, spoolStatisticsPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
             return printFileFromDisk(spoolJob, 0, true);
         } 
         catch (IOException ex) 

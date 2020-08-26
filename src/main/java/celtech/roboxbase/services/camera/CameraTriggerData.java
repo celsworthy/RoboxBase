@@ -7,19 +7,19 @@ package celtech.roboxbase.services.camera;
 public class CameraTriggerData
 {
     private final boolean turnOffHeadLights;
-    private final boolean turnOffLED;
+    private final boolean turnOffAmbient;
     private final boolean moveBeforeCapture;
     private final int xMoveBeforeCapture;
     private final int yMoveBeforeCapture;
 
-        public CameraTriggerData(boolean turnOffHeadLights,
-            boolean turnOffLED,
+    public CameraTriggerData(boolean turnOffHeadLights,
+            boolean turnOffAmbient,
             boolean moveBeforeCapture,
             int xMoveBeforeCapture,
             int yMoveBeforeCapture)
     {
         this.turnOffHeadLights = turnOffHeadLights;
-        this.turnOffLED = turnOffLED;
+        this.turnOffAmbient = turnOffAmbient;
         this.moveBeforeCapture = moveBeforeCapture;
         this.xMoveBeforeCapture = xMoveBeforeCapture;
         this.yMoveBeforeCapture = yMoveBeforeCapture;
@@ -30,9 +30,9 @@ public class CameraTriggerData
         return turnOffHeadLights;
     }
     
-    public boolean isTurnOffLED()
+    public boolean isTurnOffAmbient()
     {
-        return turnOffLED;
+        return turnOffAmbient;
     }
 
     public boolean isMoveBeforeCapture()

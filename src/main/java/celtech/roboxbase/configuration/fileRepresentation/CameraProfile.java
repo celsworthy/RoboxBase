@@ -3,6 +3,8 @@ package celtech.roboxbase.configuration.fileRepresentation;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -20,18 +22,26 @@ public class CameraProfile
     @JsonProperty("captureWidth")
     private int captureWidth = 1080;
     
-    @JsonProperty("lockFocus")
-    private boolean lockFocus = false;
+    @JsonProperty("moveBeforeSnapshot")
+    private boolean moveBeforeSnapshot = false;
     
-    @JsonProperty("focusValue")
-    private int focusValue = 0;
+    @JsonProperty("moveToX")
+    private int moveToX = 0;
+
+    @JsonProperty("moveToY")
+    private int moveToY = 0;
+
+    @JsonProperty("headLightOn")
+    private boolean headLightOn = false;
     
-    @JsonProperty("headLight")
-    private boolean headLight = false;
+    @JsonProperty("ambientLightOn")
+    private boolean ambientLightOn = false;
     
-    @JsonProperty("ambientLight")
-    private boolean ambientLight = false;
-    
+    @JsonProperty("cameraName")
+    private String cameraName = "";
+
+    @JsonProperty("controlSettings")
+    private Map<String, String> controlSettings = new HashMap<>();
     /**
      * Default constructor of Jackson
      */
@@ -42,10 +52,13 @@ public class CameraProfile
         profileName = "";
         captureHeight = profileToCopy.getCaptureHeight();
         captureWidth = profileToCopy.getCaptureWidth();
-        lockFocus = profileToCopy.isLockFocus();
-        focusValue = profileToCopy.getFocusValue();
-        headLight = profileToCopy.isHeadLight();
-        ambientLight = profileToCopy.isAmbientLight();
+        headLightOn = profileToCopy.isHeadLightOn();
+        ambientLightOn = profileToCopy.isAmbientLightOn();
+        moveBeforeSnapshot = profileToCopy.isMoveBeforeSnapshot();
+        moveToX = profileToCopy.getMoveToX();
+        moveToY = profileToCopy.getMoveToY();
+        cameraName = profileToCopy.getCameraName();
+        controlSettings = new HashMap<>(profileToCopy.getControlSettings());
     }
 
     public String getProfileName()
@@ -78,44 +91,83 @@ public class CameraProfile
         this.captureWidth = captureWidth;
     }
 
-    public boolean isLockFocus() 
+    public boolean isHeadLightOn() 
     {
-        return lockFocus;
+        return headLightOn;
     }
 
-    public void setLockFocus(boolean lockFocus)
+    public void setHeadLightOn(boolean headLight) 
     {
-        this.lockFocus = lockFocus;
+        this.headLightOn = headLight;
     }
 
-    public int getFocusValue()
+    public void setAmbientLightOn(boolean ambientLight) 
     {
-        return focusValue;
+        this.ambientLightOn = ambientLight;
     }
 
-    public void setFocusValue(int focusValue) 
+    public boolean isAmbientLightOn() 
     {
-        this.focusValue = focusValue;
+        return ambientLightOn;
     }
 
-    public boolean isHeadLight() 
+    public void setMoveBeforeSnapshot(boolean moveBeforeSnapshot) 
     {
-        return headLight;
+        this.moveBeforeSnapshot = moveBeforeSnapshot;
     }
 
-    public void setHeadLight(boolean headLight) 
+    public boolean isMoveBeforeSnapshot() 
     {
-        this.headLight = headLight;
+        return moveBeforeSnapshot;
     }
 
-    public boolean isAmbientLight() 
+    public int getMoveToX()
     {
-        return ambientLight;
+        return moveToX;
     }
 
-    public void setAmbientLight(boolean ambientLight) 
+    public void setMoveToX(int moveToX) 
     {
-        this.ambientLight = ambientLight;
+        this.moveToX = moveToX;
+    }
+
+    public int getMoveToY()
+    {
+        return moveToY;
+    }
+
+    public void setMoveToY(int moveToY) 
+    {
+        this.moveToY = moveToY;
+    }
+
+    public String getCameraName()
+    {
+        return cameraName;
     }
     
+    public void setCameraName(String cameraName)
+    {
+        this.cameraName = cameraName;
+    }
+    
+    public Map<String, String> getControlSettings() 
+    {
+        return controlSettings;
+    }
+
+    public void setControlSettings(Map<String, String> controlSettings) 
+    {
+        this.controlSettings = controlSettings;
+    }
+
+    public String getControlSetting(String control) 
+    {
+        return controlSettings.get(control);
+    }
+
+    public void setControlSetting(String control, String value) 
+    {
+        controlSettings.put(control, value);
+    }
 }

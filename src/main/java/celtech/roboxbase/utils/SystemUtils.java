@@ -414,6 +414,40 @@ public class SystemUtils
     {
         return gcode.trim().replaceFirst(";.*$", "").replaceFirst("\\s+$", "");
     }
+    
+    /**
+     *
+     * @param source
+     * @return
+     */
+    public static String jsonEscape(String source)
+    {
+        // Return a copy of the source with all unicode characters greater than 128 escaped
+        // as backslash u followed by the hex value for the codepoint.
+        if (source != null)
+        {
+            StringBuilder sb = new StringBuilder(source.length() + 4);
+            source.codePoints().forEach(c -> 
+                                        {
+                                            if (c > 0x7f)
+                                            {
+                                                // Encode as \\uHHHH
+                                                String t = Integer.toHexString(c).toUpperCase();
+                                                while (t.length() < 4)
+                                                    t = "0" + t;
+                                                sb.append("\\u");
+                                                sb.append(t.substring(t.length() - 4));
+                                            }
+                                            else
+                                            {
+                                                sb.appendCodePoint(c);
+                                            }
+                                        });
+            return sb.toString();
+        }
+        else
+            return "";
+    }
 
     public static boolean downloadFromUrl(URL url, String localFilename, PercentProgressReceiver progressReceiver) throws IOException
     {

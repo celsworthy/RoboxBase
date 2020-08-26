@@ -116,6 +116,7 @@ public class BaseConfiguration
      * The extension for statistics files in print spool directories
      */
     public static String statisticsFileExtension = ".statistics";
+    public static String cameraDataFileExtension = ".camera";
     public static final String gcodeTempFileExtension = ".gcode";
     public static final String stlTempFileExtension = ".stl";
     public static final String amfTempFileExtension = ".amf";

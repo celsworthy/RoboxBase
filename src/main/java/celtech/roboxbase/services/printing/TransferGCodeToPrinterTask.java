@@ -5,6 +5,7 @@ import celtech.roboxbase.comms.RemoteDetectedPrinter;
 import celtech.roboxbase.comms.exceptions.RoboxCommsException;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.configuration.BaseConfiguration;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.configuration.hardwarevariants.PrinterType;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.comms.commands.GCodeMacros;
@@ -64,10 +65,6 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         public void end(){
         }
     }
-    private static final String PRIVATE_KEY = "automaker-root.ssh";
-    private static final int[] pp1 = {81, 86, 10, 93, 51, 78, 87, 120, 117};
-    private static final int[] pp2 = {-14, 155, 66, 138, 31, 189, 11, 231, 3};
-    private static final String USER = "pi";
            
     private Printer printerToUse = null;
     private String gcodeFileToPrint = null;
@@ -81,6 +78,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
     private int lineCounter = 0;
     private int numberOfLines = 0;
     private final PrintJobStatistics printJobStatistics;
+    private final CameraSettings cameraData;
 
     /**
      *
@@ -93,6 +91,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
      * @param thisJobCanBeReprinted
      * @param dontInitiatePrint
      * @param printJobStatistics
+     * @param cameraData
      */
     public TransferGCodeToPrinterTask(Printer printerToUse,
             String modelFileToPrint,
@@ -102,8 +101,8 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
             int startFromSequenceNumber,
             boolean thisJobCanBeReprinted,
             boolean dontInitiatePrint,
-            PrintJobStatistics printJobStatistics
-    )
+            PrintJobStatistics printJobStatistics,
+            CameraSettings cameraData)
     {
         this.printerToUse = printerToUse;
         this.gcodeFileToPrint = modelFileToPrint;
@@ -114,6 +113,7 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         this.thisJobCanBeReprinted = thisJobCanBeReprinted;
         this.dontInitiatePrint = dontInitiatePrint;
         this.printJobStatistics = printJobStatistics;
+        this.cameraData = cameraData;
         updateProgress(0.0, 100.0);
     }
 
@@ -141,12 +141,15 @@ public class TransferGCodeToPrinterTask extends Task<GCodePrintResult>
         if (printerIsRemote)
         {
             //We're talking to a remote printer
-            //Send the statistics if they exist
+            //Send the statistics and camera data if they exist
             if (!gcodeFile.getParent().endsWith("Macros") && printJobStatistics != null)
             {
                 try
                 {
                     ((RoboxRemoteCommandInterface) printerToUse.getCommandInterface()).sendStatistics(printJobStatistics);
+                    if (cameraData != null)
+                        ((RoboxRemoteCommandInterface) printerToUse.getCommandInterface()).sendCameraData(printJobID, cameraData);
+                        
                 } catch (RoboxCommsException ex)
                 {
                     errorTransferringStats = true;

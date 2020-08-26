@@ -4326,6 +4326,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     ReelEEPROMDataResponse reelResponse = (ReelEEPROMDataResponse) rxPacket;
                     processReelResponse(reelResponse);
                     break;
+
                 case HEAD_EEPROM_DATA:
 //                    steno.info("Head EEPROM data received");
 

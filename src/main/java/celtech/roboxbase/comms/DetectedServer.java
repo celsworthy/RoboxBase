@@ -11,8 +11,11 @@ import celtech.roboxbase.configuration.ApplicationVersion;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.fileRepresentation.CameraProfile;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
+import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonParser;
@@ -41,6 +44,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -146,6 +150,10 @@ public final class DetectedServer
     private static final String DELETE_FILAMENT_COMMAND = "/api/admin/deleteFilament";
     @JsonIgnore
     private static final String SET_UPGRADE_COMMAND = "/api/admin/setUpgradeState";
+    @JsonIgnore
+    private static final String CAMERA_CONTROL_COMMAND = "/api/cameraControl";
+    @JsonIgnore
+    private static final String TAKE_SNAPSHOT_COMMAND = "/snapshot";
 
     @JsonIgnore
     // A server for any given address is created once, on the first create request, and placed on the
@@ -542,13 +550,13 @@ public final class DetectedServer
             {
                 if (serverStatus.get() != ServerStatus.UPGRADING)
                 {
-                    steno.warning("No response from @ " + address.getHostAddress());
+                    steno.warning("503 response from @ " + address.getHostAddress());
                     disconnect();
                 }
             }
             else
             {
-                steno.warning("No response from @ " + address.getHostAddress());
+                steno.warning("No response to \"" + url + "\" from @" + address.getHostAddress());
                 //disconnect();
             }
         } catch (java.net.SocketTimeoutException stex)
@@ -619,7 +627,7 @@ public final class DetectedServer
             else
             {
                 disconnect();
-                steno.warning("No response from @ " + address.getHostAddress());
+                steno.warning("No response to \"" + url + "\" from @" + address.getHostAddress());
             }
         } catch (java.net.SocketTimeoutException ex)
         {
@@ -665,28 +673,89 @@ public final class DetectedServer
                 int availChars = con.getInputStream().available();
                 byte[] inputData = new byte[availChars];
                 con.getInputStream().read(inputData, 0, availChars);
+
                 ListCamerasResponse listCamerasResponse = mapper.readValue(inputData, ListCamerasResponse.class);
 
                 detectedCameras = listCamerasResponse.getCameras();
+                detectedCameras.forEach((dc) -> {
+                    dc.setServer(this);
+                    dc.setServerIP(address.getHostAddress());
+                });
                 
                 pollCount = 0; // Successful contact, so zero the poll count;
             } else
             {
-                steno.warning("No response from @ " + address.getHostAddress());
+                steno.warning("No response to \"" + url + "\"from @" + address.getHostAddress());
             }
         } catch (java.net.SocketTimeoutException ex)
         {
             long t2 = System.currentTimeMillis();
-            steno.error("Timeout whilst polling for remote cameras @ " + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            steno.error("Timeout whilst polling for remote cameras @" + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
         }
         catch (IOException ex)
         {
-            steno.exception("Error whilst polling for remote cameras @ " + address.getHostAddress(), ex);
+            steno.exception("Error whilst polling for remote cameras @" + address.getHostAddress(), ex);
         }
         
         cameraDetected.set(!detectedCameras.isEmpty());
         
         return detectedCameras;
+    }
+    
+    public Image takeCameraSnapshot(CameraSettings settings)
+    {
+        String url = "http://" 
+                         + address.getHostAddress() 
+                         + ":" 
+                         + Configuration.remotePort 
+                         + CAMERA_CONTROL_COMMAND
+                         + "/" 
+                         + Integer.toString(settings.getCamera().getCameraNumber())
+                         + TAKE_SNAPSHOT_COMMAND;
+        Image snapshotImage = null;
+        long t1 = System.currentTimeMillis();
+        try
+        {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+            
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(settings));
+            con.setDoOutput(true);
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Content-Length", "" + jsonifiedData.length());
+            con.getOutputStream().write(jsonifiedData.getBytes());
+            
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
+            
+            int responseCode = con.getResponseCode();
+
+            if (responseCode == 200)
+            {
+                snapshotImage = new Image(con.getInputStream());
+                pollCount = 0; // Successful contact, so zero the poll count;
+            } else
+            {
+                steno.warning("No response to \"" + url + "\"from @" + address.getHostAddress());
+            }
+        } catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst polling for remote cameras @" + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+        }
+        catch (IOException ex)
+        {
+            steno.exception("Error whilst polling for remote cameras @" + address.getHostAddress(), ex);
+        }
+        
+        return snapshotImage;
     }
 
     public void postRoboxPacket(String urlString) throws IOException
@@ -986,7 +1055,7 @@ public final class DetectedServer
         try
         {
             SerializableFilament serializableFilament = new SerializableFilament(filament);
-            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(serializableFilament));
             postData(SAVE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {
@@ -999,7 +1068,7 @@ public final class DetectedServer
         try
         {
             SerializableFilament serializableFilament = new SerializableFilament(filament);
-            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(serializableFilament));
             postData(DELETE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {

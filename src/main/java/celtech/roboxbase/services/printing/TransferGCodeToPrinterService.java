@@ -1,5 +1,7 @@
 package celtech.roboxbase.services.printing;
 
+import celtech.roboxbase.camera.CameraInfo;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.services.ControllableService;
@@ -30,6 +32,7 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
     private boolean canBeReprinted = true;
     private boolean dontInitiatePrint = false;
     private PrintJobStatistics printJobStatistics = null;
+    private CameraSettings cameraData = null;
 
     /**
      *
@@ -149,13 +152,24 @@ public class TransferGCodeToPrinterService extends Service<GCodePrintResult> imp
         this.printJobStatistics = printJobStatistics;
     }
 
+    public void setCameraData(CameraSettings cameraData)
+    {
+        this.cameraData = cameraData;
+    }
+
     @Override
     protected Task<GCodePrintResult> createTask()
     {
-        return new TransferGCodeToPrinterTask(getPrinterToUse(), getModelFileToPrint(), getCurrentPrintJobID(),
-                linesInGCodeFileProperty(), printUsingSDCard,
-                startFromSequenceNumber, canBeReprinted, dontInitiatePrint,
-                printJobStatistics);
+        return new TransferGCodeToPrinterTask(getPrinterToUse(),
+                                              getModelFileToPrint(),
+                                              getCurrentPrintJobID(),
+                                              linesInGCodeFileProperty(),
+                                              printUsingSDCard,
+                                              startFromSequenceNumber,
+                                              canBeReprinted,
+                                              dontInitiatePrint,
+                                              printJobStatistics,
+                                              cameraData);
     }
 
     /**

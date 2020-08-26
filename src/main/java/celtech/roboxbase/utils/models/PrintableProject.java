@@ -1,8 +1,11 @@
 package celtech.roboxbase.utils.models;
 
+import celtech.roboxbase.camera.CameraInfo;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.services.slicer.PrintQualityEnumeration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Object to represent a project that can be printed.
@@ -17,14 +20,19 @@ public class PrintableProject {
     private PrintQualityEnumeration printQuality;
     private String projectLocation;
     private List<Boolean> usedExtruders;
-    private CameraTriggerData cameraTriggerData;
+    private CameraTriggerData cameraTriggerData; // Used by post processor to set trigger points in GCode.
+    private Optional<CameraSettings> cameraData; // Sent to Root so it can use the specified camera.
     private boolean cameraEnabled;
     
     public PrintableProject(String projectName, 
-            PrintQualityEnumeration printQuality, String projectLocation) {
-        this.projectName = projectName;
+							PrintQualityEnumeration printQuality,
+							String projectLocation) {
+		this.projectName = projectName;
         this.printQuality = printQuality;
         this.projectLocation = projectLocation;
+        this.cameraTriggerData = null;
+        this.cameraData = Optional.empty();
+        this.cameraEnabled = false;
     }
 
     public String getProjectName() {
@@ -73,6 +81,14 @@ public class PrintableProject {
 
     public void setCameraTriggerData(CameraTriggerData cameraTriggerData) {
         this.cameraTriggerData = cameraTriggerData;
+    }
+
+    public Optional<CameraSettings> getCameraData() {
+        return cameraData;
+    }
+
+    public void setCameraData(Optional<CameraSettings> cameraData) {
+        this.cameraData = cameraData;
     }
 
     public boolean isCameraEnabled() {
