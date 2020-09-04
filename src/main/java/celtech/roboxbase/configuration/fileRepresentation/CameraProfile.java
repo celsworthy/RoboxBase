@@ -22,15 +22,6 @@ public class CameraProfile
     @JsonProperty("captureWidth")
     private int captureWidth = 1080;
     
-    @JsonProperty("moveBeforeSnapshot")
-    private boolean moveBeforeSnapshot = false;
-    
-    @JsonProperty("moveToX")
-    private int moveToX = 0;
-
-    @JsonProperty("moveToY")
-    private int moveToY = 0;
-
     @JsonProperty("headLightOn")
     private boolean headLightOn = false;
     
@@ -54,9 +45,6 @@ public class CameraProfile
         captureWidth = profileToCopy.getCaptureWidth();
         headLightOn = profileToCopy.isHeadLightOn();
         ambientLightOn = profileToCopy.isAmbientLightOn();
-        moveBeforeSnapshot = profileToCopy.isMoveBeforeSnapshot();
-        moveToX = profileToCopy.getMoveToX();
-        moveToY = profileToCopy.getMoveToY();
         cameraName = profileToCopy.getCameraName();
         controlSettings = new HashMap<>(profileToCopy.getControlSettings());
     }
@@ -109,36 +97,6 @@ public class CameraProfile
     public boolean isAmbientLightOn() 
     {
         return ambientLightOn;
-    }
-
-    public void setMoveBeforeSnapshot(boolean moveBeforeSnapshot) 
-    {
-        this.moveBeforeSnapshot = moveBeforeSnapshot;
-    }
-
-    public boolean isMoveBeforeSnapshot() 
-    {
-        return moveBeforeSnapshot;
-    }
-
-    public int getMoveToX()
-    {
-        return moveToX;
-    }
-
-    public void setMoveToX(int moveToX) 
-    {
-        this.moveToX = moveToX;
-    }
-
-    public int getMoveToY()
-    {
-        return moveToY;
-    }
-
-    public void setMoveToY(int moveToY) 
-    {
-        this.moveToY = moveToY;
     }
 
     public String getCameraName()

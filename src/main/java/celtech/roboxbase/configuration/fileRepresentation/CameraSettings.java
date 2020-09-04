@@ -40,6 +40,12 @@ public class CameraSettings
         this.camera = camera;
     }
 
+    public CameraSettings(CameraSettings settings) 
+    {
+        this.profile = settings.profile;
+        this.camera = settings.camera;
+    }
+
     public CameraProfile getProfile()
     {
         return profile;
@@ -57,6 +63,13 @@ public class CameraSettings
     
     public void setCamera(CameraInfo camera)
     {
+        this.camera = camera;
+    }
+
+    @JsonIgnore
+    public void setCameraAndProfile(CameraProfile profile, CameraInfo camera)
+    {
+        this.profile = profile;
         this.camera = camera;
     }
     
@@ -80,11 +93,8 @@ public class CameraSettings
     }
 
     @JsonIgnore
-    public List<String> encodeSettingsForRootScript(String firstParameter)
+    private void appendParametersForRootScript(List<String> parameters)
     {
-        List<String> parameters = new ArrayList<>();
-        if (firstParameter != null && !firstParameter.isBlank())
-            parameters.add(firstParameter);
         parameters.add(camera.getUdevName());
         parameters.add(String.format("%dx%d",
                                   profile.getCaptureWidth(),
@@ -98,6 +108,24 @@ public class CameraSettings
                 parameters.add("-s");
                 parameters.add(String.format("%s=%s", k, v));
         }});
+    }
+
+    @JsonIgnore
+    public List<String> encodeSettingsForRootScript()
+    {
+        List<String> parameters = new ArrayList<>();
+        appendParametersForRootScript(parameters);
         return parameters;
     }
+
+    @JsonIgnore
+    public List<String> encodeSettingsForRootScript(String printerName, String jobID)
+    {
+        List<String> parameters = new ArrayList<>();
+        parameters.add(printerName);
+        parameters.add(jobID);
+        appendParametersForRootScript(parameters);
+        return parameters;
+    }
+
 }

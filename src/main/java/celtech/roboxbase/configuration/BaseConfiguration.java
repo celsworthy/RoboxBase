@@ -93,7 +93,7 @@ public class BaseConfiguration
 
     private static final String remotePrintJobDirectory = "/home/pi/CEL Root/PrintJobs/";
     private static final String remoteRootDirectory = "/home/pi/CEL Root/";
-
+    private static final String remoteRootTimelapseDirectory = "/home/pi/CEL Root/Timelapse";
     private static MachineType machineType = null;
 
     private static boolean autoRepairHeads = true;
@@ -105,6 +105,9 @@ public class BaseConfiguration
     private static String applicationLocale = null;
     private static LogLevel applicationLogLevel = null;
     private static String applicationTitleAndVersion = null;
+
+    private static final String timelapseDirectoryPath = "Timelapse";
+    private static String timelapseDirectory = null;
 
     private static String printFileSpoolDirectory = null;
 
@@ -446,6 +449,11 @@ public class BaseConfiguration
         return remotePrintJobDirectory;
     }
 
+    public static String getRemoteTimelapseDirectory() 
+    {
+        return remoteRootTimelapseDirectory;
+    }
+
     public static boolean isAutoRepairHeads()
     {
         return autoRepairHeads;
@@ -614,6 +622,24 @@ public class BaseConfiguration
         return printFileSpoolDirectory;
     }
 
+    public static String getTimelapseDirectory()
+    {
+        if (timelapseDirectory == null)
+        {
+            timelapseDirectory = getUserStorageDirectory() + timelapseDirectoryPath
+                    + File.separator;
+
+            File dirHandle = new File(printFileSpoolDirectory);
+
+            if (!dirHandle.exists())
+            {
+                dirHandle.mkdirs();
+            }
+        }
+
+        return timelapseDirectoryPath;
+    }
+
     public static String getUserStorageDirectory()
     {
         loadConfigurationInstance();
@@ -629,7 +655,6 @@ public class BaseConfiguration
                                                                                      null),
                                                      getApplicationName()).toAbsolutePath()
                                                + File.separator;
-                    steno.info("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {
                     steno.error(

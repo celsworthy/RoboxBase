@@ -11,7 +11,6 @@ import celtech.roboxbase.configuration.ApplicationVersion;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
-import celtech.roboxbase.configuration.fileRepresentation.CameraProfile;
 import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
@@ -106,6 +105,9 @@ public final class DetectedServer
     
     @JsonIgnore
     private final BooleanProperty cameraDetected = new SimpleBooleanProperty(false);
+
+    @JsonIgnore
+    private final ObjectProperty<CameraSettings> cameraSettings = new SimpleObjectProperty<>(null);
     
     private ApplicationVersion version;
     
@@ -331,6 +333,23 @@ public final class DetectedServer
         return cameraDetected;
     }
 
+    public CameraSettings getCameraSettings()
+    {
+        return cameraSettings.get();
+    }
+    
+    public void setCameraDetected(CameraSettings settings)
+    {
+        this.cameraSettings.set(settings);
+        // Have to listen to camera settings property for notification of changes.
+        //dataChanged.set(!dataChanged.get());
+    }
+    
+    public ObjectProperty<CameraSettings> cameraSettingsProperty()
+    {
+        return cameraSettings;
+    }
+
     public String getRootUUID()
     {
         return rootUUID.get();
@@ -476,6 +495,7 @@ public final class DetectedServer
     public void disconnect()
     {
         steno.info("Disconnecting \"" + getDisplayName() + "\"");
+        setCameraDetected(false);
         setServerStatus(ServerStatus.NOT_CONNECTED);
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         
@@ -536,11 +556,11 @@ public final class DetectedServer
                     String rid = response.getRootUUID();
                     if (rid != null) 
                         rootUUID.set(rid);
-//                    System.out.println("Host \"" + address.getHostAddress() + "\" name = \"" + response.getName() + "\" rootUUID = \"" + rid + "\"");
-//                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
-//                    {
-//                        setServerStatus(ServerStatus.WRONG_VERSION);
-//                    }
+                    //System.out.println("Host \"" + address.getHostAddress() + "\" name = \"" + response.getName() + "\" rootUUID = \"" + rid + "\"");
+                    //if (!version.getVersionString().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+                    //{
+                    //    setServerStatus(ServerStatus.WRONG_VERSION);
+                    //}
                 } else
                 {
                     steno.warning("Got an indecipherable response from " + address.getHostAddress());
@@ -681,7 +701,7 @@ public final class DetectedServer
                     dc.setServer(this);
                     dc.setServerIP(address.getHostAddress());
                 });
-                
+
                 pollCount = 0; // Successful contact, so zero the poll count;
             } else
             {
@@ -739,11 +759,15 @@ public final class DetectedServer
 
             if (responseCode == 200)
             {
-                snapshotImage = new Image(con.getInputStream());
                 pollCount = 0; // Successful contact, so zero the poll count;
+                snapshotImage = new Image(con.getInputStream());
+                if (snapshotImage.isError()) {
+                    snapshotImage = null;
+                    steno.exception("Error loading image.from \"" + url + "\"@" + address.getHostAddress() + "\r\n" + snapshotImage.exceptionProperty().get().getMessage(), snapshotImage.exceptionProperty().get());
+                }
             } else
             {
-                steno.warning("No response to \"" + url + "\"from @" + address.getHostAddress());
+                steno.warning("No response to \"" + url + "\"@" + address.getHostAddress());
             }
         } catch (java.net.SocketTimeoutException ex)
         {

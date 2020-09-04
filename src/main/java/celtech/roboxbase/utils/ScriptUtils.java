@@ -27,8 +27,12 @@ public class ScriptUtils
 
         command.addAll(Arrays.asList(parameters));
 
+        String c = new String();
+        for(String s : command)
+            c = c + " " + s;
+        STENO.debug("Running script \"" + c + "\"");
+
         ProcessBuilder builder = new ProcessBuilder(command);
-        STENO.info("builder = " + builder.toString());
 
         String scriptOutput = null;
 
@@ -60,26 +64,28 @@ public class ScriptUtils
     {
         List<String> command = new ArrayList<>();
         command.add(pathToScript);
-
         command.addAll(Arrays.asList(parameters));
 
+        String c = new String();
+        for(String s : command)
+            c = c + " " + s;
+        STENO.debug("Running script(B) \"" + c + "\"");
+            
         ProcessBuilder builder = new ProcessBuilder(command);
-
         ByteArrayOutputStream scriptOutput = new ByteArrayOutputStream();
 
-       
-        STENO.info("Reading script output");
+        STENO.debug("Reading script output");
         try {
             Process scriptProcess = builder.start();
             InputStream iStream = scriptProcess.getInputStream();
             byte[] data = new byte[1024];
             int bytesRead = iStream.read(data);
             while(bytesRead != -1) {
-                STENO.info("Read " + bytesRead + " from input stream");
+                //STENO.debug("Read " + bytesRead + " from input stream");
                 scriptOutput.write(data, 0, bytesRead);
                 bytesRead = iStream.read(data);
             }
-            STENO.info("Read total of " + scriptOutput.size() + "bytes from input stream");
+            STENO.debug("Read total of " + scriptOutput.size() + " bytes from input stream");
         } 
         catch (IOException ex)
         {

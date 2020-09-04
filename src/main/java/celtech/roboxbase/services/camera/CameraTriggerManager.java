@@ -1,5 +1,6 @@
 package celtech.roboxbase.services.camera;
 
+import celtech.roboxbase.comms.RoboxCommsManager;
 import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -12,9 +13,9 @@ import celtech.roboxbase.printerControl.PrintJob;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.printerControl.model.PrinterException;
 import celtech.roboxbase.utils.ScriptUtils;
-import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
+import javafx.scene.paint.Color;
 import libertysystems.configuration.ConfigNotLoadedException;
 import libertysystems.configuration.Configuration;
 import libertysystems.stenographer.Stenographer;
@@ -136,12 +137,34 @@ public class CameraTriggerManager
                     if (job != null)
                     {
                         String jobID = job.getJobUUID();
-                        STENO.info("Print Job = " + jobID);
                         CameraSettings cameraData = job.getCameraData();
                         if (cameraData != null) {
-                            List<String> parameters = cameraData.encodeSettingsForRootScript(jobID);
-                            ScriptUtils.runScript(BaseConfiguration.getApplicationInstallDirectory(CameraTriggerManager.class) + "takePhoto.sh",
-                                                  parameters.toArray(new String[0]));
+                            String printerName = associatedPrinter.getPrinterIdentity().printerFriendlyNameProperty().get();
+                            List<String> parameters = cameraData.encodeSettingsForRootScript(printerName, jobID);
+                            // Synchronized access with CameraAPI::takeSnapshot, so both are not trying to access the
+                            // camera at the same time. Synchronize on the CameraSettings class object as it
+                            // is easily accessable to both methods.
+                            if (!cameraData.getProfile().isAmbientLightOn()) {
+                                try {
+                                    associatedPrinter.setAmbientLEDColour(Color.BLACK);
+                                } catch (PrinterException ex) {
+                                    STENO.exception("Failed to switch off ambient light", ex);
+                                }
+                            }
+                            synchronized(CameraSettings.class){
+                                ScriptUtils.runScript(BaseConfiguration.getApplicationInstallDirectory(CameraTriggerManager.class) + "takePhoto.sh",
+                                                      parameters.toArray(new String[0]));
+                            }
+                            if (!cameraData.getProfile().isAmbientLightOn()) {
+                                try {
+                                    associatedPrinter.setAmbientLEDColour(associatedPrinter.getPrinterIdentity()
+                                            .printerColourProperty()
+                                            .get());
+                                }
+                                catch (PrinterException ex) {
+                                    STENO.exception("Failed to switch on ambient light", ex);
+                                }
+                            }
                         }
                     }
                 } 
