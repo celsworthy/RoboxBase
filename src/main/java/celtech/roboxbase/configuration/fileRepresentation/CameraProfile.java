@@ -1,6 +1,7 @@
 package celtech.roboxbase.configuration.fileRepresentation;
 
 import celtech.roboxbase.configuration.BaseConfiguration;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
@@ -33,6 +34,10 @@ public class CameraProfile
 
     @JsonProperty("controlSettings")
     private Map<String, String> controlSettings = new HashMap<>();
+
+    @JsonIgnore()
+    private boolean systemProfile = false;
+    
     /**
      * Default constructor of Jackson
      */
@@ -47,6 +52,7 @@ public class CameraProfile
         ambientLightOn = profileToCopy.isAmbientLightOn();
         cameraName = profileToCopy.getCameraName();
         controlSettings = new HashMap<>(profileToCopy.getControlSettings());
+        systemProfile = false;
     }
 
     public String getProfileName()
@@ -127,5 +133,17 @@ public class CameraProfile
     public void setControlSetting(String control, String value) 
     {
         controlSettings.put(control, value);
+    }
+    
+    @JsonIgnore()
+    public boolean isSystemProfile() 
+    {
+        return systemProfile;
+    }
+
+    @JsonIgnore()
+    public void setSystemProfile(boolean systemProfile) 
+    {
+        this.systemProfile = systemProfile;
     }
 }

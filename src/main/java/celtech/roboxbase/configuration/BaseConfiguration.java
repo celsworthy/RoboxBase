@@ -147,8 +147,9 @@ public class BaseConfiguration
     public static final String printProfileDirectoryPath = "PrintProfiles";
     public static final int maxPrintSpoolFiles = 20;
 
-    private static String userCameraProfileDirectory = null;
-    public static final String cameraProfileDirectoryName = "CameraProfiles";
+    private static String cameraProfilesDirectory = null;
+    private static String userCameraProfilesDirectory = null;
+    public static final String cameraProfilesDirectoryName = "CameraProfiles";
     public static final String cameraProfileFileExtention = ".cameraprofile";
     public static final String defaultCameraProfileName = "Default";
     
@@ -767,17 +768,28 @@ public class BaseConfiguration
         return userSlicerPrintProfileDirectory;
     }
     
-    public static String getUserCameraProfileDirectory()
+    public static String getApplicationCameraProfilesDirectory()
     {
-        userCameraProfileDirectory = getUserStorageDirectory() + cameraProfileDirectoryName;
+        if (cameraProfilesDirectory == null)
+        {
+            cameraProfilesDirectory = getCommonApplicationDirectory() + cameraProfilesDirectoryName
+                    + '/';
+        }
+
+        return cameraProfilesDirectory;
+    }
+
+    public static String getUserCameraProfilesDirectory()
+    {
+        userCameraProfilesDirectory = getUserStorageDirectory() + cameraProfilesDirectoryName;
         
-        File dirHandle = new File(userCameraProfileDirectory);
+        File dirHandle = new File(userCameraProfilesDirectory);
         if (!dirHandle.exists())
         {
             dirHandle.mkdirs();
         }
         
-        return userCameraProfileDirectory;
+        return userCameraProfilesDirectory;
     }
     
     public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)

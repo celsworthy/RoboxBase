@@ -1,8 +1,6 @@
 package celtech.roboxbase.configuration.datafileaccessors;
 
-import celtech.roboxbase.comms.DetectedServer;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.fileRepresentation.CameraProfile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -27,14 +25,15 @@ public class CameraProfileContainer
     
     private static CameraProfileContainer instance;
     
-    private static Map<String, CameraProfile> cameraProfilesMap;
- 
-    private static String anyCameraName = "";
+    private final Map<String, CameraProfile> cameraProfilesMap;
 
+    private final CameraProfile defaultCameraProfile;
+ 
     private CameraProfileContainer()
     {
         cameraProfilesMap = new HashMap<>();
-        CameraProfile defaultCameraProfile = new CameraProfile();
+        defaultCameraProfile = new CameraProfile();
+        defaultCameraProfile.setSystemProfile(true);
         cameraProfilesMap.put(defaultCameraProfile.getProfileName().toLowerCase(), defaultCameraProfile);
         loadCameraProfiles();
     }
@@ -53,11 +52,25 @@ public class CameraProfileContainer
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         
-        Path cameraProfilesPath = Path.of(BaseConfiguration.getUserCameraProfileDirectory());
+        Path appCameraProfilesPath = Path.of(BaseConfiguration.getApplicationCameraProfilesDirectory());
+        Path userCameraProfilePath = Path.of(BaseConfiguration.getUserCameraProfilesDirectory());
         
         String cameraProfileSearchString = "*" + BaseConfiguration.cameraProfileFileExtention;
         
-        try(DirectoryStream<Path> stream = Files.newDirectoryStream(cameraProfilesPath, cameraProfileSearchString))
+        try(DirectoryStream<Path> stream = Files.newDirectoryStream(appCameraProfilesPath, cameraProfileSearchString))
+        {
+            for(Path path : stream)
+            {
+                CameraProfile cameraProfile = objectMapper.readValue(path.toFile(), CameraProfile.class);
+                cameraProfile.setSystemProfile(true);
+                cameraProfilesMap.put(cameraProfile.getProfileName().toLowerCase(), cameraProfile);
+            }
+        } catch (IOException ex) 
+        {
+            STENO.exception("Error when loading Camera profiles from " + appCameraProfilesPath.toString(), ex);
+        }
+
+        try(DirectoryStream<Path> stream = Files.newDirectoryStream(userCameraProfilePath, cameraProfileSearchString))
         {
             for(Path path : stream)
             {
@@ -66,15 +79,15 @@ public class CameraProfileContainer
             }
         } catch (IOException ex) 
         {
-            STENO.exception("Error when loading Camera profiles from " + cameraProfilesPath.toString(), ex);
+            STENO.exception("Error when loading Camera profiles from " + appCameraProfilesPath.toString(), ex);
         }
     }
     
     public void saveCameraProfile(CameraProfile cameraProfile)
     {
-        if (cameraProfile.getProfileName().equals(BaseConfiguration.defaultCameraProfileName))
+        if (cameraProfile.isSystemProfile())
         {
-            STENO.warning("Can't save default camera profile.");
+            STENO.warning("Can't save system camera profile.");
         }
         else
         {
@@ -82,7 +95,7 @@ public class CameraProfileContainer
             objectMapper.registerModule(new Jdk8Module());
 
             String cameraProfileFileName = cameraProfile.getProfileName() + BaseConfiguration.cameraProfileFileExtention;
-            Path cameraProfilePath = Path.of(BaseConfiguration.getUserCameraProfileDirectory() + File.separator + cameraProfileFileName);
+            Path cameraProfilePath = Path.of(BaseConfiguration.getUserCameraProfilesDirectory() + File.separator + cameraProfileFileName);
 
             try 
             {
@@ -97,15 +110,15 @@ public class CameraProfileContainer
     
     public void deleteCameraProfile(CameraProfile cameraProfile)
     {
-        if (cameraProfile.getProfileName().equals(BaseConfiguration.defaultCameraProfileName))
+        if (cameraProfile.isSystemProfile())
         {
-            STENO.warning("Can't delete default camera profile.");
+            STENO.warning("Can't delete system camera profile.");
         }
         else
         {
             String profileName = cameraProfile.getProfileName();
             String profileNameLC = profileName.toLowerCase();
-
+            
             if (cameraProfilesMap.containsKey(profileNameLC))
             {
                 cameraProfilesMap.remove(profileNameLC);
@@ -114,7 +127,7 @@ public class CameraProfileContainer
                 STENO.error("File " + profileName + ", doesn't exist");
             }
 
-            String filePath = BaseConfiguration.getUserCameraProfileDirectory() + File.separator 
+            String filePath = BaseConfiguration.getUserCameraProfilesDirectory() + File.separator 
                        + profileName + BaseConfiguration.cameraProfileFileExtention;
             Path fileToDelete = Paths.get(filePath);
 

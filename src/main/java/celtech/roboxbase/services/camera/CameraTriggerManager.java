@@ -1,6 +1,5 @@
 package celtech.roboxbase.services.camera;
 
-import celtech.roboxbase.comms.RoboxCommsManager;
 import celtech.roboxbase.comms.remote.PauseStatus;
 import celtech.roboxbase.comms.remote.RoboxRemoteCommandInterface;
 import celtech.roboxbase.configuration.BaseConfiguration;
@@ -30,6 +29,7 @@ public class CameraTriggerManager
     private static final Stenographer STENO = StenographerFactory.getStenographer(CameraTriggerManager.class.getName());
     
     private static final String APP_SHORT_NAME_ROOT = "Root";
+    private static final int AMBIENT_LIGHT_OFF_DELAY = 2000;
     
     private Printer associatedPrinter = null;
     private static final int MOVE_FEED_RATE_MM_PER_MIN = 12000;
@@ -147,8 +147,13 @@ public class CameraTriggerManager
                             if (!cameraData.getProfile().isAmbientLightOn()) {
                                 try {
                                     associatedPrinter.setAmbientLEDColour(Color.BLACK);
-                                } catch (PrinterException ex) {
+                                    // Apparently have to wait a couple of seconds for the light to turn off.
+                                    Thread.sleep(AMBIENT_LIGHT_OFF_DELAY);
+                                }
+                                catch (PrinterException ex) {
                                     STENO.exception("Failed to switch off ambient light", ex);
+                                }
+                                catch (InterruptedException ex) {
                                 }
                             }
                             synchronized(CameraSettings.class){
