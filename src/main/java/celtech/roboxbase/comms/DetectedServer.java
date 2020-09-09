@@ -17,13 +17,16 @@ import celtech.roboxbase.utils.PercentProgressReceiver;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +58,61 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public final class DetectedServer
 {
+    // The current camera profile name and current camera name are stored in a tag structure which is immutable
+    // so the whole tag must be replaced to update them, thus notifying any property listeners if either the
+    // profile name or the camera name are changed.
+    public class CameraTag {
+        private final String cameraProfileName;
+        private final String cameraName;
+
+        public CameraTag() {
+            cameraProfileName = "";
+            cameraName = "";
+        }
+
+        public CameraTag(String cameraProfileName, String cameraName) {
+            this.cameraProfileName = cameraProfileName;
+            this.cameraName = cameraName;
+        }
+        
+        public String getCameraProfileName() {
+            return cameraProfileName;
+        }
+
+        public String getCameraName() {
+            return cameraName;
+        }
+    }
+    
+    // Jackson serializer, so that camera settings are serializedDetectedServer.createDetectedServer() is used to create
+    // new servers, thus ensuring the integrity of the known server list.
+    public static class DetectedServerSerializer extends StdSerializer<DetectedServer> {
+    
+        public DetectedServerSerializer() {
+            this(null);
+        }
+
+        public DetectedServerSerializer(Class<DetectedServer> t) {
+            super(t);
+        }
+ 
+        @Override
+        public void serialize(
+          DetectedServer server, JsonGenerator jgen, SerializerProvider provider) 
+          throws IOException, JsonProcessingException {
+
+            jgen.writeStartObject();
+                jgen.writeStringField("address", server.serverIP.get());
+                jgen.writeStringField("name", server.getName());
+                jgen.writeStringField("rootUUID", server.getRootUUID());
+                jgen.writeStringField("pin", server.getPin());
+                jgen.writeBooleanField("wasAutomaticallyAdded", server.getWasAutomaticallyAdded());
+                jgen.writeObjectField("cameraTag", server.cameraTagProperty().get());
+                jgen.writeObjectField("version", server.getVersion());
+            jgen.writeEndObject();
+        }
+    }
+
     // Jackson deserializer, so that DetectedServer.createDetectedServer() is used to create
     // new servers, thus ensuring the integrity of the known server list.
     public static class DetectedServerDeserializer extends StdDeserializer<DetectedServer> {
@@ -86,31 +144,44 @@ public final class DetectedServer
             server.setVersion(new ApplicationVersion(node.get("version").get("versionString").asText()));
             server.setPin(node.get("pin").asText());
             server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
-            
+            subNode = node.get("cameraTag");
+            if (subNode != null)
+            {
+                server.setCameraTag(subNode.get("cameraProfileName").asText(),
+                                    subNode.get("cameraName").asText());
+                
+            }
             return server;
         }
     }
 
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
-
+    @JsonIgnore
     private InetAddress address;
+    @JsonIgnore
     private final StringProperty name = new SimpleStringProperty("");
     @JsonIgnore
     private final StringProperty serverIP = new SimpleStringProperty("");
+    @JsonIgnore
     private final StringProperty pin = new SimpleStringProperty("1111");
+    @JsonIgnore
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
+    @JsonIgnore
     private ListProperty<String> colours = new SimpleListProperty<>();
+    @JsonIgnore
     private final StringProperty rootUUID = new SimpleStringProperty("");
     
     @JsonIgnore
     private final BooleanProperty cameraDetected = new SimpleBooleanProperty(false);
 
     @JsonIgnore
-    private final ObjectProperty<CameraSettings> cameraSettings = new SimpleObjectProperty<>(null);
-    
+    private final ObjectProperty<CameraTag> cameraTag = new SimpleObjectProperty<>(new CameraTag());
+
+    @JsonIgnore
     private ApplicationVersion version;
     
+    @JsonIgnore
     private List<DetectedDevice> detectedDevices = new ArrayList();
 
     @JsonIgnore
@@ -333,23 +404,30 @@ public final class DetectedServer
         return cameraDetected;
     }
 
-    public CameraSettings getCameraSettings()
+    public ObjectProperty<CameraTag> cameraTagProperty()
     {
-        return cameraSettings.get();
-    }
-    
-    public void setCameraDetected(CameraSettings settings)
-    {
-        this.cameraSettings.set(settings);
-        // Have to listen to camera settings property for notification of changes.
-        //dataChanged.set(!dataChanged.get());
-    }
-    
-    public ObjectProperty<CameraSettings> cameraSettingsProperty()
-    {
-        return cameraSettings;
+        return cameraTag;
     }
 
+    public void setCameraTag(String cameraProfileName, String cameraName)
+    {
+        CameraTag currentTag = cameraTag.get();
+        if (!currentTag.getCameraProfileName().equalsIgnoreCase(cameraProfileName) ||
+            !currentTag.getCameraName().equalsIgnoreCase(cameraName)) {                
+            cameraTag.set(new CameraTag(cameraProfileName, cameraName));
+        }
+    }
+
+    public String getCameraProfileName()
+    {
+        return cameraTag.get().cameraProfileName;
+    }
+
+    public String getCameraName()
+    {
+        return cameraTag.get().cameraName;
+    }
+    
     public String getRootUUID()
     {
         return rootUUID.get();

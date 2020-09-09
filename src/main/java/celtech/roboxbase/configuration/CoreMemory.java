@@ -34,6 +34,7 @@ public class CoreMemory
     {
         SimpleModule module = new SimpleModule("DetectedServerDeserializer", new Version(1, 0, 0, null, null, null));
         module.addDeserializer(DetectedServer.class, new DetectedServer.DetectedServerDeserializer());
+        module.addSerializer(DetectedServer.class, new DetectedServer.DetectedServerSerializer());
         mapper.registerModule(module);
     }
 
@@ -108,6 +109,12 @@ public class CoreMemory
             cachedActiveRoboxRoots.remove(server);
             writeRoboxRootData();
         }
+    }
+    
+    public void updateRoboxRoot(DetectedServer server)
+    {
+        if (cachedActiveRoboxRoots.contains(server))
+            writeRoboxRootData();
     }
 
     public float getLastPrinterFirmwareVersion()
