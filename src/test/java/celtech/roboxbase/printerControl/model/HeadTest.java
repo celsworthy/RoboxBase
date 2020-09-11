@@ -145,6 +145,16 @@ public class HeadTest extends BaseEnvironmentConfiguredTest
                 "0023059",
                 "0002",
                 "4");
+        assertTrue(validResult);
+
+        // New format head code.
+        //        RXV2H-22-DM-2516-0023059-0002-8
+        validResult = Head.validateSerial("RXV2H-22",
+                "25",
+                "16",
+                "0023059",
+                "0002",
+                "8");
 
         assertTrue(validResult);
         boolean failDueToNulls = Head.validateSerial(null,

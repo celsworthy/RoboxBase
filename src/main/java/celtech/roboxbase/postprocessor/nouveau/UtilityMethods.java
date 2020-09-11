@@ -76,7 +76,7 @@ public class UtilityMethods
 
                 if (layerForwardsEvent instanceof LayerChangeDirectiveNode)
                 {
-                    cameraTriggerManager.appendLayerEndTriggerCode((LayerChangeDirectiveNode) layerForwardsEvent, cameraTriggerData.isTurnOffHeadLights());
+                    cameraTriggerManager.appendLayerEndTriggerCode((LayerChangeDirectiveNode) layerForwardsEvent);
                     break;
                 }
             }

@@ -23,12 +23,21 @@ public class CameraProfile
     @JsonProperty("captureWidth")
     private int captureWidth = 1080;
     
-    @JsonProperty("headLightOn")
-    private boolean headLightOn = false;
+    @JsonProperty("headLightOff")
+    private boolean headLightOff = true;
     
-    @JsonProperty("ambientLightOn")
-    private boolean ambientLightOn = false;
+    @JsonProperty("ambientLightOff")
+    private boolean ambientLightOff = false;
     
+    @JsonProperty("moveBeforeCapture")
+    private boolean moveBeforeCapture = true;
+
+    @JsonProperty("moveToX")
+    private int moveToX = 50;
+
+    @JsonProperty("moveToY")
+    private int moveToY = 50;
+
     @JsonProperty("cameraName")
     private String cameraName = "";
 
@@ -48,8 +57,11 @@ public class CameraProfile
         profileName = "";
         captureHeight = profileToCopy.getCaptureHeight();
         captureWidth = profileToCopy.getCaptureWidth();
-        headLightOn = profileToCopy.isHeadLightOn();
-        ambientLightOn = profileToCopy.isAmbientLightOn();
+        headLightOff = profileToCopy.isHeadLightOff();
+        ambientLightOff = profileToCopy.isAmbientLightOff();
+        moveBeforeCapture = profileToCopy.isMoveBeforeCapture();
+        moveToX = profileToCopy.getMoveToX();
+        moveToY = profileToCopy.getMoveToY();
         cameraName = profileToCopy.getCameraName();
         controlSettings = new HashMap<>(profileToCopy.getControlSettings());
         systemProfile = false;
@@ -85,24 +97,54 @@ public class CameraProfile
         this.captureWidth = captureWidth;
     }
 
-    public boolean isHeadLightOn() 
+    public boolean isHeadLightOff() 
     {
-        return headLightOn;
+        return headLightOff;
     }
 
-    public void setHeadLightOn(boolean headLight) 
+    public void setHeadLightOff(boolean headLightOff) 
     {
-        this.headLightOn = headLight;
+        this.headLightOff = headLightOff;
     }
 
-    public void setAmbientLightOn(boolean ambientLight) 
+    public void setAmbientLightOff(boolean ambientLightOff) 
     {
-        this.ambientLightOn = ambientLight;
+        this.ambientLightOff = ambientLightOff;
     }
 
-    public boolean isAmbientLightOn() 
+    public boolean isAmbientLightOff() 
     {
-        return ambientLightOn;
+        return ambientLightOff;
+    }
+
+    public void setMoveBeforeCapture(boolean moveBeforeCapture) 
+    {
+        this.moveBeforeCapture = moveBeforeCapture;
+    }
+    
+    public boolean isMoveBeforeCapture() 
+    {
+        return moveBeforeCapture;
+    }
+
+    public void setMoveToX(int moveToX) 
+    {
+        this.moveToX = moveToX;
+    }
+    
+    public int getMoveToX() 
+    {
+        return moveToX;
+    }
+
+    public void setMoveToY(int moveToY) 
+    {
+        this.moveToY = moveToY;
+    }
+    
+    public int getMoveToY() 
+    {
+        return moveToY;
     }
 
     public String getCameraName()

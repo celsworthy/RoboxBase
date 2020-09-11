@@ -421,6 +421,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 pauseStatus.isEqualTo(PauseStatus.PAUSED)
                         //.or(printEngine.postProcessorService.runningProperty())
                         //.or(printEngine.slicerService.runningProperty())
+                        .or(printerStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -431,6 +432,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canRunMacro.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))
+                .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                 .or(printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
                         .and(printEngine.macroBeingRun.isEqualTo(Macro.CANCEL_PRINT)))
                 .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -440,6 +442,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         );
 
         canPause.bind(pauseStatus.isNotEqualTo(PauseStatus.PAUSED)
+                .and(pauseStatus.isNotEqualTo(PauseStatus.SELFIE_PAUSE))
                 .and(pauseStatus.isNotEqualTo(PauseStatus.PAUSE_PENDING))
                 .and(printerStatus.isEqualTo(PrinterStatus.PRINTING_PROJECT)
                         .or(pauseStatus.isEqualTo(PauseStatus.RESUME_PENDING))));
@@ -466,8 +469,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         usedExtrudersLoaded.bind(extruders.get(0).filamentLoaded);
         
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
-                .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING))
-                .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE)))
+                .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
                 .and(usedExtrudersLoaded));
     }
 

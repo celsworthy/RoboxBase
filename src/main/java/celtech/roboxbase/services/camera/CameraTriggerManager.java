@@ -63,7 +63,7 @@ public class CameraTriggerManager
         }
     }
 
-    public void appendLayerEndTriggerCode(LayerChangeDirectiveNode layerChangeNode, boolean turnOffHeadLights)
+    public void appendLayerEndTriggerCode(LayerChangeDirectiveNode layerChangeNode)
     {
         CommentNode beginComment = new CommentNode("Start of camera trigger");
         CommentNode endComment = new CommentNode("End of camera trigger");
@@ -71,6 +71,7 @@ public class CameraTriggerManager
         TravelNode moveBedForward = new TravelNode();
 
         boolean outputMoveCommand = triggerData.isMoveBeforeCapture();
+	boolean turnOffHeadLights = triggerData.isTurnOffHeadLights();
 
         if (outputMoveCommand)
         {
@@ -144,7 +145,7 @@ public class CameraTriggerManager
                             // Synchronized access with CameraAPI::takeSnapshot, so both are not trying to access the
                             // camera at the same time. Synchronize on the CameraSettings class object as it
                             // is easily accessable to both methods.
-                            if (!cameraData.getProfile().isAmbientLightOn()) {
+                            if (cameraData.getProfile().isAmbientLightOff()) {
                                 try {
                                     associatedPrinter.setAmbientLEDColour(Color.BLACK);
                                     // Apparently have to wait a couple of seconds for the light to turn off.
@@ -160,7 +161,7 @@ public class CameraTriggerManager
                                 ScriptUtils.runScript(BaseConfiguration.getApplicationInstallDirectory(CameraTriggerManager.class) + "takePhoto.sh",
                                                       parameters.toArray(new String[0]));
                             }
-                            if (!cameraData.getProfile().isAmbientLightOn()) {
+                            if (!cameraData.getProfile().isAmbientLightOff()) {
                                 try {
                                     associatedPrinter.setAmbientLEDColour(associatedPrinter.getPrinterIdentity()
                                             .printerColourProperty()

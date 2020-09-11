@@ -580,12 +580,8 @@ public class Head implements Cloneable, RepairableComponent
     {
         boolean typeCodeIsValid = false;
 
-        if (typeCode != null
-                && typeCode.matches("[a-zA-Z][0-9a-zA-Z]{4}-[0-9a-zA-Z]{2}"))
-        {
-            typeCodeIsValid = true;
-        }
-
+        if (typeCode != null && typeCode.length() == 8)
+            typeCodeIsValid = typeCode.matches("R[BX][0-9a-zA-Z]{3}-[0-9a-zA-Z]{2}");
         return typeCodeIsValid;
     }
 
@@ -679,9 +675,7 @@ public class Head implements Cloneable, RepairableComponent
                 && serialNumberInput != null
                 && checksumInput != null)
         {
-            everythingIsGroovy &= typeCodeInput.startsWith("RBX");
-            everythingIsGroovy &= typeCodeInput.length() == 8;
-            everythingIsGroovy &= isTypeCodeValid(typeCodeInput);
+            everythingIsGroovy = isTypeCodeValid(typeCodeInput);
 
             try
             {
