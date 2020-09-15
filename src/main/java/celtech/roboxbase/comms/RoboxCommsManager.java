@@ -263,6 +263,21 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         return newPrinter;
     }
     
+    private void removeMissingCameras(List<CameraInfo> remotelyAttachedCameras)
+    {
+        List<CameraInfo> missingCameras = new ArrayList<>();
+            
+        // Remove cameras that are no longer detected.
+        activeCameras.forEach((c) -> {
+            if (!remotelyAttachedCameras.contains(c))
+                missingCameras.add(c);
+        });
+        missingCameras.forEach((c) -> {
+            BaseLookup.cameraDisconnected(c);
+            activeCameras.remove(c);
+        });
+    }            
+
     private void assessCandidateCamera(CameraInfo candidateCamera)
     {
         if (!activeCameras.contains(candidateCamera))
@@ -271,7 +286,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             BaseLookup.cameraConnected(candidateCamera);
         }
     }
-
+    
     @Override
     public void run()
     {
@@ -279,15 +294,16 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
         {
             long startOfRunTime = System.currentTimeMillis();
 
-            //Search
+            // Search
             List<DetectedDevice> directlyAttachedDevices = usbSerialDeviceDetector.searchForDevices();
             List<DetectedDevice> remotelyAttachedDevices = remotePrinterDetector.searchForDevices();
 
             // Cache camera info
             List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
+            removeMissingCameras(remotelyAttachedCameras);
             remotelyAttachedCameras.forEach(this::assessCandidateCamera);
             
-            //Now new connections
+            // Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();
             directlyAttachedDevices.forEach(newPrinter ->
             {

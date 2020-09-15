@@ -470,6 +470,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
+                .or(printerStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                 .and(usedExtrudersLoaded));
     }
 

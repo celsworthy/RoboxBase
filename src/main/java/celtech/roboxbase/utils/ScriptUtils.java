@@ -1,14 +1,10 @@
 package celtech.roboxbase.utils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
@@ -16,11 +12,11 @@ import libertysystems.stenographer.StenographerFactory;
  *
  * @author Ian & George Salter
  */
-public class ScriptUtils 
+public class ScriptUtils
 {
     public static final Stenographer STENO = StenographerFactory.getStenographer(ScriptUtils.class.getName());
     
-    public static String runScript(String pathToScript, String... parameters)
+    public static String runScript(String pathToScript, int timeout, String... parameters)
     {
         List<String> command = new ArrayList<>();
         command.add(pathToScript);
@@ -34,33 +30,39 @@ public class ScriptUtils
 
         ProcessBuilder builder = new ProcessBuilder(command);
 
-        String scriptOutput = null;
-
+        String data = "";
+            
         try
         {
             Process scriptProcess = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(scriptProcess.getInputStream()));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                if (stringBuilder.length() > 0)
-                {
-                    stringBuilder.append(System.getProperty("line.separator"));
+            StringConsumer outputConsumer = new StringConsumer(scriptProcess.getInputStream());
+            outputConsumer.start();
+            if (timeout > 0) {
+                if (scriptProcess.waitFor(timeout, TimeUnit.SECONDS)) {
+                    if (scriptProcess.exitValue() == 0)
+                        data = outputConsumer.getString();
+                    else
+                        STENO.error("Script error");
                 }
-                stringBuilder.append(line);
+                else {
+                    STENO.error("Script timeout");
+                    scriptProcess.destroyForcibly();
+                }
             }
-
-            scriptOutput = stringBuilder.toString();
-        } catch (IOException ex)
+            else if (scriptProcess.waitFor() == 0)
+                data = outputConsumer.getString();
+            else
+                STENO.error("Script error");
+       } 
+        catch (IOException | InterruptedException ex)
         {
             STENO.error("Error " + ex);
         }
 
-        return scriptOutput;
+        return data;
     }
 
-    public static byte[] runScriptB(String pathToScript, String... parameters)
+    public static byte[] runByteScript(String pathToScript, int timeout, String... parameters)
     {
         List<String> command = new ArrayList<>();
         command.add(pathToScript);
@@ -72,26 +74,35 @@ public class ScriptUtils
         STENO.debug("Running script(B) \"" + c + "\"");
             
         ProcessBuilder builder = new ProcessBuilder(command);
-        ByteArrayOutputStream scriptOutput = new ByteArrayOutputStream();
+        byte[] data = null;
 
         STENO.debug("Reading script output");
         try {
             Process scriptProcess = builder.start();
-            InputStream iStream = scriptProcess.getInputStream();
-            byte[] data = new byte[1024];
-            int bytesRead = iStream.read(data);
-            while(bytesRead != -1) {
-                //STENO.debug("Read " + bytesRead + " from input stream");
-                scriptOutput.write(data, 0, bytesRead);
-                bytesRead = iStream.read(data);
+            ByteConsumer outputConsumer = new ByteConsumer(scriptProcess.getInputStream());
+            outputConsumer.start();
+            if (timeout > 0) {
+                if (scriptProcess.waitFor(timeout, TimeUnit.SECONDS)) {
+                    if (scriptProcess.exitValue() == 0)
+                        data = outputConsumer.getBytes();
+                    else
+                        STENO.error("Byte script error");
+                }
+                else {
+                    STENO.error("Byte script timeout");
+                    scriptProcess.destroyForcibly();
+                }
             }
-            STENO.debug("Read total of " + scriptOutput.size() + " bytes from input stream");
+            else if (scriptProcess.waitFor() == 0)
+                data = outputConsumer.getBytes();
+            else
+                STENO.error("Byte script error");
         } 
-        catch (IOException ex)
+        catch (IOException | InterruptedException ex)
         {
             STENO.error("Error " + ex);
         }
 
-        return scriptOutput.toByteArray();
+        return data;
     }
 }

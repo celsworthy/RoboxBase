@@ -30,6 +30,7 @@ public class CameraTriggerManager
     
     private static final String APP_SHORT_NAME_ROOT = "Root";
     private static final int AMBIENT_LIGHT_OFF_DELAY = 2000;
+    private static final int SCRIPT_TIMEOUT = 15;
     
     private Printer associatedPrinter = null;
     private static final int MOVE_FEED_RATE_MM_PER_MIN = 12000;
@@ -46,7 +47,7 @@ public class CameraTriggerManager
                 }
             } catch (PrinterException ex)
             {
-                STENO.error("Exception whilst resuming");
+                STENO.exception("Exception whilst resuming", ex);
             }
         }
     };
@@ -159,6 +160,7 @@ public class CameraTriggerManager
                             }
                             synchronized(CameraSettings.class){
                                 ScriptUtils.runScript(BaseConfiguration.getApplicationInstallDirectory(CameraTriggerManager.class) + "takePhoto.sh",
+                                                      SCRIPT_TIMEOUT,
                                                       parameters.toArray(new String[0]));
                             }
                             if (!cameraData.getProfile().isAmbientLightOff()) {
