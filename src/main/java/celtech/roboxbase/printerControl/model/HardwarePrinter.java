@@ -378,9 +378,10 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                         );
                     }
                     canCalibrateXYAlignment.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                            .and(Bindings.size(head.get().getNozzles()).greaterThan(1))
                             .and(extrudersProperty().get(0).filamentLoadedProperty())
                             .and(Bindings.valueAt(reels, 0).isNotNull())
-                            .and(Bindings.size(head.get().getNozzles()).greaterThan(1)
+                            .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
                                     .or(extrudersProperty().get(1).filamentLoadedProperty()
                                             .and(Bindings.valueAt(reels, 1).isNotNull())))
                     );
