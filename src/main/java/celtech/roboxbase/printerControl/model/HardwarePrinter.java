@@ -423,7 +423,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 pauseStatus.isEqualTo(PauseStatus.PAUSED)
                         //.or(printEngine.postProcessorService.runningProperty())
                         //.or(printEngine.slicerService.runningProperty())
-                        .or(printerStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
+                        .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -472,7 +472,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         
         canResume.bind((pauseStatus.isEqualTo(PauseStatus.PAUSED)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSE_PENDING)))
-                .or(printerStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
+                .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                 .and(usedExtrudersLoaded));
     }
 

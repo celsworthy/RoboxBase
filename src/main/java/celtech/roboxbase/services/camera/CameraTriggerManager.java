@@ -178,11 +178,18 @@ public class CameraTriggerManager
                 } 
                 
                 resumePrinter = true;
-            } catch (ConfigNotLoadedException ex)
+            }
+			catch (ConfigNotLoadedException ex)
             {
                 STENO.error("Configuration not loaded, cannot determine platform type, print will resume with no camera trigger.");
-                resumePrinter = true;
             }
+			catch (Exception ex)
+            {
+                STENO.exception("Exception during selfie", ex);
+            }
+			finally {
+                resumePrinter = true;
+			}
         }
         
         return resumePrinter;

@@ -65,7 +65,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
 
     private boolean doNotCheckForPresenceOfHead = false;
     private BooleanProperty detectLoadedFilamentOverride = new SimpleBooleanProperty(true);
-    private boolean searchForRemotePrinters = false;
+    private BooleanProperty searchForRemoteCamerasProperty = new SimpleBooleanProperty(false);
 
     // Set to true when an attempt is made to connect another printer when the maximum number
     // of printers have already been connected. It will be set to false again when a printer is
@@ -78,12 +78,12 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             boolean suppressPrinterIDChecks,
             boolean doNotCheckForPresenceOfHead,
             BooleanProperty detectLoadedFilamentProperty,
-            boolean searchForRemotePrinters)
+            BooleanProperty searchForRemoteCamerasProperty)
     {
         this.suppressPrinterIDChecks = suppressPrinterIDChecks;
         this.doNotCheckForPresenceOfHead = doNotCheckForPresenceOfHead;
         this.detectLoadedFilamentOverride = detectLoadedFilamentProperty;
-        this.searchForRemotePrinters = searchForRemotePrinters;
+        this.searchForRemoteCamerasProperty = searchForRemoteCamerasProperty;
 
         this.setDaemon(true);
         this.setName("Robox Comms Manager");
@@ -117,7 +117,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
     {
         if (instance == null)
         {
-            instance = new RoboxCommsManager(pathToBinaries, false, false, new SimpleBooleanProperty(true), true);
+            instance = new RoboxCommsManager(pathToBinaries, false, false, new SimpleBooleanProperty(true), new SimpleBooleanProperty(false));
         }
 
         return instance;
@@ -128,13 +128,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
      * @param pathToBinaries
      * @param doNotCheckForHeadPresence
      * @param detectLoadedFilament
-     * @param searchForRemotePrinters
+     * @param searchForRemoteCameras
      * @return
      */
     public static RoboxCommsManager getInstance(String pathToBinaries,
             boolean doNotCheckForHeadPresence,
             boolean detectLoadedFilament,
-            boolean searchForRemotePrinters)
+            boolean searchForRemoteCameras)
     {
         if (instance == null)
         {
@@ -142,7 +142,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                     false,
                     doNotCheckForHeadPresence,
                     new SimpleBooleanProperty(detectLoadedFilament),
-                    searchForRemotePrinters);
+                    new SimpleBooleanProperty(searchForRemoteCameras));
         }
 
         return instance;
@@ -153,13 +153,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
      * @param pathToBinaries
      * @param doNotCheckForHeadPresence
      * @param detectLoadedFilamentProperty
-     * @param searchForRemotePrinters
+     * @param searchForRemoteCameras
      * @return
      */
     public static RoboxCommsManager getInstance(String pathToBinaries,
             boolean doNotCheckForHeadPresence,
             BooleanProperty detectLoadedFilamentProperty,
-            boolean searchForRemotePrinters)
+            BooleanProperty searchForRemoteCamerasProperty)
     {
         if (instance == null)
         {
@@ -167,7 +167,7 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
                     false,
                     doNotCheckForHeadPresence,
                     detectLoadedFilamentProperty,
-                    searchForRemotePrinters);
+                    searchForRemoteCamerasProperty);
         }
 
         return instance;
@@ -298,10 +298,17 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             List<DetectedDevice> directlyAttachedDevices = usbSerialDeviceDetector.searchForDevices();
             List<DetectedDevice> remotelyAttachedDevices = remotePrinterDetector.searchForDevices();
 
-            // Cache camera info
-            List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
-            removeMissingCameras(remotelyAttachedCameras);
-            remotelyAttachedCameras.forEach(this::assessCandidateCamera);
+            if (searchForRemoteCamerasProperty.get()) {
+                // Cache camera info
+                List<CameraInfo> remotelyAttachedCameras = remoteCameraDetector.searchForDevices();
+                removeMissingCameras(remotelyAttachedCameras);
+                remotelyAttachedCameras.forEach(this::assessCandidateCamera);
+            }
+            else if (!activeCameras.isEmpty()) {
+                // searchForRemoteCamerasProperty has been set to false, so clear camera cache.
+                activeCameras.forEach(BaseLookup::cameraDisconnected);
+                activeCameras.clear();
+            }
             
             // Now new connections
             List<DetectedDevice> printersToConnect = new ArrayList<>();
