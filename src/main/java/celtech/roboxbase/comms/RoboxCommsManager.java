@@ -306,7 +306,13 @@ public class RoboxCommsManager extends Thread implements PrinterStatusConsumer
             }
             else if (!activeCameras.isEmpty()) {
                 // searchForRemoteCamerasProperty has been set to false, so clear camera cache.
-                activeCameras.forEach(BaseLookup::cameraDisconnected);
+                activeCameras.forEach((c) -> {
+                    // The camera detected flag on the server is reset for each camera
+                    // on the server. Although slightly inefficent, this doesn't matter
+                    // as all cameras will be removed.
+                    c.getServer().setCameraDetected(false);
+                    BaseLookup.cameraDisconnected(c);
+                });
                 activeCameras.clear();
             }
             
