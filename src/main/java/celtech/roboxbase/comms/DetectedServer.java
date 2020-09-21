@@ -185,6 +185,9 @@ public final class DetectedServer
     private List<DetectedDevice> detectedDevices = new ArrayList();
 
     @JsonIgnore
+    private List<CameraInfo> attachedCameras = new ArrayList();
+
+    @JsonIgnore
     private int pollCount = 0;
 
     @JsonIgnore
@@ -396,6 +399,10 @@ public final class DetectedServer
     public void setCameraDetected(boolean cameraDetected)
     {
         this.cameraDetected.set(cameraDetected);
+        // If cameraDetected is cleared, then
+        // ensure that there are no attached cameras.
+        if (!cameraDetected)
+            attachedCameras.clear();
         dataChanged.set(!dataChanged.get());
     }
     
@@ -779,16 +786,19 @@ public final class DetectedServer
                     dc.setServer(this);
                     dc.setServerIP(address.getHostAddress());
                 });
+                attachedCameras = detectedCameras;
 
                 pollCount = 0; // Successful contact, so zero the poll count;
-            } else
-            {
+            } 
+            else {
                 steno.warning("No response to \"" + url + "\"from @" + address.getHostAddress());
             }
         } catch (java.net.SocketTimeoutException ex)
         {
             long t2 = System.currentTimeMillis();
             steno.error("Timeout whilst polling for remote cameras @" + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            // On a timeout, use last know list of attached cameras, to avoid flickering of camera panels.
+            detectedCameras = attachedCameras;
         }
         catch (IOException ex)
         {
