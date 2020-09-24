@@ -61,24 +61,6 @@ public class ConsoleSystemNotificationManager implements SystemNotificationManag
     }
     
     @Override
-    public boolean showSelectLicenseDialog() 
-    {
-        outputNotification("Select license dialog display");
-        return false;
-    }
-    
-    @Override
-    public void showConnectLicensedPrinterDialog() 
-    {
-        outputNotification("Connect licensed printer dialog display");
-    }
-    
-    @Override
-    public void showPurchaseLicenseDialog() {
-        outputNotification("Purchase license dialog display");
-    }
-
-    @Override
     public void processErrorPacketFromPrinter(FirmwareError error, Printer printer)
     {
         outputNotification("Firmware error", error.name() + " : " + printer.getPrinterIdentity().printerFriendlyNameProperty().get());
