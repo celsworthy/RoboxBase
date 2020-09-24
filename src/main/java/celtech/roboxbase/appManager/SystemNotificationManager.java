@@ -44,12 +44,6 @@ public interface SystemNotificationManager
 
     RoboxResetIDResult askUserToResetPrinterID(Printer printerToUse, PrinterIDResponse printerID);
     
-    boolean showSelectLicenseDialog();
-    
-    void showConnectLicensedPrinterDialog();
-    
-    void showPurchaseLicenseDialog();
-    
     void processErrorPacketFromPrinter(FirmwareError error, Printer printer);
 
     void showCalibrationDialogue();

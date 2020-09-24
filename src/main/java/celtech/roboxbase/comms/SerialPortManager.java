@@ -7,8 +7,6 @@ import java.io.UnsupportedEncodingException;
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import com.fazecast.jSerialComm.SerialPortDataListener;
-import com.fazecast.jSerialComm.SerialPortIOException;
-import com.fazecast.jSerialComm.SerialPortTimeoutException;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 
