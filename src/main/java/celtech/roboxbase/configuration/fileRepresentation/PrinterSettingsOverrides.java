@@ -45,7 +45,7 @@ public class PrinterSettingsOverrides
     private boolean spiralPrintOverride = false;
     
     private boolean fillDensityChangedByUser = false;
-
+    
     public PrinterSettingsOverrides()
     {
         customSettingsName.set("");
@@ -73,7 +73,7 @@ public class PrinterSettingsOverrides
         copy.raftOverride = this.raftOverride;
         copy.spiralPrintOverride = this.spiralPrintOverride;
         copy.fillDensityChangedByUser = this.fillDensityChangedByUser;
-        
+
         return copy;
     }
 

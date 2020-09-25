@@ -232,7 +232,7 @@ public class FilamentContainer
                         costGBPPerKGString = filamentProperties.getProperty(costGBPPerKGProperty).trim();
                     } catch (Exception ex)
                     {
-                        steno.warning("No cost per GBP found in filament file " + filamentFile.getAbsolutePath());
+                        steno.debug("No cost per GBP found in filament file " + filamentFile.getAbsolutePath());
                     }
 
                     // introduced in 2.01.03
@@ -242,7 +242,7 @@ public class FilamentContainer
                         defaultLengthString = filamentProperties.getProperty(defaultLengthProperty).trim();
                     } catch (Exception ex)
                     {
-                        steno.warning("No default length found in filament file " + filamentFile.getAbsolutePath());
+                        steno.debug("No default length found in filament file " + filamentFile.getAbsolutePath());
                     }
                     
                     String filledString = "No";

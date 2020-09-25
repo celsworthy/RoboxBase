@@ -277,7 +277,16 @@ public class DummyPrinterCommandInterface extends CommandInterface
                 attachExtruder(1);
                 break;
             default:
-                STENO.warning("Attempted to attach head of: " + headName + " onto dummy printer");
+                if (headName.startsWith("RX") && headName.length() == 8) {
+                    // Version 2 head code.
+                    int feedCount = ((headName.charAt(7) - 48) & 3);
+                    if (feedCount > 0)
+                        attachExtruder(0);
+                    if (feedCount > 1)
+                        attachExtruder(1);
+                }
+                else
+                    STENO.warning("Attempted to attach head of: " + headName + " onto dummy printer");
         }
         
         attachHead(headName);

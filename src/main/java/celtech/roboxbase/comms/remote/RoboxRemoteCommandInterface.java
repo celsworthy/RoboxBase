@@ -1,5 +1,6 @@
 package celtech.roboxbase.comms.remote;
 
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.CommandInterface;
 import celtech.roboxbase.comms.PrinterStatusConsumer;
 import celtech.roboxbase.comms.RemoteDetectedPrinter;
@@ -10,6 +11,7 @@ import celtech.roboxbase.comms.rx.PrinterNotFound;
 import celtech.roboxbase.comms.rx.RoboxRxPacket;
 import celtech.roboxbase.comms.tx.RoboxTxPacket;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.postprocessor.PrintJobStatistics;
 import celtech.roboxbase.printerControl.model.Printer;
 import celtech.roboxbase.utils.tasks.Cancellable;
@@ -149,6 +151,16 @@ public class RoboxRemoteCommandInterface extends CommandInterface
     public PrintJobStatistics retrieveStatistics() throws RoboxCommsException
     {
         return remoteClient.retrieveStatistics(printerHandle.getConnectionHandle());
+    }
+
+    public void sendCameraData(String printJobID, CameraSettings cameraData) throws RoboxCommsException
+    {
+        remoteClient.sendCameraData(printerHandle.getConnectionHandle(), printJobID, cameraData);
+    }
+
+    public CameraSettings retrieveCameraData(String printJobID) throws RoboxCommsException
+    {
+        return remoteClient.retrieveCameraData(printerHandle.getConnectionHandle(), printJobID);
     }
 
     public void overrideFilament(int reelNumber, Filament filament) throws RoboxCommsException

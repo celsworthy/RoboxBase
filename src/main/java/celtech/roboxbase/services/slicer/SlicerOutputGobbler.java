@@ -44,11 +44,13 @@ class SlicerOutputGobbler extends Thread
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
             String line = null;
+            int printCounter = 0;
             while ((line = br.readLine()) != null)
             {
-                steno.debug(">" + line);
+                printCounter++;
                 if (slicerType == SlicerType.Slic3r)
                 {
+                    steno.debug(">" + line);
                     if (line.contains("Processing triangulated mesh"))
                     {
                         setLoadProgress("Slicing perimeters", 10);
@@ -92,6 +94,12 @@ class SlicerOutputGobbler extends Thread
                             float workDone = Float.valueOf(lineParts[2]);
                             float totalWork = slicerType == SlicerType.Cura4 ? parseTotalWork(lineParts[3]) : Float.valueOf(lineParts[3]);
 
+                            if (workDone == 1f || workDone == totalWork || printCounter >= 40)
+                            {
+                                printCounter = 0;
+                                steno.debug(">" + line);
+                            }
+                            
                             if (task.equalsIgnoreCase("inset"))
                             {
                                 progressInt = (int) ((workDone / totalWork) * 25);
@@ -107,6 +115,10 @@ class SlicerOutputGobbler extends Thread
                             }
                             setLoadProgress(task, progressInt);
                         }
+                    } else
+                    {
+                        printCounter = 0;
+                        steno.debug(">" + line);
                     }
                 }
             }
@@ -124,9 +136,9 @@ class SlicerOutputGobbler extends Thread
         }
     }
     
-    private float parseTotalWork(String workDone)
+    private float parseTotalWork(String totalWork)
     {
-        String[] lineParts = workDone.split(" ");
+        String[] lineParts = totalWork.split(" ");
         return Float.valueOf(lineParts[0]);
     }
     

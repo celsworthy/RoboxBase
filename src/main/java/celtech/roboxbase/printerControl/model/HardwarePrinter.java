@@ -143,7 +143,6 @@ import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
-import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -158,7 +157,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             HardwarePrinter.class.getName());
     private final FilamentContainer filamentContainer = FilamentContainer.getInstance();
 
-    protected final ObjectProperty<PrinterStatus> printerStatus = new SimpleObjectProperty(
+    protected final ObjectProperty<PrinterStatus> printerStatus = new SimpleObjectProperty<>(
             PrinterStatus.IDLE);
     protected BooleanProperty macroIsInterruptible = new SimpleBooleanProperty(false);
 
@@ -380,16 +379,18 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                                         .or(extrudersProperty().get(1).filamentLoadedProperty()
                                                 .and(Bindings.valueAt(reels, 1).isNotNull())))
                         );
-                        canCalibrateXYAlignment.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
-                                .and(extrudersProperty().get(0).filamentLoadedProperty())
-                                .and(Bindings.valueAt(reels, 0).isNotNull())
-                                .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
-                                        .or(extrudersProperty().get(1).filamentLoadedProperty()
-                                                .and(Bindings.valueAt(reels, 1).isNotNull())))
-                        );
                     }
                     if (head.get().headTypeProperty().get() == Head.HeadType.STYLUS_HEAD)
                         isStylusHead.set(true);
+                    canCalibrateXYAlignment.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
+                            .and(Bindings.size(head.get().getNozzles()).greaterThan(1))
+                            .and(extrudersProperty().get(0).filamentLoadedProperty())
+                            .and(Bindings.valueAt(reels, 0).isNotNull())
+                            .and(head.get().headTypeProperty().isEqualTo(HeadType.SINGLE_MATERIAL_HEAD)
+                                    .or(extrudersProperty().get(1).filamentLoadedProperty()
+                                            .and(Bindings.valueAt(reels, 1).isNotNull())))
+                    );
+                    Bindings.size(head.get().getNozzles()).greaterThan(1);
                     canCalibrateNozzleHeight.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                             .and(extrudersProperty().get(0).filamentLoadedProperty())
                             .and(Bindings.valueAt(reels, 0).isNotNull())
@@ -427,6 +428,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                 pauseStatus.isEqualTo(PauseStatus.PAUSED)
                         //.or(printEngine.postProcessorService.runningProperty())
                         //.or(printEngine.slicerService.runningProperty())
+                        .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                         .or(printEngine.transferGCodeToPrinterService.runningProperty())
                         .or(printerStatus.isEqualTo(PrinterStatus.PURGING_HEAD))
                         .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -437,6 +439,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
 
         canRunMacro.bind(printerStatus.isEqualTo(PrinterStatus.IDLE)
                 .or(pauseStatus.isEqualTo(PauseStatus.PAUSED))
+                .or(pauseStatus.isEqualTo(PauseStatus.SELFIE_PAUSE))
                 .or(printerStatus.isEqualTo(PrinterStatus.RUNNING_MACRO_FILE)
                         .and(printEngine.macroBeingRun.isEqualTo(Macro.CANCEL_PRINT)))
                 .or(printerStatus.isEqualTo(PrinterStatus.CALIBRATING_NOZZLE_ALIGNMENT))
@@ -446,6 +449,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
         );
 
         canPause.bind(pauseStatus.isNotEqualTo(PauseStatus.PAUSED)
+                .and(pauseStatus.isNotEqualTo(PauseStatus.SELFIE_PAUSE))
                 .and(pauseStatus.isNotEqualTo(PauseStatus.PAUSE_PENDING))
                 .and(printerStatus.isEqualTo(PrinterStatus.PRINTING_PROJECT)
                         .or(pauseStatus.isEqualTo(PauseStatus.RESUME_PENDING))));
@@ -3742,11 +3746,11 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
             switch (error)
             {
                 case E_UNLOAD_ERROR:
-                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 1);
+                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 1, error);
                     break;
 
                 case D_UNLOAD_ERROR:
-                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 0);
+                    BaseLookup.getSystemNotificationHandler().showEjectFailedDialog(this, 0, error);
                     break;
 
                 case E_FILAMENT_SLIP:
@@ -4345,6 +4349,7 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
                     ReelEEPROMDataResponse reelResponse = (ReelEEPROMDataResponse) rxPacket;
                     processReelResponse(reelResponse);
                     break;
+
                 case HEAD_EEPROM_DATA:
 //                    steno.info("Head EEPROM data received");
 
@@ -5052,75 +5057,15 @@ public final class HardwarePrinter implements Printer, ErrorConsumer
     @Override
     public void tidyPrintJobDirectories()
     {
-        BaseLookup.getTaskExecutor().runOnBackgroundThread(() -> {
-            List<PrintJobStatistics> orderedStats = new ArrayList<>();
-            List<SuitablePrintJob> suitablePrintJobs = new ArrayList<>();
-            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
-            
-            File printSpoolDir = new File(BaseConfiguration.getPrintSpoolDirectory());
-            for (File printJobDir : printSpoolDir.listFiles())
-            {
-                if (printJobDir.isDirectory())
-                {
-                    PrintJob pj = new PrintJob(printJobDir.getName());
-                    File roboxisedGCode = new File(pj.getRoboxisedFileLocation());
-                    File statistics = new File(pj.getStatisticsFileLocation());
-                    
-                    boolean directoryValid = false;
-                    if (roboxisedGCode.exists() && statistics.exists())
-                    {
-                        //Valid files - does it work for us?
-                        try
-                        {
-                            PrintJobStatistics stats = pj.getStatistics();
-                            orderedStats.add(stats);
-                            directoryValid = true;
-                        } catch (IOException ex)
-                        {
-                            steno.exception("Failed to load stats from " + printJobDir.getName(), ex);
-                        }
-                    }
-                    if (!directoryValid)
-                    {
-                        try
-                        {
-                            // Delete the invalid directory.
-                            FileUtils.deleteDirectory(printJobDir);
-                        } catch (IOException ex)
-                        {
-                            steno.exception("Failed to delete invalid project directory \"" + printJobDir.getName() + "\"", ex);
-                        }
-                    }
-                }
-            }
-            
-            orderedStats.sort((PrintJobStatistics o1, PrintJobStatistics o2) -> o1.getCreationDate().compareTo(o2.getCreationDate()));
-            //Make sure the newest are at the top
-            Collections.reverse(orderedStats);
-            
-            if (orderedStats.size() > MAX_RETAINED_PRINT_JOBS)
-            {
-                // Delete the older projects as there are more than the max number to retain.
-                for (int index = MAX_RETAINED_PRINT_JOBS; index < orderedStats.size(); ++index)
-                {
-                    File printJobDir = new File(BaseConfiguration.getPrintSpoolDirectory() + File.separator + orderedStats.get(index).getPrintJobID());
-                    try
-                    {
-                        FileUtils.deleteDirectory(printJobDir);
-                    } catch (IOException ex)
-                    {
-                        steno.exception("Failed to delete project directory " + printJobDir, ex);
-                    }
-                }
-            }
-        });
+        PrintJobCleaner cleaner = new PrintJobCleaner();
+        cleaner.tidyPrintJobDirectories();
     }
 
     @Override
-    public boolean reprintJob(String printJobID)
+    public boolean printJob(String printJobID)
     {
         PrintJob printJob = new PrintJob(printJobID);
-        return getPrintEngine().reprintFileFromDisk(printJob);
+        return getPrintEngine().printFileFromDisk(printJob);
     }
     
     @Override

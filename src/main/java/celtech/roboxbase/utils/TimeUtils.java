@@ -144,8 +144,21 @@ public class TimeUtils
                 foundTimer = true;
             }
         }
+        
+        if (!foundTimer)
+        {
+            throw new TimerNotFoundException("Attempted to get time so far from stop a non-existent timer for object:" + objectName
+                    + " class:" + referenceObject.getClass().getCanonicalName()
+                    + " timerTitle: " + timerTitle);
+        }
 
         return timeSoFar_ms;
+    }
+
+    public void timerDelete(Object referenceObject, String timerTitle)
+    {
+        String objectName = referenceObject.toString();
+        timersByObjectName.remove(objectName);
     }
 
     public class TimerNotFoundException extends RuntimeException

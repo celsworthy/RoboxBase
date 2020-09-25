@@ -1,6 +1,5 @@
 package celtech.roboxbase.postprocessor.nouveau;
 
-import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.datafileaccessors.HeadContainer;
 import celtech.roboxbase.postprocessor.CannotCloseFromPerimeterException;
@@ -23,8 +22,8 @@ import celtech.roboxbase.postprocessor.nouveau.nodes.ToolSelectNode;
 import celtech.roboxbase.postprocessor.nouveau.nodes.nodeFunctions.IteratorWithStartPoint;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.Movement;
 import celtech.roboxbase.postprocessor.nouveau.nodes.providers.NozzlePositionProvider;
-import celtech.roboxbase.services.CameraTriggerData;
-import celtech.roboxbase.services.CameraTriggerManager;
+import celtech.roboxbase.services.camera.CameraTriggerData;
+import celtech.roboxbase.services.camera.CameraTriggerManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,8 +67,7 @@ public class UtilityMethods
             LayerPostProcessResult lastLayerPostProcessResult,
             List<NozzleProxy> nozzleProxies)
     {
-        if (ppFeatureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS)
-                && cameraTriggerData.isMoveBeforeCapture())
+        if (ppFeatureSet.isEnabled(PostProcessorFeature.INSERT_CAMERA_CONTROL_POINTS))
         {
             IteratorWithStartPoint<GCodeEventNode> layerForwards = layerNode.treeSpanningIterator(null);
             while (layerForwards.hasNext())
@@ -87,17 +85,17 @@ public class UtilityMethods
 
             if (ppFeatureSet.isEnabled(PostProcessorFeature.OPEN_AND_CLOSE_NOZZLES))
             {
-            while (layerBackwards.hasNext())
-            {
-                GCodeEventNode layerChild = layerBackwards.next();
-                if (layerChild instanceof ToolSelectNode)
+                while (layerBackwards.hasNext())
                 {
-                    closeAtEndOfToolSelectIfNecessary((ToolSelectNode) layerChild, nozzleProxies);
-                    break;
+                    GCodeEventNode layerChild = layerBackwards.next();
+                    if (layerChild instanceof ToolSelectNode)
+                    {
+                        closeAtEndOfToolSelectIfNecessary((ToolSelectNode) layerChild, nozzleProxies);
+                        break;
+                    }
                 }
             }
         }
-    }
     }
 
     protected void suppressUnnecessaryToolChangesAndInsertToolchangeCloses(LayerNode layerNode,
@@ -505,7 +503,13 @@ public class UtilityMethods
             int layerNumber = lastLayerParseResult.getLayerData().getLayerNumber();
             if (layerNumber >= 0)
             {
-                layerNumberToLineNumber.add(layerNumber, writer.getNumberOfLinesOutput());
+                int nLines = writer.getNumberOfLinesOutput();
+                for (int i = layerNumberToLineNumber.size(); i < layerNumber; ++i)
+                {
+                    steno.warning("Adding missing layer number " + i + " to layer to line number map");
+                    layerNumberToLineNumber.add(nLines);
+                }
+                layerNumberToLineNumber.add(layerNumber, nLines);
             }
         }
     }

@@ -86,7 +86,7 @@ public class NodeManagementUtilities
         // as the first section in an object inherits the type from
         // the previous object, but may only contain some set up
         // and travels before changing to a different section type.
-        STENO.debug("movePerimeterSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
+        STENO.trace("movePerimeterSections(" + Integer.toString(layerNode.getLayerNumber()) + ") ...");
         Iterator<GCodeEventNode> layerIterator = layerNode.treeSpanningIterator(null);
         List<GCodeEventNode> perimeterParents = new ArrayList<>();
         GCodeEventNode fillParent = null;
@@ -121,7 +121,7 @@ public class NodeManagementUtilities
             // can't be used in lambda expression. So make another
             // variable that is final.
             final GCodeEventNode ffp = fillParent;
-            STENO.debug("... moving perimeter sections to be in front of first fill section ...");
+            STENO.trace("... moving perimeter sections to be in front of first fill section ...");
             perimeterParents.forEach(pp -> {
                 pp.removeFromParent();
             });
@@ -129,7 +129,7 @@ public class NodeManagementUtilities
                 ffp.addSiblingBefore(pp);
             });
         }
-        STENO.debug("... done");
+        STENO.trace("... done");
     }
 
     protected void moveSupportSections(LayerNode layerNode, LayerPostProcessResult lastLayerParseResult)

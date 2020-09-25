@@ -331,8 +331,13 @@ public class NozzleAssignmentUtilities
                                 || postProcessingMode == PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE) 
                         {
                             requiredToolNumber = objectReferenceNumber;
-                        }
-                        else
+                        } else if (postProcessingMode == PostProcessingMode.FORCED_USE_OF_D_EXTRUDER)
+                        {
+                            requiredToolNumber = 0;
+                        } else if (postProcessingMode == PostProcessingMode.FORCED_USE_OF_E_EXTRUDER)
+                        {
+                            requiredToolNumber = 1;
+                        } else
                         {
                             requiredToolNumber = objectToNozzleNumberMap.get(objectReferenceNumber);
                         }

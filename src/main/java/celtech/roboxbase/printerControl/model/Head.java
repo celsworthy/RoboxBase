@@ -93,7 +93,7 @@ public class Head implements Cloneable, RepairableComponent
     protected final StringProperty checksum = new SimpleStringProperty("");
 
     protected final ObservableList<NozzleHeater> nozzleHeaters = FXCollections.observableArrayList();
-    protected final List<Nozzle> nozzles = new ArrayList<>();
+    protected final ObservableList<Nozzle> nozzles = FXCollections.observableArrayList();
 
     protected final BooleanProperty dataChanged = new SimpleBooleanProperty();
 
@@ -224,7 +224,7 @@ public class Head implements Cloneable, RepairableComponent
         return nozzleHeaters;
     }
 
-    public List<Nozzle> getNozzles()
+    public ObservableList<Nozzle> getNozzles()
     {
         return nozzles;
     }
@@ -580,12 +580,8 @@ public class Head implements Cloneable, RepairableComponent
     {
         boolean typeCodeIsValid = false;
 
-        if (typeCode != null
-                && typeCode.matches("[a-zA-Z][0-9a-zA-Z]{4}-[0-9a-zA-Z]{2}"))
-        {
-            typeCodeIsValid = true;
-        }
-
+        if (typeCode != null && typeCode.length() == 8)
+            typeCodeIsValid = typeCode.matches("R[BX][0-9a-zA-Z]{3}-[0-9a-zA-Z]{2}");
         return typeCodeIsValid;
     }
 
@@ -679,9 +675,7 @@ public class Head implements Cloneable, RepairableComponent
                 && serialNumberInput != null
                 && checksumInput != null)
         {
-            everythingIsGroovy &= typeCodeInput.startsWith("RBX");
-            everythingIsGroovy &= typeCodeInput.length() == 8;
-            everythingIsGroovy &= isTypeCodeValid(typeCodeInput);
+            everythingIsGroovy = isTypeCodeValid(typeCodeInput);
 
             try
             {

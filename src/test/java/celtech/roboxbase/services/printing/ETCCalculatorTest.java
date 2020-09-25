@@ -20,7 +20,7 @@ import org.junit.Before;
  */
 public class ETCCalculatorTest
 {
-    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.PrinterConnectionType.SERIAL, "Test Printer");
+    private DetectedDevice printerHandle = new DetectedDevice(DeviceDetector.DeviceConnectionType.SERIAL, "Test Printer");
 
     List<Double> layerNumberToDistanceTravelled;
     Map<Integer,Double> layerNumberToPredictedDuration_E;

@@ -26,6 +26,27 @@ public class NozzleParameters
     public NozzleParameters()
     {
     }
+    
+    /**
+     * Copy constructor
+     * 
+     * @param nozzleParameters parameters to copy
+     */
+    public NozzleParameters(NozzleParameters nozzleParameters)
+    {
+        this.name = nozzleParameters.getName();
+        this.closedPosition = nozzleParameters.getClosedPosition();
+        this.openPosition = nozzleParameters.getOpenPosition();
+        this.diameter = nozzleParameters.getDiameter();
+        this.openOverVolume = nozzleParameters.getOpenOverVolume();
+        this.preejectionVolume = nozzleParameters.getPreejectionVolume();
+        this.ejectionVolume = nozzleParameters.getEjectionVolume();
+        this.openValueAtMidPoint = nozzleParameters.getOpenValueAtMidPoint();
+        this.midPointPercent = nozzleParameters.getMidPointPercent();
+        this.wipeVolume = nozzleParameters.getWipeVolume();
+        this.partialBMinimum = nozzleParameters.getPartialBMinimum();
+        this.travelBeforeForcedClose = nozzleParameters.getTravelBeforeForcedClose();
+    }
 
     public String getName()
     {
@@ -145,29 +166,5 @@ public class NozzleParameters
     public void setTravelBeforeForcedClose(float travelBeforeForcedClose)
     {
         this.travelBeforeForcedClose = travelBeforeForcedClose;
-    }
-
-    @Override
-    public NozzleParameters clone()
-    {
-        NozzleParameters clone = new NozzleParameters();
-
-        clone.name = name;
-
-        clone.closedPosition = closedPosition;
-        clone.openPosition = openPosition;
-
-        clone.diameter = diameter;
-        clone.openOverVolume = openOverVolume;
-        clone.preejectionVolume = preejectionVolume;
-        clone.ejectionVolume = ejectionVolume;
-        clone.openValueAtMidPoint = openValueAtMidPoint;
-        clone.midPointPercent = midPointPercent;
-        clone.wipeVolume = wipeVolume;
-        clone.partialBMinimum = partialBMinimum;
-
-        clone.travelBeforeForcedClose = travelBeforeForcedClose;
-
-        return clone;
     }
 }

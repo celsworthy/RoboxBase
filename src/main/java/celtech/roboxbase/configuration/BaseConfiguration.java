@@ -97,7 +97,8 @@ public class BaseConfiguration
     public static final String applicationKeyPath = "Key";
 
     private static final String remotePrintJobDirectory = "/home/pi/CEL Root/PrintJobs/";
-
+    private static final String remoteRootDirectory = "/home/pi/CEL Root/";
+    private static final String remoteRootTimelapseDirectory = "/home/pi/CEL Root/Timelapse";
     private static MachineType machineType = null;
 
     private static boolean autoRepairHeads = true;
@@ -110,6 +111,9 @@ public class BaseConfiguration
     private static LogLevel applicationLogLevel = null;
     private static String applicationTitleAndVersion = null;
 
+    private static final String timelapseDirectoryPath = "Timelapse";
+    private static String timelapseDirectory = null;
+
     private static String printFileSpoolDirectory = null;
 
     public static final String printSpoolStorageDirectoryPath = "PrintJobs";
@@ -120,6 +124,7 @@ public class BaseConfiguration
      * The extension for statistics files in print spool directories
      */
     public static String statisticsFileExtension = ".statistics";
+    public static String cameraDataFileExtension = ".camera";
     public static final String gcodeTempFileExtension = ".gcode";
     public static final String stlTempFileExtension = ".stl";
     public static final String amfTempFileExtension = ".amf";
@@ -147,6 +152,12 @@ public class BaseConfiguration
     public static final String printProfileDirectoryPath = "PrintProfiles";
     public static final int maxPrintSpoolFiles = 20;
 
+    private static String cameraProfilesDirectory = null;
+    private static String userCameraProfilesDirectory = null;
+    public static final String cameraProfilesDirectoryName = "CameraProfiles";
+    public static final String cameraProfileFileExtention = ".cameraprofile";
+    public static final String defaultCameraProfileName = "Default";
+    
     private static String printProfileSettingsFileLocation = null;
     private static final String printProfileSettingsFileName = "print_profile_settings.json";
     
@@ -245,6 +256,11 @@ public class BaseConfiguration
         }
 
         return machineType;
+    }
+    
+    public static boolean isWindows32Bit()
+    {
+        return System.getProperty("os.name").contains("Windows") && System.getenv("ProgramFiles(x86)") == null;
     }
 
     public static String getApplicationName()
@@ -429,8 +445,19 @@ public class BaseConfiguration
         }
     }
     
-    public static String getRemotePrintJobDirectory() {
+    public static String getRemoteRootDirectory()
+    {
+        return remoteRootDirectory;
+    }
+    
+    public static String getRemotePrintJobDirectory() 
+    {
         return remotePrintJobDirectory;
+    }
+
+    public static String getRemoteTimelapseDirectory() 
+    {
+        return remoteRootTimelapseDirectory;
     }
 
     public static boolean isAutoRepairHeads()
@@ -601,6 +628,24 @@ public class BaseConfiguration
         return printFileSpoolDirectory;
     }
 
+    public static String getTimelapseDirectory()
+    {
+        if (timelapseDirectory == null)
+        {
+            timelapseDirectory = getUserStorageDirectory() + timelapseDirectoryPath
+                    + File.separator;
+
+            File dirHandle = new File(printFileSpoolDirectory);
+
+            if (!dirHandle.exists())
+            {
+                dirHandle.mkdirs();
+            }
+        }
+
+        return timelapseDirectoryPath;
+    }
+
     public static String getUserStorageDirectory()
     {
         loadConfigurationInstance();
@@ -616,7 +661,6 @@ public class BaseConfiguration
                                                                                      null),
                                                      getApplicationName()).toAbsolutePath()
                                                + File.separator;
-                    steno.info("User storage directory = " + userStorageDirectory);
                 } catch (ConfigNotLoadedException ex)
                 {
                     steno.error(
@@ -727,6 +771,30 @@ public class BaseConfiguration
         }
         
         return userSlicerPrintProfileDirectory;
+    }
+    
+    public static String getApplicationCameraProfilesDirectory()
+    {
+        if (cameraProfilesDirectory == null)
+        {
+            cameraProfilesDirectory = getCommonApplicationDirectory() + cameraProfilesDirectoryName
+                    + '/';
+        }
+
+        return cameraProfilesDirectory;
+    }
+
+    public static String getUserCameraProfilesDirectory()
+    {
+        userCameraProfilesDirectory = getUserStorageDirectory() + cameraProfilesDirectoryName;
+        
+        File dirHandle = new File(userCameraProfilesDirectory);
+        if (!dirHandle.exists())
+        {
+            dirHandle.mkdirs();
+        }
+        
+        return userCameraProfilesDirectory;
     }
     
     public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)

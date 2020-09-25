@@ -2,6 +2,7 @@ package celtech.roboxbase;
 
 import celtech.roboxbase.appManager.ConsoleSystemNotificationManager;
 import celtech.roboxbase.appManager.SystemNotificationManager;
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.datafileaccessors.FilamentContainer;
 import celtech.roboxbase.configuration.datafileaccessors.SlicerMappingsContainer;
@@ -43,9 +44,12 @@ public class BaseLookup
     private static boolean shuttingDown = false;
 
     private static PrinterListChangesNotifier printerListChangesNotifier;
-    private static final ObservableList<Printer> connectedPrinters = FXCollections.observableArrayList();
-    private static final ObservableList<Printer> connectedPrintersUnmodifiable = FXCollections.unmodifiableObservableList(connectedPrinters);
+    private static final ObservableList<Printer> CONNECTED_PRINTERS = FXCollections.observableArrayList();
+    private static final ObservableList<Printer> CONNECTED_PRINTERS_UNMODIFIABLE = FXCollections.unmodifiableObservableList(CONNECTED_PRINTERS);
 
+    private static final ObservableList<CameraInfo> CONNECTED_CAMS = FXCollections.observableArrayList();
+    private static final ObservableList<CameraInfo> CONNECTED_CAMS_UNMODIFIABLE = FXCollections.unmodifiableObservableList(CONNECTED_CAMS);
+    
     public static final ObservableList<File> MOUNTED_USB_DIRECTORIES = FXCollections.observableArrayList();
     
     private static Set<Locale> availableLocales = null;
@@ -145,7 +149,7 @@ public class BaseLookup
 
     private static synchronized void doPrinterConnect(Printer printer)
     {
-        connectedPrinters.add(printer);
+        CONNECTED_PRINTERS.add(printer);
     }
 
     public static void printerDisconnected(Printer printer)
@@ -159,12 +163,27 @@ public class BaseLookup
 
     private static synchronized void doPrinterDisconnect(Printer printer)
     {
-        connectedPrinters.remove(printer);
+        CONNECTED_PRINTERS.remove(printer);
     }
 
     public static ObservableList<Printer> getConnectedPrinters()
     {
-        return connectedPrintersUnmodifiable;
+        return CONNECTED_PRINTERS_UNMODIFIABLE;
+    }
+    
+    public static void cameraConnected(CameraInfo camera)
+    {
+        CONNECTED_CAMS.add(camera);
+    }
+    
+    public static void cameraDisconnected(CameraInfo camera)
+    {
+        CONNECTED_CAMS.remove(camera);
+    }
+    
+    public static ObservableList<CameraInfo> getConnectedCameras()
+    {
+        return CONNECTED_CAMS_UNMODIFIABLE;
     }
     
     public static synchronized void retainAndAddUSBDirectories(File[] usbDirs) {

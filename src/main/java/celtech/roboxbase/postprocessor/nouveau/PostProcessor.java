@@ -30,7 +30,7 @@ import celtech.roboxbase.postprocessor.nouveau.verifier.VerifierResult;
 import celtech.roboxbase.printerControl.model.Head;
 import celtech.roboxbase.printerControl.model.Head.HeadType;
 import celtech.roboxbase.printerControl.model.Printer;
-import celtech.roboxbase.services.CameraTriggerData;
+import celtech.roboxbase.services.camera.CameraTriggerData;
 import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.TimeUtils;
 import java.io.BufferedReader;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
+import javafx.concurrent.Task;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.parboiled.Parboiled;
@@ -152,7 +153,7 @@ public class PostProcessor
             nozzleProxies.add(proxy);
         }
 
-        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD && slicerType != SlicerType.Cura4)
+        if (headFile.getType() == HeadType.DUAL_MATERIAL_HEAD)
         {
             // If we have a dual extruder head but a single extruder machine force use of the available extruder
             if (!printer.extrudersProperty().get(0).isFittedProperty().get() && !printer.extrudersProperty().get(1).isFittedProperty().get())
@@ -167,7 +168,7 @@ public class PostProcessor
             {
                 postProcessingMode = PostProcessingMode.FORCED_USE_OF_E_EXTRUDER;
                 steno.warning("Attempt to postprocess with a DM head and only the E extruder.");
-            } else
+            } else if (slicerType != SlicerType.Cura4)
             {
                 switch (printerOverrides.getPrintSupportTypeOverride())
                 {
@@ -178,6 +179,9 @@ public class PostProcessor
                         postProcessingMode = PostProcessingMode.SUPPORT_IN_SECOND_MATERIAL;
                         break;
                 }
+            } else
+            {
+                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
             }
         } else if (slicerType == SlicerType.Cura4) 
         {
@@ -186,11 +190,7 @@ public class PostProcessor
             if (settingsProfile.getSpecificBooleanSettingWithDefault("support_after_model", true))
                 featureSet.enableFeature(PostProcessorFeature.MOVE_SUPPORT_AFTER_MODEL);
             
-            if(headFile.getType() == HeadType.DUAL_MATERIAL_HEAD) {
-                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_DUAL;
-            } else {
-                postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
-            }
+            postProcessingMode = PostProcessingMode.LEAVE_TOOL_CHANGES_ALONE_SINGLE;
         } else
         {
             postProcessingMode = PostProcessingMode.TASK_BASED_NOZZLE_SELECTION;
@@ -210,7 +210,7 @@ public class PostProcessor
         outputVerifier = new OutputVerifier(featureSet);
     }
 
-    public RoboxiserResult processInput()
+    public RoboxiserResult processInput(Task postProcessorTask)
     {
         RoboxiserResult result = new RoboxiserResult();
         result.setSuccess(false);
@@ -262,6 +262,14 @@ public class PostProcessor
                 
                 for (String lineRead = fileReader.readLine(); lineRead != null; lineRead = fileReader.readLine())
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     linesRead++;
                     double percentSoFar = ((double) linesRead / (double) linesInGCodeFile) * 100;
                     if (percentSoFar - lastPercentSoFar >= 1)
@@ -318,6 +326,14 @@ public class PostProcessor
 
                 for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     timeUtils.timerStart(this, assignExtrusionTimerName);
                     NozzleAssignmentUtilities.ExtrusionAssignmentResult assignmentResult = nozzleControlUtilities.assignExtrusionToCorrectExtruder(resultToBeProcessed.getLayerData());
                     timeUtils.timerStop(this, assignExtrusionTimerName);
@@ -378,6 +394,14 @@ public class PostProcessor
 
                 for (LayerPostProcessResult resultToBeProcessed : postProcessResults)
                 {
+                    if(postProcessorTask.isCancelled())
+                    {
+                        steno.debug("Post Processor cancelled, exciting process");
+                        fileReader.close();
+                        writer.close();
+                        return result;
+                    }
+                    
                     timeUtils.timerStart(this, writeOutputTimerName);
                     if (resultToBeProcessed.getLayerData().getLayerNumber() == 1)
                     {

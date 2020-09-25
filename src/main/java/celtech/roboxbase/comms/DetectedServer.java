@@ -1,7 +1,9 @@
 package celtech.roboxbase.comms;
 
+import celtech.roboxbase.camera.CameraInfo;
 import celtech.roboxbase.comms.remote.Configuration;
 import celtech.roboxbase.comms.remote.StringToBase64Encoder;
+import celtech.roboxbase.comms.remote.clear.ListCamerasResponse;
 import celtech.roboxbase.comms.remote.clear.ListPrintersResponse;
 import celtech.roboxbase.comms.remote.clear.WhoAreYouResponse;
 import celtech.roboxbase.comms.remote.types.SerializableFilament;
@@ -9,17 +11,22 @@ import celtech.roboxbase.configuration.ApplicationVersion;
 import celtech.roboxbase.configuration.BaseConfiguration;
 import celtech.roboxbase.configuration.CoreMemory;
 import celtech.roboxbase.configuration.Filament;
+import celtech.roboxbase.configuration.fileRepresentation.CameraSettings;
 import celtech.roboxbase.services.printing.SFTPUtils;
 import celtech.roboxbase.utils.PercentProgressReceiver;
+import celtech.roboxbase.utils.SystemUtils;
 import celtech.roboxbase.utils.net.MultipartUtility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.jcraft.jsch.SftpProgressMonitor;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +46,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
 import libertysystems.stenographer.Stenographer;
 import libertysystems.stenographer.StenographerFactory;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -50,6 +58,61 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public final class DetectedServer
 {
+    // The current camera profile name and current camera name are stored in a tag structure which is immutable
+    // so the whole tag must be replaced to update them, thus notifying any property listeners if either the
+    // profile name or the camera name are changed.
+    public class CameraTag {
+        private final String cameraProfileName;
+        private final String cameraName;
+
+        public CameraTag() {
+            cameraProfileName = "";
+            cameraName = "";
+        }
+
+        public CameraTag(String cameraProfileName, String cameraName) {
+            this.cameraProfileName = cameraProfileName;
+            this.cameraName = cameraName;
+        }
+        
+        public String getCameraProfileName() {
+            return cameraProfileName;
+        }
+
+        public String getCameraName() {
+            return cameraName;
+        }
+    }
+    
+    // Jackson serializer, so that camera settings are serializedDetectedServer.createDetectedServer() is used to create
+    // new servers, thus ensuring the integrity of the known server list.
+    public static class DetectedServerSerializer extends StdSerializer<DetectedServer> {
+    
+        public DetectedServerSerializer() {
+            this(null);
+        }
+
+        public DetectedServerSerializer(Class<DetectedServer> t) {
+            super(t);
+        }
+ 
+        @Override
+        public void serialize(
+          DetectedServer server, JsonGenerator jgen, SerializerProvider provider) 
+          throws IOException, JsonProcessingException {
+
+            jgen.writeStartObject();
+                jgen.writeStringField("address", server.serverIP.get());
+                jgen.writeStringField("name", server.getName());
+                jgen.writeStringField("rootUUID", server.getRootUUID());
+                jgen.writeStringField("pin", server.getPin());
+                jgen.writeBooleanField("wasAutomaticallyAdded", server.getWasAutomaticallyAdded());
+                jgen.writeObjectField("cameraTag", server.cameraTagProperty().get());
+                jgen.writeObjectField("version", server.getVersion());
+            jgen.writeEndObject();
+        }
+    }
+
     // Jackson deserializer, so that DetectedServer.createDetectedServer() is used to create
     // new servers, thus ensuring the integrity of the known server list.
     public static class DetectedServerDeserializer extends StdDeserializer<DetectedServer> {
@@ -75,28 +138,54 @@ public final class DetectedServer
             
             server.serverIP.set(addressText);
             server.setName(node.get("name").asText());
+            JsonNode subNode = node.get("rootUUID");
+            if (subNode != null)
+                server.setRootUUID(subNode.asText());
             server.setVersion(new ApplicationVersion(node.get("version").get("versionString").asText()));
             server.setPin(node.get("pin").asText());
             server.setWasAutomaticallyAdded(node.get("wasAutomaticallyAdded").asBoolean());
-            
+            subNode = node.get("cameraTag");
+            if (subNode != null)
+            {
+                server.setCameraTag(subNode.get("cameraProfileName").asText(),
+                                    subNode.get("cameraName").asText());
+                
+            }
             return server;
         }
     }
 
     @JsonIgnore
     private final Stenographer steno = StenographerFactory.getStenographer(DetectedServer.class.getName());
-
+    @JsonIgnore
     private InetAddress address;
+    @JsonIgnore
     private final StringProperty name = new SimpleStringProperty("");
     @JsonIgnore
     private final StringProperty serverIP = new SimpleStringProperty("");
+    @JsonIgnore
     private final StringProperty pin = new SimpleStringProperty("1111");
+    @JsonIgnore
     private final BooleanProperty wasAutomaticallyAdded = new SimpleBooleanProperty(true);
+    @JsonIgnore
     private ListProperty<String> colours = new SimpleListProperty<>();
+    @JsonIgnore
+    private final StringProperty rootUUID = new SimpleStringProperty("");
     
+    @JsonIgnore
+    private final BooleanProperty cameraDetected = new SimpleBooleanProperty(false);
+
+    @JsonIgnore
+    private final ObjectProperty<CameraTag> cameraTag = new SimpleObjectProperty<>(new CameraTag());
+
+    @JsonIgnore
     private ApplicationVersion version;
     
+    @JsonIgnore
     private List<DetectedDevice> detectedDevices = new ArrayList();
+
+    @JsonIgnore
+    private List<CameraInfo> attachedCameras = new ArrayList();
 
     @JsonIgnore
     private int pollCount = 0;
@@ -111,20 +200,22 @@ public final class DetectedServer
     private final ObjectProperty<ServerStatus> serverStatus = new SimpleObjectProperty<>(ServerStatus.NOT_CONNECTED);
 
     @JsonIgnore
-    public static final String defaultUser = "root";
+    public static final String DEFAULT_USER = "root";
 
     @JsonIgnore
-    public static final int readTimeOutShort = 1500;
+    public static final int READ_TIMEOUT_SHORT = 1500;
     @JsonIgnore
-    public static final int connectTimeOutShort = 300;
+    public static final int CONNECT_TIMEOUT_SHORT = 300;
     @JsonIgnore
-    public static final int readTimeOutLong = 15000;
+    public static final int READ_TIMEOUT_LONG = 15000;
     @JsonIgnore
-    public static final int connectTimeOutLong = 2000;
+    public static final int CONNECT_TIMEOUT_LONG = 2000;
     @JsonIgnore
-    public static final int maxAllowedPollCount = 8;
+    public static final int MAX_ALLOWED_POLL_COUNT = 8;
     @JsonIgnore
     private static final String LIST_PRINTERS_COMMAND = "/api/discovery/listPrinters";
+    @JsonIgnore
+    private static final String LIST_CAMERAS_COMMAND = "/api/discovery/listCameras";
     @JsonIgnore
     private static final String UPDATE_SYSTEM_COMMAND = "/api/admin/updateSystem";
     @JsonIgnore
@@ -133,6 +224,12 @@ public final class DetectedServer
     private static final String SAVE_FILAMENT_COMMAND = "/api/admin/saveFilament";
     @JsonIgnore
     private static final String DELETE_FILAMENT_COMMAND = "/api/admin/deleteFilament";
+    @JsonIgnore
+    private static final String SET_UPGRADE_COMMAND = "/api/admin/setUpgradeState";
+    @JsonIgnore
+    private static final String CAMERA_CONTROL_COMMAND = "/api/cameraControl";
+    @JsonIgnore
+    private static final String TAKE_SNAPSHOT_COMMAND = "/snapshot";
 
     @JsonIgnore
     // A server for any given address is created once, on the first create request, and placed on the
@@ -145,7 +242,8 @@ public final class DetectedServer
         NOT_CONNECTED,
         CONNECTED,
         WRONG_VERSION,
-        WRONG_PIN;
+        WRONG_PIN,
+        UPGRADING;
 
         private String getI18NString()
         {
@@ -188,7 +286,7 @@ public final class DetectedServer
 
     public boolean maxPollCountExceeded()
     {
-        if (pollCount > maxAllowedPollCount)
+        if (pollCount > MAX_ALLOWED_POLL_COUNT)
         {
             steno.warning("Maximum poll count of \"" + getDisplayName() + "\" exceeded! Count = " + Integer.toString(pollCount));
             return true;
@@ -228,7 +326,7 @@ public final class DetectedServer
 
     public void setName(String name)
     {
-        if (!name.equals(this.name))
+        if (!name.equals(this.name.get()))
         {
             this.name.set(name);
             dataChanged.set(!dataChanged.get());
@@ -291,6 +389,69 @@ public final class DetectedServer
     public ListProperty coloursProperty() 
     {
         return colours;
+    }
+    
+    public boolean getCameraDetected()
+    {
+        return cameraDetected.get();
+    }
+    
+    public void setCameraDetected(boolean cameraDetected)
+    {
+        this.cameraDetected.set(cameraDetected);
+        // If cameraDetected is cleared, then
+        // ensure that there are no attached cameras.
+        if (!cameraDetected)
+            attachedCameras.clear();
+        dataChanged.set(!dataChanged.get());
+    }
+    
+    public BooleanProperty cameraDetectedProperty()
+    {
+        return cameraDetected;
+    }
+
+    public ObjectProperty<CameraTag> cameraTagProperty()
+    {
+        return cameraTag;
+    }
+
+    public void setCameraTag(String cameraProfileName, String cameraName)
+    {
+        CameraTag currentTag = cameraTag.get();
+        if (!currentTag.getCameraProfileName().equalsIgnoreCase(cameraProfileName) ||
+            !currentTag.getCameraName().equalsIgnoreCase(cameraName)) {                
+            cameraTag.set(new CameraTag(cameraProfileName, cameraName));
+        }
+    }
+
+    public String getCameraProfileName()
+    {
+        return cameraTag.get().cameraProfileName;
+    }
+
+    public String getCameraName()
+    {
+        return cameraTag.get().cameraName;
+    }
+    
+    public String getRootUUID()
+    {
+        return rootUUID.get();
+    }
+    
+    public void setRootUUID(String rootUUID)
+    {
+        if (!rootUUID.equals(this.rootUUID.get()))
+        {
+            this.rootUUID.set(rootUUID);
+            dataChanged.set(!dataChanged.get());
+        }
+    }
+
+    public StringProperty rootUUIDProperty()
+    {
+        return rootUUID;
     }
 
     public ServerStatus getServerStatus()
@@ -401,7 +562,6 @@ public final class DetectedServer
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
                 } else
                 {
-
                     steno.debug("Response = " + Integer.toString(response) + "- setting status to NOT_CONNECTED");
                     setServerStatus(ServerStatus.NOT_CONNECTED);
                     CoreMemory.getInstance().deactivateRoboxRoot(this);
@@ -420,6 +580,7 @@ public final class DetectedServer
     public void disconnect()
     {
         steno.info("Disconnecting \"" + getDisplayName() + "\"");
+        setCameraDetected(false);
         setServerStatus(ServerStatus.NOT_CONNECTED);
         CoreMemory.getInstance().deactivateRoboxRoot(this);
         
@@ -435,8 +596,7 @@ public final class DetectedServer
         boolean gotAResponse = false;
         WhoAreYouResponse response = null;
 
-        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes";
-
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + "/api/discovery/whoareyou?pc=yes&rid=yes";
         long t1 = System.currentTimeMillis();
         try
         {
@@ -450,8 +610,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
                     //+ BaseConfiguration.getApplicationVersion());
 
-            con.setConnectTimeout(connectTimeOutShort);
-            con.setReadTimeout(readTimeOutShort);
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
 
             int responseCode = con.getResponseCode();
 
@@ -472,22 +632,36 @@ public final class DetectedServer
                     
                     ObservableList<String> observableList = FXCollections.observableArrayList();
                     List<String> printerColours = response.getPrinterColours();
-                    if(printerColours != null) 
+                    if (printerColours != null) 
                     {
                         observableList = FXCollections.observableArrayList(printerColours);
                     }
                     colours = new SimpleListProperty<>(observableList);
-//                    if (!version.get().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
-//                    {
-//                        setServerStatus(ServerStatus.WRONG_VERSION);
-//                    }
+                    
+                    String rid = response.getRootUUID();
+                    if (rid != null) 
+                        rootUUID.set(rid);
+                    //System.out.println("Host \"" + address.getHostAddress() + "\" name = \"" + response.getName() + "\" rootUUID = \"" + rid + "\"");
+                    //if (!version.getVersionString().equalsIgnoreCase(BaseConfiguration.getApplicationVersion()))
+                    //{
+                    //    setServerStatus(ServerStatus.WRONG_VERSION);
+                    //}
                 } else
                 {
                     steno.warning("Got an indecipherable response from " + address.getHostAddress());
                 }
-            } else
+            }
+            else if (responseCode == 503)
             {
-                steno.warning("No response from @ " + address.getHostAddress());
+                if (serverStatus.get() != ServerStatus.UPGRADING)
+                {
+                    steno.warning("503 response from @ " + address.getHostAddress());
+                    disconnect();
+                }
+            }
+            else
+            {
+                steno.warning("No response to \"" + url + "\" from @" + address.getHostAddress());
                 //disconnect();
             }
         } catch (java.net.SocketTimeoutException stex)
@@ -521,8 +695,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutShort);
-            con.setReadTimeout(readTimeOutShort);
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
             
             int responseCode = con.getResponseCode();
 
@@ -539,9 +713,9 @@ public final class DetectedServer
                 listPrintersResponse.getPrinterIDs().forEach((printerID) ->
                 {
                      detectedDevices.add(previousDetectedDevices.stream()
-                                                                .filter((d) -> d.getConnectionHandle().equals(printerID) && d.getConnectionType() == DeviceDetector.PrinterConnectionType.ROBOX_REMOTE)
+                                                                .filter((d) -> d.getConnectionHandle().equals(printerID) && d.getConnectionType() == DeviceDetector.DeviceConnectionType.ROBOX_REMOTE)
                                                                 .findAny()
-                                                                .orElse(new RemoteDetectedPrinter(this, DeviceDetector.PrinterConnectionType.ROBOX_REMOTE, printerID)));
+                                                                .orElse(new RemoteDetectedPrinter(this, DeviceDetector.DeviceConnectionType.ROBOX_REMOTE, printerID)));
                 });
                 
                 // Disconnect any devices that were previously found, but are not in the new list.
@@ -554,10 +728,11 @@ public final class DetectedServer
                     }
                 });
                 pollCount = 0; // Successful contact, so zero the poll count;
-            } else
+            }
+            else
             {
                 disconnect();
-                steno.warning("No response from @ " + address.getHostAddress());
+                steno.warning("No response to \"" + url + "\" from @" + address.getHostAddress());
             }
         } catch (java.net.SocketTimeoutException ex)
         {
@@ -572,6 +747,127 @@ public final class DetectedServer
             steno.exception("Error whilst polling for remote printers @ " + address.getHostAddress(), ex);
         }
         return detectedDevices;
+    }
+    
+    public List<CameraInfo> listAttachedCameras()
+    {
+        String url = "http://" + address.getHostAddress() + ":" + Configuration.remotePort + LIST_CAMERAS_COMMAND;
+        
+        List<CameraInfo> detectedCameras = new ArrayList<>();
+        
+        long t1 = System.currentTimeMillis();
+        try
+        {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
+            
+            int responseCode = con.getResponseCode();
+
+            if (responseCode == 200)
+            {
+                int availChars = con.getInputStream().available();
+                byte[] inputData = new byte[availChars];
+                con.getInputStream().read(inputData, 0, availChars);
+
+                ListCamerasResponse listCamerasResponse = mapper.readValue(inputData, ListCamerasResponse.class);
+
+                detectedCameras = listCamerasResponse.getCameras();
+                detectedCameras.forEach((dc) -> {
+                    dc.setServer(this);
+                    dc.setServerIP(address.getHostAddress());
+                });
+                attachedCameras = detectedCameras;
+
+                pollCount = 0; // Successful contact, so zero the poll count;
+            } 
+            else {
+                steno.warning("No response to \"" + url + "\"from @" + address.getHostAddress());
+            }
+        } catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst polling for remote cameras @" + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+            // On a timeout, use last know list of attached cameras, to avoid flickering of camera panels.
+            detectedCameras = attachedCameras;
+        }
+        catch (IOException ex)
+        {
+            steno.exception("Error whilst polling for remote cameras @" + address.getHostAddress(), ex);
+        }
+        
+        cameraDetected.set(!detectedCameras.isEmpty());
+        
+        return detectedCameras;
+    }
+    
+    public Image takeCameraSnapshot(CameraSettings settings)
+    {
+        String url = "http://" 
+                         + address.getHostAddress() 
+                         + ":" 
+                         + Configuration.remotePort 
+                         + CAMERA_CONTROL_COMMAND
+                         + "/" 
+                         + Integer.toString(settings.getCamera().getCameraNumber())
+                         + TAKE_SNAPSHOT_COMMAND;
+        Image snapshotImage = null;
+        long t1 = System.currentTimeMillis();
+        try
+        {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("POST");
+
+            //add request header
+            con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
+            con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
+            
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(settings));
+            con.setDoOutput(true);
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Content-Length", "" + jsonifiedData.length());
+            con.getOutputStream().write(jsonifiedData.getBytes());
+            
+            con.setConnectTimeout(CONNECT_TIMEOUT_SHORT);
+            con.setReadTimeout(READ_TIMEOUT_SHORT);
+            
+            int responseCode = con.getResponseCode();
+
+            if (responseCode == 200)
+            {
+                pollCount = 0; // Successful contact, so zero the poll count;
+                snapshotImage = new Image(con.getInputStream());
+                if (snapshotImage.isError()) {
+                    snapshotImage = null;
+                    steno.exception("Error loading image.from \"" + url + "\"@" + address.getHostAddress() + "\r\n" + snapshotImage.exceptionProperty().get().getMessage(), snapshotImage.exceptionProperty().get());
+                }
+            } else
+            {
+                steno.warning("No response to \"" + url + "\"@" + address.getHostAddress());
+            }
+        } catch (java.net.SocketTimeoutException ex)
+        {
+            long t2 = System.currentTimeMillis();
+            steno.error("Timeout whilst polling for remote cameras @" + address.getHostAddress() + " - time taken = " + Long.toString(t2 - t1));
+        }
+        catch (IOException ex)
+        {
+            steno.exception("Error whilst polling for remote cameras @" + address.getHostAddress(), ex);
+        }
+        
+        return snapshotImage;
     }
 
     public void postRoboxPacket(String urlString) throws IOException
@@ -594,8 +890,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutLong);
-            con.setReadTimeout(readTimeOutLong);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
 
             if (content != null)
             {
@@ -644,8 +940,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setReadTimeout(readTimeOutLong);
-            con.setConnectTimeout(connectTimeOutLong);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
 
             if (content != null)
             {
@@ -680,8 +976,8 @@ public final class DetectedServer
             con.setRequestProperty("User-Agent", BaseConfiguration.getApplicationName());
             con.setRequestProperty("Authorization", "Basic " + StringToBase64Encoder.encode("root:" + getPin()));
 
-            con.setConnectTimeout(connectTimeOutLong);
-            con.setReadTimeout(readTimeOutLong);
+            con.setConnectTimeout(CONNECT_TIMEOUT_LONG);
+            con.setReadTimeout(READ_TIMEOUT_LONG);
 
             rc = con.getResponseCode();
             pollCount = 0; // Successful contact, so zero the poll count;
@@ -715,9 +1011,18 @@ public final class DetectedServer
         }
 
         DetectedServer rhs = (DetectedServer) obj;
-        return new EqualsBuilder()
+        // If both servers have rootUUIDs, compare them. Otherwise,
+        // compare the IP addresses.
+        if (!rootUUID.get().isEmpty() && !rhs.rootUUID.get().isEmpty())
+        {
+            return rootUUID.get().equals(rhs.rootUUID.get());
+        }
+        else
+        {    
+            return new EqualsBuilder()
                 .append(address, rhs.address)
                 .isEquals();
+        }
     }
 
     private class TransferProgressMonitor implements SftpProgressMonitor
@@ -766,6 +1071,18 @@ public final class DetectedServer
     {
         boolean success = true;
         
+        progressReceiver.updateProgressPercent(0.0);
+        
+        try
+        {
+            if (postData(SET_UPGRADE_COMMAND, "true") == 503) { // 503 = server unavailable - implies it is probably upgrading.
+                return false;
+            }
+        } catch (IOException ex)
+        {
+        }
+        serverStatus.set(ServerStatus.UPGRADING);
+        
         // First try SFTP;
         TransferProgressMonitor monitor = new TransferProgressMonitor(this, progressReceiver);
         SFTPUtils sftpHelper = new SFTPUtils(address.getHostAddress());
@@ -795,6 +1112,7 @@ public final class DetectedServer
 
             try
             {
+                progressReceiver.updateProgressPercent(0.0);
                 long t1 = System.currentTimeMillis();
                 MultipartUtility multipart = new MultipartUtility(requestURL, charset, StringToBase64Encoder.encode("root:" + getPin()));
 
@@ -828,7 +1146,17 @@ public final class DetectedServer
         {
             // Disconnecting here does not clear the user interface, so set the poll count to force the user interface to disconnect.
             disconnect();
-            pollCount = maxAllowedPollCount + 1;
+            pollCount = MAX_ALLOWED_POLL_COUNT + 1;
+        }
+        else {
+            serverStatus.set(ServerStatus.CONNECTED);
+            try
+            {
+                postData(SET_UPGRADE_COMMAND, "false");
+            }
+            catch (IOException ex)
+            {
+            }
         }
         
         return success;
@@ -839,7 +1167,7 @@ public final class DetectedServer
         try
         {
             SerializableFilament serializableFilament = new SerializableFilament(filament);
-            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(serializableFilament));
             postData(SAVE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {
@@ -852,7 +1180,7 @@ public final class DetectedServer
         try
         {
             SerializableFilament serializableFilament = new SerializableFilament(filament);
-            String jsonifiedData = mapper.writeValueAsString(serializableFilament);
+            String jsonifiedData = SystemUtils.jsonEscape(mapper.writeValueAsString(serializableFilament));
             postData(DELETE_FILAMENT_COMMAND, jsonifiedData);
         } catch (IOException ex)
         {

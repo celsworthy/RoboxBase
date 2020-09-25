@@ -2,11 +2,11 @@ package celtech.roboxbase.configuration.slicer;
 
 import celtech.roboxbase.BaseLookup;
 import celtech.roboxbase.configuration.BaseConfiguration;
-import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import celtech.roboxbase.configuration.RoboxProfile;
 import celtech.roboxbase.configuration.SlicerType;
 import celtech.roboxbase.configuration.datafileaccessors.PrintProfileSettingsContainer;
 import celtech.roboxbase.configuration.fileRepresentation.SlicerMappingData;
+import celtech.roboxbase.configuration.profilesettings.PrintProfileSetting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -127,9 +127,7 @@ public abstract class SlicerConfigWriter {
 
             for (Map.Entry<String, String> entry : mappingData.getMappingData().entrySet()) {
                 String targetVariableName = entry.getKey();
-                String settingNameOrValue = extractTargetVariableName(entry.getValue());
-                STENO.debug("Processing method: " + settingNameOrValue + " and variable : "
-                    + targetVariableName);
+                String settingNameOrValue = extractSettingNameOrValue(entry.getValue());
 
                 try {
                     float value = Float.parseFloat(settingNameOrValue);
@@ -145,7 +143,7 @@ public abstract class SlicerConfigWriter {
                     }
                 } catch (NumberFormatException nfe) {
                     Optional<String> settingType = getSettingType(settingNameOrValue);
-                    STENO.debug("Writing " + settingNameOrValue + " : " + targetVariableName);
+                    
                     if(settingType.isPresent()) {
                         switch (settingType.get()) {
                             case BOOLEAN: {
@@ -367,15 +365,15 @@ public abstract class SlicerConfigWriter {
         return Optional.of(resultingValue);
     }
 
-    private String extractTargetVariableName(String value) {
-        String targetVariableName = value;
+    private String extractSettingNameOrValue(String value) {
+        String nameOrValue = value;
 
         if (value.contains(":")) {
             String[] elements = value.split(":");
-            targetVariableName = elements[0];
+            nameOrValue = elements[0];
         }
 
-        return targetVariableName;
+        return nameOrValue;
     }
 
     private Optional<String> getSettingType(String settingId) {

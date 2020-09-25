@@ -101,16 +101,16 @@ public class LicenceManager
     
     public synchronized boolean validateLicense(Licence license, boolean activateLicense, boolean canDisplayDialogs) 
     {
+        // check if we are using 32 bit windows, if we are then pro features should not activate
+        if (BaseConfiguration.isWindows32Bit())
+        {
+            return false;
+        }
+        
         NoHardwareLicenceTimer.getInstance().setTimerFilePath(BaseConfiguration.getApplicationStorageDirectory() +
                                                 BaseConfiguration.LICENSE_SUB_PATH +
                                                 "/timer.lic");
         boolean isLicenseWithoutHardwareAllowed = NoHardwareLicenceTimer.getInstance().hasHardwareBeenCheckedInLast(FIFTEEN_DAYS);
-        // I think perhaps we can remove this dialog, a notification should be enough
-//        if(!isLicenseWithoutHardwareAllowed && canDisplayDialogs) 
-//        {
-//            BaseLookup.getSystemNotificationHandler().showConnectLicensedPrinterDialog();
-//        }
-        
         boolean isAssociatedPrinterConnected = doesLicenseContainAConnectedPrinter(license);
         
         if(isAssociatedPrinterConnected) 

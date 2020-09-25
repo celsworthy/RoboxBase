@@ -24,7 +24,6 @@ import libertysystems.stenographer.StenographerFactory;
  */
 public class CalibrationXAndYActions extends StateTransitionActions
 {
-
     private final Stenographer steno = StenographerFactory.getStenographer(
             CalibrationXAndYActions.class.getName());
 
