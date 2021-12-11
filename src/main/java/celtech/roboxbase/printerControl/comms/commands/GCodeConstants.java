@@ -177,7 +177,7 @@ public class GCodeConstants {
         if (extruderLetter == "D") {
             extruderHeaterLetter = "S";
         }
-        return fmt.format("M104 %1$s%3$d\nM109 %1$s\nG0 %2$s-1500\n", extruderHeaterLetter, extruderLetter, temperature).toString();
+        return fmt.format("M104 %1$s%3$d\nM109 %1$s\nG0 %2$s-1500\nM104 %1$s0\n", extruderHeaterLetter, extruderLetter, temperature).toString();
     }
 
     /**
