@@ -3,14 +3,14 @@ package celtech.roboxbase.configuration;
 import celtech.roboxbase.ApplicationFeature;
 import celtech.roboxbase.configuration.datafileaccessors.PrinterContainer;
 import celtech.roboxbase.configuration.utils.RoboxProfileUtils;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import libertysystems.configuration.ConfigNotLoadedException;
+import libertysystems.configuration.Configuration;
+import libertysystems.stenographer.LogLevel;
+import libertysystems.stenographer.Stenographer;
+import libertysystems.stenographer.StenographerFactory;
+import org.apache.commons.io.FileUtils;
+
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -21,19 +21,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-import libertysystems.configuration.ConfigNotLoadedException;
-import libertysystems.configuration.Configuration;
-import libertysystems.stenographer.LogLevel;
-import libertysystems.stenographer.Stenographer;
-import libertysystems.stenographer.StenographerFactory;
-import org.apache.commons.io.FileUtils;
+
+import static celtech.roboxbase.utils.ScriptUtils.STENO;
 
 /**
- *
  * @author Ian Hudson @ Liberty Systems Limited
  */
-public class BaseConfiguration
-{
+public class BaseConfiguration {
 
     private static final Stenographer steno = StenographerFactory.getStenographer(BaseConfiguration.class.getName());
 
@@ -141,7 +135,7 @@ public class BaseConfiguration
     public static final String macroFileSubpath = "Macros/";
 
     public static final String LICENSE_SUB_PATH = "License/";
-    
+
     private static String printProfileFileDirectory = null;
     private static String userPrintProfileFileDirectory = null;
     public static final String printProfileDirectoryPath = "PrintProfiles";
@@ -152,10 +146,10 @@ public class BaseConfiguration
     public static final String cameraProfilesDirectoryName = "CameraProfiles";
     public static final String cameraProfileFileExtention = ".cameraprofile";
     public static final String defaultCameraProfileName = "Default";
-    
+
     private static String printProfileSettingsFileLocation = null;
     private static final String printProfileSettingsFileName = "print_profile_settings.json";
-    
+
     private static String applicationLanguageRaw = null;
 
     private static CoreMemory coreMemory = null;
@@ -165,14 +159,12 @@ public class BaseConfiguration
 
     private static final Set<ApplicationFeature> applicationFeatures = new HashSet();
 
-    public static void initialise(Class classToCheck)
-    {
+    public static void initialise(Class classToCheck) {
         getApplicationInstallDirectory(classToCheck);
         PrinterContainer.getCompletePrinterList();
     }
 
-    public static void shutdown()
-    {
+    public static void shutdown() {
         writeApplicationMemory();
     }
 
@@ -184,13 +176,11 @@ public class BaseConfiguration
      * @param userStorageDirectory
      */
     public static void setInstallationProperties(Properties testingProperties,
-            String applicationInstallDirectory, String userStorageDirectory)
-    {
+                                                 String applicationInstallDirectory, String userStorageDirectory) {
         installationProperties = testingProperties;
         steno.info("App dir: " + applicationInstallDirectory);
         BaseConfiguration.applicationInstallDirectory = applicationInstallDirectory;
-        if (System.getProperty("os.name").startsWith("Windows") && BaseConfiguration.applicationInstallDirectory.matches("/[A-Za-z]:.*"))
-        {
+        if (System.getProperty("os.name").startsWith("Windows") && BaseConfiguration.applicationInstallDirectory.matches("/[A-Za-z]:.*")) {
             // This seeems to be a bug. Windows paths from URLs come out with a leading /
             // e.g. /C:/Root/Leaf
             // Remove the leading slash
@@ -200,30 +190,23 @@ public class BaseConfiguration
         BaseConfiguration.userStorageDirectory = userStorageDirectory;
     }
 
-    public static MachineType getMachineType()
-    {
-        if (machineType == null)
-        {
+    public static MachineType getMachineType() {
+        if (machineType == null) {
             String osName = System.getProperty("os.name");
 
-            if (osName.startsWith("Windows 95"))
-            {
+            if (osName.startsWith("Windows 95")) {
                 machineType = MachineType.WINDOWS_95;
-            } else if (osName.startsWith("Windows"))
-            {
+            } else if (osName.startsWith("Windows")) {
                 machineType = MachineType.WINDOWS;
-            } else if (osName.startsWith("Mac"))
-            {
+            } else if (osName.startsWith("Mac")) {
                 machineType = MachineType.MAC;
-            } else if (osName.startsWith("Linux"))
-            {
+            } else if (osName.startsWith("Linux")) {
                 steno.debug("We have a linux variant");
                 ProcessBuilder builder = new ProcessBuilder("uname", "-m");
 
                 Process process = null;
 
-                try
-                {
+                try {
                     process = builder.start();
                     InputStream is = process.getInputStream();
                     InputStreamReader isr = new InputStreamReader(is);
@@ -232,17 +215,14 @@ public class BaseConfiguration
 
                     machineType = MachineType.LINUX_X86;
 
-                    while ((line = br.readLine()) != null)
-                    {
-                        if (line.equalsIgnoreCase("x86_64") == true)
-                        {
+                    while ((line = br.readLine()) != null) {
+                        if (line.equalsIgnoreCase("x86_64") == true) {
                             machineType = MachineType.LINUX_X64;
                             steno.debug("Linux 64 bit detected");
                             break;
                         }
                     }
-                } catch (IOException ex)
-                {
+                } catch (IOException ex) {
                     machineType = MachineType.UNKNOWN;
                     steno.error("Error whilst determining linux machine type " + ex);
                 }
@@ -252,24 +232,19 @@ public class BaseConfiguration
 
         return machineType;
     }
-    
-    public static boolean isWindows32Bit()
-    {
+
+    public static boolean isWindows32Bit() {
         return System.getProperty("os.name").contains("Windows") && System.getenv("ProgramFiles(x86)") == null;
     }
 
-    public static String getApplicationName()
-    {
+    public static String getApplicationName() {
         loadConfigurationInstance();
 
-        if (configuration != null && applicationName == null)
-        {
-            try
-            {
+        if (configuration != null && applicationName == null) {
+            try {
                 applicationName = configuration.getFilenameString(applicationConfigComponent,
                         "ApplicationName", null);
-            } catch (ConfigNotLoadedException ex)
-            {
+            } catch (ConfigNotLoadedException ex) {
                 steno.error(
                         "Couldn't determine application name - the application will not run correctly");
             }
@@ -278,13 +253,10 @@ public class BaseConfiguration
     }
 
     private static void loadConfigurationInstance() {
-        if (configuration == null)
-        {
-            try
-            {
+        if (configuration == null) {
+            try {
                 configuration = Configuration.getInstance();
-            } catch (ConfigNotLoadedException ex)
-            {
+            } catch (ConfigNotLoadedException ex) {
                 steno.error(
                         "Couldn't load configuration - the application cannot derive the install directory");
             }
@@ -292,20 +264,16 @@ public class BaseConfiguration
 
     }
 
-    public static String getApplicationShortName()
-    {
+    public static String getApplicationShortName() {
 
         loadConfigurationInstance();
 
-        if (configuration != null && applicationShortName == null)
-        {
-            try
-            {
+        if (configuration != null && applicationShortName == null) {
+            try {
                 applicationShortName = configuration.getFilenameString(applicationConfigComponent,
                         "ApplicationShortName", null);
                 steno.debug("Application short name = " + applicationShortName);
-            } catch (ConfigNotLoadedException ex)
-            {
+            } catch (ConfigNotLoadedException ex) {
                 steno.error(
                         "Couldn't determine application short name - the application will not run correctly");
             }
@@ -313,39 +281,31 @@ public class BaseConfiguration
         return applicationShortName;
     }
 
-    public static String getApplicationInstallDirectory(Class classToCheck)
-    {
+    public static String getApplicationInstallDirectory(Class classToCheck) {
         loadConfigurationInstance();
 
-        if (configuration != null && applicationInstallDirectory == null)
-        {
-            try
-            {
+        if (configuration != null && applicationInstallDirectory == null) {
+            try {
                 String fakeAppDirectory = configuration.getFilenameString(applicationConfigComponent,
                         "FakeInstallDirectory",
                         null);
 
-                if (fakeAppDirectory == null)
-                {
-                    try
-                    {
+                if (fakeAppDirectory == null) {
+                    try {
                         String path = classToCheck.getProtectionDomain().getCodeSource().getLocation().getPath();
                         URI uri = new URI(path);
                         File file = new File(uri.getSchemeSpecificPart());
                         String actualPath = file.getCanonicalPath();
                         actualPath = actualPath.replaceFirst("[a-zA-Z0-9]*\\.jar", "");
                         applicationInstallDirectory = actualPath;
-                    } catch (URISyntaxException ex)
-                    {
+                    } catch (URISyntaxException ex) {
                         steno.error(
                                 "URI Syntax Exception whilst attempting to determine the application path - the application is unlikely to run correctly.");
-                    } catch (IOException ex)
-                    {
+                    } catch (IOException ex) {
                         steno.error(
                                 "IO Exception whilst attempting to determine the application path - the application is unlikely to run correctly.");
                     }
-                } else
-                {
+                } else {
                     applicationInstallDirectory = fakeAppDirectory;
                 }
 
@@ -366,8 +326,7 @@ public class BaseConfiguration
 //                {
 //                    steno.exception("Unable to establish install directory", ex);
 //                }
-            } catch (ConfigNotLoadedException ex)
-            {
+            } catch (ConfigNotLoadedException ex) {
                 steno.error(
                         "Couldn't load configuration - the application cannot derive the install directory");
             }
@@ -375,10 +334,8 @@ public class BaseConfiguration
         return applicationInstallDirectory;
     }
 
-    public static String getCELInstallDirectory()
-    {
-        if (celInstallDirectory == null)
-        {
+    public static String getCELInstallDirectory() {
+        if (celInstallDirectory == null) {
             File p = new File(applicationInstallDirectory);
             celInstallDirectory = p.getParent() + File.separator;
         }
@@ -386,10 +343,8 @@ public class BaseConfiguration
         return celInstallDirectory;
     }
 
-    public static String getCommonApplicationDirectory()
-    {
-        if (commonApplicationDirectory == null)
-        {
+    public static String getCommonApplicationDirectory() {
+        if (commonApplicationDirectory == null) {
             File p = new File(applicationInstallDirectory);
             commonApplicationDirectory = getCELInstallDirectory() + "Common" + File.separator;
         }
@@ -397,30 +352,24 @@ public class BaseConfiguration
         return commonApplicationDirectory;
     }
 
-    public static String getApplicationHeadDirectory()
-    {
-        if (headFileDirectory == null)
-        {
+    public static String getApplicationHeadDirectory() {
+        if (headFileDirectory == null) {
             headFileDirectory = getCommonApplicationDirectory() + headDirectoryPath + '/';
         }
 
         return headFileDirectory;
     }
 
-    public static String getApplicationPrinterDirectory()
-    {
-        if (printerFileDirectory == null)
-        {
+    public static String getApplicationPrinterDirectory() {
+        if (printerFileDirectory == null) {
             printerFileDirectory = getCommonApplicationDirectory() + printerDirectoryPath + '/';
         }
 
         return printerFileDirectory;
     }
 
-    public static String getApplicationKeyDirectory()
-    {
-        if (applicationKeyDirectory == null)
-        {
+    public static String getApplicationKeyDirectory() {
+        if (applicationKeyDirectory == null) {
             applicationKeyDirectory = applicationInstallDirectory + applicationKeyPath + '/';
         }
 
@@ -429,126 +378,99 @@ public class BaseConfiguration
 
     public static String getExternalStaticDirectory() {
         loadConfigurationInstance();
-        try
-        {
+        try {
             return configuration.getFilenameString(applicationConfigComponent,
                     "ExternalStaticDirectory", null);
-        } catch (ConfigNotLoadedException ex)
-        {
+        } catch (ConfigNotLoadedException ex) {
             steno.info("No external static directory specified");
             return null;
         }
     }
-    
-    public static String getRemoteRootDirectory()
-    {
+
+    public static String getRemoteRootDirectory() {
         return remoteRootDirectory;
     }
-    
-    public static String getRemotePrintJobDirectory() 
-    {
+
+    public static String getRemotePrintJobDirectory() {
         return remotePrintJobDirectory;
     }
 
-    public static String getRemoteTimelapseDirectory() 
-    {
+    public static String getRemoteTimelapseDirectory() {
         return remoteRootTimelapseDirectory;
     }
 
-    public static boolean isAutoRepairHeads()
-    {
+    public static boolean isAutoRepairHeads() {
         return autoRepairHeads;
     }
 
-    public static void setAutoRepairHeads(boolean value)
-    {
+    public static void setAutoRepairHeads(boolean value) {
         autoRepairHeads = value;
     }
 
-    public static boolean isAutoRepairReels()
-    {
+    public static boolean isAutoRepairReels() {
         return autoRepairReels;
     }
 
-    public static void setAutoRepairReels(boolean value)
-    {
+    public static void setAutoRepairReels(boolean value) {
         autoRepairReels = value;
     }
 
-    private static void loadProjectProperties()
-    {
+    private static void loadProjectProperties() {
         InputStream input = null;
 
-        try
-        {
+        try {
             input = new FileInputStream(applicationInstallDirectory + "application.properties");
 
             // load a properties file
             installationProperties = new Properties();
             installationProperties.load(input);
-        } catch (IOException ex)
-        {
+        } catch (IOException ex) {
             steno.warning("Couldn't load application.properties");
-        } finally
-        {
-            if (input != null)
-            {
-                try
-                {
+        } finally {
+            if (input != null) {
+                try {
                     input.close();
-                } catch (IOException ex)
-                {
+                } catch (IOException ex) {
                     steno.exception("Error closing properties file", ex);
                 }
             }
         }
     }
 
-    public static String getApplicationVersion()
-    {
-        if (installationProperties == null)
-        {
+    public static String getApplicationVersion() {
+        if (installationProperties == null) {
             loadProjectProperties();
         }
         if (installationProperties != null
-                && applicationVersion == null)
-        {
+                && applicationVersion == null) {
             applicationVersion = installationProperties.getProperty("version");
         }
 
         return applicationVersion;
     }
 
-    public static String getApplicationLocale()
-    {
-        if (installationProperties == null)
-        {
+    public static String getApplicationLocale() {
+        if (installationProperties == null) {
             loadProjectProperties();
         }
         if (installationProperties != null
-                && applicationLocale == null)
-        {
+                && applicationLocale == null) {
             applicationLocale = installationProperties.getProperty("language");
         }
 
         return applicationLocale;
     }
-    
-    public static LogLevel getApplicationLogLevel()
-    {
-        if (installationProperties == null)
-        {
+
+    public static LogLevel getApplicationLogLevel() {
+        if (installationProperties == null) {
             loadProjectProperties();
         }
         if (installationProperties != null
-                && applicationLogLevel == null)
-        {
+                && applicationLogLevel == null) {
             String logLevel = installationProperties.getProperty("log_level");
-            if (logLevel != null && logLevel.length() > 0)
-            {
+            if (logLevel != null && logLevel.length() > 0) {
                 logLevel = logLevel.toUpperCase();
-                switch (logLevel)
-                {
+                switch (logLevel) {
                     case "OFF":
                         applicationLogLevel = LogLevel.OFF;
                         break;
@@ -587,35 +509,29 @@ public class BaseConfiguration
                         applicationLogLevel = LogLevel.INFO;
                         break;
                 }
-            }
-            else
+            } else
                 applicationLogLevel = LogLevel.INFO;
         }
 
         return applicationLogLevel;
     }
 
-    public static void setTitleAndVersion(String titleAndVersion)
-    {
+    public static void setTitleAndVersion(String titleAndVersion) {
         applicationTitleAndVersion = titleAndVersion;
     }
 
-    public static String getTitleAndVersion()
-    {
+    public static String getTitleAndVersion() {
         return applicationTitleAndVersion;
     }
 
-    public static String getPrintSpoolDirectory()
-    {
-        if (printFileSpoolDirectory == null)
-        {
+    public static String getPrintSpoolDirectory() {
+        if (printFileSpoolDirectory == null) {
             printFileSpoolDirectory = getUserStorageDirectory() + printSpoolStorageDirectoryPath
                     + File.separator;
 
             File dirHandle = new File(printFileSpoolDirectory);
 
-            if (!dirHandle.exists())
-            {
+            if (!dirHandle.exists()) {
                 dirHandle.mkdirs();
             }
         }
@@ -623,17 +539,14 @@ public class BaseConfiguration
         return printFileSpoolDirectory;
     }
 
-    public static String getTimelapseDirectory()
-    {
-        if (timelapseDirectory == null)
-        {
+    public static String getTimelapseDirectory() {
+        if (timelapseDirectory == null) {
             timelapseDirectory = getUserStorageDirectory() + timelapseDirectoryPath
                     + File.separator;
 
             File dirHandle = new File(printFileSpoolDirectory);
 
-            if (!dirHandle.exists())
-            {
+            if (!dirHandle.exists()) {
                 dirHandle.mkdirs();
             }
         }
@@ -641,40 +554,31 @@ public class BaseConfiguration
         return timelapseDirectoryPath;
     }
 
-    public static String getUserStorageDirectory()
-    {
+    public static String getUserStorageDirectory() {
         loadConfigurationInstance();
 
-        if (configuration != null && userStorageDirectory == null)
-        {
-            if (userStorageDirectory == null)
-            {
-                try
-                {
+        if (configuration != null && userStorageDirectory == null) {
+            if (userStorageDirectory == null) {
+                try {
                     userStorageDirectory = Paths.get(configuration.getFilenameString(applicationConfigComponent,
-                                                                                     userStorageDirectoryComponent,
-                                                                                     null),
-                                                     getApplicationName()).toAbsolutePath()
-                                               + File.separator;
-                } catch (ConfigNotLoadedException ex)
-                {
+                                    userStorageDirectoryComponent,
+                                    null),
+                            getApplicationName()).toAbsolutePath()
+                            + File.separator;
+                } catch (ConfigNotLoadedException ex) {
                     steno.error(
                             "Couldn't determine user storage location - the application will not run correctly");
                 }
             }
         }
 
-        if (userStorageDirectory != null)
-        {
+        if (userStorageDirectory != null) {
             File userStorageDirRef = new File(userStorageDirectory);
 
-            if (!userStorageDirRef.exists())
-            {
-                try
-                {
+            if (!userStorageDirRef.exists()) {
+                try {
                     FileUtils.forceMkdir(userStorageDirRef);
-                } catch (IOException ex)
-                {
+                } catch (IOException ex) {
                     steno.exception("Couldn't create user storage directory: " + userStorageDirectory, ex);
                 }
             }
@@ -683,10 +587,8 @@ public class BaseConfiguration
         return userStorageDirectory;
     }
 
-    public static String getApplicationPrintProfileDirectory()
-    {
-        if (printProfileFileDirectory == null)
-        {
+    public static String getApplicationPrintProfileDirectory() {
+        if (printProfileFileDirectory == null) {
             printProfileFileDirectory = getCommonApplicationDirectory() + printProfileDirectoryPath
                     + '/';
         }
@@ -694,84 +596,68 @@ public class BaseConfiguration
         return printProfileFileDirectory;
     }
 
-    public static String getUserPrintProfileDirectory()
-    {
+    public static String getUserPrintProfileDirectory() {
         userPrintProfileFileDirectory = getUserStorageDirectory() + printProfileDirectoryPath
                 + '/';
 
         File dirHandle = new File(userPrintProfileFileDirectory);
 
-        if (!dirHandle.exists())
-        {
+        if (!dirHandle.exists()) {
             dirHandle.mkdirs();
         }
 
         return userPrintProfileFileDirectory;
     }
-    
-    public static String getApplicationPrintProfileDirectoryForSlicer(SlicerType slicerType)
-    {
-        if(slicerType == SlicerType.Cura) 
-        {
+
+    public static String getApplicationPrintProfileDirectoryForSlicer(SlicerType slicerType) {
+        if (slicerType == SlicerType.Cura) {
             return getApplicationPrintProfileDirectory() + curaFilePath;
-        } else if(slicerType == SlicerType.Cura4) 
-        {
+        } else if (slicerType == SlicerType.Cura4) {
             return getApplicationPrintProfileDirectory() + cura4FilePath;
         }
-        
+
         return getApplicationPrintProfileDirectory();
     }
-    
-    public static String getUserPrintProfileDirectoryForSlicer(SlicerType slicerType) 
-    {
+
+    public static String getUserPrintProfileDirectoryForSlicer(SlicerType slicerType) {
         String userSlicerPrintProfileDirectory = getUserPrintProfileDirectory();
-        
-        if (slicerType == SlicerType.Cura)
-        {
-            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;    
-        } else if (slicerType == SlicerType.Cura4) 
-        {
+
+        if (slicerType == SlicerType.Cura) {
+            userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + curaFilePath;
+        } else if (slicerType == SlicerType.Cura4) {
             userSlicerPrintProfileDirectory = getUserPrintProfileDirectory() + cura4FilePath;
         }
-         
+
         File dirHandle = new File(userSlicerPrintProfileDirectory);
-        if (!dirHandle.exists()) 
-        {
+        if (!dirHandle.exists()) {
             dirHandle.mkdirs();
         }
-        
-        if (slicerType == SlicerType.Cura)
-        {
+
+        if (slicerType == SlicerType.Cura) {
             // Find any old .roboxprofiles hanging around and convert them to the new format
             // They are added to the correct head folder and the old file is archived
-            try 
-            {
+            try {
                 Path userProfileDir = Paths.get(getUserPrintProfileDirectory());
-                
+
                 List<Path> oldRoboxFiles = Files.list(userProfileDir)
                         .filter(file -> file.getFileName().toString().endsWith(printProfileFileExtension))
                         .collect(Collectors.toList());
-                
-                if (!oldRoboxFiles.isEmpty()) 
-                {
-                    for (Path file : oldRoboxFiles)
-                    {
+
+                if (!oldRoboxFiles.isEmpty()) {
+                    for (Path file : oldRoboxFiles) {
                         RoboxProfileUtils.convertOldProfileIntoNewFormat(file, dirHandle.toPath());
                     }
                 }
-            } catch (IOException ex) 
-            {
+            } catch (IOException ex) {
                 steno.exception("Failed to convert old robox profiles to the new format.", ex);
             }
         }
-        
+
         return userSlicerPrintProfileDirectory;
     }
-    
-    public static String getApplicationCameraProfilesDirectory()
-    {
-        if (cameraProfilesDirectory == null)
-        {
+
+    public static String getApplicationCameraProfilesDirectory() {
+        if (cameraProfilesDirectory == null) {
             cameraProfilesDirectory = getCommonApplicationDirectory() + cameraProfilesDirectoryName
                     + '/';
         }
@@ -779,52 +665,43 @@ public class BaseConfiguration
         return cameraProfilesDirectory;
     }
 
-    public static String getUserCameraProfilesDirectory()
-    {
+    public static String getUserCameraProfilesDirectory() {
         userCameraProfilesDirectory = getUserStorageDirectory() + cameraProfilesDirectoryName;
-        
+
         File dirHandle = new File(userCameraProfilesDirectory);
-        if (!dirHandle.exists())
-        {
+        if (!dirHandle.exists()) {
             dirHandle.mkdirs();
         }
-        
+
         return userCameraProfilesDirectory;
     }
-    
-    public static String getPrintProfileSettingsFileLocation(SlicerType slicerType)
-    {
+
+    public static String getPrintProfileSettingsFileLocation(SlicerType slicerType) {
         return printProfileSettingsFileLocation = getApplicationPrintProfileDirectoryForSlicer(slicerType) + printProfileSettingsFileName;
     }
 
-    public static String getUserTempDirectory()
-    {
+    public static String getUserTempDirectory() {
         userTempFileDirectory = getUserStorageDirectory() + userTempDirectoryPath
                 + '/';
 
         File dirHandle = new File(userTempFileDirectory);
 
-        if (!dirHandle.exists())
-        {
+        if (!dirHandle.exists()) {
             dirHandle.mkdirs();
         }
 
         return userTempFileDirectory;
     }
 
-    public static String getApplicationStorageDirectory()
-    {
+    public static String getApplicationStorageDirectory() {
         loadConfigurationInstance();
 
-        if (configuration != null && applicationStorageDirectory == null)
-        {
-            try
-            {
+        if (configuration != null && applicationStorageDirectory == null) {
+            try {
                 applicationStorageDirectory = configuration.getFilenameString(
                         applicationConfigComponent, applicationStorageDirectoryComponent, null);
                 steno.debug("Application storage directory = " + applicationStorageDirectory);
-            } catch (ConfigNotLoadedException ex)
-            {
+            } catch (ConfigNotLoadedException ex) {
                 steno.error(
                         "Couldn't determine application storage location - the application will not run correctly");
             }
@@ -832,49 +709,40 @@ public class BaseConfiguration
         return applicationStorageDirectory;
     }
 
-    public static String getApplicationModelDirectory()
-    {
+    public static String getApplicationModelDirectory() {
         return getCommonApplicationDirectory().concat(modelStorageDirectoryPath).concat("/");
     }
 
-    public static Properties getInstallationProperties()
-    {
+    public static Properties getInstallationProperties() {
         return installationProperties;
     }
 
-    public static String getApplicationFilamentDirectory()
-    {
-        if (filamentFileDirectory == null)
-        {
+    public static String getApplicationFilamentDirectory() {
+        if (filamentFileDirectory == null) {
             filamentFileDirectory = BaseConfiguration.getCommonApplicationDirectory() + filamentDirectoryPath + '/';
         }
 
         return filamentFileDirectory;
     }
 
-    public static String getUserFilamentDirectory()
-    {
+    public static String getUserFilamentDirectory() {
         userFilamentFileDirectory = BaseConfiguration.getUserStorageDirectory() + filamentDirectoryPath + '/';
 
         File dirHandle = new File(userFilamentFileDirectory);
 
-        if (!dirHandle.exists())
-        {
+        if (!dirHandle.exists()) {
             dirHandle.mkdirs();
         }
 
         return userFilamentFileDirectory;
     }
 
-    public static String getApplicationInstallationLanguage()
-    {
-        if (BaseConfiguration.getInstallationProperties() == null)
-        {
+    public static String getApplicationInstallationLanguage() {
+        if (BaseConfiguration.getInstallationProperties() == null) {
             BaseConfiguration.loadProjectProperties();
         }
 
-        if (applicationLanguageRaw == null)
-        {
+        if (applicationLanguageRaw == null) {
             applicationLanguageRaw = BaseConfiguration.getInstallationProperties().getProperty("language").replaceAll("_",
                     "-");
         }
@@ -882,82 +750,64 @@ public class BaseConfiguration
         return applicationLanguageRaw;
     }
 
-    public static String getBinariesDirectory()
-    {
+    public static String getBinariesDirectory() {
         return BaseConfiguration.getCommonApplicationDirectory() + "bin" + File.separator;
     }
 
-    public static String getGCodeViewerDirectory()
-    {
+    public static String getGCodeViewerDirectory() {
         return BaseConfiguration.getCommonApplicationDirectory() + "GCodeViewer" + File.separator;
     }
 
-    public static void enableApplicationFeature(ApplicationFeature feature)
-    {
+    public static void enableApplicationFeature(ApplicationFeature feature) {
         applicationFeatures.add(feature);
     }
 
-    public static void disableApplicationFeature(ApplicationFeature feature)
-    {
+    public static void disableApplicationFeature(ApplicationFeature feature) {
         applicationFeatures.remove(feature);
     }
 
-    public static boolean isApplicationFeatureEnabled(ApplicationFeature feature)
-    {
+    public static boolean isApplicationFeatureEnabled(ApplicationFeature feature) {
         return applicationFeatures.contains(feature);
     }
 
-    private static void loadApplicationMemoryProperties()
-    {
+    private static void loadApplicationMemoryProperties() {
         InputStream input = null;
 
-        if (applicationMemoryProperties == null)
-        {
+        if (applicationMemoryProperties == null) {
             applicationMemoryProperties = new Properties();
         }
-        
-        try
-        {
+
+        try {
             File inputFile = new File(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
                     + ".properties");
-            if (inputFile.exists())
-            {
+            if (inputFile.exists()) {
                 input = new FileInputStream(inputFile);
 
                 // load a properties file
                 applicationMemoryProperties.load(input);
             }
-        } catch (IOException ex)
-        {
+        } catch (IOException ex) {
             ex.printStackTrace();
-        } finally
-        {
-            if (input != null)
-            {
-                try
-                {
+        } finally {
+            if (input != null) {
+                try {
                     input.close();
-                } catch (IOException e)
-                {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
     }
 
-    public static String getApplicationMemory(String propertyName)
-    {
-        if (applicationMemoryProperties == null)
-        {
+    public static String getApplicationMemory(String propertyName) {
+        if (applicationMemoryProperties == null) {
             loadApplicationMemoryProperties();
         }
         return applicationMemoryProperties.getProperty(propertyName);
     }
 
-    public static void setApplicationMemory(String propertyName, String value)
-    {
-        if (applicationMemoryProperties == null)
-        {
+    public static void setApplicationMemory(String propertyName, String value) {
+        if (applicationMemoryProperties == null) {
             loadApplicationMemoryProperties();
         }
         applicationMemoryProperties.setProperty(propertyName, value);
@@ -968,36 +818,55 @@ public class BaseConfiguration
     /**
      *
      */
-    public static void writeApplicationMemory()
-    {
-        if (applicationMemoryProperties == null)
-        {
+    public static void writeApplicationMemory() {
+        if (applicationMemoryProperties == null) {
             loadApplicationMemoryProperties();
         }
 
         OutputStream output = null;
 
-        try
-        {
+        try {
             output = new FileOutputStream(BaseConfiguration.getApplicationStorageDirectory() + BaseConfiguration.getApplicationName()
                     + ".properties");
 
             applicationMemoryProperties.save(output, BaseConfiguration.getApplicationName() + " runtime properties");
-        } catch (IOException ex)
-        {
+        } catch (IOException ex) {
             ex.printStackTrace();
-        } finally
-        {
-            if (output != null)
-            {
-                try
-                {
+        } finally {
+            if (output != null) {
+                try {
                     output.close();
-                } catch (IOException e)
-                {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
     }
+
+    public static void enableProFeatures() {
+        STENO.info("License type of Automaker Pro, enabling associated features");
+        BaseConfiguration.enableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
+        BaseConfiguration.enableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+        BaseConfiguration.enableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
+        BaseConfiguration.enableApplicationFeature(ApplicationFeature.PRO_SPLASH_SCREEN);
+    }
+
+    public static void enableFreeFeatures() {
+        STENO.info("License type of Automaker Free, enabling standard features");
+        BaseConfiguration.disableApplicationFeature(ApplicationFeature.LATEST_CURA_VERSION);
+        BaseConfiguration.disableApplicationFeature(ApplicationFeature.GCODE_VISUALISATION);
+        BaseConfiguration.disableApplicationFeature(ApplicationFeature.OFFLINE_PRINTER);
+        BaseConfiguration.disableApplicationFeature(ApplicationFeature.PRO_SPLASH_SCREEN);
+    }
+
+    // checkFeaturesAvailability replaces license check and only checks if system is not windows 32bit
+    public static boolean checkFeaturesAvailability() {
+        if (BaseConfiguration.isWindows32Bit()) {
+            enableFreeFeatures();
+            return false;
+        }
+        enableProFeatures();
+        return true;
+    }
+
 }
