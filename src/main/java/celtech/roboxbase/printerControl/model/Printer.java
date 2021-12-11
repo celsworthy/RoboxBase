@@ -30,8 +30,6 @@ import celtech.roboxbase.utils.RectangularBounds;
 import celtech.roboxbase.utils.models.PrintableProject;
 import celtech.roboxbase.utils.tasks.Cancellable;
 import celtech.roboxbase.utils.tasks.TaskResponder;
-import java.util.List;
-import java.util.Optional;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -40,6 +38,9 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -150,7 +151,7 @@ public interface Printer extends RoboxResponseConsumer
 
     public void closeNozzleFully() throws PrinterException;
 
-    public void ejectFilament(int extruderNumber, TaskResponder responder) throws PrinterException;
+    public void ejectFilament(int extruderNumber,int temperature, TaskResponder responder) throws PrinterException;
 
     public ObservableList<Extruder> extrudersProperty();
 

@@ -1,11 +1,11 @@
 package celtech.roboxbase.printerControl.comms.commands;
 
+import java.util.Formatter;
+
 /**
- *
  * @author ianhudson
  */
-public class GCodeConstants
-{
+public class GCodeConstants {
 
     /**
      *
@@ -63,7 +63,7 @@ public class GCodeConstants
      *
      */
     public static final String setFirstLayerNozzleHeaterTemperatureTarget0 = "M103 S";
-     public static final String setFirstLayerNozzleHeaterTemperatureTarget1 = "M103 T";
+    public static final String setFirstLayerNozzleHeaterTemperatureTarget1 = "M103 T";
 
     /**
      *
@@ -144,7 +144,7 @@ public class GCodeConstants
      *
      */
     public static final String openNozzle = "G0 B1";
-    
+
     /**
      *
      */
@@ -168,7 +168,17 @@ public class GCodeConstants
     /**
      *
      */
-    public static final String ejectFilament = "M121";
+    public static final String getEjectFilamentCommand(String extruderLetter, int temperature) {
+        Formatter fmt = new Formatter();
+        if (temperature < 0) {
+            temperature = 140;
+        }
+        String extruderHeaterLetter = "T";
+        if (extruderLetter == "D") {
+            extruderHeaterLetter = "S";
+        }
+        return fmt.format("M104 %1$s%3$d\nM109 %1$s\nG0 %2$s-1500\n", extruderHeaterLetter, extruderLetter, temperature).toString();
+    }
 
     /**
      *
@@ -189,7 +199,7 @@ public class GCodeConstants
      *
      */
     public static final String goToOpenDoorPosition = "G37";
-    
+
     /**
      * Don't wait for safe temp before opening door.
      */
